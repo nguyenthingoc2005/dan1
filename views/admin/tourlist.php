@@ -1,5 +1,5 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
+<!-- <a href="<?= BASEURL ?>views/admin/listlichtrinhtour.php">Lich trình tour</a> -->
 <div class="container mt-4">
     <h2 class="mb-4">Danh sách Tour</h2>
 
@@ -21,7 +21,7 @@
                 </tr>
             </thead>
             <tbody>
-                <?php foreach($data1 as $tour): ?>
+                <?php foreach ($data1 as $tour): ?>
                     <tr>
                         <td><?= $tour['tour_id'] ?></td>
                         <td><?= $tour['ten'] ?></td>
@@ -35,26 +35,31 @@
                         <td><?= $tour['ngay_tao'] ?></td>
                         <td>
                             <a href="<?= BASEURL ?>?act=uppdatetour&tour_id=<?= $tour['tour_id'] ?>" class="btn btn-sm btn-warning">Sửa</a>
-<a href="<?= BASEURL ?>?act=deletetour&tour_id=<?= $tour['tour_id'] ?>" 
-   onclick="return confirm('Bạn có chắc chắn muốn xóa tour này không?')" 
-   class="btn btn-sm btn-danger">Xóa</a>                        </td>
-                    <td><div class="d-flex justify-content-between mt-3">
-    <a href="<?= BASEURL ?>?act=diadiem&tour_id=<?= $tour['tour_id'] ?>" class="btn btn-info">
-        Địa điểm tour
-    </a>
-    <a href="<?= BASEURL ?>?act=chinhsach&tour_id=<?= $tour['tour_id'] ?>" class="btn btn-secondary">
-        Chính sách tour
-    </a>
-</div>
-</td>
+                            <a href="<?= BASEURL ?>?act=deletetour&tour_id=<?= $tour['tour_id'] ?>"
+                                onclick="return confirm('Bạn có chắc chắn muốn xóa tour này không?')"
+                                class="btn btn-sm btn-danger">Xóa</a>
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-between mt-3">
+                                <a href="<?= BASEURL ?>?act=diadiem&tour_id=<?= $tour['tour_id'] ?>" class="btn btn-info">
+                                    Địa điểm tour
+                                </a>
+                                <a href="<?= BASEURL ?>?act=chinhsach&tour_id=<?= $tour['tour_id'] ?>" class="btn btn-secondary">
+                                    Chính sách tour
+                                </a>
+                                <a href="<?= BASEURL ?>?act=listlichtrinhtour&tour_id=<?= $tour['tour_id'] ?>" class="btn" style="background-color: #ff69b4; color: white;">List lịch trình tour</a>
+                            </div>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
-                
+
         <a href="<?= BASEURL ?>?act=addtour" class="btn btn-success mt-3">Thêm tour mới</a>
     <?php else: ?>
         <div class="alert alert-info">Không có tour nào.</div>
         <a href="<?= BASEURL ?>?act=addtour" class="btn btn-success">Thêm tour đầu tiên</a>
     <?php endif; ?>
+    <a href="<?= BASEURL ?>?act=ncc_list" class="btn btn-info mt-3">Danh sách nhà cung cấp</a>
+    <a href="<?= BASEURL ?>?act=hdv" class="btn btn-info mt-3">Danh sách hướng dẫn viên</a>
 </div>
