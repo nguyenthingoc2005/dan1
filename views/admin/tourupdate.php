@@ -1,6 +1,7 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <div class="container mt-4" style="max-width: 700px;">
+    
     <div class="card shadow-sm">
         <div class="card-header bg-warning text-dark">
             <h4 class="mb-0">Cập nhật Tour</h4>

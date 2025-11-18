@@ -305,6 +305,24 @@
             header("Location: " . BASEURL . "?act=hdv&msg=invalid_request");
             exit;
         }
+        
+    }
+    public function chinhsach($tour_id){
+        $chinhSachList = $this->modelGet->getChinhSachByTourId($tour_id);
+        $danhsachchinhsach = $this->modelGet->getDanhSachChinhSach();
+        require_once './views/admin/chinhsachtour.php';
+    }
+    public function luuChinhSachTour($tour_id){
+        $chinh_sach_id = $_POST['chinh_sach_id'];
+        $ghi_chu = $_POST['ghi_chu'] ?? null;
+        $this->modelCreate->luuChinhSachTour($tour_id, $chinh_sach_id, $ghi_chu);
+        header('Location: '.BASEURL.'?act=chinhsach&tour_id='.$tour_id);
+    }
+    public function xoaChinhSachTour($tour_chinh_sach_id){
+        if ($tour_chinh_sach_id !== null) {
+            $this->modelDelete->xoaChinhSachKhoiTour($tour_chinh_sach_id);
+        }
+        header('Location: '.BASEURL.'?act=chinhsach&tour_id='.$_GET['tour_id']);
     }
 }
 ?>

@@ -31,5 +31,8 @@ $act = $_GET['act'] ?? '/';
             'deletehdv' => (new AdminController())->deleteHDV($_GET['id'] ?? null),
             'edithdv' => (new AdminController())->editHDV($_GET['id'] ?? null),
             'updatehdv' => (new AdminController())->updateHDV($_GET['id'] ?? null),
+            'chinhsach'=>(new AdminController())->chinhsach($_GET['tour_id'] ?? null),
+            'luu_chinh_sach_tour'=>(new AdminController())->luuChinhSachTour($_GET['tour_id'] ?? null),
+            'xoa_chinh_sach_tour'=>(new AdminController())->xoaChinhSachTour($_GET['id'] ?? null),
             default => (new AdminController())->index(),
         };

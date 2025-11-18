@@ -153,6 +153,41 @@ public function getAllDiaDiem(){
             $stmt= $this->conn->query($sql);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
+        public function getChinhSachByTourId($tour_id){
+    $sql = "SELECT 
+                tcs.tour_chinh_sach_id,
+                cs.chinh_sach_id,
+                cs.ten,
+                cs.noi_dung,
+                cs.loai,
+                cs.hoat_dong,
+                cs.ngay_tao,
+                tcs.ghi_chu
+            FROM TourChinhSach tcs
+            JOIN ChinhSach cs ON tcs.chinh_sach_id = cs.chinh_sach_id
+            WHERE tcs.tour_id = :tour_id";
+
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+public function getDanhSachChinhSach(){
+    $sql = "SELECT 
+                chinh_sach_id,
+                ten,
+                noi_dung,
+                loai,
+                hoat_dong,
+                ngay_tao
+            FROM ChinhSach
+            ORDER BY ngay_tao DESC";
+
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 
         
     }

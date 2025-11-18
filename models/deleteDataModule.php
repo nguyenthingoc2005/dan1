@@ -40,6 +40,15 @@ public function xoaDiaDiemKhoiTour( $dia_diem_tour_id){
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             return $stmt->execute();
         }
+        public function xoaChinhSachKhoiTour($tour_chinh_sach_id){
+    $sql = "DELETE FROM TourChinhSach WHERE tour_chinh_sach_id = :id";
+
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':id', $tour_chinh_sach_id, PDO::PARAM_INT);
+
+    return $stmt->execute();
+}
+
     }
 
 

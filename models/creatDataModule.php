@@ -84,6 +84,18 @@ public function createLichTrinh($data)
             $stmt->bindParam(':ngon_ngu', $data['ngon_ngu']);
             return $stmt->execute();
         }
+        public function luuChinhSachTour($tour_id, $chinh_sach_id, $ghi_chu = null){
+    $sql = "INSERT INTO TourChinhSach (tour_id, chinh_sach_id, ghi_chu)
+            VALUES (:tour_id, :chinh_sach_id, :ghi_chu)";
+
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
+    $stmt->bindParam(':chinh_sach_id', $chinh_sach_id, PDO::PARAM_INT);
+    $stmt->bindParam(':ghi_chu', $ghi_chu);
+
+    return $stmt->execute();
+}
+
 
         
     }
