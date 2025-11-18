@@ -111,6 +111,200 @@
             $this->modelUpdate->capNhatDiaDiemTour($dia_diem_tour_id, $dia_diem_id, $ghi_chu);
             header('Location: '.BASEURL.'?act=diadiem&tour_id='.$_POST['tour_id']);
         }
+         public function formaddncc(){
+        require_once './views/admin/ncc_add.php';
+    }
 
+    public function createncc(){
+        $data = [
+            'ten' => $_POST['ten'],
+            'lien_he' => $_POST['lien_he'],
+            'dia_chi' => $_POST['dia_chi'],
+            'ma_so_thue' => $_POST['ma_so_thue']
+        ];
+
+        $this->modelCreate->createNCC($data);
+        header("Location: " . BASEURL . "?act=ncc_list");
+    }
+
+    public function deletencc($id){
+        $this->modelDelete->deleteNCC($id);
+        header("Location: " . BASEURL . "?act=ncc_list");
+    }
+
+    public function formupdatencc($id){
+        $ncc = $this->modelGet->getNCCById($id);
+        require_once './views/admin/ncc_update.php';
+    }
+
+    public function updatencc($id){
+        $data = [
+            'ten' => $_POST['ten'],
+            'lien_he' => $_POST['lien_he'],
+            'dia_chi' => $_POST['dia_chi'],
+            'ma_so_thue' => $_POST['ma_so_thue']
+        ];
+
+        $this->modelUpdate->updateNCC($id, $data);
+        header("Location: " . BASEURL . "?act=ncc_list");
+    }
+    public function showncc(){
+        $data= $this->modelGet->getAllNCC();
+        require_once './views/admin/ncc_list.php';
+    }
+     public function listlichtrinhtour()
+    {
+        $tour_id = $_GET['tour_id'] ?? null;
+        $data = $this->modelGet->getAllLichTrinhTour($tour_id);
+        require './views/admin/listlichtrinhtour.php';
+    }
+
+    // Form thêm
+    public function formAddLichTrinh($tour_id)
+    {
+
+        $tour = $this->modelGet->getTourById($tour_id);
+        require './views/admin/lichtrinhtouradd.php';
+    }
+
+    // Thêm
+    public function createLichTrinh()
+    {
+        if (empty($_POST['tour_id'])) {
+            die('Lỗi: tour_id không được để trống!');
+        }
+
+        $data = [
+            'tour_id' => $_POST['tour_id'],
+            'ngay_thu' => $_POST['ngay_thu'],
+            'tieu_de' => $_POST['tieu_de'],
+            'noi_dung' => $_POST['noi_dung']
+        ];
+
+        $this->modelCreate->createLichTrinh($data);
+        header("Location: " . BASEURL . "?act=listlichtrinhtour&tour_id=" . $_POST['tour_id']);
+    }
+
+    // Form sửa
+    public function editLichTrinh($lich_trinh_id)
+    {
+        $info = $this->modelGet->getLichTrinhById($lich_trinh_id);
+        require './views/admin/editlichtrinhtour.php';
+    }
+
+    // Update
+    public function capnhatLichTrinh($lich_trinh_id)
+    {
+        $data = [
+            'ngay_thu' => $_POST['ngay_thu'],
+            'tieu_de' => $_POST['tieu_de'],
+            'noi_dung' => $_POST['noi_dung']
+        ];
+
+        // ĐÚNG HÀM UPDATE LỊCH TRÌNH
+        $this->modelUpdate->updateLichTrinh($lich_trinh_id, $data);
+
+        header("Location: " . BASEURL . "?act=listlichtrinhtour&tour_id=" . $_POST['tour_id']);
+    }
+
+
+    // Xóa
+    public function deleteLichTrinh($lich_trinh_id)
+    {
+        $this->modelDelete->deleteLichTrinh($lich_trinh_id);
+
+        $tour_id = $_GET['tour_id'] ?? 0;
+        header("Location: " . BASEURL . "?act=listlichtrinhtour&tour_id=" . $tour_id);
+    }
+    public function hdv(){
+        $hdvList = $this->modelGet->getAllHDV();
+        require_once './views/admin/hdvlist.php';
+    }
+    public function addHDV(){
+        require_once './views/admin/hdvcreate.php';
+    }
+    public function createHDV(){
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+            $data = [
+                'ho_ten'        => $_POST['ho_ten'] ?? '',
+                'so_dien_thoai' => $_POST['so_dien_thoai'] ?? '',
+                'email'         => $_POST['email'] ?? '',
+                'kinh_nghiem'   => $_POST['kinh_nghiem'] ?? '',
+                'ngon_ngu'      => $_POST['ngon_ngu'] ?? '',
+                'nguoi_dung_id' => 3 
+            ];
+
+            $result = $this->modelCreate->addHDV($data);
+
+            if ($result) {
+                header("Location: " . BASEURL . "?act=hdv&msg=success");
+                exit;
+            } else {
+                echo "<pre>Lỗi SQL: ";
+                print_r($this->modelCreate->conn->errorInfo());
+                echo "</pre>";
+                exit;
+            }
+        }
+    }
+    public function deleteHDV($id){
+        if ($id > 0) {
+            $result = $this->modelDelete->deleteHDV($id);
+            if ($result) {
+                header("Location: " . BASEURL . "?act=hdv&msg=deleted");
+                exit;
+            } else {
+                echo "<pre>Lỗi SQL: ";
+                print_r($this->modelDelete->conn->errorInfo());
+                echo "</pre>";
+                exit;
+            }
+        } else {
+            header("Location: " . BASEURL . "?act=hdv&msg=invalid_id");
+            exit;
+        }
+    }
+    public function editHDV($id){
+        if ($id > 0) {
+            $hdv = $this->modelGet->getHDVById($id);
+            if ($hdv) {
+                require_once './views/admin/hdvedit.php';
+            } else {
+                header("Location: " . BASEURL . "?act=hdv&msg=not_found");
+                exit;
+            }
+        } else {
+            header("Location: " . BASEURL . "?act=hdv&msg=invalid_id");
+            exit;
+        }
+    }
+    public function updateHDV($id){
+        if ($id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+
+            $data = [
+                'ho_ten'        => $_POST['ho_ten'] ?? '',
+                'so_dien_thoai' => $_POST['so_dien_thoai'] ?? '',
+                'email'         => $_POST['email'] ?? '',
+                'kinh_nghiem'   => $_POST['kinh_nghiem'] ?? '',
+                'ngon_ngu'      => $_POST['ngon_ngu'] ?? ''
+            ];
+
+            $result = $this->modelUpdate->updateHDV($id, $data);
+
+            if ($result) {
+                header("Location: " . BASEURL . "?act=hdv&msg=updated");
+                exit;
+            } else {
+                echo "<pre>Lỗi SQL: ";
+                print_r($this->modelUpdate->conn->errorInfo());
+                echo "</pre>";
+                exit;
+            }
+        } else {
+            header("Location: " . BASEURL . "?act=hdv&msg=invalid_request");
+            exit;
+        }
+    }
 }
 ?>

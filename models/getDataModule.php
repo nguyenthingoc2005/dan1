@@ -86,6 +86,73 @@ public function getAllDiaDiem(){
     $stmt->execute();
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
+  public function getAllNCC(){
+        $sql = "SELECT * FROM nhacungcap ORDER BY ncc_id DESC";
+        $stmt = $this->conn->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getNCCById($id){
+        $sql = "SELECT * FROM nhacungcap WHERE ncc_id = :id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    public function getAllLichTrinhTour($tour_id)
+    {
+        $sql = "SELECT 
+                lt.lich_trinh_id,
+                lt.tour_id,
+                t.ten AS ten_tour,
+                lt.ngay_thu,
+                lt.tieu_de,
+                lt.noi_dung
+            FROM LichTrinh lt
+            JOIN Tour t ON lt.tour_id = t.tour_id
+            WHERE lt.tour_id = :tour_id
+            ORDER BY lt.ngay_thu ASC";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Lấy thông tin chi tiết một lịch trình theo ID
+    public function getLichTrinhById($lich_trinh_id)
+    {
+        $sql = "SELECT * FROM LichTrinh WHERE lich_trinh_id = :lich_trinh_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':lich_trinh_id', $lich_trinh_id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Lấy tour liên quan của một lịch trình
+    public function getTourByLichTrinh($lich_trinh_id)
+    {
+        $sql = "SELECT t.* 
+                FROM tour t
+                JOIN LichTrinh lt ON t.tour_id = lt.tour_id
+                WHERE lt.lich_trinh_id = :lich_trinh_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':lich_trinh_id', $lich_trinh_id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    public function getHDVById($id){
+            $sql = "SELECT * FROM `huongdanvien` WHERE `hdv_id` = :id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+          public function getAllHDV(){
+            $sql = "SELECT * FROM `huongdanvien`";
+            $stmt= $this->conn->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         
     }

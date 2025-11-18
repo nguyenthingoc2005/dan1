@@ -21,6 +21,25 @@ public function xoaDiaDiemKhoiTour( $dia_diem_tour_id){
     return $stmt->execute();
 }
 
+    public function deleteNCC($id){
+        $sql = "DELETE FROM nhacungcap WHERE ncc_id = :id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+     public function deleteLichTrinh($lich_trinh_id)
+    {
+        $sql = "DELETE FROM LichTrinh WHERE lich_trinh_id = :id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':id', $lich_trinh_id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+      public function deleteHDV($id){
+            $sql = "DELETE FROM `huongdanvien` WHERE `hdv_id` = :id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            return $stmt->execute();
+        }
     }
 
 

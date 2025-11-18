@@ -43,6 +43,51 @@ public function uppDateTour($tour_id, $data){
 
     return $stmt->execute();
     }
+    public function updateNCC($id, $data){
+        $sql = "UPDATE nhacungcap 
+                SET ten = :ten, lien_he = :lien_he, dia_chi = :dia_chi, ma_so_thue = :mst
+                WHERE ncc_id = :id";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':ten', $data['ten']);
+        $stmt->bindParam(':lien_he', $data['lien_he']);
+        $stmt->bindParam(':dia_chi', $data['dia_chi']);
+        $stmt->bindParam(':mst', $data['ma_so_thue']);
+        $stmt->bindParam(':id', $id);
+
+        return $stmt->execute();
+    }
+    public function updateLichTrinh($lich_trinh_id, $data)
+    {
+        $sql = "UPDATE LichTrinh SET
+                    ngay_thu = :ngay_thu,
+                    tieu_de = :tieu_de,
+                    noi_dung = :noi_dung
+                WHERE lich_trinh_id = :lich_trinh_id";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':ngay_thu', $data['ngay_thu'], PDO::PARAM_INT);
+        $stmt->bindParam(':tieu_de', $data['tieu_de']);
+        $stmt->bindParam(':noi_dung', $data['noi_dung']);
+        $stmt->bindParam(':lich_trinh_id', $lich_trinh_id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+      public function updateHDV($id, $data){
+            $sql = "UPDATE `huongdanvien` 
+                    SET `ho_ten` = :ho_ten, `so_dien_thoai` = :so_dien_thoai, `email` = :email, 
+                        `kinh_nghiem` = :kinh_nghiem, `ngon_ngu` = :ngon_ngu 
+                    WHERE `hdv_id` = :id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':ho_ten', $data['ho_ten']);
+            $stmt->bindParam(':so_dien_thoai', $data['so_dien_thoai']);
+            $stmt->bindParam(':email', $data['email']);
+            $stmt->bindParam(':kinh_nghiem', $data['kinh_nghiem']);
+            $stmt->bindParam(':ngon_ngu', $data['ngon_ngu']);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);   
+            return $stmt->execute();
+
+        }
 }
 
 
