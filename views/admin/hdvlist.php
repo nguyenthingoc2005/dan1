@@ -1,39 +1,31 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
   <title>Danh sách Hướng dẫn viên</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-</head>
+<link href="https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css" rel="stylesheet">
+<link rel="stylesheet" href="./assets/css/sidebar.css">
+
+  </head>
 <body class="bg-light">
 
 <div class="container-fluid mt-4">
-  <div class="row">
-    <!-- Sidebar trái -->
-    <div class="col-md-3 mb-4">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-dark text-white text-center">
-          <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Danh mục quản lý</h6>
-        </div>
-        <div class="card-body px-3 py-4">
-          <div class="d-grid gap-3">
-            <a href="<?= BASEURL ?>?act=ncc_list" class="btn btn-outline-primary">
-              <i class="bi bi-building"></i> Nhà cung cấp
-            </a>
-            <a href="<?= BASEURL ?>?act=hdv" class="btn btn-outline-primary">
-              <i class="bi bi-person-badge"></i> Hướng dẫn viên
-            </a>
-            <a href="<?= BASEURL ?>?act=admin" class="btn btn-outline-primary">
-              <i class="bi bi-map"></i> Tour
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
+  <?php include './views/parts/sidebar.php'; ?>
 
-    <!-- Nội dung chính -->
-    <div class="col-md-9">
+  <!-- Overlay -->
+  <div class="overlay"></div>
+
+  <div class="row">
+    <!-- Nội dung chính toàn màn hình -->
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">📋 Danh sách Hướng dẫn viên</h2>
+        <a href="<?= BASEURL ?>?act=addhdv" class="btn btn-success">
+          <i class="bi bi-plus-circle"></i> Thêm HDV
+        </a>
+      </div>
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">📋 Danh sách Hướng dẫn viên</h2>
         <a href="<?= BASEURL ?>?act=addhdv" class="btn btn-success">
@@ -91,7 +83,7 @@
     </div>
   </div>
 </div>
-
+<script src="./assets/js/sidebar.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

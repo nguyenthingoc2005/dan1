@@ -17,11 +17,18 @@
     $stmt->bindParam(':thoi_luong_mac_dinh', $data['thoi_luong_mac_dinh']);
     $stmt->bindParam(':diem_khoi_hanh', $data['diem_khoi_hanh']);
     $stmt->bindParam(':hoat_dong', $data['hoat_dong']);
-    return $stmt->execute();
+    if ($stmt->execute()) {
+            // Nếu insert thành công, trả về ID vừa sinh ra
+            return $this->conn->lastInsertId(); 
+        } else {
+            // Nếu thất bại
+            return false; 
+        }
 }
-    public function ganDiaDiemChoTour($tour_id, $dia_diem_id, $ghi_chu = null){
+ public function ganDiaDiemChoTour($tour_id, $dia_diem_id, $ghi_chu = null) {
+    // Bổ sung 'thu_tu' (thứ tự) nếu bạn muốn lưu theo thứ tự chuyến đi
     $sql = "INSERT INTO DiaDiemTour (tour_id, dia_diem_id, ghi_chu)
-            VALUES (:tour_id, :dia_diem_id, :ghi_chu)";
+             VALUES (:tour_id, :dia_diem_id, :ghi_chu)";
     
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
@@ -29,7 +36,7 @@
     $stmt->bindParam(':ghi_chu', $ghi_chu);
     
     return $stmt->execute();
-} public function createNCC($data){
+}public function createNCC($data){
         $sql = "INSERT INTO nhacungcap (ten, lien_he, dia_chi, ma_so_thue, ngay_tao)
                 VALUES (:ten, :lien_he, :dia_chi, :mst, NOW())";
 
@@ -84,9 +91,11 @@ public function createLichTrinh($data)
             $stmt->bindParam(':ngon_ngu', $data['ngon_ngu']);
             return $stmt->execute();
         }
-        public function luuChinhSachTour($tour_id, $chinh_sach_id, $ghi_chu = null){
+  // Hàm Model luuChinhSachTour của bạn (Chèn đơn lẻ)
+
+public function luuChinhSachTour($tour_id, $chinh_sach_id, $ghi_chu = null){
     $sql = "INSERT INTO TourChinhSach (tour_id, chinh_sach_id, ghi_chu)
-            VALUES (:tour_id, :chinh_sach_id, :ghi_chu)";
+             VALUES (:tour_id, :chinh_sach_id, :ghi_chu)";
 
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);

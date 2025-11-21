@@ -23,6 +23,111 @@ public function getTourById($tour_id){
     $stmt->execute();
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
+public function getAggregatedTourDetail($tour_id) {
+    $sql = "SELECT 
+        -- 1. Thông tin Tour Cơ bản (t) & Danh Mục (dmt)
+        t.tour_id, t.ten AS ten_tour, t.mo_ta, t.mo_ta_ngan,
+        t.gia_co_ban, 
+        t.thoi_luong_mac_dinh AS thoi_gian, -- Đặt bí danh là 'thoi_gian' cho khớp View cũ
+        dmt.ten AS loai_tour_ten, -- Tên Danh mục làm Loai Tour
+        
+        -- 2. Thông tin Chính sách (cs, tcs)
+        cs.chinh_sach_id, cs.ten AS ten_chinh_sach, cs.loai AS loai_chinh_sach, tcs.ghi_chu AS cs_ghi_chu,
+        
+        -- 3. Thông tin Địa điểm (dd, qg, ddt)
+        dd.dia_diem_id, dd.ten AS ten_diadiem, qg.ten AS quoc_gia_diadiem, dd.mo_ta AS dd_mo_ta, ddt.ghi_chu AS dd_ghi_chu,
+        
+        -- 4. Thông tin Lịch trình (lt)
+        lt.lich_trinh_id, lt.ngay_thu, lt.tieu_de AS tieu_de_lt, lt.noi_dung AS noi_dung_lt
+        
+    FROM Tour t
+    LEFT JOIN DanhMucTour dmt ON t.danh_muc_id = dmt.danh_muc_id
+    
+    LEFT JOIN TourChinhSach tcs ON t.tour_id = tcs.tour_id
+    LEFT JOIN ChinhSach cs ON tcs.chinh_sach_id = cs.chinh_sach_id
+    
+    LEFT JOIN DiaDiemTour ddt ON t.tour_id = ddt.tour_id
+    LEFT JOIN DiaDiem dd ON ddt.dia_diem_id = dd.dia_diem_id
+    LEFT JOIN QuocGia qg ON dd.quoc_gia_id = qg.quoc_gia_id
+    
+    LEFT JOIN LichTrinh lt ON t.tour_id = lt.tour_id
+    
+    WHERE t.tour_id = :tour_id
+    ORDER BY lt.ngay_thu ASC, cs.chinh_sach_id ASC, dd.dia_diem_id ASC";
+
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
+    $stmt->execute();
+    $rawData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($rawData)) {
+        return null;
+    }
+
+    $tourDetail = [];
+    $cs_ids = []; 
+    $dd_ids = []; 
+    $lt_ids = []; 
+
+    foreach ($rawData as $row) {
+        // 1. Gán thông tin Tour Cơ bản (Chỉ cần làm 1 lần)
+        if (empty($tourDetail)) {
+            $tourDetail = [
+                'tour_id' => $row['tour_id'],
+                'ten' => $row['ten_tour'],
+                'mo_ta' => $row['mo_ta'],
+                // Ánh xạ tên cột mới sang tên cũ cho khớp View
+                'gia' => $row['gia_co_ban'], 
+                'thoi_gian' => $row['thoi_gian'], 
+                'loai_tour' => $row['loai_tour_ten'], // Lấy từ DanhMucTour
+                'phuong_tien' => 'N/A', // Không có cột này, đặt là N/A hoặc cần JOIN thêm DV_tour
+                
+                'chinh_sach' => [],
+                'dia_diem' => [],
+                'lich_trinh' => [],
+            ];
+        }
+
+        // 2. Gán Chính sách
+        if ($row['chinh_sach_id'] !== null && !in_array($row['chinh_sach_id'], $cs_ids)) {
+            $tourDetail['chinh_sach'][] = [
+                'ten' => $row['ten_chinh_sach'],
+                'loai' => $row['loai_chinh_sach'],
+                'ghi_chu' => $row['cs_ghi_chu']
+            ];
+            $cs_ids[] = $row['chinh_sach_id'];
+        }
+
+        // 3. Gán Địa điểm
+        if ($row['dia_diem_id'] !== null && !in_array($row['dia_diem_id'], $dd_ids)) {
+            $tourDetail['dia_diem'][] = [
+                'ten_diadiem' => $row['ten_diadiem'],
+                'quoc_gia' => $row['quoc_gia_diadiem'],
+                'mo_ta' => $row['dd_mo_ta'],
+                'ghi_chu' => $row['dd_ghi_chu']
+            ];
+            $dd_ids[] = $row['dia_diem_id'];
+        }
+
+        // 4. Gán Lịch trình
+        if ($row['lich_trinh_id'] !== null && !in_array($row['lich_trinh_id'], $lt_ids)) {
+            $tourDetail['lich_trinh'][] = [
+                'ngay_thu' => $row['ngay_thu'],
+                'tieu_de' => $row['tieu_de_lt'],
+                'noi_dung' => $row['noi_dung_lt']
+            ];
+            $lt_ids[] = $row['lich_trinh_id'];
+        }
+    }
+
+    // Sắp xếp Lịch trình theo Ngày Thứ (đảm bảo)
+    usort($tourDetail['lich_trinh'], function($a, $b) {
+        return $a['ngay_thu'] <=> $b['ngay_thu'];
+    });
+
+    return $tourDetail;
+}
+
 
         public function getAllDanh_muc_tour(){
                 $sql = "SELECT * FROM `danhmuctour`";
@@ -87,7 +192,7 @@ public function getAllDiaDiem(){
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
   public function getAllNCC(){
-        $sql = "SELECT * FROM nhacungcap ORDER BY ncc_id DESC";
+        $sql = "SELECT * FROM nhacungcap WHERE isdelete=1 ORDER BY ncc_id DESC ";
         $stmt = $this->conn->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

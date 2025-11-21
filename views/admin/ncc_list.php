@@ -5,36 +5,23 @@
   <title>Danh sách nhà cung cấp</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="./assets/css/sidebar.css">
+  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css">
 </head>
 <body class="bg-light">
 
-<div class="container-fluid py-4">
-  <div class="row">
-    <!-- Sidebar -->
-    <div class="col-md-3 mb-4">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-primary text-white text-center">
-          <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Danh mục quản lý</h6>
-        </div>
-        <div class="card-body px-3 py-4">
-          <div class="d-grid gap-3">
-            <a href="<?= BASEURL ?>?act=ncc_list" class="btn btn-outline-primary">
-              <i class="bi bi-building"></i> Nhà cung cấp
-            </a>
-            <a href="<?= BASEURL ?>?act=hdv" class="btn btn-outline-primary">
-              <i class="bi bi-person-badge"></i> Hướng dẫn viên
-            </a>
-            <a href="<?= BASEURL ?>?act=admin" class="btn btn-outline-primary">
-              <i class="bi bi-map"></i> Tour
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
+  <?php include_once './views/parts/sidebar.php'; ?>
 
-    <!-- Main content -->
-    <div class="col-md-9">
+  <div class="overlay"></div>
+
+  <div class="main-content">
+    <div class="container-fluid py-4">
       <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Danh sách nhà cung cấp</h2>
+        <a href="<?= BASEURL ?>?act=ncc_add" class="btn btn-success">
+          <i class="bi bi-plus-circle"></i> Thêm mới
+        </a>
+      </div><div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">Danh sách nhà cung cấp</h2>
         <a href="<?= BASEURL ?>?act=ncc_add" class="btn btn-success">
           <i class="bi bi-plus-circle"></i> Thêm mới
@@ -78,7 +65,7 @@
       </div>
     </div>
   </div>
-</div>
 
+  <script src="./assets/js/sidebar.js"></script>
 </body>
 </html>
