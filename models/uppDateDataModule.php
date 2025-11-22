@@ -144,6 +144,20 @@ public function uppDateTour($tour_id, $data){
         return false;
     }
 }
+public function updateHanhKhach($hanh_khach_id, $data) {
+    $sql = "UPDATE `hanhkhachlist` SET 
+                ho_ten = :ho_ten, ngay_sinh = :ngay_sinh, cccd = :cccd, 
+                sdt = :sdt, ghi_chu = :ghi_chu 
+            WHERE hanh_khach_id = :hanh_khach_id";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':ho_ten', $data['ho_ten']);
+    $stmt->bindParam(':ngay_sinh', $data['ngay_sinh']);
+    $stmt->bindParam(':cccd', $data['cccd']);
+    $stmt->bindParam(':sdt', $data['sdt']);
+    $stmt->bindParam(':ghi_chu', $data['ghi_chu']);
+    $stmt->bindParam(':hanh_khach_id', $hanh_khach_id, PDO::PARAM_INT);
+    return $stmt->execute();
+}
 }
 
 

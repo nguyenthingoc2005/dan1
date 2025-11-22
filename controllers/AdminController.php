@@ -523,9 +523,8 @@ class AdminController
                 'ho_ten'=>$khach_hang['ho_ten']??'',
                 'ngay_sinh'=>$khach_hang['ngay_sinh']??'',
                 'gioi_tinh'=>$khach_hang['gioi_tinh']??'',
-                'so_cmnd'=>$khach_hang['so_cmnd']??'',
-                'quoc_tich'=>$khach_hang['quoc_tich']??'',
-                'so_dien_thoai'=>$khach_hang['so_dien_thoai']??'',
+                'cccd'=>$khach_hang['cccd']??'',
+                'sdt'=>$khach_hang['sdt']??'',
                 'email'=>$khach_hang['email']??'',
             ];
             $this->modelCreate->createHanhKhach($data);
@@ -551,7 +550,8 @@ class AdminController
         ];
         $this->modelCreate->createDatCoc($data);
 
-        // var_dump($data);
+
+        var_dump($data);
          header('Location: '.BASEURL.'?act=dattourlist');
         // header('Location: '.BASEURL.'?act=dattourlist');
     }
@@ -584,6 +584,73 @@ class AdminController
         ];
 
         $this->modelUpdate->updateDatTour($dat_tour_id, $data);
-        header('Location: ' . BASEURL . '?act=dattourlist');
+        header('Location: ' . BASEURL . '?act=hanh_khach_edit&dat_tour_id=' . $dat_tour_id);
     }
+    public function hanh_khach_edit($dat_tour_id)
+    {
+        $data = $this->modelGet->getDatTourById($dat_tour_id);
+        $hanhKhachList = $this->modelGet->getHanhKhachByDatTourId($dat_tour_id);
+        require_once './views/admin/hanh_khach_edit.php';
+    }public function hanh_khach_update($dat_tour_id) {
+    // 1. Lấy dữ liệu từ POST
+    $hanh_khach_data = $_POST['hanh_khach'] ?? [];
+    $dat_tour_id = $_POST['dat_tour_id'] ?? $dat_tour_id; // Đảm bảo lấy được ID
+
+    $success_count = 0;
+    
+    // 2. Lặp qua danh sách hành khách gửi lên từ form
+    foreach($hanh_khach_data as $hanh_khach_input) {
+        
+        // Chuẩn bị mảng dữ liệu để truyền vào Model
+        $data = [
+            'dat_tour_id' => $dat_tour_id,
+            'ho_ten'      => $hanh_khach_input['ho_ten'] ?? '',
+            'ngay_sinh'   => $hanh_khach_input['ngay_sinh'] ?? null, // Lưu ý: Nếu là chuỗi rỗng nên là null
+            // 'gioi_tinh'   => $hanh_khach_input['gioi_tinh'] ?? '', // Nếu có trong form
+            'cccd'        => $hanh_khach_input['cccd'] ?? null,
+            'sdt'         => $hanh_khach_input['sdt'] ?? null,
+            // 'email'       => $hanh_khach_input['email'] ?? null, // Nếu có trong form
+            'ghi_chu'     => $hanh_khach_input['ghi_chu'] ?? null,
+        ];
+        
+        // Lấy ID hành khách (0 nếu là bản ghi mới)
+        $hanh_khach_id = (int)($hanh_khach_input['hanh_khach_id'] ?? 0);
+
+        // 3. Logic Cập nhật hoặc Tạo mới
+        if ($hanh_khach_id > 0) {
+            // CÓ ID -> CẬP NHẬT bản ghi đã tồn tại
+            
+            // Bổ sung ID vào mảng data để truyền cho hàm update (nếu cần)
+            $data['hanh_khach_id'] = $hanh_khach_id; 
+            
+            // Gọi hàm Update trong Model
+            $result = $this->modelUpdate->updateHanhKhach($hanh_khach_id, $data);
+            if ($result !== false) {
+                $success_count++;
+            }
+            
+        } else {
+            // KHÔNG CÓ ID (hoặc ID = 0) -> TẠO MỚI bản ghi
+            
+            // Gọi hàm Create trong Model
+            $result = $this->modelCreate->createHanhKhach($data);
+            if ($result !== false) {
+                $success_count++;
+            }
+        }
+    } 
+    
+    // 4. Xử lý kết quả và chuyển hướng
+    if ($success_count > 0) {
+        // Thông báo thành công (tùy chọn)
+        $_SESSION['success'] = "Đã cập nhật/thêm $success_count hành khách thành công!";
+    } else {
+        // Thông báo lỗi (tùy chọn)
+        $_SESSION['error'] = "Không có hành khách nào được cập nhật.";
+    }
+
+    // Chuyển hướng về trang chi tiết đơn đặt tour
+    header('Location: '.BASEURL.'?act=dat_tour_detail&dat_tour_id='.$dat_tour_id);
+    exit();
+}
 }

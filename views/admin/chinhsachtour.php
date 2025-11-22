@@ -124,7 +124,7 @@
                     <i class="bi bi-geo-alt me-2"></i> Quay lại gắn: Gán Địa điểm
                 </a>
                 
-                <a href="<?= BASEURL ?>?act=admin" 
+                <a href="<?= BASEURL ?>?act=tour_list" 
                    class="btn btn-secondary btn-lg">
                     <i class="bi bi-list-ul me-2"></i> HOÀN TẤT (Về Tour List)
                 </a>

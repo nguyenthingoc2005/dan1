@@ -162,15 +162,15 @@ public function createDatTour($data) {
     }
 }
 public function createHanhKhach($data){
-        $sql = "INSERT INTO `hanhkhachlist`(`dat_tour_id`, `ho_ten`, `cccd`, `ngay_sinh`, `so_ghe`, `ghi_chu`) 
-                VALUES (:dat_tour_id, :ho_ten, :cccd, :ngay_sinh, :so_ghe, :ghi_chu)";
+        $sql = "INSERT INTO `hanhkhachlist`(`dat_tour_id`, `ho_ten`, `cccd`, `ngay_sinh`, `sdt`, `ghi_chu`) 
+                VALUES (:dat_tour_id, :ho_ten, :cccd, :ngay_sinh, :sdt, :ghi_chu)";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':dat_tour_id', $data['dat_tour_id'], PDO::PARAM_INT);
         $stmt->bindParam(':ho_ten', $data['ho_ten']);
         $stmt->bindParam(':cccd', $data['cccd']);
         $stmt->bindParam(':ngay_sinh', $data['ngay_sinh']);
-        $stmt->bindParam(':so_ghe', $data['so_ghe']);
+        $stmt->bindParam(':sdt', $data['sdt']);
         $stmt->bindParam(':ghi_chu', $data['ghi_chu']);
         return $stmt->execute();
 
@@ -204,17 +204,8 @@ public function createHanhKhach($data){
         $stmt->bindParam(':trang_thai', $trangThai, $trangThai === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(':ngay_dat', $ngayDat, $ngayDat === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(':ghi_chu', $ghiChu, $ghiChu === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
-        $a=$stmt->execute();
-        // var_dump());;
-        die;
-        // 1. Thực thi
-        // if () {
-        //      // 2. Trả về ID vừa được chèn (dat_coc_id)
-        //     return $this->conn->lastInsertId(); 
-        // } else {
-            
-        //     return false;
-        // }
+        return $stmt->execute();
+      
         
     } catch (PDOException $e) {
         // Ghi lại lỗi và trả về false

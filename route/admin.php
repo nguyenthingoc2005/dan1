@@ -47,5 +47,7 @@ $act = $_GET['act'] ?? '/';
             'dat_coc_save' => (new AdminController())->dat_coc_save($_GET['dat_tour_id'] ?? null),
             'dat_tour_edit' => (new AdminController())->dat_tour_edit($_GET['id'] ?? null),
             'dat_tour_update' => (new AdminController())->dat_tour_update($_GET['dat_tour_id'] ?? null),
+            'hanh_khach_edit' => (new AdminController())->hanh_khach_edit($_GET['dat_tour_id'] ?? null),
+            'hanh_khach_update' => (new AdminController())->hanh_khach_update($_GET['dat_tour_id'] ?? null),
             default => (new AdminController())->index(),
         };

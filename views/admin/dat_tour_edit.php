@@ -119,10 +119,10 @@
 
                     <div class="d-flex justify-content-end mt-4">
                         <a href="<?= BASEURL ?>?act=dat_tour_list" class="btn btn-secondary me-2">
-                            <i class="bi bi-arrow-left-circle"></i> Quay lại
+                            <i class="bi bi-arrow-left-circle"></i> Thoát
                         </a>
                         <button type="submit" class="btn btn-warning">
-                            <i class="bi bi-check-circle"></i> Cập Nhật Đơn Tour
+                            <i class="bi bi-check-circle"></i> Cập Nhật Đơn Tour & Tiếp tục
                         </button>
                     </div>
                 </form>
