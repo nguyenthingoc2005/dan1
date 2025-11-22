@@ -80,8 +80,8 @@
                 </div>
                 
                 <div class="d-flex justify-content-end pt-4">
-                    <a href="<?= BASEURL ?>?act=dat_tour_detail&dat_tour_id=<?= htmlspecialchars($data['dat_tour_id'] ?? '') ?>" class="btn btn-secondary me-3">
-                        <i class="bi bi-arrow-left-circle"></i> Quay lại
+                    <a href="<?= BASEURL ?>?act=dattourlist" class="btn btn-secondary me-3">
+                        <i class="bi bi-arrow-left-circle"></i> Bỏ qua (Hoàn thành sau)
                     </a>
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-save"></i> Lưu Đặt Cọc

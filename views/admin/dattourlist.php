@@ -41,16 +41,16 @@
                 <h2 class="mb-0"><i class="bi bi-card-checklist"></i> Danh sách Đơn Đặt Tour</h2>
                <div class="d-flex"> 
                 <a href="<?= BASEURL ?>?act=dat_tour_add" class="btn btn-primary me-2">
-                         <i class="bi bi-calendar-plus"></i> Tạo Booking Mới
+                    <i class="bi bi-calendar-plus"></i> Tạo Booking Mới
                 </a> 
-               <a href="<?= BASEURL ?>?act=dat_tour_deleted_list" class="btn btn-warning">
-                     <i class="bi bi-trash"></i> Thùng rác
+                <a href="<?= BASEURL ?>?act=dat_tour_deleted_list" class="btn btn-warning">
+                    <i class="bi bi-trash"></i> Thùng rác
                 </a>
                </div>
             </div>
 
             <?php 
-            // Giả định biến $data chứa kết quả từ DatTourModel::getAllDatTour()
+            // Giả định biến $data chứa kết quả từ Model::getAllDatTour()
             if (!empty($data)): 
             ?>
                 <div class="table-responsive">
@@ -71,14 +71,18 @@
                             <?php foreach ($data as $row): ?>
                                 <?php
                                     // --------------------------------------------------------
-                                    // LOGIC HIỂN THỊ DỮ LIỆU THIẾU HOẶC TẠO GIAO DIỆN
+                                    // LOGIC HIỂN THỊ DỮ LIỆU ĐÃ CẬP NHẬT
                                     // --------------------------------------------------------
                                     
-                                    // 1. Xử lý Tên Tour (có thể NULL từ LEFT JOIN)
-                                    $ten_tour = !empty($row['ten_tour']) ? htmlspecialchars($row['ten_tour']) : '<span class="text-danger fw-bold">Chưa gán Tour</span>';
+                                    // 1. Xử lý Tên Tour (lấy từ DT.tour_id -> T.ten)
+                                    $ten_tour = !empty($row['ten_tour']) 
+                                        ? htmlspecialchars($row['ten_tour']) 
+                                        : '<span class="text-danger fw-bold">Chưa chọn Tour</span>';
                                     
-                                    // 2. Xử lý Ngày Khởi Hành (có thể NULL từ LEFT JOIN)
-                                    $ngay_bat_dau = !empty($row['ngay_bat_dau']) ? date('d/m/Y', strtotime($row['ngay_bat_dau'])) : '<span class="text-danger fst-italic">Chưa xếp lịch</span>';
+                                    // 2. Xử lý Ngày Khởi Hành (lấy từ LKH)
+                                    $ngay_bat_dau = !empty($row['ngay_bat_dau']) 
+                                        ? date('d/m/Y', strtotime($row['ngay_bat_dau'])) 
+                                        : '<span class="text-danger fst-italic">Chưa xếp lịch</span>';
                                     
                                     // 3. Xử lý Trạng Thái (Tạo badge màu)
                                     $trang_thai = htmlspecialchars($row['trang_thai_dat_tour']);
@@ -89,6 +93,9 @@
                                         'hủy' => 'bg-danger',
                                         default => 'bg-secondary',
                                     };
+                                    
+                                    // 4. Định dạng ngày đặt
+                                    $ngay_dat_tour = date('d/m/Y', strtotime($row['ngay_dat_tour']));
                                 ?>
                                 <tr>
                                     <td><?= htmlspecialchars($row['dat_tour_id']) ?></td>
@@ -96,8 +103,8 @@
                                         <div class="fw-bold"><?= $ten_tour ?></div>
                                     </td>
                                     <td>
-                                        <div class="text-nowrap"><?= htmlspecialchars($row['ten_khach_hang']) ?></div>
-                                        <small class="text-muted"><?= htmlspecialchars($row['cccd']) ?></small>
+                                        <div class="text-nowrap fw-medium"><?= htmlspecialchars($row['ten_khach_hang']) ?></div>
+                                        <small class="text-muted">CCCD: <?= htmlspecialchars($row['cccd']) ?></small>
                                     </td>
                                     <td>
                                         <?= $ngay_bat_dau ?>
@@ -109,9 +116,13 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <?= date('d/m/Y', strtotime($row['ngay_dat_tour'])) ?>
+                                        <?= $ngay_dat_tour ?>
                                     </td>
                                     <td>
+                                        <a href="<?= BASEURL ?>?act=dat_tour_edit&id=<?= $row['dat_tour_id'] ?>" class="btn btn-warning btn-sm mb-1 w-100">
+                                            <i class="bi bi-pencil-square"></i> Sửa
+                                        </a>
+                                        
                                         <a href="<?= BASEURL ?>?act=dat_tour_detail&id=<?= $row['dat_tour_id'] ?>" class="btn btn-info btn-sm mb-1 w-100">
                                             <i class="bi bi-eye"></i> Chi tiết
                                         </a>

@@ -106,54 +106,61 @@ public function luuChinhSachTour($tour_id, $chinh_sach_id, $ghi_chu = null){
 }
 public function createDatTour($data) {
         
-        // SQL INSERT: Chỉ bao gồm các cột còn lại sau khi loại bỏ tong_tien và tien_te
-        $sql = "INSERT INTO `DatTour` (
-                    `khach_hang_id`, 
-                    `so_nguoi`, 
-                    `loai`, 
-                    `trang_thai`, 
-                    `nguon`, 
-                    `ghi_chu`, 
-                    `ngay_tao`
-                ) VALUES (
-                    :khach_hang_id, 
-                    :so_nguoi, 
-                    :loai, 
-                    :trang_thai, 
-                    :nguon, 
-                    :ghi_chu, 
-                    NOW()
-                )";
+    $sql = "INSERT INTO `DatTour` (
+                `khach_hang_id`, 
+                `tour_id`,          -- Cột 2
+                `so_nguoi`, 
+                `loai`, 
+                `trang_thai`, 
+                `nguon`, 
+                `ghi_chu`, 
+                `ngay_tao`
+            ) VALUES (
+                :khach_hang_id, 
+                :tour_id,           -- Placeholder 2 (Đã sửa)
+                :so_nguoi, 
+                :loai, 
+                :trang_thai, 
+                :nguon, 
+                :ghi_chu, 
+                NOW()               -- Sử dụng hàm NOW() trực tiếp trong SQL
+            )";
         
-        try {
-            $stmt = $this->conn->prepare($sql);
-            
-            // Ép kiểu (dù đã làm trong Controller, nên làm lại để an toàn)
-            $khach_hang_id = (int)$data['khach_hang_id'];
-            $so_nguoi = (int)$data['so_nguoi'];
+    try {
+        $stmt = $this->conn->prepare($sql);
+        
+        // --- Xử lý dữ liệu và Binding các tham số ---
+        
+        // Ép kiểu cho các trường INT
+        $khach_hang_id = (int)($data['khach_hang_id'] ?? 0);
+        $tour_id = (int)($data['tour_id'] ?? 0); // Lấy tour_id
+        $so_nguoi = (int)($data['so_nguoi'] ?? 0);
 
-            // Binding các tham số
-            $stmt->bindParam(':khach_hang_id', $khach_hang_id, PDO::PARAM_INT);
-            $stmt->bindParam(':so_nguoi', $so_nguoi, PDO::PARAM_INT);
-            $stmt->bindParam(':loai', $data['loai']);
-            $stmt->bindParam(':trang_thai', $data['trang_thai']);
-            $stmt->bindParam(':nguon', $data['nguon']);
-            $stmt->bindParam(':ghi_chu', $data['ghi_chu']);
+        // Binding: Khóa ngoại
+        $stmt->bindParam(':khach_hang_id', $khach_hang_id, PDO::PARAM_INT);
+        $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT); 
+        
+        // Binding: Thông tin tour/khách
+        $stmt->bindParam(':so_nguoi', $so_nguoi, PDO::PARAM_INT);
+        $stmt->bindParam(':loai', $data['loai']);
+        $stmt->bindParam(':trang_thai', $data['trang_thai']);
+        $stmt->bindParam(':nguon', $data['nguon']);
+        
+        // Binding: Ghi chú (Cho phép NULL)
+        $ghi_chu = $data['ghi_chu'] ?? null;
+        $stmt->bindParam(':ghi_chu', $ghi_chu, $ghi_chu === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
 
-            if ($stmt->execute()) {
-                // Nếu insert thành công, trả về ID vừa sinh ra
-                return $this->conn->lastInsertId(); 
-            } else {
-                // Nếu thất bại
-                return false; 
-            }
-
-        } catch (PDOException $e) {
-            // Ghi log lỗi
-            error_log("Lỗi CREATE DatTour: " . $e->getMessage());
-            return false;
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId(); 
+        } else {
+            return false; 
         }
+
+    } catch (PDOException $e) {
+        error_log("Lỗi CREATE DatTour: " . $e->getMessage());
+        return false;
     }
+}
 public function createHanhKhach($data){
         $sql = "INSERT INTO `hanhkhachlist`(`dat_tour_id`, `ho_ten`, `cccd`, `ngay_sinh`, `so_ghe`, `ghi_chu`) 
                 VALUES (:dat_tour_id, :ho_ten, :cccd, :ngay_sinh, :so_ghe, :ghi_chu)";

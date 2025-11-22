@@ -292,26 +292,27 @@ public function getDanhSachChinhSach(){
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
-    public function getAllDatTour(){
+  public function getAllDatTour(){
     $sql = "SELECT
     -- Chọn các cột cần thiết từ DatTour
     DT.dat_tour_id,
     DT.so_nguoi,
     DT.trang_thai AS trang_thai_dat_tour,
     DT.ngay_tao AS ngay_dat_tour,
+    DT.tour_id AS tour_id_dat_tour_moi, -- Cột tour_id mới trực tiếp từ DatTour
 
     -- Thông tin khách hàng
     KH.khach_hang_id,
     ND.ho_ten AS ten_khach_hang,
     KH.cccd,
 
-    -- Thông tin lịch khởi hành (LEFT JOIN vì có thể chưa gán lịch)
+    -- Thông tin lịch khởi hành (Giữ lại join LKH qua lich_id)
     LKH.lich_id,
     LKH.ngay_bat_dau,
     LKH.ngay_ket_thuc,
 
-    -- Thông tin Tour (LEFT JOIN vì Tour được nối qua LKH, có thể NULL)
-    T.tour_id,
+    -- Thông tin Tour (Lấy tên tour qua cột tour_id MỚI trong DatTour)
+    T.tour_id AS tour_id_tu_tour,
     T.ten AS ten_tour,
     T.mo_ta_ngan
 
@@ -320,23 +321,23 @@ FROM
 INNER JOIN
     KhachHang KH ON DT.khach_hang_id = KH.khach_hang_id
 INNER JOIN
-    NguoiDung ND ON KH.nguoi_dung_id = ND.nguoi_dung_id -- Cần NguoiDung để lấy ho_ten khách hàng
+    NguoiDung ND ON KH.nguoi_dung_id = ND.nguoi_dung_id 
 
 LEFT JOIN 
     LichKhoiHanh LKH ON DT.lich_id = LKH.lich_id
 
+-- THAY ĐỔI: JOIN TRỰC TIẾP VỚI BẢNG TOUR QUA tour_id MỚI CỦA DATTOUR
 LEFT JOIN 
-    Tour T ON LKH.tour_id = T.tour_id
+    Tour T ON DT.tour_id = T.tour_id
 
 WHERE
-    DT.isdelete = 0"; // Điều kiện lọc: Chỉ lấy đơn đặt tour KHÔNG bị xóa mềm
+    DT.isdelete = 0";
     
     try {
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        // Xử lý lỗi (ví dụ: ghi log)
         error_log("Lỗi khi lấy danh sách đơn đặt tour: " . $e->getMessage());
         return [];
     }

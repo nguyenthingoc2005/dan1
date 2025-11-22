@@ -88,6 +88,62 @@ public function uppDateTour($tour_id, $data){
             return $stmt->execute();
 
         }
+        public function updateDatTour($dat_tour_id, $data) {
+        
+    // SQL UPDATE: Thiết lập các cột cần cập nhật. Không cập nhật ngay_tao.
+    $sql = "UPDATE `DatTour` SET
+                `khach_hang_id` = :khach_hang_id, 
+                `tour_id`       = :tour_id,
+                `so_nguoi`      = :so_nguoi, 
+                `loai`          = :loai, 
+                `trang_thai`    = :trang_thai, 
+                `nguon`         = :nguon, 
+                `ghi_chu`       = :ghi_chu, 
+                `ngay_cap_nhat` = NOW()
+            WHERE `dat_tour_id` = :dat_tour_id";
+        
+    try {
+        $stmt = $this->conn->prepare($sql);
+        
+        // --- Xử lý dữ liệu và Binding các tham số ---
+        
+        // ID đơn tour cần cập nhật
+        $id_to_update = (int)$dat_tour_id;
+
+        // Ép kiểu cho các trường INT
+        $khach_hang_id = (int)($data['khach_hang_id'] ?? 0);
+        $tour_id = (int)($data['tour_id'] ?? 0);
+        $so_nguoi = (int)($data['so_nguoi'] ?? 0);
+
+        // Binding ID WHERE
+        $stmt->bindParam(':dat_tour_id', $id_to_update, PDO::PARAM_INT);
+        
+        // Binding dữ liệu cập nhật
+        $stmt->bindParam(':khach_hang_id', $khach_hang_id, PDO::PARAM_INT);
+        $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT); 
+        $stmt->bindParam(':so_nguoi', $so_nguoi, PDO::PARAM_INT);
+        $stmt->bindParam(':loai', $data['loai']);
+        $stmt->bindParam(':trang_thai', $data['trang_thai']);
+        $stmt->bindParam(':nguon', $data['nguon']);
+        
+        // Binding: Ghi chú (Cho phép NULL)
+        $ghi_chu = $data['ghi_chu'] ?? null;
+        $stmt->bindParam(':ghi_chu', $ghi_chu, $ghi_chu === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+
+        if ($stmt->execute()) {
+            // Trả về số lượng dòng bị ảnh hưởng (dòng đã được cập nhật)
+            // Nếu trả về 1 là thành công, 0 là không có gì thay đổi
+            return $stmt->rowCount(); 
+        } else {
+            return false; 
+        }
+
+    } catch (PDOException $e) {
+        // Ghi log lỗi
+        error_log("Lỗi UPDATE DatTour: " . $e->getMessage());
+        return false;
+    }
+}
 }
 
 

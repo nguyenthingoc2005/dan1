@@ -435,7 +435,7 @@ class AdminController
         require_once  './views/admin/dattourlist.php';
     }
     public function dat_tour_add()
-    {
+    {   $dataTour = $this->modelGet->getAllTours();
         $data = $this->modelGet->getAllKhachHang();
         require_once './views/admin/dat_tour_add.php';
     }
@@ -443,44 +443,67 @@ class AdminController
     // File: controllers/DatTourController.php
 
     public function dat_tour_save()
-    {
-        // 1. Kiểm tra request POST
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ' . BASEURL . '?act=dat_tour_add');
-            exit();
-        }
+{
+    // Đảm bảo session đã được khởi tạo trước khi sử dụng $_SESSION
+    // if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
-        // 2. Xác định Loại (Loai) dựa trên Số Lượng Người (so_nguoi)
-        $soNguoi = (int)$_POST['so_nguoi'];
-        $loaiDatTour = ($soNguoi === 1) ? 'individual' : 'group';
-
-        // 3. Chuẩn bị dữ liệu để gửi đến Model
-        // (Đã loại bỏ tong_tien và tien_te)
-        $data = [
-            'khach_hang_id' => $_POST['khach_hang_id'],
-            'so_nguoi'      => $soNguoi, // Giá trị đã được ép kiểu (int)
-            'loai'          => $loaiDatTour, // Giá trị đã được tính toán
-            'trang_thai'    => $_POST['trang_thai'] ?? 'chờ xác nhận',
-            'nguon'         => $_POST['nguon'] ?? 'web', // Thêm nguồn nếu có
-            'ghi_chu'       => $_POST['ghi_chu'] ?? null
-        ];
-
-        // 4. Gọi Model để lưu dữ liệu
-        // Sử dụng biến Model hiện tại của bạn
-        $dat_tour_id = $this->modelCreate->createDatTour($data);
-
-        if ($dat_tour_id) {
-            // 5. THÀNH CÔNG: Chuyển hướng sang bước tiếp theo: Thêm hành khách
-            $_SESSION['success_message'] = "Đơn đặt tour #{$dat_tour_id} đã được tạo thành công.";
-            header('Location: ' . BASEURL . '?act=hanh_khach_add&dat_tour_id=' . $dat_tour_id);
-            exit();
-        } else {
-            // 6. THẤT BẠI: Xử lý lỗi
-            $_SESSION['error_message'] = "Lỗi hệ thống: Không thể tạo đơn đặt tour.";
-            header('Location: ' . BASEURL . '?act=dat_tour_add');
-            exit();
-        }
+    // 1. Kiểm tra request POST
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ' . BASEURL . '?act=dat_tour_add');
+        exit();
     }
+
+    // 2. Lấy và kiểm tra các trường bắt buộc (Validation)
+    
+    $khachHangId = $_POST['khach_hang_id'] ?? null;
+    $tourId = $_POST['tour_id'] ?? null;
+    $soNguoi = (int)($_POST['so_nguoi'] ?? 0);
+    $trangThai = $_POST['trang_thai'] ?? 'chờ xác nhận';
+    $nguon = $_POST['nguon'] ?? 'web';
+    $ghiChu = $_POST['ghi_chu'] ?? null;
+
+    $errors = [];
+    if (empty($khachHangId)) { $errors[] = "Vui lòng chọn Khách Hàng."; }
+    if (empty($tourId)) { $errors[] = "Vui lòng chọn Tour."; }
+    if ($soNguoi < 1) { $errors[] = "Số lượng người phải lớn hơn 0."; }
+    
+    if (!empty($errors)) {
+        // Có lỗi validation, chuyển hướng và hiển thị lỗi
+        $_SESSION['error_message'] = "Lỗi nhập liệu: " . implode('; ', $errors);
+        // Có thể lưu lại $_POST để điền lại form
+        header('Location: ' . BASEURL . '?act=dat_tour_add');
+        exit();
+    }
+    
+    // 3. Tính toán lại Loại (Đảm bảo logic backend là nguồn tin cậy duy nhất)
+    $loaiDatTour = ($soNguoi === 1) ? 'individual' : 'group';
+
+    // 4. Chuẩn bị dữ liệu để gửi đến Model
+    $data = [
+        'khach_hang_id' => $khachHangId,
+        'tour_id'       => $tourId,
+        'so_nguoi'      => $soNguoi, 
+        'loai'          => $loaiDatTour, 
+        'trang_thai'    => $trangThai,
+        'nguon'         => $nguon, 
+        'ghi_chu'       => $ghiChu
+    ];
+
+    // 5. Gọi Model để lưu dữ liệu
+    $dat_tour_id = $this->modelCreate->createDatTour($data);
+
+    if ($dat_tour_id) {
+        // THÀNH CÔNG: Chuyển hướng sang bước tiếp theo
+        $_SESSION['success_message'] = "Đơn đặt tour #{$dat_tour_id} đã được tạo thành công. Vui lòng nhập thông tin hành khách.";
+        header('Location: ' . BASEURL . '?act=hanh_khach_add&dat_tour_id=' . $dat_tour_id);
+        exit();
+    } else {
+        // THẤT BẠI: Lỗi từ database
+        $_SESSION['error_message'] = "Lỗi hệ thống: Không thể tạo đơn đặt tour. (Lỗi DB hoặc Model)";
+        header('Location: ' . BASEURL . '?act=dat_tour_add');
+        exit();
+    }
+}
 
     public function hanh_khach_add($dat_tour_id)
     {
@@ -531,5 +554,36 @@ class AdminController
         // var_dump($data);
          header('Location: '.BASEURL.'?act=dattourlist');
         // header('Location: '.BASEURL.'?act=dattourlist');
+    }
+    public function dat_tour_edit($dat_tour_id)
+    {
+        $dataTour = $this->modelGet->getAllTours();
+        $dataKhachHang = $this->modelGet->getAllKhachHang();
+        $data = $this->modelGet->getDatTourById($dat_tour_id);
+        require_once './views/admin/dat_tour_edit.php';
+    }
+    public function dat_tour_update($dat_tour_id)
+    {
+        $khachHangId = $_POST['khach_hang_id'] ?? null;
+        $tourId = $_POST['tour_id'] ?? null;
+        $soNguoi = (int)($_POST['so_nguoi'] ?? 0);
+        $trangThai = $_POST['trang_thai'] ?? 'chờ xác nhận';
+        $nguon = $_POST['nguon'] ?? 'web';
+        $ghiChu = $_POST['ghi_chu'] ?? null;
+
+        $loaiDatTour = ($soNguoi === 1) ? 'individual' : 'group';
+
+        $data = [
+            'khach_hang_id' => $khachHangId,
+            'tour_id'       => $tourId,
+            'so_nguoi'      => $soNguoi, 
+            'loai'          => $loaiDatTour, 
+            'trang_thai'    => $trangThai,
+            'nguon'         => $nguon, 
+            'ghi_chu'       => $ghiChu
+        ];
+
+        $this->modelUpdate->updateDatTour($dat_tour_id, $data);
+        header('Location: ' . BASEURL . '?act=dattourlist');
     }
 }
