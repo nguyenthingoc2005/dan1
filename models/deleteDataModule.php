@@ -23,7 +23,7 @@ public function xoaDiaDiemKhoiTour( $dia_diem_tour_id){
 
     public function deleteNCC($id){
         $sql = "UPDATE nhacungcap
-SET isdelete = 0  -- Sửa giá trị cột isdelete thành 0
+SET isdelete = 1  -- Sửa giá trị cột isdelete thành 1
 WHERE ncc_id = :id; -- Tại nhà cung cấp có ID tương ứng";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $id);

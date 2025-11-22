@@ -1,3 +1,9 @@
+
+
+    <?php
+    var_dump($tour);
+    ?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>

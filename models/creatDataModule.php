@@ -104,12 +104,118 @@ public function luuChinhSachTour($tour_id, $chinh_sach_id, $ghi_chu = null){
 
     return $stmt->execute();
 }
+public function createDatTour($data) {
+        
+        // SQL INSERT: Chỉ bao gồm các cột còn lại sau khi loại bỏ tong_tien và tien_te
+        $sql = "INSERT INTO `DatTour` (
+                    `khach_hang_id`, 
+                    `so_nguoi`, 
+                    `loai`, 
+                    `trang_thai`, 
+                    `nguon`, 
+                    `ghi_chu`, 
+                    `ngay_tao`
+                ) VALUES (
+                    :khach_hang_id, 
+                    :so_nguoi, 
+                    :loai, 
+                    :trang_thai, 
+                    :nguon, 
+                    :ghi_chu, 
+                    NOW()
+                )";
+        
+        try {
+            $stmt = $this->conn->prepare($sql);
+            
+            // Ép kiểu (dù đã làm trong Controller, nên làm lại để an toàn)
+            $khach_hang_id = (int)$data['khach_hang_id'];
+            $so_nguoi = (int)$data['so_nguoi'];
+
+            // Binding các tham số
+            $stmt->bindParam(':khach_hang_id', $khach_hang_id, PDO::PARAM_INT);
+            $stmt->bindParam(':so_nguoi', $so_nguoi, PDO::PARAM_INT);
+            $stmt->bindParam(':loai', $data['loai']);
+            $stmt->bindParam(':trang_thai', $data['trang_thai']);
+            $stmt->bindParam(':nguon', $data['nguon']);
+            $stmt->bindParam(':ghi_chu', $data['ghi_chu']);
+
+            if ($stmt->execute()) {
+                // Nếu insert thành công, trả về ID vừa sinh ra
+                return $this->conn->lastInsertId(); 
+            } else {
+                // Nếu thất bại
+                return false; 
+            }
+
+        } catch (PDOException $e) {
+            // Ghi log lỗi
+            error_log("Lỗi CREATE DatTour: " . $e->getMessage());
+            return false;
+        }
+    }
+public function createHanhKhach($data){
+        $sql = "INSERT INTO `hanhkhachlist`(`dat_tour_id`, `ho_ten`, `cccd`, `ngay_sinh`, `so_ghe`, `ghi_chu`) 
+                VALUES (:dat_tour_id, :ho_ten, :cccd, :ngay_sinh, :so_ghe, :ghi_chu)";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':dat_tour_id', $data['dat_tour_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':ho_ten', $data['ho_ten']);
+        $stmt->bindParam(':cccd', $data['cccd']);
+        $stmt->bindParam(':ngay_sinh', $data['ngay_sinh']);
+        $stmt->bindParam(':so_ghe', $data['so_ghe']);
+        $stmt->bindParam(':ghi_chu', $data['ghi_chu']);
+        return $stmt->execute();
 
 
         
     }
+   public function createDatCoc(array $data) 
+{
+    $sql = "INSERT INTO DatCoc (
+                dat_tour_id, so_tien, tien_te, hinh_thuc, trang_thai, ngay_dat, ghi_chu
+            ) VALUES (
+                :dat_tour_id, :so_tien, :tien_te, :hinh_thuc, :trang_thai, :ngay_dat, :ghi_chu
+            )";
 
+    try {
+        $stmt = $this->conn->prepare($sql);
+        
+        // Xử lý giá trị NULL (các trường Có NULL trong DB)
+        $datTourId = $data['dat_tour_id'] ?? null;
+        $soTien = $data['so_tien'] ?? null;
+        $hinhThuc = $data['hinh_thuc'] ?? null;
+        $trangThai = $data['trang_thai'] ?? null;
+        $ngayDat = $data['ngay_dat'] ?? null;
+        $ghiChu = $data['ghi_chu'] ?? null;
 
-
+        // Bind các tham số (giả định $data['tien_te'] luôn có giá trị mặc định là 'VND')
+        $stmt->bindParam(':dat_tour_id', $datTourId, $datTourId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindParam(':so_tien', $soTien); 
+        $stmt->bindParam(':tien_te', $data['tien_te'], PDO::PARAM_STR);
+        $stmt->bindParam(':hinh_thuc', $hinhThuc, $hinhThuc === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindParam(':trang_thai', $trangThai, $trangThai === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindParam(':ngay_dat', $ngayDat, $ngayDat === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindParam(':ghi_chu', $ghiChu, $ghiChu === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $a=$stmt->execute();
+        // var_dump());;
+        die;
+        // 1. Thực thi
+        // if () {
+        //      // 2. Trả về ID vừa được chèn (dat_coc_id)
+        //     return $this->conn->lastInsertId(); 
+        // } else {
+            
+        //     return false;
+        // }
+        
+    } catch (PDOException $e) {
+        // Ghi lại lỗi và trả về false
+        error_log("Lỗi tạo Đặt Cọc: " . $e->getMessage());
+        var_dump($e->getMessage());
+        return false;
+    }
+}
+    }
 
 ?>

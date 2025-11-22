@@ -16,12 +16,7 @@
 
   <div class="main-content">
     <div class="container-fluid py-4">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0">Danh sách nhà cung cấp</h2>
-        <a href="<?= BASEURL ?>?act=ncc_add" class="btn btn-success">
-          <i class="bi bi-plus-circle"></i> Thêm mới
-        </a>
-      </div><div class="d-flex justify-content-between align-items-center mb-3">
+     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">Danh sách nhà cung cấp</h2>
         <a href="<?= BASEURL ?>?act=ncc_add" class="btn btn-success">
           <i class="bi bi-plus-circle"></i> Thêm mới

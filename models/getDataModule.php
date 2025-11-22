@@ -11,13 +11,13 @@
                 danhmuctour.ten AS ten_danh_muc 
             FROM tour 
             JOIN danhmuctour ON tour.danh_muc_id = danhmuctour.danh_muc_id 
-            WHERE tour.trang_thai_xoa = 1";
+            WHERE tour.trang_thai_xoa = 0";
     
     $stmt = $this->conn->query($sql);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 public function getTourById($tour_id){
-    $sql = "SELECT * FROM tour WHERE tour_id = :tour_id AND trang_thai_xoa = 1";
+    $sql = "SELECT * FROM tour WHERE tour_id = :tour_id AND trang_thai_xoa = 0";
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
     $stmt->execute();
@@ -192,13 +192,13 @@ public function getAllDiaDiem(){
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
   public function getAllNCC(){
-        $sql = "SELECT * FROM nhacungcap WHERE isdelete=1 ORDER BY ncc_id DESC ";
+        $sql = "SELECT * FROM nhacungcap WHERE isdelete=0 ORDER BY ncc_id DESC ";
         $stmt = $this->conn->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getNCCById($id){
-        $sql = "SELECT * FROM nhacungcap WHERE ncc_id = :id";
+        $sql = "SELECT * FROM nhacungcap WHERE ncc_id = :id AND isdelete=0";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $id);
         $stmt->execute();
@@ -292,11 +292,182 @@ public function getDanhSachChinhSach(){
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+    public function getAllDatTour(){
+    $sql = "SELECT
+    -- Chọn các cột cần thiết từ DatTour
+    DT.dat_tour_id,
+    DT.so_nguoi,
+    DT.trang_thai AS trang_thai_dat_tour,
+    DT.ngay_tao AS ngay_dat_tour,
 
+    -- Thông tin khách hàng
+    KH.khach_hang_id,
+    ND.ho_ten AS ten_khach_hang,
+    KH.cccd,
+
+    -- Thông tin lịch khởi hành (LEFT JOIN vì có thể chưa gán lịch)
+    LKH.lich_id,
+    LKH.ngay_bat_dau,
+    LKH.ngay_ket_thuc,
+
+    -- Thông tin Tour (LEFT JOIN vì Tour được nối qua LKH, có thể NULL)
+    T.tour_id,
+    T.ten AS ten_tour,
+    T.mo_ta_ngan
+
+FROM
+    DatTour DT
+INNER JOIN
+    KhachHang KH ON DT.khach_hang_id = KH.khach_hang_id
+INNER JOIN
+    NguoiDung ND ON KH.nguoi_dung_id = ND.nguoi_dung_id -- Cần NguoiDung để lấy ho_ten khách hàng
+
+LEFT JOIN 
+    LichKhoiHanh LKH ON DT.lich_id = LKH.lich_id
+
+LEFT JOIN 
+    Tour T ON LKH.tour_id = T.tour_id
+
+WHERE
+    DT.isdelete = 0"; // Điều kiện lọc: Chỉ lấy đơn đặt tour KHÔNG bị xóa mềm
+    
+    try {
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        // Xử lý lỗi (ví dụ: ghi log)
+        error_log("Lỗi khi lấy danh sách đơn đặt tour: " . $e->getMessage());
+        return [];
+    }
+}
+    public function getAllKhachHang() {
+    $sql = "SELECT
+        KH.khach_hang_id,
+        KH.cccd,
+        KH.dia_chi,
+        KH.ngay_tao AS ngay_tao_khach_hang,
+
+        -- Thông tin chi tiết từ bảng NguoiDung
+        ND.nguoi_dung_id,
+        ND.email,
+        ND.ho_ten,
+        ND.so_dien_thoai,
+        ND.trang_thai AS trang_thai_tai_khoan
+        
+    FROM
+        KhachHang KH
+    INNER JOIN
+        NguoiDung ND ON KH.nguoi_dung_id = ND.nguoi_dung_id
+    
+    -- Lọc theo trạng thái xóa mềm: chỉ lấy người dùng KHÔNG bị xóa (isdelete = 0)
+    WHERE 
+        ND.isdelete = 0
+        
+    ORDER BY
+        KH.khach_hang_id DESC";
+
+    try {
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        // Xử lý lỗi (ghi log hoặc ném exception)
+        error_log("Lỗi khi lấy danh sách khách hàng: " . $e->getMessage());
+        return [];
+    }
+}
+
+    public function getDatTourById($dat_tour_id){
+        $sql = "SELECT * FROM `dattour` WHERE dat_tour_id = :dat_tour_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':dat_tour_id', $dat_tour_id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    // public function getDatTourDetail(int $dat_tour_id) {
+    //     // Truy vấn chính sử dụng LEFT JOIN cho tất cả các bảng 1-1 hoặc 1-nhiều (SUM)
+    //     $sql = "SELECT
+    //         -- 1. Thông tin Đặt Tour chính
+    //         DT.dat_tour_id, DT.lich_id, DT.so_nguoi, DT.tong_tien, DT.tien_te, 
+    //         DT.trang_thai AS trang_thai_dat_tour, DT.nguon, DT.ngay_tao, DT.ghi_chu AS ghi_chu_dat_tour, DT.loai,
+            
+    //         -- 2. Thông tin Khách hàng đặt tour (LEFT JOIN)
+    //         ND.ho_ten AS ten_khach_hang, ND.so_dien_thoai, ND.email, 
+    //         KH.cccd, KH.dia_chi,
+            
+    //         -- 3. Thông tin Tour & Lịch Khởi Hành (LEFT JOIN)
+    //         T.tour_id, T.ten AS ten_tour, T.mo_ta_ngan,
+    //         LKH.ngay_bat_dau, LKH.ngay_ket_thuc, LKH.gia_mac_dinh, LKH.tien_te AS tien_te_lich,
+            
+    //         -- 4. Thông tin Đặt Cọc (LEFT JOIN)
+    //         SUM(DC.so_tien) AS tong_dat_coc
+            
+    //     FROM
+    //         DatTour DT
+        
+    //     -- LEFT JOIN cho KhachHang và NguoiDung
+    //     LEFT JOIN
+    //         KhachHang KH ON DT.khach_hang_id = KH.khach_hang_id
+    //     LEFT JOIN
+    //         NguoiDung ND ON KH.nguoi_dung_id = ND.nguoi_dung_id
+        
+    //     -- LEFT JOIN cho Lịch Khởi Hành và Tour
+    //     LEFT JOIN 
+    //         LichKhoiHanh LKH ON DT.lich_id = LKH.lich_id
+    //     LEFT JOIN 
+    //         Tour T ON LKH.tour_id = T.tour_id
+
+    //     -- LEFT JOIN cho Đặt Cọc
+    //     LEFT JOIN
+    //         DatCoc DC ON DT.dat_tour_id = DC.dat_tour_id AND DC.trang_thai = 'confirmed' 
+
+    //     WHERE
+    //         DT.dat_tour_id = :id 
+    //         -- AND DT.isdelete = 0 -- Giả sử trường này cần được dùng nếu có trong DB
+    //     GROUP BY 
+    //         DT.dat_tour_id";
 
         
+    //     // --- Lấy dữ liệu Dạng Mảng (Hành Khách, Dịch Vụ Thêm) ---
+    //     $sql_hanh_khach = "SELECT ho_ten, cccd, ngay_sinh, so_ghe, ghi_chu FROM HanhKhachlist WHERE dat_tour_id = :id";
+    //     $sql_dv_them = "SELECT DVT.ten, DVT.gia, DVT.don_vi, DVT.mo_ta, DVTD.so_luong, DVTD.tong_tien AS tong_tien_dv 
+    //                     FROM DichVuThemDat DVTD
+    //                     INNER JOIN DichVuThem DVT ON DVTD.dv_them_id = DVT.dv_them_id
+    //                     WHERE DVTD.dat_tour_id = :id";
+        
+    //     try {
+    //         // Thực hiện truy vấn chính (dữ liệu 1-1)
+    //         $stmt_main = $this->conn->prepare($sql);
+    //         $stmt_main->bindParam(':id', $dat_tour_id, PDO::PARAM_INT);
+    //         $stmt_main->execute();
+    //         $detail = $stmt_main->fetch(PDO::FETCH_ASSOC);
+
+    //         if ($detail) {
+    //             // Thực hiện truy vấn phụ (dữ liệu 1-nhiều)
+                
+    //             // 1. Hành Khách
+    //             $stmt_hk = $this->conn->prepare($sql_hanh_khach);
+    //             $stmt_hk->bindParam(':id', $dat_tour_id, PDO::PARAM_INT);
+    //             $stmt_hk->execute();
+    //             $detail['hanh_khach_list'] = $stmt_hk->fetchAll(PDO::FETCH_ASSOC);
+                
+    //             // 2. Dịch Vụ Thêm
+    //             $stmt_dv = $this->conn->prepare($sql_dv_them);
+    //             $stmt_dv->bindParam(':id', $dat_tour_id, PDO::PARAM_INT);
+    //             $stmt_dv->execute();
+    //             $detail['dich_vu_them'] = $stmt_dv->fetchAll(PDO::FETCH_ASSOC);
+    //         }
+            
+    //         return $detail;
+
+    //     } catch (PDOException $e) {
+    //         error_log("Lỗi khi lấy chi tiết Đơn Đặt Tour: " . $e->getMessage());
+    //         return false;
+    //     }
+    // }
+
+
     }
-
-
 
 ?>

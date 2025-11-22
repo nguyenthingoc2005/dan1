@@ -37,5 +37,13 @@ $act = $_GET['act'] ?? '/';
             'chinhsach'=>(new AdminController())->chinhsach($_GET['tour_id'] ?? null),
             'luu_chinh_sach_tour'=>(new AdminController())->luuChinhSachTour($_GET['tour_id'] ?? null),
             'xoa_chinh_sach_tour'=>(new AdminController())->xoaChinhSachTour($_GET['id'] ?? null),
+            'dattourlist' => (new AdminController())->dattourlist(),
+            'dat_tour_add' => (new AdminController())->dat_tour_add(),
+            'dat_tour_save' => (new AdminController())->dat_tour_save(),
+            'hanh_khach_add' => (new AdminController())->hanh_khach_add($_GET['dat_tour_id'] ?? null),
+            //'dat_tour_detail' => (new AdminController())->dat_tour_detail($_GET['dat_tour_id'] ?? null),
+            'hanh_khach_save' => (new AdminController())->hanh_khach_save($_GET['dat_tour_id'] ?? null),
+            'dat_coc' => (new AdminController())->dat_coc($_GET['dat_tour_id'] ?? null),
+            'dat_coc_save' => (new AdminController())->dat_coc_save($_GET['dat_tour_id'] ?? null),
             default => (new AdminController())->index(),
         };
