@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8">
   <title>Danh sách nhà cung cấp</title>
@@ -8,6 +9,7 @@
   <link rel="stylesheet" href="./assets/css/sidebar.css">
   <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css">
 </head>
+
 <body class="bg-light">
 
   <?php include_once './views/parts/sidebar.php'; ?>
@@ -16,7 +18,7 @@
 
   <div class="main-content">
     <div class="container-fluid py-4">
-     <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">Danh sách nhà cung cấp</h2>
         <a href="<?= BASEURL ?>?act=ncc_add" class="btn btn-success">
           <i class="bi bi-plus-circle"></i> Thêm mới
@@ -52,6 +54,9 @@
                   <a onclick="return confirm('Xóa nhà cung cấp?')" href="<?= BASEURL ?>?act=ncc_delete&id=<?= $row['ncc_id'] ?>" class="btn btn-danger btn-sm">
                     <i class="bi bi-trash"></i> Xóa
                   </a>
+                  <a href="<?= BASEURL ?>?act=lay_dich_vu&ncc_id=<?= $row['ncc_id'] ?>" class="btn btn-outline-primary">
+                    <i class="bi bi-bag"></i> Dịch vụ
+                  </a>
                 </td>
               </tr>
             <?php endforeach; ?>
@@ -63,4 +68,5 @@
 
   <script src="./assets/js/sidebar.js"></script>
 </body>
+
 </html>
