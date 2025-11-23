@@ -116,6 +116,7 @@ class getDataModule
             // 4. Gán Lịch trình
             if ($row['lich_trinh_id'] !== null && !in_array($row['lich_trinh_id'], $lt_ids)) {
                 $tourDetail['lich_trinh'][] = [
+                    'lich_trinh_id'=>$row['lich_trinh_id'],
                     'ngay_thu' => $row['ngay_thu'],
                     'tieu_de' => $row['tieu_de_lt'],
                     'noi_dung' => $row['noi_dung_lt']
