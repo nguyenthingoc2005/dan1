@@ -466,8 +466,36 @@ WHERE
     //         return false;
     //     }
     // }
+    // public function search($keyword = "") {
+    //     if ($keyword == "") {
+    //         $stmt = $this->conn->prepare("SELECT * FROM hanhkhachlist");
+    //         $stmt->execute();
+    //     } else {
+    //         $sql = "SELECT * FROM hanhkhachlist 
+    //                 WHERE ho_ten LIKE ? OR cccd LIKE ?";
+    //         $stmt = $this->conn->prepare($sql);
+    //         $kw = "%".$keyword."%";
+    //         $stmt->execute([$kw, $kw]);
+    //     }
+    //     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // }
+    public function getAll()
+  {
+    $sql = "SELECT * FROM nguoidung";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
 
 
-    }
+  public function checkLogin($email, $password) {
+    $sql = "SELECT * FROM `nguoidung` WHERE email = :email AND mat_khau = :password";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute(['email' => $email, 'password' => $password]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $user;
+}
+
+ }
 
 ?>

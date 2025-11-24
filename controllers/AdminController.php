@@ -532,4 +532,16 @@ class AdminController
          header('Location: '.BASEURL.'?act=dattourlist');
         // header('Location: '.BASEURL.'?act=dattourlist');
     }
+    // public function showHK() {
+    //     $keyword = $_GET['keyword'] ?? "";
+    //     $list = $this->modelGet->search($keyword);
+
+    //     require_once "views/admin/hanhkhach_list.php";
+    // }
+    public function logout()
+    {
+        unset($_SESSION['user']);
+        header("Location: " . BASEURL . "?act=login");
+        exit;
+    }
 }
