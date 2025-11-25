@@ -28,8 +28,8 @@ class deleteDataModule
     public function deleteNCC($id)
     {
         $sql = "UPDATE nhacungcap
-SET isdelete = 1  -- Sửa giá trị cột isdelete thành 1
-WHERE ncc_id = :id; -- Tại nhà cung cấp có ID tương ứng";
+        SET isdelete = 1  -- Sửa giá trị cột isdelete thành 1
+        WHERE ncc_id = :id; -- Tại nhà cung cấp có ID tương ứng";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
