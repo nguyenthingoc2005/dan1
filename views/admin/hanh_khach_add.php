@@ -64,8 +64,8 @@
                                 </div>
                                 
                                 <div class="col-md-4">
-                                    <label for="so_ghe_<?= $i ?>" class="form-label form-control-label">Số Ghế (Tùy chọn)</label>
-                                    <input type="text" class="form-control" name="hanh_khach[<?= $i ?>][so_ghe]" id="so_ghe_<?= $i ?>">
+                                    <label for="sdt_<?= $i ?>" class="form-label form-control-label">Số điện thoại</label>
+                                    <input type="text" class="form-control" name="hanh_khach[<?= $i ?>][sdt]" id="sdt_<?= $i ?>">
                                 </div>
                                 
                                 <div class="col-md-4">

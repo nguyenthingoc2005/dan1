@@ -41,6 +41,27 @@
                         </select>
                         <small class="form-text text-muted">Chỉ khách hàng đang hoạt động mới hiển thị.</small>
                     </div>
+                    <div class="col-md-12">
+                        <label for="tour_id" class="form-label fw-bold">2. Chọn Tour</label>
+                        <select class="form-select" id="tour_id" name="tour_id" required>
+                            <option value="">-- Chọn Tour --</option>
+                            <?php 
+                            // GIẢ ĐỊNH: Dữ liệu Tour được truyền qua biến $dataTour
+                            // Hoặc nếu tất cả dữ liệu được gộp chung, ta sẽ dùng key mới (ví dụ $data['tours'])
+                            if (isset($dataTour) && is_array($dataTour)):
+                                foreach ($dataTour as $tour): 
+                            ?>
+                                <option value="<?= htmlspecialchars($tour['tour_id']) ?>">
+                                    <?= htmlspecialchars($tour['ten']) ?> 
+                                    (<?= htmlspecialchars($tour['thoi_luong_mac_dinh']) ?>)
+                                </option>
+                            <?php 
+                                endforeach;
+                            endif; 
+                            ?>
+                        </select>
+                        <small class="form-text text-muted">Tour sẽ được chọn để tính giá sau này.</small>
+                    </div>
 
                     <div class="col-md-6">
                         <label for="so_nguoi" class="form-label fw-bold">2. Số Lượng Người</label>

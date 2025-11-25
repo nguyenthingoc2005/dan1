@@ -19,6 +19,7 @@ require_once './models/deleteDataModule.php';
 require_once './models/getDataModule.php';
 
 // // Route
+
 // require_once './route/admin.php';
 
 if(isset($_SESSION['user'])&&$_SESSION['user']['vai_tro_id']==1){
@@ -28,4 +29,6 @@ else{
     require_once './route/hdv.php';
 }
 
+
+require_once './route/admin.php';
 
