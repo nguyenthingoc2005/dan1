@@ -6,9 +6,9 @@ class creatDataModule
     public function __construct()
     {
         // Giả định connectDB() trả về đối tượng PDO đã kết nối
-        $this->conn = connectDB(); 
+        $this->conn = connectDB();
     }
-    
+
     // ================== TOUR ==================
     public function createTour($data)
     {
@@ -31,7 +31,7 @@ class creatDataModule
             return false;
         }
     }
-    
+
     // ================== ĐỊA ĐIỂM TOUR ==================
     public function ganDiaDiemChoTour($tour_id, $dia_diem_id, $ghi_chu = null)
     {
@@ -45,7 +45,7 @@ class creatDataModule
 
         return $stmt->execute();
     }
-    
+
     // ================== NHÀ CUNG CẤP (NCC) ==================
     public function createNCC($data)
     {
@@ -59,7 +59,7 @@ class creatDataModule
         $stmt->bindParam(':mst', $data['ma_so_thue']);
         return $stmt->execute();
     }
-    
+
     // ================== LỊCH TRÌNH ==================
     public function createLichTrinh($data)
     {
@@ -93,7 +93,7 @@ class creatDataModule
 
         return $stmt->execute();
     }
-    
+
     // ================== HƯỚNG DẪN VIÊN (HDV) ==================
     public function addHDV($data)
     {
@@ -108,7 +108,7 @@ class creatDataModule
         $stmt->bindParam(':ngon_ngu', $data['ngon_ngu']);
         return $stmt->execute();
     }
-    
+
     // ================== CHÍNH SÁCH TOUR ==================
     public function luuChinhSachTour($tour_id, $chinh_sach_id, $ghi_chu = null)
     {
@@ -122,7 +122,7 @@ class creatDataModule
 
         return $stmt->execute();
     }
-    
+
     // ================== ĐẶT TOUR ==================
     public function createDatTour($data)
     {
@@ -175,7 +175,7 @@ class creatDataModule
             return false;
         }
     }
-    
+
     // ================== HÀNH KHÁCH (Đã hợp nhất) ==================
     public function createHanhKhach($data)
     {
@@ -183,24 +183,24 @@ class creatDataModule
         // Tôi chọn cấu trúc có vẻ hoàn chỉnh hơn (BASE/cũ) với 'sdt' và thêm 'so_ghe' nếu cần.
         // Quyết định: Sử dụng 'so_ghe' thay cho 'sdt' như trong phiên bản mới hơn (bc2db65...)
         // Nếu cần cả 'sdt' và 'so_ghe', bạn cần thêm cột trong DB và thêm vào SQL.
-        
+
         // **Giữ lại 'so_ghe' (vì nó là phiên bản đã merge/bc2db65...)**
         $sql = "INSERT INTO `hanhkhachlist`(`dat_tour_id`, `ho_ten`, `cccd`, `ngay_sinh`, `ghi_chu`) 
-                VALUES (:dat_tour_id, :ho_ten, :cccd, :ngay_sinh, :ghi_chu)"; 
+                VALUES (:dat_tour_id, :ho_ten, :cccd, :ngay_sinh, :ghi_chu)";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':dat_tour_id', $data['dat_tour_id'], PDO::PARAM_INT);
         $stmt->bindParam(':ho_ten', $data['ho_ten']);
         $stmt->bindParam(':cccd', $data['cccd']);
         $stmt->bindParam(':ngay_sinh', $data['ngay_sinh']);
-        
+
         // Cột bị xung đột: sử dụng 'so_ghe'
-        
+
         $stmt->bindParam(':ghi_chu', $data['ghi_chu']);
-        
+
         return $stmt->execute();
     }
-    
+
     // ================== ĐẶT CỌC (Đã hợp nhất) ==================
     public function createDatCoc(array $data)
     {
@@ -220,23 +220,23 @@ class creatDataModule
             $trangThai = $data['trang_thai'] ?? null;
             $ngayDat = $data['ngay_dat'] ?? null;
             $ghiChu = $data['ghi_chu'] ?? null;
-            
+
             // Bind các tham số
             $stmt->bindParam(':dat_tour_id', $datTourId, $datTourId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->bindParam(':so_tien', $soTien);
-// Thay thế bindParam bằng bindValue cho dòng này
-            $stmt->bindValue(':tien_te', $data['tien_te'] ?? 'VND', PDO::PARAM_STR);            $stmt->bindParam(':hinh_thuc', $hinhThuc, $hinhThuc === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+            // Thay thế bindParam bằng bindValue cho dòng này
+            $stmt->bindValue(':tien_te', $data['tien_te'] ?? 'VND', PDO::PARAM_STR);
+            $stmt->bindParam(':hinh_thuc', $hinhThuc, $hinhThuc === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindParam(':trang_thai', $trangThai, $trangThai === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindParam(':ngay_dat', $ngayDat, $ngayDat === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindParam(':ghi_chu', $ghiChu, $ghiChu === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
-            
+
             if ($stmt->execute()) {
                 // Trả về ID vừa được chèn (dat_coc_id)
                 return $this->conn->lastInsertId();
             } else {
                 return false;
             }
-
         } catch (PDOException $e) {
             // Ghi lại lỗi và trả về false
             error_log("Lỗi tạo Đặt Cọc: " . $e->getMessage());
@@ -244,22 +244,40 @@ class creatDataModule
             return false;
         }
     }
-    
+
     // ================== DỊCH VỤ (Đã chuẩn hóa) ==================
     public function themDichVu($data)
     {
         // Chuẩn hóa để sử dụng $this->conn và nhận mảng $data
-        $sql = "INSERT INTO dichvuncc (loai_dich_vu, ma, mo_ta, gia_mac_dinh, don_vi, ncc_id) 
-                VALUES (:loai_dich_vu, :ma, :mo_ta, :gia_mac_dinh, :don_vi, :ncc_id)";
-        
+        $sql = "INSERT INTO dichvuncc (loai_dich_vu, ma,ten_dich_vu, mo_ta, gia_mac_dinh, don_vi, ncc_id) 
+                VALUES (:loai_dich_vu, :ma, :ten_dich_vu, :mo_ta, :gia_mac_dinh, :don_vi, :ncc_id)";
+
         $stmt = $this->conn->prepare($sql);
-        
+
         $stmt->bindParam(':loai_dich_vu', $data['loai_dich_vu']);
         $stmt->bindParam(':ma', $data['ma']);
+        $stmt->bindParam(':ten_dich_vu', $data['ten_dich_vu']);
         $stmt->bindParam(':mo_ta', $data['mo_ta']);
         $stmt->bindParam(':gia_mac_dinh', $data['gia_mac_dinh']);
         $stmt->bindParam(':don_vi', $data['don_vi']);
         $stmt->bindParam(':ncc_id', $data['ncc_id'], PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+    // public function themDichVu($db, $loai_dich_vu, $ma, $ten_dich_vu, $mo_ta, $gia_mac_dinh, $don_vi, $ncc_id)
+    // {
+    //     $stmt = $db->prepare("INSERT INTO dichvuncc (loai_dich_vu, ma, ten_dich_vu, mo_ta, gia_mac_dinh, don_vi, ncc_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    //     return $stmt->execute([$loai_dich_vu, $ma, $ten_dich_vu, $mo_ta, $gia_mac_dinh, $don_vi, $ncc_id]);
+    // }
+    public function ganDichVuTour($tour_id, $dich_vu_id, $ghi_chu = null)
+    {
+        $sql = "INSERT INTO dv_tour (tour_id, dich_vu_id, ghi_chu)
+             VALUES (:tour_id, :dich_vu_id, :ghi_chu)";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
+        $stmt->bindParam(':dich_vu_id', $dich_vu_id, PDO::PARAM_INT);
+        $stmt->bindParam(':ghi_chu', $ghi_chu);
 
         return $stmt->execute();
     }

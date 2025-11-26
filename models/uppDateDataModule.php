@@ -142,21 +142,23 @@ class uppDateDataModuleDataModule
             return false;
         }
     }
-    public function capNhatDichVu($db, $dich_vu_id, $data)
+    public function capNhatDichVu($dich_vu_id, $data)
     {
         $sql = "UPDATE `dichvuncc`
             SET `loai_dich_vu` = :loai_dich_vu,
                 `ma` = :ma,
+                `ten_dich_vu` = :ten_dich_vu,
                 `mo_ta` = :mo_ta,
                 `gia_mac_dinh` = :gia_mac_dinh,
                 `don_vi` = :don_vi,
                 `ncc_id` = :ncc_id
             WHERE `dich_vu_id` = :dich_vu_id";
 
-        $stmt = $db->prepare($sql);
+        $stmt = $this->conn->prepare($sql);
 
         $stmt->bindParam(':loai_dich_vu', $data['loai_dich_vu']);
         $stmt->bindParam(':ma', $data['ma']);
+        $stmt->bindParam(':ten_dich_vu', $data['ten_dich_vu']);
         $stmt->bindParam(':mo_ta', $data['mo_ta']);
         $stmt->bindParam(':gia_mac_dinh', $data['gia_mac_dinh']);
         $stmt->bindParam(':don_vi', $data['don_vi']);
@@ -165,9 +167,35 @@ class uppDateDataModuleDataModule
 
         return $stmt->execute();
     }
-    
+    public function xuLydichVuKhoiTour($gia_dv_id, $data)
+    {
+        $sql = "UPDATE TourDichVu
+            SET gia = :gia,
+                da_xac_nhan = :da_xac_nhan,
+                ghi_chu = :ghi_chu
+            WHERE gia_dv_id = :gia_dv_id";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':gia', $data['gia'], PDO::PARAM_INT);
+        $stmt->bindParam(':da_xac_nhan', $data['da_xac_nhan'], PDO::PARAM_INT);
+        $stmt->bindParam(':ghi_chu', $data['ghi_chu']);
+        $stmt->bindParam(':gia_dv_id', $gia_dv_id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+    public function updateGiaDichVu($id, $gia, $da_xac_nhan, $ghi_chu)
+    {
+        $sql = "UPDATE gia_dv_tour 
+                SET gia = ?, da_xac_nhan = ?, ghi_chu = ?
+                WHERE gia_dv_id = ?";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([$gia, $da_xac_nhan, $ghi_chu, $id]);
+    }
+
+
     // Hàm updateHanhKhach đã được thêm vào từ HEAD
-    public function updateHanhKhach($hanh_khach_id, $data) {
+    public function updateHanhKhach($hanh_khach_id, $data)
+    {
         $sql = "UPDATE `hanhkhachlist` SET 
                 ho_ten = :ho_ten, ngay_sinh = :ngay_sinh, cccd = :cccd, 
                 sdt = :sdt, ghi_chu = :ghi_chu 
@@ -182,4 +210,3 @@ class uppDateDataModuleDataModule
         return $stmt->execute();
     }
 }
-?>

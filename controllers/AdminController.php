@@ -454,9 +454,15 @@ class AdminController
         $ghiChu = $_POST['ghi_chu'] ?? null;
 
         $errors = [];
-        if (empty($khachHangId)) { $errors[] = "Vui lòng chọn Khách Hàng."; }
-        if (empty($tourId)) { $errors[] = "Vui lòng chọn Tour."; }
-        if ($soNguoi < 1) { $errors[] = "Số lượng người phải lớn hơn 0."; }
+        if (empty($khachHangId)) {
+            $errors[] = "Vui lòng chọn Khách Hàng.";
+        }
+        if (empty($tourId)) {
+            $errors[] = "Vui lòng chọn Tour.";
+        }
+        if ($soNguoi < 1) {
+            $errors[] = "Số lượng người phải lớn hơn 0.";
+        }
 
         if (!empty($errors)) {
             // Xử lý lỗi validation
@@ -518,7 +524,7 @@ class AdminController
         }
         header('Location: ' . BASEURL . '?act=dat_coc&dat_tour_id=' . $id);
     }
-    
+
     public function dat_coc($dat_tour_id)
     {
         $data = $this->modelGet->getDatTourById($dat_tour_id);
@@ -576,15 +582,15 @@ class AdminController
         $hanhKhachList = $this->modelGet->getHanhKhachByDatTourId($dat_tour_id);
         require_once './views/admin/hanh_khach_edit.php';
     }
-    
-    public function hanh_khach_update($dat_tour_id) 
+
+    public function hanh_khach_update($dat_tour_id)
     {
         $hanh_khach_data = $_POST['hanh_khach'] ?? [];
-        $dat_tour_id = $_POST['dat_tour_id'] ?? $dat_tour_id; 
+        $dat_tour_id = $_POST['dat_tour_id'] ?? $dat_tour_id;
 
         $success_count = 0;
-        
-        foreach($hanh_khach_data as $hanh_khach_input) {
+
+        foreach ($hanh_khach_data as $hanh_khach_input) {
             $data = [
                 'dat_tour_id' => $dat_tour_id,
                 'ho_ten'      => $hanh_khach_input['ho_ten'] ?? '',
@@ -593,11 +599,11 @@ class AdminController
                 'sdt'         => $hanh_khach_input['sdt'] ?? null,
                 'ghi_chu'     => $hanh_khach_input['ghi_chu'] ?? null,
                 // Bổ sung các trường thiếu nếu có (email, gioi_tinh, quoc_tich) để tránh lỗi DB
-                'gioi_tinh'   => $hanh_khach_input['gioi_tinh'] ?? '', 
-                'email'       => $hanh_khach_input['email'] ?? null, 
+                'gioi_tinh'   => $hanh_khach_input['gioi_tinh'] ?? '',
+                'email'       => $hanh_khach_input['email'] ?? null,
                 'quoc_tich'   => $hanh_khach_input['quoc_tich'] ?? '',
             ];
-            
+
             $hanh_khach_id = (int)($hanh_khach_input['hanh_khach_id'] ?? 0);
 
             if ($hanh_khach_id > 0) {
@@ -613,15 +619,15 @@ class AdminController
                     $success_count++;
                 }
             }
-        } 
-        
+        }
+
         if ($success_count > 0) {
             $_SESSION['success'] = "Đã cập nhật/thêm $success_count hành khách thành công!";
         } else {
             $_SESSION['error'] = "Không có hành khách nào được cập nhật.";
         }
 
-        header('Location: '.BASEURL.'?act=dattourlist'); // Chuyển hướng về danh sách hoặc chi tiết tour
+        header('Location: ' . BASEURL . '?act=dattourlist'); // Chuyển hướng về danh sách hoặc chi tiết tour
         exit();
     }
 
@@ -633,28 +639,41 @@ class AdminController
     {
         // LƯU Ý: Hàm này sử dụng $this->modelGet->conn thay vì biến $db.
         // Cần đảm bảo hàm layTatCaDichVu trong Model nhận đúng đối tượng kết nối (như trong Model bạn gửi)
-        $db = $this->modelGet->conn; 
+        $db = $this->modelGet->conn;
         $dichVuList = $this->modelGet->layTatCaDichVu($db);
         $nccList = $this->modelGet->layTatCaNhaCungCap($db);
         require_once './views/admin/dichvulist.php';
     }
     public function themDichVu()
-    {  $db = $this->modelGet->conn;
+    {
+        $db = $this->modelGet->conn;
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            
+
             $data = [
                 'loai_dich_vu' => $_POST['loai_dich_vu'] ?? '',
                 'ma' => $_POST['ma'] ?? '',
+                'ten_dich_vu' => $_POST['ten_dich_vu'] ?? '',
                 'mo_ta' => $_POST['mo_ta'] ?? '',
                 'gia_mac_dinh' => $_POST['gia_mac_dinh'] ?? 0,
                 'don_vi' => $_POST['don_vi'] ?? '',
                 'ncc_id' => $_POST['ncc_id'] ?? 0
             ];
-            
+
             // Hàm Model tạo dịch vụ cần được sửa để nhận mảng $data
-            $this->modelCreate->themDichVu( $data); 
-            
+            $this->modelCreate->themDichVu($data);
+
             header('location:' . BASEURL . '?act=lay_dich_vu');
+            $db = $this->modelGet->conn;
+            $loai_dich_vu = $_POST['loai_dich_vu'];
+            $ma = $_POST['ma'];
+            $tendv = $_POST['ten_dich_vu'];
+            $mo_ta = $_POST['mo_ta'];
+            $gia_mac_dinh = $_POST['gia_mac_dinh'];
+            $don_vi = $_POST['don_vi'];
+            $ncc_id = $_POST['ncc_id'];
+
+            $this->modelCreate->themDichVu($db, $loai_dich_vu, $ma, $tendv, $mo_ta, $gia_mac_dinh, $don_vi, $ncc_id);
+            header('location:' . BASEURL . '?act=lay_dich_vu&ncc_id=' . $ncc_id);
             exit;
         } else {
             $nccList = $this->modelGet->layTatCaNhaCungCap($db);
@@ -677,24 +696,28 @@ class AdminController
             header("Location: " . BASEURL . "?act=lay_dich_vu&msg=invalid_id");
             exit;
         }
-        $db = $this->modelGet->conn;
+
+        $db = $this->modelGet->conn; // Kết nối DB
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $data = [
-                'loai_dich_vu'  => $_POST['loai_dich_vu'] ?? '',
-                'ma'            => $_POST['ma'] ?? '',
-                'mo_ta'         => $_POST['mo_ta'] ?? '',
-                'gia_mac_dinh'  => $_POST['gia_mac_dinh'] ?? 0,
-                'don_vi'        => $_POST['don_vi'] ?? '',
-                'ncc_id'        => $_POST['ncc_id'] ?? 0
+                'loai_dich_vu'  => $_POST['loai_dich_vu'],
+                'ma'            => $_POST['ma'],
+                'ten_dich_vu'   => $_POST['ten_dich_vu'],
+                'mo_ta'         => $_POST['mo_ta'],
+                'gia_mac_dinh'  => $_POST['gia_mac_dinh'],
+                'don_vi'        => $_POST['don_vi'],
+                'ncc_id'        => $_POST['ncc_id']
             ];
 
-            $this->modelUpdate->capNhatDichVu($db, $id, $data);
+            $this->modelUpdate->capNhatDichVu($id, $data);
 
             header("Location: " . BASEURL . "?act=lay_dich_vu&msg=updated");
             exit;
         }
-        $dichVu = $this->modelGet->layDichVuTheoId($db, $id);
+
+        $dichvu = $this->modelGet->layDichVuTheoId($db, $id);
         $nccList = $this->modelGet->layTatCaNhaCungCap($db);
 
         require_once 'views/admin/editdichvu.php';
@@ -711,5 +734,56 @@ class AdminController
         header("Location: " . BASEURL . "?act=login");
         exit;
     }
+
+
+
+    public function ganDichVuTour($tour_id)
+    {
+
+        $data = $this->modelGet->layTatCaDichVu($this->modelGet->conn);
+        $dichVuDaGan = $this->modelGet->getDichVuByTourId($tour_id);
+        require_once './views/admin/gandichvutour.php';
+    }
+    // Lưu gán dịch vụ cho tour
+    public function luuGanDichVuTour($tour_id)
+    {
+        if (!$tour_id) {
+            header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $tour_id . '&error=missing_tour_id');
+            exit;
+        }
+
+        $dichVuIds = $_POST['dich_vu_id'] ?? [];
+        $ghiChu = $_POST['ghi_chu'] ?? null;
+
+        if (!is_array($dichVuIds) || empty($dichVuIds)) {
+            header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $tour_id . '&error=no_services_selected');
+            exit;
+        }
+
+        $allSuccess = true;
+        foreach ($dichVuIds as $dich_vu_id) {
+            $result = $this->modelCreate->ganDichVuTour($tour_id, $dich_vu_id, $ghiChu);
+            if (!$result) {
+                $allSuccess = false;
+            }
+        }
+
+
+        if ($allSuccess) {
+            header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $tour_id . '&msg=success');
+        } else {
+            header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $tour_id . '&error=insert_failed');
+        }
+        exit;
+    }
+
+    public function xoaGanDichVuTour($gia_dv_id, $tour_id)
+    {
+
+
+        if ($gia_dv_id !== null && $tour_id !== null) {
+            $this->modelDelete->xoaGanDichVuTour($gia_dv_id, $tour_id);
+        }
+        header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $_GET['tour_id']);
+    }
 }
-?>

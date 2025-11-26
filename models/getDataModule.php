@@ -83,8 +83,8 @@ class getDataModule
                     'mo_ta' => $row['mo_ta'],
                     'gia' => $row['gia_co_ban'],
                     'thoi_gian' => $row['thoi_gian'],
-                    'loai_tour' => $row['loai_tour_ten'], 
-                    'phuong_tien' => 'N/A', 
+                    'loai_tour' => $row['loai_tour_ten'],
+                    'phuong_tien' => 'N/A',
 
                     'chinh_sach' => [],
                     'dia_diem' => [],
@@ -116,7 +116,7 @@ class getDataModule
             // 4. Gán Lịch trình
             if ($row['lich_trinh_id'] !== null && !in_array($row['lich_trinh_id'], $lt_ids)) {
                 $tourDetail['lich_trinh'][] = [
-                    'lich_trinh_id'=>$row['lich_trinh_id'],
+                    'lich_trinh_id' => $row['lich_trinh_id'],
                     'ngay_thu' => $row['ngay_thu'],
                     'tieu_de' => $row['tieu_de_lt'],
                     'noi_dung' => $row['noi_dung_lt']
@@ -401,27 +401,27 @@ WHERE
     //         -- 1. Thông tin Đặt Tour chính
     //         DT.dat_tour_id, DT.lich_id, DT.so_nguoi, DT.tong_tien, DT.tien_te, 
     //         DT.trang_thai AS trang_thai_dat_tour, DT.nguon, DT.ngay_tao, DT.ghi_chu AS ghi_chu_dat_tour, DT.loai,
-            
+
     //         -- 2. Thông tin Khách hàng đặt tour (LEFT JOIN)
     //         ND.ho_ten AS ten_khach_hang, ND.so_dien_thoai, ND.email, 
     //         KH.cccd, KH.dia_chi,
-            
+
     //         -- 3. Thông tin Tour & Lịch Khởi Hành (LEFT JOIN)
     //         T.tour_id, T.ten AS ten_tour, T.mo_ta_ngan,
     //         LKH.ngay_bat_dau, LKH.ngay_ket_thuc, LKH.gia_mac_dinh, LKH.tien_te AS tien_te_lich,
-            
+
     //         -- 4. Thông tin Đặt Cọc (LEFT JOIN)
     //         SUM(DC.so_tien) AS tong_dat_coc
-            
+
     //     FROM
     //         DatTour DT
-        
+
     //     -- LEFT JOIN cho KhachHang và NguoiDung
     //     LEFT JOIN
     //         KhachHang KH ON DT.khach_hang_id = KH.khach_hang_id
     //     LEFT JOIN
     //         NguoiDung ND ON KH.nguoi_dung_id = ND.nguoi_dung_id
-        
+
     //     -- LEFT JOIN cho Lịch Khởi Hành và Tour
     //     LEFT JOIN 
     //         LichKhoiHanh LKH ON DT.lich_id = LKH.lich_id
@@ -438,14 +438,14 @@ WHERE
     //     GROUP BY 
     //         DT.dat_tour_id";
 
-        
+
     //     // --- Lấy dữ liệu Dạng Mảng (Hành Khách, Dịch Vụ Thêm) ---
     //     $sql_hanh_khach = "SELECT ho_ten, cccd, ngay_sinh, so_ghe, ghi_chu FROM HanhKhachlist WHERE dat_tour_id = :id";
     //     $sql_dv_them = "SELECT DVT.ten, DVT.gia, DVT.don_vi, DVT.mo_ta, DVTD.so_luong, DVTD.tong_tien AS tong_tien_dv 
     //                     FROM DichVuThemDat DVTD
     //                     INNER JOIN DichVuThem DVT ON DVTD.dv_them_id = DVT.dv_them_id
     //                     WHERE DVTD.dat_tour_id = :id";
-        
+
     //     try {
     //         // Thực hiện truy vấn chính (dữ liệu 1-1)
     //         $stmt_main = $this->conn->prepare($sql);
@@ -455,20 +455,20 @@ WHERE
 
     //         if ($detail) {
     //             // Thực hiện truy vấn phụ (dữ liệu 1-nhiều)
-                
+
     //             // 1. Hành Khách
     //             $stmt_hk = $this->conn->prepare($sql_hanh_khach);
     //             $stmt_hk->bindParam(':id', $dat_tour_id, PDO::PARAM_INT);
     //             $stmt_hk->execute();
     //             $detail['hanh_khach_list'] = $stmt_hk->fetchAll(PDO::FETCH_ASSOC);
-                
+
     //             // 2. Dịch Vụ Thêm
     //             $stmt_dv = $this->conn->prepare($sql_dv_them);
     //             $stmt_dv->bindParam(':id', $dat_tour_id, PDO::PARAM_INT);
     //             $stmt_dv->execute();
     //             $detail['dich_vu_them'] = $stmt_dv->fetchAll(PDO::FETCH_ASSOC);
     //         }
-            
+
     //         return $detail;
 
     //     } catch (PDOException $e) {
@@ -477,22 +477,24 @@ WHERE
     //     }
     // }
     public function getAll()
-  {
-    $sql = "SELECT * FROM nguoidung";
-    $stmt = $this->conn->prepare($sql);
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-  }
+    {
+        $sql = "SELECT * FROM nguoidung";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
 
-  public function checkLogin($email, $password) {
-    $sql = "SELECT * FROM `nguoidung` WHERE email = :email AND mat_khau = :password";
-    $stmt = $this->conn->prepare($sql);
-    $stmt->execute(['email' => $email, 'password' => $password]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $user;
-}
-public function getHanhKhachByDatTourId($dat_tour_id){
+    public function checkLogin($email, $password)
+    {
+        $sql = "SELECT * FROM `nguoidung` WHERE email = :email AND mat_khau = :password";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute(['email' => $email, 'password' => $password]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $user;
+    }
+    public function getHanhKhachByDatTourId($dat_tour_id)
+    {
         $sql = "SELECT * FROM `hanhkhachlist` WHERE dat_tour_id = :dat_tour_id";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':dat_tour_id', $dat_tour_id, PDO::PARAM_INT);
@@ -502,7 +504,7 @@ public function getHanhKhachByDatTourId($dat_tour_id){
 
     public function layTatCaDichVu($db)
     {
-        $stmt = $db->prepare("
+        $stmt = $this->conn->prepare("
         SELECT dichvuncc.*, nhacungcap.ten AS ten_ncc
         FROM dichvuncc
         JOIN nhacungcap ON dichvuncc.ncc_id = nhacungcap.ncc_id
@@ -513,10 +515,10 @@ public function getHanhKhachByDatTourId($dat_tour_id){
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+
     public function layDichVuTheoId($db, $dich_vu_id)
     {
-        $stmt = $db->prepare("SELECT * FROM dichvuncc WHERE dich_vu_id = ?");
+        $stmt = $this->conn->prepare("SELECT * FROM dichvuncc WHERE dich_vu_id = ?");
         $stmt->execute([$dich_vu_id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
@@ -531,7 +533,55 @@ public function getHanhKhachByDatTourId($dat_tour_id){
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    public function getDichVuByTourId($tour_id)
+    {
+        $sql = "SELECT 
+    gdv.gia_dv_id,
+    gdv.lich_id,
+    gdv.tour_id,
+    gdv.dich_vu_id,
+    gdv.gia,
+    gdv.da_xac_nhan,
+    gdv.ghi_chu,
 
- }
-    
-?>
+    dv.loai_dich_vu,
+    dv.ma,
+    dv.ten_dich_vu,
+    dv.mo_ta,
+    dv.gia_mac_dinh,
+    dv.don_vi,
+    dv.ncc_id
+
+FROM dv_tour AS gdv
+JOIN dichvuncc AS dv 
+    ON gdv.dich_vu_id = dv.dich_vu_id
+
+WHERE gdv.tour_id = :tour_id
+  AND dv.isdelete = 0;
+
+";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public function ganDichVuTour($tour_id, $dich_vu_id, $ghi_chu = null)
+    {
+        $sql = "INSERT INTO dv_tour (tour_id, dich_vu_id, gia, ghi_chu, da_xac_nhan) 
+            VALUES (:tour_id, :dich_vu_id, 0, :ghi_chu, 0)";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
+        $stmt->bindParam(':dich_vu_id', $dich_vu_id, PDO::PARAM_INT);
+        $stmt->bindParam(':ghi_chu', $ghi_chu, PDO::PARAM_STR);
+        return $stmt->execute();
+    }
+    function xoaGanDichVuTour($gia_dv_id, $tour_id)
+    {
+        $sql = "DELETE FROM dv_tour WHERE gia_dv_id = :gia_dv_id AND tour_id = :tour_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':gia_dv_id', $gia_dv_id, PDO::PARAM_INT);
+        $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+}

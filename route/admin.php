@@ -39,7 +39,7 @@ match ($act) {
 
     // ================== LỊCH TRÌNH ==================
     // Route này thường không cần tour_id, nhưng giữ lại nếu bạn dùng để lọc danh sách
-    'listlichtrinhtour' => (new AdminController())->listlichtrinhtour(), 
+    'listlichtrinhtour' => (new AdminController())->listlichtrinhtour(),
     'addlichtrinh' => (new AdminController())->formAddLichTrinh($_GET['tour_id'] ?? null),
     'createlichtrinh' => (new AdminController())->createLichTrinh(), // Không cần tour_id ở đây vì nó nằm trong POST
     'editlichtrinh' => (new AdminController())->editLichTrinh($_GET['lich_trinh_id'] ?? null),
@@ -70,17 +70,19 @@ match ($act) {
     'dat_coc_save' => (new AdminController())->dat_coc_save($_GET['dat_tour_id'] ?? null),
     'dat_tour_edit' => (new AdminController())->dat_tour_edit($_GET['id'] ?? null),
     'dat_tour_update' => (new AdminController())->dat_tour_update($_GET['dat_tour_id'] ?? null),
-    
+
     // **ROUTES MỚI HỢP NHẤT TỪ CONTROLLER**
     'hanh_khach_edit' => (new AdminController())->hanh_khach_edit($_GET['dat_tour_id'] ?? null),
     'hanh_khach_update' => (new AdminController())->hanh_khach_update($_GET['dat_tour_id'] ?? null),
-    
+
     // ================== DỊCH VỤ ==================
     'lay_dich_vu' => (new AdminController())->layDichVu(),
     'them_dich_vu' => (new AdminController())->themDichVu(),
     'xoa_dich_vu' => (new AdminController())->xoaDichVu($_GET['id'] ?? null),
     'capnhat_dich_vu' => (new AdminController())->capNhatDichVu($_GET['id'] ?? null),
-    
-    // ================== DEFAULT ==================
+    'gandichvu' => (new AdminController())->ganDichVuTour($_GET['tour_id'] ?? null),
+    'luuGanDichVuTour' => (new AdminController())->luuGanDichVuTour($_GET['tour_id'] ?? null),
+    'XoaGanDichVuTour' => (new AdminController())->xoaGanDichVuTour($_GET['dich_vu_id'] ?? null, $_GET['tour_id'] ?? null),
+
     default => (new AdminController())->index(),
 };

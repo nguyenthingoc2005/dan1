@@ -54,7 +54,7 @@
                   <a onclick="return confirm('Xóa nhà cung cấp?')" href="<?= BASEURL ?>?act=ncc_delete&id=<?= $row['ncc_id'] ?>" class="btn btn-danger btn-sm">
                     <i class="bi bi-trash"></i> Xóa
                   </a>
-                  <a href="<?= BASEURL ?>?act=lay_dich_vu&ncc_id=<?= $row['ncc_id'] ?>" class="btn btn-outline-primary">
+                  <a href="<?= BASEURL ?>?act=lay_dich_vu&ncc_id=<?= $row['ncc_id'] ?>" class="btn btn-info btn-sm">
                     <i class="bi bi-bag"></i> Dịch vụ
                   </a>
                 </td>
