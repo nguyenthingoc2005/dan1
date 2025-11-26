@@ -66,4 +66,13 @@ WHERE dich_vu_id = :id";
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
+    public function xoaGanDichVuTour($gia_dv_id, $tour_id)
+    {
+        $sql = "DELETE FROM dv_tour WHERE gia_dv_id = :gia_dv_id AND tour_id = :tour_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            ':gia_dv_id' => $gia_dv_id,
+            ':tour_id' => $tour_id
+        ]);
+    }
 }

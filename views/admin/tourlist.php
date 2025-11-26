@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <title>Danh sách Tour</title>
@@ -9,6 +10,7 @@
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css">
     <link rel="stylesheet" href="./assets/css/sidebar.css">
 </head>
+
 <body class="bg-light">
 
     <?php include './views/parts/sidebar.php'; ?>
@@ -17,9 +19,9 @@
 
     <div class="main-content">
         <div class="container-fluid py-4">
-          <br>
-          <br>
-          <br>
+            <br>
+            <br>
+            <br>
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h2 class="mb-0">📋 Danh sách Tour</h2>
                 <a href="<?= BASEURL ?>?act=addtour" class="btn btn-success">
@@ -40,8 +42,9 @@
                                 <th>Mô tả</th>
                                 <th>Thời lượng</th>
                                 <th>Điểm khởi hành</th>
-                                <th>Hoạt động</th> <th>Ngày tạo</th>
-                                <th colspan="2">Thao tác</th>
+                                <th>Hoạt động</th>
+                                <th>Ngày tạo</th>
+                                <th colspan="3">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -61,7 +64,7 @@
                                         </span>
                                     </td>
                                     <td><?= htmlspecialchars($tour['ngay_tao']) ?></td>
-                                    
+
                                     <td>
                                         <a href="<?= BASEURL ?>?act=uppdatetour&tour_id=<?= htmlspecialchars($tour['tour_id']) ?>" class="btn btn-warning btn-sm w-100 mb-1">
                                             <i class="bi bi-pencil-square"></i> Sửa
@@ -70,10 +73,15 @@
                                             <i class="bi bi-trash"></i> Xóa
                                         </a>
                                     </td>
-                                    
+
                                     <td>
                                         <a href="<?= BASEURL ?>?act=chitiettour&tour_id=<?= htmlspecialchars($tour['tour_id']) ?>" class="btn btn-info btn-sm w-100">
                                             <i class="bi bi-geo-alt"></i> Chi tiết
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="<?= BASEURL ?>?act=gandichvu&tour_id=<?= htmlspecialchars($tour['tour_id']) ?>" class="btn btn-info btn-sm w-100">
+                                            <i class="bi bi-add"></i> Gán Dịch vụ
                                         </a>
                                     </td>
                                 </tr>
@@ -92,4 +100,5 @@
 
     <script src="./assets/js/sidebar.js"></script>
 </body>
+
 </html>
