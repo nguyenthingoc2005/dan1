@@ -85,5 +85,12 @@ match ($act) {
     'XoaGanDichVuTour' => (new AdminController())->xoaGanDichVuTour($_GET['dich_vu_id'] ?? null, $_GET['tour_id'] ?? null),
     'logout' => (new AdminController())->logout(),
 
+    'user_list'     => (new AdminController())->userList(),
+    'user_create'   => (new AdminController())->createUser(),
+    'user_store'    => (new AdminController())->storeUser(),
+    'user_edit'     => (new AdminController())->editUser(),
+    'user_update'   => (new AdminController())->updateUser(),
+    'user_delete'   => (new AdminController())->deleteUser(),
+
     default => (new AdminController())->index(),
 };

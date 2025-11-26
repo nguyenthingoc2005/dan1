@@ -7,6 +7,7 @@ class HdvController
     public $modelCreate;
     public $modelDelete;
     public $modelUpdate;
+    
     public function __construct()
     {
         $this->modelGet = new getDataModule();
@@ -58,6 +59,7 @@ class HdvController
         header("Location: " . BASEURL . "?act=login");
         exit;
     }
+    
 
 }
 ?>

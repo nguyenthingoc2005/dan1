@@ -281,4 +281,18 @@ class creatDataModule
 
         return $stmt->execute();
     }
+    public function storeUser($data)
+    {
+        $sql = "INSERT INTO nguoidung (email, mat_khau, ho_ten, so_dien_thoai, vai_tro_id, trang_thai, ngay_tao)
+                VALUES (:email, :mat_khau, :ho_ten, :so_dien_thoai, :vai_tro_id, :trang_thai, NOW())";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':email', $data['email']);
+        $stmt->bindParam(':mat_khau', $data['mat_khau']);
+        $stmt->bindParam(':ho_ten', $data['ho_ten']);
+        $stmt->bindParam(':so_dien_thoai', $data['so_dien_thoai']);
+        $stmt->bindParam(':vai_tro_id', $data['vai_tro_id']);
+        $stmt->bindParam(':trang_thai', $data['trang_thai']);
+        return $stmt->execute();
+    }
 }

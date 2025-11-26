@@ -16,7 +16,7 @@
         <li class="list"><a href="<?= BASEURL ?>?act=ncc_list" class="nav-link"><i class="bx bx-building icon"></i><span class="link">Nhà cung cấp</span></a></li>
         <li class="list"><a href="<?= BASEURL ?>?act=tour_list" class="nav-link"><i class="bx bx-map icon"></i><span class="link">Tour</span></a></li>
         <li class="list"><a href="<?= BASEURL ?>?act=dattourlist "class="nav-link"><i class="bx bx-map icon"></i><span class="link">Quản lí đặt tour</span></a></li>
-        <li class="list"><a href="<?= BASEURL ?>?act=user" class="nav-link"><i class="bx bx-group"></i><span class="link">Quản lí user</span></a></li>
+        <li class="list"><a href="<?= BASEURL ?>?act=user_list" class="nav-link"><i class="bx bx-group"></i><span class="link">Quản lí user</span></a></li>
       </ul>
 
       <div class="bottom-cotent">

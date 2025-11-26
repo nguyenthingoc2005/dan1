@@ -75,4 +75,11 @@ WHERE dich_vu_id = :id";
             ':tour_id' => $tour_id
         ]);
     }
+    public function softDeleteUser($id)
+{
+    $sql = "UPDATE nguoidung SET isdelete = 1 WHERE nguoi_dung_id = ?";
+    $stmt = $this->conn->prepare($sql);
+    return $stmt->execute([$id]);
+}
+
 }

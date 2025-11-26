@@ -5,6 +5,7 @@ class AdminController
     public $modelCreate;
     public $modelDelete;
     public $modelUpdate;
+    public $modelRole;
 
     public function __construct()
     {
@@ -13,6 +14,7 @@ class AdminController
         $this->modelCreate = new creatDataModule();
         $this->modelDelete = new deleteDataModule();
         $this->modelUpdate = new uppDateDataModuleDataModule();
+        $this->modelRole = new getDataModule();
     }
 
     // ===================================================================
@@ -785,5 +787,50 @@ class AdminController
             $this->modelDelete->xoaGanDichVuTour($gia_dv_id, $tour_id);
         }
         header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $_GET['tour_id']);
+    }
+    public function userList()
+    {
+        $users = $this->modelGet->getAllUsers();
+        require './views/admin/user_list.php';
+    }
+     public function createUser()
+    {
+        $roles = $this->modelRole->getAllVaiTro();
+        require './views/admin/user_create.php';
+    }
+
+    public function storeUser()
+    {
+        $data = $_POST;
+        $this->modelCreate->storeUser($data);
+
+        header("Location: " . BASEURL . "?act=user_list");
+    }
+
+    public function editUser()
+    {
+        $id = $_GET['id'];
+        $user = $this->modelGet->find($id);
+        $roles = $this->modelRole->getAllVaiTro();
+
+        require './views/admin/user_edit.php';
+    }
+
+    public function updateUser()
+    {
+        $id = $_POST['id'];
+        $data = $_POST;
+
+        $this->modelUpdate->updateUser($id, $data);
+
+        header("Location: " . BASEURL . "?act=user_list");
+    }
+
+    public function deleteUser()
+    {
+        $id = $_GET['id'];
+        $this->modelDelete->softDeleteUser($id);
+
+        header("Location: " . BASEURL . "?act=user_list");
     }
 }

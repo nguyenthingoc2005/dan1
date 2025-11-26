@@ -584,4 +584,32 @@ WHERE gdv.tour_id = :tour_id
         $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
         return $stmt->execute();
     }
+    public function getAllUsers()
+    {
+        $sql = "SELECT nguoidung.*, vaitro.ten AS ten_vai_tro
+                FROM nguoidung 
+                LEFT JOIN vaitro ON nguoidung.vai_tro_id = vaitro.vai_tro_id
+                WHERE nguoidung.isdelete = 0";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Lấy 1 user theo id
+    public function find($id)
+    {
+        $sql = "SELECT * FROM nguoidung WHERE nguoi_dung_id = ? AND isdelete = 0";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    public function getAllVaiTro()
+    {
+        $sql = "SELECT * FROM vaitro";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

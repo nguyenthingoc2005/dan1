@@ -209,4 +209,21 @@ class uppDateDataModuleDataModule
         $stmt->bindParam(':hanh_khach_id', $hanh_khach_id, PDO::PARAM_INT);
         return $stmt->execute();
     }
+    public function updateUser($id, $data)
+    {
+        $sql = "UPDATE nguoidung
+                SET email=?, ho_ten=?, so_dien_thoai=?, vai_tro_id=?, trang_thai=?
+                WHERE nguoi_dung_id=?";
+
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([
+            $data['email'],
+            $data['ho_ten'],
+            $data['so_dien_thoai'],
+            $data['vai_tro_id'],
+            $data['trang_thai'],
+            $id
+        ]);
+    }
+
 }

@@ -29,5 +29,7 @@
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-save"></i> Lưu
         </button>
+                <a href="index.php?act=ncc_list" class="btn btn-secondary">← Quay lại</a>
+
     </div>
 </form>
