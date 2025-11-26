@@ -83,6 +83,7 @@ match ($act) {
     'gandichvu' => (new AdminController())->ganDichVuTour($_GET['tour_id'] ?? null),
     'luuGanDichVuTour' => (new AdminController())->luuGanDichVuTour($_GET['tour_id'] ?? null),
     'XoaGanDichVuTour' => (new AdminController())->xoaGanDichVuTour($_GET['dich_vu_id'] ?? null, $_GET['tour_id'] ?? null),
+    'logout' => (new AdminController())->logout(),
 
     default => (new AdminController())->index(),
 };
