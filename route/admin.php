@@ -81,6 +81,8 @@ match ($act) {
     'xoa_dich_vu' => (new AdminController())->xoaDichVu($_GET['id'] ?? null),
     'capnhat_dich_vu' => (new AdminController())->capNhatDichVu($_GET['id'] ?? null),
     
+    'logout'=>(new HdvController())->logout(),
+
     // ================== DEFAULT ==================
     default => (new AdminController())->index(),
 };

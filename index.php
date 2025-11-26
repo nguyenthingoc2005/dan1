@@ -22,13 +22,11 @@ require_once './models/getDataModule.php';
 
 // require_once './route/admin.php';
 
-// if(isset($_SESSION['user'])&&$_SESSION['user']['vai_tro_id']==1){
-//     require_once './route/admin.php';
-// }
-// else{
-//     require_once './route/hdv.php';
-// }
+if(isset($_SESSION['user'])&&$_SESSION['user']['vai_tro_id']==1){
+    require_once './route/admin.php';
+}
+else{
+    require_once './route/hdv.php';
+}
 
-
-require_once './route/admin.php';
 

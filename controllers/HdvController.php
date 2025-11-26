@@ -34,17 +34,19 @@ class HdvController
             $user = $this->modelGet->checkLogin($email, $password);
 
             if ($user) {
+                $_SESSION['user'] = $user;
+                $_SESSION['user']['vai_tro_id'] = $user['vai_tro_id'];
                 // Chuyển hướng thẳng đến dashboard
                 header("Location: " . BASEURL . "?act=dashboard");
                 echo "<script>alert('Đăng nhập thành công');</script>";
-                $_SESSION['user'] = $user;
-                $_SESSION['user']['vai_tro_id'] = $user['vai_tro_id'];
+                
                 exit;
             } else {
                 // Đăng nhập thất bại
                 
                 header('Location:' . BASEURL . '?act=login');
                 echo "<script>alert('Đăng nhập thất bại, vui lòng kiểm tra lại email và mật khẩu');</script>";
+
                 exit();
             }
         }
