@@ -24,4 +24,11 @@ class hdvModel
         $stmt->execute();
         return $stmt->fetch();
     }
+    public function getAllKhachHang()
+    {
+        $sql = "SELECT * FROM khach_hang";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
 }

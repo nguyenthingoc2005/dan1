@@ -40,6 +40,12 @@ class HdvController
 
         require_once './views/hdv/xem_chitiet_tour.php';
     }
+    public function list_Khach_hang()
+    {
+        $khachhang = $this->modelGet->getAllKhachHang();
+
+        require_once './views/hdv/list_khachhang.php';
+    }
 
 
     public function loginProcess()
