@@ -781,8 +781,8 @@ public function getDatTourDetail($dat_tour_id)
             -- 5. Dịch Vụ Tour
             dv.dich_vu_id, 
             dv.ten_dich_vu, 
-            dvt.gia AS gia_dv_tour, 
             dvt.ghi_chu AS dv_ghi_chu,
+            dv.gia_mac_dinh AS gia_dv_tour,
             
             -- 6. Đặt Cọc
             (SELECT SUM(dc.so_tien) FROM datcoc dc WHERE dc.dat_tour_id = dt.dat_tour_id AND dc.trang_thai = 'confirmed') AS tong_tien_da_dat_coc
