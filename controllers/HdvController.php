@@ -7,7 +7,7 @@ class HdvController
     public $modelCreate;
     public $modelDelete;
     public $modelUpdate;
-    
+
     public function __construct()
     {
         $this->modelGet = new getDataModule();
@@ -18,11 +18,27 @@ class HdvController
 
     public function home()
     {
-        include './views/hdv/home.php';
+        require_once './views/hdv/home.php';
     }
+
     public function loginForm()
     {
-        include './views/hdv/login.php';
+        require_once './views/hdv/login.php';
+    }
+
+
+    public function xemtour()
+    {
+        $tours = $this->modelGet->getAllTours();
+
+        require_once './views/hdv/xemtour.php';
+    }
+    public function xem_chitiet_tour()
+    {
+        $tourId = $_GET['id'];
+        $tourDetails = $this->modelGet->getTourById($tourId);
+
+        require_once './views/hdv/xem_chitiet_tour.php';
     }
 
 
@@ -40,18 +56,17 @@ class HdvController
                 // Chuyển hướng thẳng đến dashboard
                 header("Location: " . BASEURL . "?act=dashboard");
                 echo "<script>alert('Đăng nhập thành công');</script>";
-                
+
                 exit;
             } else {
                 // Đăng nhập thất bại
-                
+
                 header('Location:' . BASEURL . '?act=login');
                 echo "<script>alert('Đăng nhập thất bại, vui lòng kiểm tra lại email và mật khẩu');</script>";
 
                 exit();
             }
-        }
-        ;
+        };
     }
     public function logout()
     {
@@ -59,7 +74,4 @@ class HdvController
         header("Location: " . BASEURL . "?act=login");
         exit;
     }
-    
-
 }
-?>
