@@ -50,7 +50,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                         <td><?= htmlspecialchars($user['so_dien_thoai']) ?></td>
                         <td><?= htmlspecialchars($user['ten_vai_tro']) ?></td>
                         <td class="text-center">
-                            <?php if($user['trang_thai'] === 'hoat_dong'): ?>
+                            <?php if($user['trang_thai'] === 'active'): ?>
                                 <span class="badge bg-success">Hoạt động</span>
                             <?php else: ?>
                                 <span class="badge bg-secondary">Khóa</span>

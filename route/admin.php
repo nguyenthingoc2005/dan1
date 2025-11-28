@@ -21,10 +21,9 @@ match ($act) {
     'diadiem' => (new AdminController())->diadiem($_GET['tour_id'] ?? null),
     'gan_diadiem' => (new AdminController())->gan_diadiem($_GET['tour_id'] ?? null),
     'luu_gan_diadiem' => (new AdminController())->luu_gan_diadiem($_GET['tour_id'] ?? null),
-    'xoa_diadiem' => (new AdminController())->xoa_diadiem_tour($_GET['dia_diem_tour_id'] ?? null),
+    'xoa_dia_diem' => (new AdminController())->xoa_dia_diem_tour($_GET['dia_diem_tour_id'] ?? null, $_GET['tour_id'] ?? null),
 
     // Route trùng lặp
-    'xoa_dia_diem' => (new AdminController())->xoa_dia_diem_tour($_GET['dia_diem_tour_id'] ?? null),
     'sua_diadiemtour' => (new AdminController())->sua_diadiem_tour($_GET['dia_diem_tour_id'] ?? null, $_GET['tour_id'] ?? null),
     'capnhat_diadiem_tour' => (new AdminController())->capnhat_diadiem_tour($_GET['dia_diem_tour_id'] ?? null),
 

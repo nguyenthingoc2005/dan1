@@ -27,9 +27,9 @@ class getDataModule
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    public function getAggregatedTourDetail($tour_id)
-    {
-        $sql = "SELECT 
+public function getAggregatedTourDetail($tour_id)
+{
+    $sql = "SELECT 
         -- 1. Thông tin Tour Cơ bản (t) & Danh Mục (dmt)
         t.tour_id, t.ten AS ten_tour, t.mo_ta, t.mo_ta_ngan,
         t.gia_co_ban, 
@@ -43,7 +43,13 @@ class getDataModule
         dd.dia_diem_id, dd.ten AS ten_diadiem, qg.ten AS quoc_gia_diadiem, dd.mo_ta AS dd_mo_ta, ddt.ghi_chu AS dd_ghi_chu,
         
         -- 4. Thông tin Lịch trình (lt)
-        lt.lich_trinh_id, lt.ngay_thu, lt.tieu_de AS tieu_de_lt, lt.noi_dung AS noi_dung_lt
+        lt.lich_trinh_id, lt.ngay_thu, lt.tieu_de AS tieu_de_lt, lt.noi_dung AS noi_dung_lt,
+        
+        -- 5. Thông tin Hình ảnh Địa điểm (hadd)
+        hadd.hinh_id, hadd.url AS hinh_url, hadd.alt_text AS hinh_alt_text,
+        
+        -- 6. Thông tin Dịch vụ (dv, dvt)
+        dv.dich_vu_id, dv.ten_dich_vu, dvt.gia AS gia_dv, dvt.ghi_chu AS dv_ghi_chu
         
     FROM Tour t
     LEFT JOIN DanhMucTour dmt ON t.danh_muc_id = dmt.danh_muc_id
@@ -51,88 +57,135 @@ class getDataModule
     LEFT JOIN TourChinhSach tcs ON t.tour_id = tcs.tour_id
     LEFT JOIN ChinhSach cs ON tcs.chinh_sach_id = cs.chinh_sach_id
     
-    LEFT JOIN DiaDiemTour ddt ON t.tour_id = ddt.tour_id
-    LEFT JOIN DiaDiem dd ON ddt.dia_diem_id = dd.dia_diem_id
-    LEFT JOIN QuocGia qg ON dd.quoc_gia_id = qg.quoc_gia_id
-    
     LEFT JOIN LichTrinh lt ON t.tour_id = lt.tour_id
     
+    -- JOIN Địa điểm
+    LEFT JOIN DiaDiemTour ddt ON t.tour_id = ddt.tour_id
+    LEFT JOIN DiaDiem dd ON ddt.dia_diem_id = dd.dia_diem_id
+    -- JOIN Quốc gia
+    LEFT JOIN QuocGia qg ON dd.quoc_gia_id = qg.quoc_gia_id
+    -- JOIN Hình ảnh Địa điểm
+    LEFT JOIN HinhAnhDiaDiem hadd ON dd.dia_diem_id = hadd.dia_diem_id
+    
+    -- JOIN Dịch vụ Tour (Đã sử dụng tên bảng bạn cung cấp: dv_tour & dichvuncc)
+    LEFT JOIN dv_tour dvt ON t.tour_id = dvt.tour_id
+    LEFT JOIN dichvuncc dv ON dvt.dich_vu_id = dv.dich_vu_id
+    
     WHERE t.tour_id = :tour_id
-    ORDER BY lt.ngay_thu ASC, cs.chinh_sach_id ASC, dd.dia_diem_id ASC";
+    
+    -- Thêm sắp xếp cho Hình ảnh và Dịch vụ để dễ xử lý
+    ORDER BY lt.ngay_thu ASC, cs.chinh_sach_id ASC, dd.dia_diem_id ASC, hadd.thu_tu ASC, dv.dich_vu_id ASC";
 
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
-        $stmt->execute();
-        $rawData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
+    $stmt->execute();
+    $rawData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($rawData)) {
-            return null;
+    if (empty($rawData)) {
+        return null;
+    }
+
+    $tourDetail = [];
+    $cs_ids = [];
+    $dd_info = []; // Dùng để gộp Địa điểm và Hình ảnh
+    $lt_ids = [];
+    $dv_ids = []; // Dùng để gộp Dịch vụ
+
+    foreach ($rawData as $row) {
+        // 1. Gán thông tin Tour Cơ bản (Chỉ cần làm 1 lần)
+        if (empty($tourDetail)) {
+            $tourDetail = [
+                'tour_id' => $row['tour_id'],
+                'ten' => $row['ten_tour'],
+                'mo_ta' => $row['mo_ta'],
+                'gia' => $row['gia_co_ban'],
+                'thoi_gian' => $row['thoi_gian'],
+                'loai_tour' => $row['loai_tour_ten'],
+                'phuong_tien' => 'N/A', // Cần bổ sung logic nếu có bảng PhươngTienTour
+                'chinh_sach' => [],
+                'dia_diem' => [],
+                'lich_trinh' => [],
+                'dich_vu' => [],
+            ];
         }
 
-        $tourDetail = [];
-        $cs_ids = [];
-        $dd_ids = [];
-        $lt_ids = [];
+        // 2. Gán Chính sách
+        if ($row['chinh_sach_id'] !== null && !in_array($row['chinh_sach_id'], $cs_ids)) {
+            $tourDetail['chinh_sach'][] = [
+                'ten' => $row['ten_chinh_sach'],
+                'loai' => $row['loai_chinh_sach'],
+                'ghi_chu' => $row['cs_ghi_chu']
+            ];
+            $cs_ids[] = $row['chinh_sach_id'];
+        }
 
-        foreach ($rawData as $row) {
-            // 1. Gán thông tin Tour Cơ bản (Chỉ cần làm 1 lần)
-            if (empty($tourDetail)) {
-                $tourDetail = [
-                    'tour_id' => $row['tour_id'],
-                    'ten' => $row['ten_tour'],
-                    'mo_ta' => $row['mo_ta'],
-                    'gia' => $row['gia_co_ban'],
-                    'thoi_gian' => $row['thoi_gian'],
-                    'loai_tour' => $row['loai_tour_ten'],
-                    'phuong_tien' => 'N/A',
+        // 3. Gán Địa điểm & Hình ảnh
+        if ($row['dia_diem_id'] !== null) {
+            $dd_id = $row['dia_diem_id'];
 
-                    'chinh_sach' => [],
-                    'dia_diem' => [],
-                    'lich_trinh' => [],
-                ];
-            }
-
-            // 2. Gán Chính sách
-            if ($row['chinh_sach_id'] !== null && !in_array($row['chinh_sach_id'], $cs_ids)) {
-                $tourDetail['chinh_sach'][] = [
-                    'ten' => $row['ten_chinh_sach'],
-                    'loai' => $row['loai_chinh_sach'],
-                    'ghi_chu' => $row['cs_ghi_chu']
-                ];
-                $cs_ids[] = $row['chinh_sach_id'];
-            }
-
-            // 3. Gán Địa điểm
-            if ($row['dia_diem_id'] !== null && !in_array($row['dia_diem_id'], $dd_ids)) {
-                $tourDetail['dia_diem'][] = [
+            // Khởi tạo Địa điểm nếu chưa có
+            if (!isset($dd_info[$dd_id])) {
+                $dd_info[$dd_id] = [
                     'ten_diadiem' => $row['ten_diadiem'],
                     'quoc_gia' => $row['quoc_gia_diadiem'],
                     'mo_ta' => $row['dd_mo_ta'],
-                    'ghi_chu' => $row['dd_ghi_chu']
+                    'ghi_chu' => $row['dd_ghi_chu'],
+                    'hinh_anh' => []
                 ];
-                $dd_ids[] = $row['dia_diem_id'];
             }
 
-            // 4. Gán Lịch trình
-            if ($row['lich_trinh_id'] !== null && !in_array($row['lich_trinh_id'], $lt_ids)) {
-                $tourDetail['lich_trinh'][] = [
-                    'lich_trinh_id' => $row['lich_trinh_id'],
-                    'ngay_thu' => $row['ngay_thu'],
-                    'tieu_de' => $row['tieu_de_lt'],
-                    'noi_dung' => $row['noi_dung_lt']
-                ];
-                $lt_ids[] = $row['lich_trinh_id'];
+            // Thêm Hình ảnh vào Địa điểm tương ứng
+            if ($row['hinh_id'] !== null && $row['hinh_url'] !== null) {
+                // Kiểm tra trùng lặp hình ảnh (nếu SELECT có nhiều dòng trùng ID hình)
+                $is_duplicate = false;
+                foreach($dd_info[$dd_id]['hinh_anh'] as $hinh) {
+                    if ($hinh['url'] === $row['hinh_url']) {
+                        $is_duplicate = true;
+                        break;
+                    }
+                }
+                
+                if (!$is_duplicate) {
+                    $dd_info[$dd_id]['hinh_anh'][] = [
+                        'url' => $row['hinh_url'],
+                        'alt_text' => $row['hinh_alt_text']
+                    ];
+                }
             }
         }
-
-        // Sắp xếp Lịch trình theo Ngày Thứ (đảm bảo)
-        usort($tourDetail['lich_trinh'], function ($a, $b) {
-            return $a['ngay_thu'] <=> $b['ngay_thu'];
-        });
-
-        return $tourDetail;
+        
+        // 4. Gán Lịch trình
+        if ($row['lich_trinh_id'] !== null && !in_array($row['lich_trinh_id'], $lt_ids)) {
+            $tourDetail['lich_trinh'][] = [
+                'lich_trinh_id' => $row['lich_trinh_id'],
+                'ngay_thu' => $row['ngay_thu'],
+                'tieu_de' => $row['tieu_de_lt'],
+                'noi_dung' => $row['noi_dung_lt']
+            ];
+            $lt_ids[] = $row['lich_trinh_id'];
+        }
+        
+        // 5. Gán Dịch vụ
+        if ($row['dich_vu_id'] !== null && !in_array($row['dich_vu_id'], $dv_ids)) {
+            $tourDetail['dich_vu'][] = [
+                'ten' => $row['ten_dich_vu'],
+                'gia' => $row['gia_dv'],
+                'ghi_chu' => $row['dv_ghi_chu']
+            ];
+            $dv_ids[] = $row['dich_vu_id'];
+        }
     }
 
+    // Đẩy Địa điểm đã tổng hợp vào $tourDetail
+    $tourDetail['dia_diem'] = array_values($dd_info);
+
+    // Sắp xếp Lịch trình theo Ngày Thứ (đảm bảo)
+    usort($tourDetail['lich_trinh'], function ($a, $b) {
+        return $a['ngay_thu'] <=> $b['ngay_thu'];
+    });
+
+    return $tourDetail;
+}
 
     public function getAllDanh_muc_tour()
     {

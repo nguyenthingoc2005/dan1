@@ -138,21 +138,14 @@ class AdminController
         }
         exit;
     }
-    public function xoa_diadiem_tour($dia_diem_tour_id)
+    public function xoa_dia_diem_tour($dia_diem_tour_id, $tour_id)
     {
         if ($dia_diem_tour_id !== null) {
             $this->modelDelete->xoaDiaDiemKhoiTour($dia_diem_tour_id);
         }
-        header('Location: ' . BASEURL . '?act=diadiem&tour_id=' . ($_GET['tour_id'] ?? 0));
+        header('Location: ' . BASEURL . '?act=gan_diadiem&tour_id=' . ($tour_id ?? 0));
     }
-    public function xoa_dia_diem_tour($dia_diem_tour_id)
-    {
-        // Chức năng này giống hệt xoa_diadiem_tour, chỉ khác URL redirect (xóa cái này hoặc gộp lại)
-        if ($dia_diem_tour_id !== null) {
-            $this->modelDelete->xoaDiaDiemKhoiTour($dia_diem_tour_id);
-        }
-        header('Location: ' . BASEURL . '?act=xoa_dia_diem&tour_id=' . ($_GET['tour_id'] ?? 0));
-    }
+  
     public function sua_diadiem_tour($dia_diem_tour_id, $tour_id)
     {
         $info = $this->modelGet->getDiaDiemTourById($dia_diem_tour_id);
