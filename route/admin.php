@@ -63,11 +63,11 @@ match ($act) {
     'dat_tour_add' => (new AdminController())->dat_tour_add(),
     'dat_tour_save' => (new AdminController())->dat_tour_save(),
     'hanh_khach_add' => (new AdminController())->hanh_khach_add($_GET['dat_tour_id'] ?? null),
-    //'dat_tour_detail' => (new AdminController())->dat_tour_detail($_GET['dat_tour_id'] ?? null),
+    'dat_tour_detail' => (new AdminController())->dat_tour_detail($_GET['dat_tour_id'] ?? null),
     'hanh_khach_save' => (new AdminController())->hanh_khach_save($_GET['dat_tour_id'] ?? null),
     'dat_coc' => (new AdminController())->dat_coc($_GET['dat_tour_id'] ?? null),
     'dat_coc_save' => (new AdminController())->dat_coc_save($_GET['dat_tour_id'] ?? null),
-    'dat_tour_edit' => (new AdminController())->dat_tour_edit($_GET['id'] ?? null),
+    'dat_tour_edit' => (new AdminController())->dat_tour_edit($_GET['dat_tour_id'] ?? null),
     'dat_tour_update' => (new AdminController())->dat_tour_update($_GET['dat_tour_id'] ?? null),
 
     // **ROUTES MỚI HỢP NHẤT TỪ CONTROLLER**
@@ -76,6 +76,7 @@ match ($act) {
 
     // ================== DỊCH VỤ ==================
     'lay_dich_vu' => (new AdminController())->layDichVu(),
+    'lay_dich_vu_ncc' => (new AdminController())->layDichVuNCC($_GET['ncc_id'] ?? null),
     'them_dich_vu' => (new AdminController())->themDichVu(),
     'xoa_dich_vu' => (new AdminController())->xoaDichVu($_GET['id'] ?? null),
     'capnhat_dich_vu' => (new AdminController())->capNhatDichVu($_GET['id'] ?? null),

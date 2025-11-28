@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Danh sách Dịch Vụ</title>
+    <title>Dịch vụ theo Nhà Cung Cấp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -67,14 +67,38 @@
     <div class="main-content">
         <div class="container-fluid">
             
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-                <div>
-                    <h3 class="fw-bold text-dark mb-1">Quản Lý Dịch Vụ</h3>
-                    <p class="text-muted mb-0">Danh sách các dịch vụ bổ sung (Khách sạn, Xe, Ăn uống...).</p>
+            <div class="row mb-4 align-items-end">
+                <div class="col-md-6">
+                    <h3 class="fw-bold text-dark mb-1">Chi tiết Dịch Vụ NCC</h3>
+                    <p class="text-muted mb-0">Quản lý dịch vụ của từng đối tác cụ thể.</p>
                 </div>
-                <a href="<?= BASEURL ?>?act=them_dich_vu" class="btn btn-success d-flex align-items-center px-4 shadow-sm">
-                    <i class="bi bi-plus-lg me-2"></i> Thêm Dịch Vụ
-                </a>
+                
+                <div class="col-md-6 text-end d-flex gap-2 justify-content-end align-items-center">
+                    <div class="flex-grow-1" style="max-width: 300px;">
+                        <form action="" method="GET">
+                            <input type="hidden" name="act" value="lay_dich_vu_ncc"> 
+                            <select class="form-select fw-bold text-primary" name="ncc_id" onchange="this.form.submit()">
+                                <option value="" disabled>-- Chuyển Nhà Cung Cấp --</option>
+                                <?php 
+                                $current_ncc_id = $_GET['ncc_id'] ?? 0;
+                                if (!empty($nccList)): 
+                                    foreach($nccList as $ncc):
+                                ?>
+                                    <option value="<?= $ncc['ncc_id'] ?>" <?= ($current_ncc_id == $ncc['ncc_id']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($ncc['ten']) ?>
+                                    </option>
+                                <?php 
+                                    endforeach; 
+                                endif; 
+                                ?>
+                            </select>
+                        </form>
+                    </div>
+
+                    <a href="<?= BASEURL ?>?act=them_dich_vu" class="btn btn-success d-flex align-items-center px-3 shadow-sm" style="white-space: nowrap;">
+                        <i class="bi bi-plus-lg me-2"></i> Thêm Mới
+                    </a>
+                </div>
             </div>
 
             <div class="card card-custom">
@@ -87,7 +111,6 @@
                                         <th class="ps-4">Mã & Tên Dịch Vụ</th>
                                         <th>Loại Dịch Vụ</th>
                                         <th>Giá Mặc Định</th>
-                                        <th>Nhà Cung Cấp</th>
                                         <th>Mô Tả</th>
                                         <th class="text-end pe-4">Thao tác</th>
                                     </tr>
@@ -138,13 +161,7 @@
                                                 </div>
                                             </td>
                                             
-                                            <td>
-                                                <div class="text-dark fw-medium">
-                                                    <i class="bi bi-shop me-1 text-secondary"></i> <?= htmlspecialchars($dv['ten_ncc']) ?>
-                                                </div>
-                                            </td>
-                                            
-                                            <td class="text-muted small text-truncate" style="max-width: 200px;">
+                                            <td class="text-muted small text-truncate" style="max-width: 250px;">
                                                 <?= htmlspecialchars($dv['mo_ta']) ?>
                                             </td>
                                             
@@ -171,12 +188,18 @@
                     <?php else: ?>
                         <div class="text-center py-5">
                             <i class="bi bi-inbox display-1 text-muted opacity-25"></i>
-                            <h5 class="text-muted mt-3">Chưa có dịch vụ nào</h5>
-                            <p class="text-muted mb-4">Hãy thêm dịch vụ đầu tiên để bắt đầu sử dụng.</p>
-                            <a href="<?= BASEURL ?>?act=them_dich_vu" class="btn btn-success px-4">Thêm Dịch Vụ</a>
+                            <h5 class="text-muted mt-3">Nhà cung cấp này chưa có dịch vụ</h5>
+                            <p class="text-muted mb-4">Vui lòng thêm dịch vụ mới hoặc chọn nhà cung cấp khác.</p>
+                            <a href="<?= BASEURL ?>?act=them_dich_vu" class="btn btn-success px-4">Thêm Dịch Vụ Ngay</a>
                         </div>
                     <?php endif; ?>
                 </div>
+            </div>
+
+            <div class="mt-4">
+                 <a href="<?= BASEURL ?>?act=ncc_list" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i> Quay lại Danh sách NCC
+                 </a>
             </div>
 
         </div>

@@ -202,7 +202,8 @@ public function getAggregatedTourDetail($tour_id)
                 dd.ten AS ten_diadiem,
                 qg.ten AS quoc_gia,
                 dd.mo_ta,
-                had.url AS hinh_anh
+                had.url AS hinh_anh,
+                ddt.ghi_chu
             FROM DiaDiemTour ddt
             JOIN DiaDiem dd ON ddt.dia_diem_id = dd.dia_diem_id
             JOIN QuocGia qg ON dd.quoc_gia_id = qg.quoc_gia_id
@@ -233,7 +234,36 @@ public function getAggregatedTourDetail($tour_id)
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+     public function getAllDiaDiemtn()
+    {
+        $sql = "SELECT 
+                dd.dia_diem_id,
+                dd.ten,
+                dd.mo_ta,
+                qg.ten AS quoc_gia,
+                dd.ngay_tao
+            FROM DiaDiem dd
+            JOIN QuocGia qg ON dd.quoc_gia_id = qg.quoc_gia_id WHERE qg.quoc_gia_id=1";
 
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+      public function getAllDiaDiemqt()
+    {
+        $sql = "SELECT 
+                dd.dia_diem_id,
+                dd.ten,
+                dd.mo_ta,
+                qg.ten AS quoc_gia,
+                dd.ngay_tao
+            FROM DiaDiem dd
+            JOIN QuocGia qg ON dd.quoc_gia_id = qg.quoc_gia_id WHERE qg.quoc_gia_id!=1";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     public function getDiaDiemTourById($dia_diem_tour_id)
     {
         $sql = "SELECT 
@@ -447,88 +477,132 @@ WHERE
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    public function getBookingDetail($booking_id)
+    {
+        $sql = "SELECT 
+            -- 1. Thông tin Booking (b)
+            b.booking_id, b.ngay_dat, b.tong_tien AS tong_tien_booking, b.trang_thai_booking, b.so_luong_khach,
+            
+            -- 2. Thông tin Lịch Khởi Hành (lkh)
+            lkh.ngay_khoi_hanh, lkh.ngay_ket_thuc, lkh.so_cho_toi_da, lkh.trang_thai_lich,
+            
+            -- 3. Thông tin Tour Cơ bản (t)
+            t.tour_id, t.ten AS ten_tour, t.gia_co_ban, t.thoi_luong_mac_dinh,
+            
+            -- 4. Thông tin Hướng Dẫn Viên được giao (thdv, hdv)
+            hdv.hdv_id, hdv.ten AS ten_hdv, hdv.email AS email_hdv, hdv.sdt AS sdt_hdv,
+            
+            -- 5. Thông tin Khách đi kèm (kddv - KhachDatDichVu)
+            kddv.kddv_id, kddv.ten AS ten_khach_di_kem, kddv.sdt AS sdt_khach_di_kem, kddv.email AS email_khach_di_kem,
+            kddv.vai_tro AS vai_tro_khach, -- Vai trò của khách trong booking (Ví dụ: khách chính, khách đi kèm)
+            
+            -- 6. Thông tin Dịch Vụ Tour (dv, dvt)
+            dv.dich_vu_id, dv.ten_dich_vu, dvt.gia AS gia_dv_tour, dvt.ghi_chu AS dv_ghi_chu,
+            
+            -- 7. Thông tin Thanh Toán (tt) - Lấy tổng số tiền đã thanh toán/đặt cọc
+            (SELECT SUM(bt.so_tien) FROM bookingthanhtoan bt WHERE bt.booking_id = b.booking_id AND bt.trang_thai = 'SUCCESS') AS tong_tien_da_thanh_toan
+            
+        FROM booking b
+        JOIN lichkhoihanh lkh ON b.lich_khoi_hanh_id = lkh.lich_khoi_hanh_id
+        JOIN tour t ON lkh.tour_id = t.tour_id
+        
+        -- Lấy HDV được giao (Giả định HDV được gán cho Lịch Khởi Hành thông qua bảng tourhdv)
+        LEFT JOIN tourhdv thdv ON lkh.lich_khoi_hanh_id = thdv.lich_khoi_hanh_id
+        LEFT JOIN huongdanvien hdv ON thdv.hdv_id = hdv.hdv_id
+        
+        -- Lấy danh sách Khách hàng chi tiết đi kèm dịch vụ/tour (dùng kddv thay vì KhachHang)
+        LEFT JOIN khachdatdichvu kddv ON b.booking_id = kddv.booking_id
+        
+        -- Lấy Dịch vụ của Tour (dịch vụ mặc định đi kèm tour/lịch trình)
+        LEFT JOIN dv_tour dvt ON t.tour_id = dvt.tour_id
+        LEFT JOIN dichvuncc dv ON dvt.dich_vu_id = dv.dich_vu_id
+        
+        WHERE b.booking_id = :booking_id
+        
+        -- Sắp xếp để xử lý Khách hàng và Dịch vụ dễ dàng
+        ORDER BY kddv.kddv_id ASC, dv.dich_vu_id ASC";
 
-    // public function getDatTourDetail(int $dat_tour_id) {
-    //     // Truy vấn chính sử dụng LEFT JOIN cho tất cả các bảng 1-1 hoặc 1-nhiều (SUM)
-    //     $sql = "SELECT
-    //         -- 1. Thông tin Đặt Tour chính
-    //         DT.dat_tour_id, DT.lich_id, DT.so_nguoi, DT.tong_tien, DT.tien_te, 
-    //         DT.trang_thai AS trang_thai_dat_tour, DT.nguon, DT.ngay_tao, DT.ghi_chu AS ghi_chu_dat_tour, DT.loai,
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':booking_id', $booking_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $rawData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    //         -- 2. Thông tin Khách hàng đặt tour (LEFT JOIN)
-    //         ND.ho_ten AS ten_khach_hang, ND.so_dien_thoai, ND.email, 
-    //         KH.cccd, KH.dia_chi,
+        if (empty($rawData)) {
+            return null;
+        }
 
-    //         -- 3. Thông tin Tour & Lịch Khởi Hành (LEFT JOIN)
-    //         T.tour_id, T.ten AS ten_tour, T.mo_ta_ngan,
-    //         LKH.ngay_bat_dau, LKH.ngay_ket_thuc, LKH.gia_mac_dinh, LKH.tien_te AS tien_te_lich,
+        $bookingDetail = [];
+        $khach_ids = []; 
+        $dv_ids = []; 
+        $hdv_ids = []; // Để xử lý trường hợp nhiều HDV được giao
 
-    //         -- 4. Thông tin Đặt Cọc (LEFT JOIN)
-    //         SUM(DC.so_tien) AS tong_dat_coc
+        foreach ($rawData as $row) {
+            // 1. Gán thông tin Booking/Tour/LKH (Chỉ cần làm 1 lần)
+            if (empty($bookingDetail)) {
+                $bookingDetail = [
+                    'booking_id' => $row['booking_id'],
+                    'ngay_dat' => $row['ngay_dat'],
+                    'tong_tien_booking' => $row['tong_tien_booking'],
+                    'so_khach' => $row['so_luong_khach'],
+                    'trang_thai_booking' => $row['trang_thai_booking'],
+                    'so_tien_da_dat_coc' => $row['tong_tien_da_thanh_toan'] ?? 0,
+                    'tour_info' => [
+                        'tour_id' => $row['tour_id'],
+                        'ten_tour' => $row['ten_tour'],
+                        'gia_co_ban' => $row['gia_co_ban'],
+                        'thoi_gian' => $row['thoi_luong_mac_dinh'],
+                    ],
+                    'lich_khoi_hanh' => [
+                        'ngay_khoi_hanh' => $row['ngay_khoi_hanh'],
+                        'ngay_ket_thuc' => $row['ngay_ket_thuc'],
+                        'so_cho_toi_da' => $row['so_cho_toi_da'],
+                        'trang_thai_lich' => $row['trang_thai_lich'],
+                    ],
+                    'huong_dan_vien' => [],
+                    'danh_sach_khach' => [],
+                    'dich_vu_tour' => [],
+                ];
+            }
 
-    //     FROM
-    //         DatTour DT
+            // 2. Gán Danh sách Khách đi kèm (từ khachdatdichvu)
+            if ($row['kddv_id'] !== null && !in_array($row['kddv_id'], $khach_ids)) {
+                $bookingDetail['danh_sach_khach'][] = [
+                    'kddv_id' => $row['kddv_id'],
+                    'ten' => $row['ten_khach_di_kem'],
+                    'email' => $row['email_khach_di_kem'],
+                    'sdt' => $row['sdt_khach_di_kem'],
+                    'vai_tro' => $row['vai_tro_khach']
+                ];
+                $khach_ids[] = $row['kddv_id'];
+            }
+            
+            // 3. Gán Dịch vụ của Tour
+            if ($row['dich_vu_id'] !== null && !in_array($row['dich_vu_id'], $dv_ids)) {
+                $bookingDetail['dich_vu_tour'][] = [
+                    'dich_vu_id' => $row['dich_vu_id'],
+                    'ten_dich_vu' => $row['ten_dich_vu'],
+                    'gia_them' => $row['gia_dv_tour'],
+                    'ghi_chu' => $row['dv_ghi_chu']
+                ];
+                $dv_ids[] = $row['dich_vu_id'];
+            }
 
-    //     -- LEFT JOIN cho KhachHang và NguoiDung
-    //     LEFT JOIN
-    //         KhachHang KH ON DT.khach_hang_id = KH.khach_hang_id
-    //     LEFT JOIN
-    //         NguoiDung ND ON KH.nguoi_dung_id = ND.nguoi_dung_id
+            // 4. Gán Hướng dẫn viên
+            if ($row['hdv_id'] !== null && !in_array($row['hdv_id'], $hdv_ids)) {
+                $bookingDetail['huong_dan_vien'][] = [
+                    'hdv_id' => $row['hdv_id'],
+                    'ten' => $row['ten_hdv'],
+                    'email' => $row['email_hdv'],
+                    'sdt' => $row['sdt_hdv'],
+                ];
+                $hdv_ids[] = $row['hdv_id'];
+            }
+        }
 
-    //     -- LEFT JOIN cho Lịch Khởi Hành và Tour
-    //     LEFT JOIN 
-    //         LichKhoiHanh LKH ON DT.lich_id = LKH.lich_id
-    //     LEFT JOIN 
-    //         Tour T ON LKH.tour_id = T.tour_id
+        return $bookingDetail;
+    }
 
-    //     -- LEFT JOIN cho Đặt Cọc
-    //     LEFT JOIN
-    //         DatCoc DC ON DT.dat_tour_id = DC.dat_tour_id AND DC.trang_thai = 'confirmed' 
-
-    //     WHERE
-    //         DT.dat_tour_id = :id 
-    //         -- AND DT.isdelete = 0 -- Giả sử trường này cần được dùng nếu có trong DB
-    //     GROUP BY 
-    //         DT.dat_tour_id";
-
-
-    //     // --- Lấy dữ liệu Dạng Mảng (Hành Khách, Dịch Vụ Thêm) ---
-    //     $sql_hanh_khach = "SELECT ho_ten, cccd, ngay_sinh, so_ghe, ghi_chu FROM HanhKhachlist WHERE dat_tour_id = :id";
-    //     $sql_dv_them = "SELECT DVT.ten, DVT.gia, DVT.don_vi, DVT.mo_ta, DVTD.so_luong, DVTD.tong_tien AS tong_tien_dv 
-    //                     FROM DichVuThemDat DVTD
-    //                     INNER JOIN DichVuThem DVT ON DVTD.dv_them_id = DVT.dv_them_id
-    //                     WHERE DVTD.dat_tour_id = :id";
-
-    //     try {
-    //         // Thực hiện truy vấn chính (dữ liệu 1-1)
-    //         $stmt_main = $this->conn->prepare($sql);
-    //         $stmt_main->bindParam(':id', $dat_tour_id, PDO::PARAM_INT);
-    //         $stmt_main->execute();
-    //         $detail = $stmt_main->fetch(PDO::FETCH_ASSOC);
-
-    //         if ($detail) {
-    //             // Thực hiện truy vấn phụ (dữ liệu 1-nhiều)
-
-    //             // 1. Hành Khách
-    //             $stmt_hk = $this->conn->prepare($sql_hanh_khach);
-    //             $stmt_hk->bindParam(':id', $dat_tour_id, PDO::PARAM_INT);
-    //             $stmt_hk->execute();
-    //             $detail['hanh_khach_list'] = $stmt_hk->fetchAll(PDO::FETCH_ASSOC);
-
-    //             // 2. Dịch Vụ Thêm
-    //             $stmt_dv = $this->conn->prepare($sql_dv_them);
-    //             $stmt_dv->bindParam(':id', $dat_tour_id, PDO::PARAM_INT);
-    //             $stmt_dv->execute();
-    //             $detail['dich_vu_them'] = $stmt_dv->fetchAll(PDO::FETCH_ASSOC);
-    //         }
-
-    //         return $detail;
-
-    //     } catch (PDOException $e) {
-    //         error_log("Lỗi khi lấy chi tiết Đơn Đặt Tour: " . $e->getMessage());
-    //         return false;
-    //     }
-    // }
+ 
     public function getAll()
     {
         $sql = "SELECT * FROM nguoidung";
@@ -568,7 +642,12 @@ WHERE
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
+    public function layDichVuTheoNCC($ncc_id)
+    {
+        $stmt = $this->conn->prepare("SELECT * FROM dichvuncc WHERE ncc_id = ? AND isdelete=0");
+        $stmt->execute([$ncc_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     public function layDichVuTheoId($db, $dich_vu_id)
     {
         $stmt = $this->conn->prepare("SELECT * FROM dichvuncc WHERE dich_vu_id = ?");
@@ -593,8 +672,6 @@ WHERE
     gdv.lich_id,
     gdv.tour_id,
     gdv.dich_vu_id,
-    gdv.gia,
-    gdv.da_xac_nhan,
     gdv.ghi_chu,
 
     dv.loai_dich_vu,
@@ -664,5 +741,160 @@ WHERE gdv.tour_id = :tour_id
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+public function getDatTourDetail($dat_tour_id)
+    {
+        $sql = "SELECT 
+            -- 1. Thông tin Đặt Tour
+            dt.dat_tour_id, 
+            dt.ngay_tao AS ngay_dat, 
+            dt.trang_thai AS trang_thai_dat_tour, 
+            dt.so_nguoi AS so_luong_khach,
+            dt.ghi_chu AS ghi_chu_booking,
+            (t.gia_co_ban * dt.so_nguoi) AS tong_tien_uoc_tinh,
+
+            -- 2. Thông tin Lịch & Tour
+            lkh.lich_id, -- Lấy thêm ID để dùng cho link thêm HDV
+            lkh.ngay_bat_dau, 
+            lkh.ngay_ket_thuc, 
+            lkh.trang_thai AS trang_thai_lich,
+            t.tour_id, 
+            t.ten AS ten_tour, 
+            t.gia_co_ban, 
+            t.thoi_luong_mac_dinh,
+            
+            -- 3. Thông tin Hướng Dẫn Viên
+            hdv.hdv_id, 
+            hdv.ho_ten AS ten_hdv, 
+            hdv.email AS email_hdv, 
+            hdv.so_dien_thoai AS sdt_hdv,
+            
+            -- 4. Thông tin Hành Khách & YÊU CẦU PHỤC VỤ (Mới cập nhật)
+            hk.hanh_khach_id, 
+            hk.ho_ten AS ten_hanh_khach, 
+            hk.sdt AS sdt_hanh_khach, 
+            hk.cccd AS cccd_hanh_khach,
+            hk.ngay_sinh,
+            ycpv.noi_dung AS yeu_cau_rieng, -- Trường mới lấy từ bảng yeucauphucvu
+            ycpv.yeu_cau_id, -- ID để sửa yêu cầu
+            
+            -- 5. Dịch Vụ Tour
+            dv.dich_vu_id, 
+            dv.ten_dich_vu, 
+            dvt.gia AS gia_dv_tour, 
+            dvt.ghi_chu AS dv_ghi_chu,
+            
+            -- 6. Đặt Cọc
+            (SELECT SUM(dc.so_tien) FROM datcoc dc WHERE dc.dat_tour_id = dt.dat_tour_id AND dc.trang_thai = 'confirmed') AS tong_tien_da_dat_coc
+            
+        FROM dattour dt
+        LEFT JOIN lichkhoihanh lkh ON dt.lich_id = lkh.lich_id
+        LEFT JOIN tour t ON dt.tour_id = t.tour_id
+        LEFT JOIN phanconghdv pc ON lkh.lich_id = pc.lich_id
+        LEFT JOIN huongdanvien hdv ON pc.hdv_id = hdv.hdv_id
+        
+        -- Join Hành khách
+        LEFT JOIN hanhkhachlist hk ON dt.dat_tour_id = hk.dat_tour_id
+        
+        -- Join Yêu Cầu Phục Vụ (MỚI: dựa trên hanh_khach_id)
+        LEFT JOIN yeucauphucvu ycpv ON hk.hanh_khach_id = ycpv.hanh_khach_id
+        
+        -- Join Dịch vụ
+        LEFT JOIN dv_tour dvt ON t.tour_id = dvt.tour_id
+        LEFT JOIN dichvuncc dv ON dvt.dich_vu_id = dv.dich_vu_id
+        
+        WHERE dt.dat_tour_id = :dat_tour_id
+        
+        ORDER BY hk.hanh_khach_id ASC, dv.dich_vu_id ASC";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':dat_tour_id', $dat_tour_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $rawData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($rawData)) return null;
+
+        $datTourDetail = [];
+        $hanhkhach_ids = []; 
+        $dv_ids = []; 
+        $hdv_ids = []; 
+        $tong_gia_dich_vu_phu_tro = 0;
+
+        foreach ($rawData as $row) {
+            // 1. Thông tin chung
+            if (empty($datTourDetail)) {
+                $datTourDetail = [
+                    'dat_tour_id' => $row['dat_tour_id'],
+                    'ngay_dat' => $row['ngay_dat'],
+                    'so_khach' => $row['so_luong_khach'],
+                    'trang_thai' => $row['trang_thai_dat_tour'],
+                    'ghi_chu' => $row['ghi_chu_booking'],
+                    'da_dat_coc' => $row['tong_tien_da_dat_coc'] ?? 0,
+                    'tong_tien_uoc_tinh' => 0, 
+                    'tour_info' => [
+                        'tour_id' => $row['tour_id'],
+                        'ten_tour' => $row['ten_tour'],
+                        'gia_co_ban' => $row['gia_co_ban'],
+                        'thoi_gian' => $row['thoi_luong_mac_dinh'],
+                    ],
+                    'lich_khoi_hanh' => [
+                        'lich_id' => $row['lich_id'], // Thêm ID lịch
+                        'ngay_bat_dau' => $row['ngay_bat_dau'],
+                        'ngay_ket_thuc' => $row['ngay_ket_thuc'],
+                        'trang_thai' => $row['trang_thai_lich'],
+                    ],
+                    'huong_dan_vien' => [],
+                    'danh_sach_hanh_khach' => [],
+                    'dich_vu_tour' => [],
+                ];
+            }
+
+            // 2. Dịch vụ
+            if ($row['dich_vu_id'] !== null && !in_array($row['dich_vu_id'], $dv_ids)) {
+                $gia_dv = $row['gia_dv_tour'] ?? 0;
+                $datTourDetail['dich_vu_tour'][] = [
+                    'id' => $row['dich_vu_id'],
+                    'ten' => $row['ten_dich_vu'],
+                    'gia' => $gia_dv,
+                    'ghi_chu' => $row['dv_ghi_chu']
+                ];
+                $tong_gia_dich_vu_phu_tro += $gia_dv;
+                $dv_ids[] = $row['dich_vu_id'];
+            }
+
+            // 3. Hành Khách (Thêm yêu cầu phục vụ)
+            if ($row['hanh_khach_id'] !== null && !in_array($row['hanh_khach_id'], $hanhkhach_ids)) {
+                $datTourDetail['danh_sach_hanh_khach'][] = [
+                    'id' => $row['hanh_khach_id'],
+                    'ho_ten' => $row['ten_hanh_khach'],
+                    'sdt' => $row['sdt_hanh_khach'],
+                    'cccd' => $row['cccd_hanh_khach'],
+                    'ngay_sinh' => $row['ngay_sinh'],
+                    // Thông tin yêu cầu phục vụ
+                    'yeu_cau_id' => $row['yeu_cau_id'],
+                    'yeu_cau_noi_dung' => $row['yeu_cau_rieng']
+                ];
+                $hanhkhach_ids[] = $row['hanh_khach_id'];
+            }
+
+            // 4. HDV
+            if ($row['hdv_id'] !== null && !in_array($row['hdv_id'], $hdv_ids)) {
+                $datTourDetail['huong_dan_vien'][] = [
+                    'id' => $row['hdv_id'],
+                    'ho_ten' => $row['ten_hdv'],
+                    'email' => $row['email_hdv'],
+                    'sdt' => $row['sdt_hdv'],
+                ];
+                $hdv_ids[] = $row['hdv_id'];
+            }
+        }
+
+        // Tính tổng tiền
+        $gia_co_ban = $datTourDetail['tour_info']['gia_co_ban'] ?? 0;
+        $so_khach = $datTourDetail['so_khach'] ?? 1;
+        $tong_tien_mot_nguoi = $gia_co_ban + $tong_gia_dich_vu_phu_tro;
+        $datTourDetail['tong_tien_uoc_tinh'] = $tong_tien_mot_nguoi * $so_khach;
+
+        return $datTourDetail;
     }
 }

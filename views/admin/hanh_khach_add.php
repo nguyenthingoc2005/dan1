@@ -2,94 +2,235 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <title>Cập Nhật Hành Khách</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thêm Hành Khách cho Đơn #<?= htmlspecialchars($data['dat_tour_id']) ?></title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css">
+    
+    <link rel="stylesheet" href="./assets/css/sidebar.css">
     
     <style>
-        .container { 
-            max-width: 900px; 
-            margin-top: 30px; /* Tăng khoảng cách trên */
+        /* MAIN LAYOUT */
+        body { background-color: #f5f7fb; font-family: 'Segoe UI', sans-serif; }
+        .main-content { padding: 30px; margin-top: 70px; margin-left: 0; min-height: 100vh; }
+        
+        /* CARD STYLE */
+        .card-custom {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            background: #fff;
         }
-        .passenger-card { 
-            border-left: 5px solid #0d6efd; /* Màu xanh Primary */
-            background-color: #f8f9fa; /* Nền xám nhạt cho từng hành khách */
+
+        /* ACCORDION STYLE */
+        .accordion-item {
+            border: 1px solid #e9ecef;
+            border-radius: 8px !important;
+            margin-bottom: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
-        .form-control-label {
-            font-weight: 600; /* Nhấn mạnh label */
+        .accordion-button {
+            background-color: #fff;
+            color: #495057;
+            font-weight: 600;
+            padding: 15px 20px;
         }
+        .accordion-button:not(.collapsed) {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
+        }
+        /* STT Badge */
+        .stt-badge {
+            width: 28px; height: 28px;
+            background-color: #e9ecef; color: #495057;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; margin-right: 15px; font-weight: bold;
+        }
+        .accordion-button:not(.collapsed) .stt-badge {
+            background-color: #0d6efd; color: #fff;
+        }
+
+        /* FORM ELEMENTS */
+        .form-label { font-weight: 600; font-size: 0.9rem; color: #6c757d; margin-bottom: 5px; }
+        .form-control { border-radius: 8px; padding: 10px 15px; border: 1px solid #dee2e6; transition: all 0.2s; }
+        .form-control:focus { border-color: #0d6efd; box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15); }
+        
+        .input-group-text { background-color: #f8f9fa; border: 1px solid #dee2e6; border-right: none; border-radius: 8px 0 0 8px; color: #6c757d; }
+        .input-icon-control { border-left: none; border-radius: 0 8px 8px 0; }
+        .input-icon-control:focus { border-color: #dee2e6; border-left-color: #dee2e6; }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container py-4">
-    <div class="card shadow-lg border-0">
-        <div class="card-header bg-success text-white py-3">
-            <h4 class="mb-0"><i class="bi bi-person-lines-fill"></i> Thêm Danh Sách Hành Khách</h4>
-            <div class="small">
-                Đơn ID: **#<?= htmlspecialchars($data['dat_tour_id']) ?>** | Tổng Số Người: **<?= htmlspecialchars($data['so_nguoi']) ?>**
-            </div>
-        </div>
-        
-        <div class="card-body p-4">
+    <?php include './views/parts/sidebar.php'; ?>
+    <div class="overlay"></div>
+
+    <div class="main-content">
+        <div class="container-fluid">
             
-            <form action="<?= BASEURL ?>?act=hanh_khach_save&dat_tour_id=<?= $_GET['dat_tour_id'] ?>" method="POST">
-                <input type="hidden" name="dat_tour_id" value="<?= htmlspecialchars($data['dat_tour_id']) ?>">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold text-dark mb-1">Cập Nhật Danh Sách Khách</h3>
+                    <p class="text-muted mb-0">
+                        Đơn hàng #<?= htmlspecialchars($data['dat_tour_id']) ?> 
+                        <span class="mx-2">|</span> 
+                        Tổng số: <strong class="text-primary"><?= htmlspecialchars($data['so_nguoi']) ?></strong> người
+                    </p>
+                </div>
                 
-                <?php 
-                // Vòng lặp tạo form dựa trên $data['so_nguoi']
-                for ($i = 1; $i <= $data['so_nguoi']; $i++): 
-                ?>
-                    <div class="card passenger-card mb-4 border-radius-lg">
-                        <div class="card-body p-3">
-                            <h5 class="card-title text-primary mb-3">Hành Khách Số <?= $i ?></h5>
+                <a href="<?= BASEURL ?>?act=dat_tour_edit&dat_tour_id=<?= htmlspecialchars($data['dat_tour_id']) ?>" class="btn btn-outline-secondary px-4 shadow-sm">
+                    <i class="bi bi-arrow-left me-2"></i> Quay lại Sửa Đơn
+                </a>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card card-custom p-4">
+                        
+                        <form action="<?= BASEURL ?>?act=hanh_khach_save&dat_tour_id=<?= htmlspecialchars($data['dat_tour_id']) ?>" method="POST">
                             
-                            <div class="row g-3">
+                            <input type="hidden" name="dat_tour_id" value="<?= htmlspecialchars($data['dat_tour_id']) ?>">
+                            
+                            <input type="hidden" name="next_step" value="deposit"> 
+
+                            <div class="accordion" id="accordionPassengers">
+                                <?php 
+                                $so_luong_nguoi = (int)($data['so_nguoi'] ?? 0);
                                 
-                                <div class="col-md-6">
-                                    <label for="ho_ten_<?= $i ?>" class="form-label form-control-label required">Họ và Tên</label>
-                                    <input type="text" class="form-control" name="hanh_khach[<?= $i ?>][ho_ten]" id="ho_ten_<?= $i ?>" required>
+                                for ($i = 0; $i < $so_luong_nguoi; $i++): 
+                                    $hk = $hanhKhachList[$i] ?? []; 
+                                    $stt = $i + 1;
+                                    $is_expanded = ($i === 0) ? 'true' : 'false'; 
+                                    $show_class = ($i === 0) ? 'show' : '';
+                                ?>
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading<?= $i ?>">
+                                        <button class="accordion-button <?= ($i === 0) ? '' : 'collapsed' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<?= $i ?>" aria-expanded="<?= $is_expanded ?>" aria-controls="collapse<?= $i ?>">
+                                            <span class="stt-badge"><?= $stt ?></span>
+                                            <span class="fw-bold name-display-<?= $i ?>">
+                                                <?= !empty($hk['ho_ten']) ? htmlspecialchars($hk['ho_ten']) : 'Hành khách #' . $stt ?>
+                                            </span>
+                                            
+                                            <?php if(!empty($hk['cccd'])): ?>
+                                                <span class="badge bg-light text-secondary ms-3 fw-normal border">CCCD: <?= htmlspecialchars($hk['cccd']) ?></span>
+                                            <?php endif; ?>
+                                        </button>
+                                    </h2>
+                                    <div id="collapse<?= $i ?>" class="accordion-collapse collapse <?= $show_class ?>" aria-labelledby="heading<?= $i ?>" data-bs-parent="#accordionPassengers">
+                                        <div class="accordion-body bg-white p-4">
+                                            
+                                            <input type="hidden" name="hanh_khach[<?= $i ?>][hanh_khach_id]" value="<?= htmlspecialchars($hk['hanh_khach_id'] ?? 0) ?>">
+
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Họ và Tên <span class="text-danger">*</span></label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                                                        <input type="text" class="form-control input-icon-control name-input" 
+                                                               data-index="<?= $i ?>"
+                                                               name="hanh_khach[<?= $i ?>][ho_ten]" 
+                                                               value="<?= htmlspecialchars($hk['ho_ten'] ?? '') ?>" 
+                                                               required placeholder="Nhập họ tên đầy đủ">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <label class="form-label">CCCD / Hộ Chiếu</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="bi bi-card-heading"></i></span>
+                                                        <input type="text" class="form-control input-icon-control" 
+                                                               name="hanh_khach[<?= $i ?>][cccd]" 
+                                                               value="<?= htmlspecialchars($hk['cccd'] ?? '') ?>" 
+                                                               placeholder="Số giấy tờ tùy thân">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Ngày Sinh</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                                                        <input type="date" class="form-control input-icon-control" 
+                                                               name="hanh_khach[<?= $i ?>][ngay_sinh]" 
+                                                               value="<?= htmlspecialchars($hk['ngay_sinh'] ?? '') ?>">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Số Điện Thoại</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="bi bi-telephone-fill"></i></span>
+                                                        <input type="text" class="form-control input-icon-control" 
+                                                               name="hanh_khach[<?= $i ?>][sdt]" 
+                                                               value="<?= htmlspecialchars($hk['sdt'] ?? '') ?>" 
+                                                               placeholder="Nhập SĐT liên hệ">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-12">
+                                                    <label class="form-label">Ghi Chú (Ăn kiêng, dị ứng...)</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="bi bi-pencil-square"></i></span>
+                                                        <input type="text" class="form-control input-icon-control" 
+                                                               name="hanh_khach[<?= $i ?>][ghi_chu]" 
+                                                               value="<?= htmlspecialchars($hk['ghi_chu'] ?? '') ?>" 
+                                                               placeholder="Ghi chú đặc biệt cho hành khách này">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
                                 </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="cccd_<?= $i ?>" class="form-label form-control-label">CCCD/Hộ Chiếu</label>
-                                    <input type="text" class="form-control" name="hanh_khach[<?= $i ?>][cccd]" id="cccd_<?= $i ?>">
+                                <?php endfor; ?>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-muted fst-italic small">
+                                    * Vui lòng kiểm tra kỹ thông tin trước khi chuyển bước.
                                 </div>
-                                
-                                <div class="col-md-4">
-                                    <label for="ngay_sinh_<?= $i ?>" class="form-label form-control-label">Ngày Sinh</label>
-                                    <input type="date" class="form-control" name="hanh_khach[<?= $i ?>][ngay_sinh]" id="ngay_sinh_<?= $i ?>">
-                                </div>
-                                
-                                <div class="col-md-4">
-                                    <label for="sdt_<?= $i ?>" class="form-label form-control-label">Số điện thoại</label>
-                                    <input type="text" class="form-control" name="hanh_khach[<?= $i ?>][sdt]" id="sdt_<?= $i ?>">
-                                </div>
-                                
-                                <div class="col-md-4">
-                                    <label for="ghi_chu_<?= $i ?>" class="form-label form-control-label">Ghi Chú</label>
-                                    <input type="text" class="form-control" name="hanh_khach[<?= $i ?>][ghi_chu]" id="ghi_chu_<?= $i ?>">
+                                <div class="d-flex gap-2">
+                                    <a href="<?= BASEURL ?>?act=dat_tour_detail&dat_tour_id=<?= htmlspecialchars($data['dat_tour_id']) ?>" 
+                                       class="btn btn-outline-secondary border px-4">
+                                        <i class="bi bi-x-circle me-2"></i> Bỏ qua & Xem chi tiết
+                                    </a>
+                                    
+                                    <button type="submit" class="btn btn-success px-4 fw-bold shadow-sm">
+                                        <i class="bi bi-cash-stack me-2"></i> Lưu & Nhập Đặt Cọc
+                                    </button>
                                 </div>
                             </div>
-                        </div>
+
+                        </form>
                     </div>
-                <?php endfor; ?>
-                
-                <div class="d-flex justify-content-end pt-3">
-                    <a href="<?= BASEURL ?>?act=dat_tour_detail&dat_tour_id=<?= htmlspecialchars($data['dat_tour_id']) ?>" class="btn btn-secondary me-3">
-                        <i class="bi bi-x-circle"></i> Bỏ qua (Hoàn thành sau)
-                    </a>
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle"></i> Lưu & Chuyển sang Đặt Cọc
-                    </button>
                 </div>
-            </form>
+            </div>
+
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./assets/js/sidebar.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const nameInputs = document.querySelectorAll('.name-input');
+            nameInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    const index = this.getAttribute('data-index');
+                    const displaySpan = document.querySelector('.name-display-' + index);
+                    if (displaySpan) {
+                        displaySpan.textContent = this.value.trim() || ('Hành khách #' + (parseInt(index) + 1));
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

@@ -21,9 +21,68 @@ class AdminController
     // I. TOUR
     // ===================================================================
 
-    public function index()
+ public function index()
     {
-        $data1 = $this->modelGet->getAllTours();
+        // 1. LẤY DỮ LIỆU TỪ MODEL
+        // Lưu ý: Đảm bảo modelGet đã được khởi tạo trong __construct
+        $allBookings  = $this->modelGet->getAllDatTour();   // Lấy list đơn đặt
+        $allTours     = $this->modelGet->getAllTours();     // Lấy list tour
+        $allCustomers = $this->modelGet->getAllKhachHang(); // Lấy list khách hàng
+
+        // 2. KHỞI TẠO BIẾN THỐNG KÊ
+        $stats = [
+            'revenue'      => 0, // Doanh thu
+            'bookings'     => count($allBookings), // Tổng đơn
+            'active_tours' => 0, // Tour đang hoạt động
+            'customers'    => count($allCustomers) // Tổng khách
+        ];
+
+        // 3. TÍNH TOÁN SỐ LIỆU
+        
+        // A. Đếm Tour đang hoạt động (hoat_dong = 1)
+        foreach ($allTours as $tour) {
+            if (isset($tour['hoat_dong']) && $tour['hoat_dong'] == 1) {
+                $stats['active_tours']++;
+            }
+        }
+
+        // B. Tính Doanh Thu & Lọc Tour Sắp Khởi Hành
+        $upcomingTours = [];
+        $today = date('Y-m-d'); // Ngày hiện tại
+
+        foreach ($allBookings as $bk) {
+            // --- Tính Doanh Thu (Ước tính: Giá cơ bản * Số người) ---
+            // Chỉ cộng tiền các đơn đã 'hoàn tất', 'thành công' hoặc 'đã đặt cọc'
+            $status = strtolower($bk['trang_thai_dat_tour'] ?? '');
+            if ($status == 'hoàn tất' || $status == 'completed' || $status == 'success' || $status == 'đã xác nhận') {
+                // Lấy giá cơ bản từ bảng Tour (trong hàm getAllDatTour bạn đã join bảng Tour chưa?)
+                // Giả định trường giá là 'gia_co_ban' và số người là 'so_nguoi'
+                $price = $bk['gia_co_ban'] ?? 0; // Cần đảm bảo Model trả về trường này
+                $pax   = $bk['so_nguoi'] ?? 0;
+                $stats['revenue'] += ($price * $pax);
+            }
+
+            // --- Lọc Tour Sắp Khởi Hành (Lớn hơn ngày hiện tại) ---
+            if (!empty($bk['ngay_bat_dau']) && $bk['ngay_bat_dau'] >= $today) {
+                $upcomingTours[] = $bk;
+            }
+        }
+
+        // 4. SẮP XẾP & CẮT DỮ LIỆU HIỂN THỊ
+        
+        // A. 5 Đơn hàng mới nhất (Sắp xếp theo ID giảm dần)
+        usort($allBookings, function($a, $b) {
+            return $b['dat_tour_id'] <=> $a['dat_tour_id'];
+        });
+        $recentBookings = array_slice($allBookings, 0, 5);
+
+        // B. 5 Tour sắp khởi hành (Sắp xếp ngày tăng dần - gần nhất lên đầu)
+        usort($upcomingTours, function($a, $b) {
+            return strtotime($a['ngay_bat_dau']) - strtotime($b['ngay_bat_dau']);
+        });
+        $upcomingTours = array_slice($upcomingTours, 0, 5);
+
+        // 5. GỌI VIEW
         require_once './views/admin/Dashboard.php';
     }
     public function showTours()
@@ -107,16 +166,26 @@ class AdminController
         $diadiemList = $this->modelGet->getDiaDiemByTourId($tour_id);
         require_once './views/admin/diadiemtour.php';
     }
-    public function gan_diadiem($tour_id)
-    {
-        $data = $this->modelGet->getAllDiaDiem();
-        $diaDiemDaGan = $this->modelGet->getDiaDiemByTourId($tour_id);
-        require_once './views/admin/gan_diadiemtour.php';
+  public function gan_diadiem($tour_id)
+{
+    $datatour = $this->modelGet->getTourById($tour_id);
+
+    if (isset($datatour['danh_muc_id']) && $datatour['danh_muc_id'] == 1) {
+        $data = $this->modelGet->getAllDiaDiemtn(); // Lấy data Trong nước
+    } else {
+        $data = $this->modelGet->getAllDiaDiemqt(); // Lấy data Quốc tế (hoặc các loại khác)
     }
+
+    // 3. Lấy các địa điểm đã gán (dùng để hiển thị và loại trừ khỏi danh sách chọn)
+    $diaDiemDaGan = $this->modelGet->getDiaDiemByTourId($tour_id);
+    
+    // 4. Chuẩn bị View
+    require_once './views/admin/gan_diadiemtour.php';
+}
     public function luu_gan_diadiem($tour_id)
     {
         $diaDiemIds = $_POST['dia_diem_id'] ?? [];
-        $ghiChu = $_POST['ghi_chu'] ?? null;
+        $ghiChu = $_POST['ghi_chu_rieng'] ?? [];
 
         if (!is_array($diaDiemIds) || empty($diaDiemIds)) {
             header('Location: ' . BASEURL . '?act=loi_chua_chon');
@@ -125,7 +194,8 @@ class AdminController
 
         $allSuccess = true;
         foreach ($diaDiemIds as $ddId) {
-            $result = $this->modelCreate->ganDiaDiemChoTour($tour_id, $ddId, $ghiChu);
+            $ghiChuRieng = $ghiChu[$ddId] ?? '';
+            $result = $this->modelCreate->ganDiaDiemChoTour($tour_id, $ddId, $ghiChuRieng);
             if (!$result) {
                 $allSuccess = false;
             }
@@ -385,30 +455,41 @@ class AdminController
         $danhsachchinhsach = $this->modelGet->getDanhSachChinhSach();
         require_once './views/admin/chinhsachtour.php';
     }
-    public function luuChinhSachTour($tour_id)
-    {
-        $chinhSachIds = $_POST['chinh_sach_ids'] ?? [];
-        $ghi_chu = $_POST['ghi_chu'] ?? null;
-        $allSuccess = true;
+public function luuChinhSachTour($tour_id)
+{
+    // Lấy mảng ID chính sách được chọn
+    $chinhSachIds = $_POST['chinh_sach_ids'] ?? [];
+    
+    // Lấy mảng ghi chú (dạng key-value: [id_chinh_sach => 'nội dung ghi chú'])
+    $ghi_chu_list = $_POST['ghi_chu'] ?? []; 
+    
+    $allSuccess = true;
 
-        if (!empty($chinhSachIds) && is_array($chinhSachIds)) {
-            foreach ($chinhSachIds as $csId) {
-                $result = $this->modelCreate->luuChinhSachTour($tour_id, $csId, $ghi_chu);
-                if (!$result) {
-                    $allSuccess = false;
-                }
+    if (!empty($chinhSachIds) && is_array($chinhSachIds)) {
+        foreach ($chinhSachIds as $csId) {
+            // Lấy ghi chú tương ứng với ID chính sách. 
+            // Nếu không có thì gán chuỗi rỗng.
+            $noi_dung_ghi_chu = isset($ghi_chu_list[$csId]) ? trim($ghi_chu_list[$csId]) : ''; 
+            
+            // Gọi Model để lưu (truyền chuỗi ghi chú, không truyền mảng)
+            $result = $this->modelCreate->luuChinhSachTour($tour_id, $csId, $noi_dung_ghi_chu);
+            
+            if (!$result) {
+                $allSuccess = false;
             }
-        } else {
-            $allSuccess = false;
         }
-
-        if ($allSuccess) {
-            header('Location: ' . BASEURL . '?act=chinhsach&tour_id=' . $tour_id . '&msg=success');
-        } else {
-            header('Location: ' . BASEURL . '?act=chinhsach&tour_id=' . $tour_id . '&msg=db_fail');
-        }
-        exit;
+    } else {
+        // Trường hợp không chọn chính sách nào
+        $allSuccess = false; 
     }
+
+    if ($allSuccess) {
+        header('Location: ' . BASEURL . '?act=chinhsach&tour_id=' . $tour_id . '&msg=success');
+    } else {
+        header('Location: ' . BASEURL . '?act=chinhsach&tour_id=' . $tour_id . '&msg=db_fail');
+    }
+    exit;
+}
     public function xoaChinhSachTour($tour_chinh_sach_id)
     {
         if ($tour_chinh_sach_id !== null) {
@@ -622,8 +703,14 @@ class AdminController
             $_SESSION['error'] = "Không có hành khách nào được cập nhật.";
         }
 
-        header('Location: ' . BASEURL . '?act=dattourlist'); // Chuyển hướng về danh sách hoặc chi tiết tour
+        header('Location: ' . BASEURL . '?act=dat_tour_detail&dat_tour_id=' . $dat_tour_id); // Chuyển hướng về danh sách hoặc chi tiết tour
         exit();
+    }
+    public function dat_tour_detail($dat_tour_id)
+    {
+        $data= $this->modelGet->getDatTourDetail($dat_tour_id);
+        include './views/admin/dat_tour_detail.php';
+        
     }
 
     // ===================================================================
@@ -638,6 +725,13 @@ class AdminController
         $dichVuList = $this->modelGet->layTatCaDichVu($db);
         $nccList = $this->modelGet->layTatCaNhaCungCap($db);
         require_once './views/admin/dichvulist.php';
+    }
+    public function layDichVuNCC($ncc_id)
+    {
+        $db = $this->modelGet->conn;
+        $dichVuList = $this->modelGet->layDichVuTheoNCC($ncc_id);
+        $nccList = $this->modelGet->layTatCaNhaCungCap($db);
+        require_once './views/admin/dichvutheoncc.php';
     }
     public function themDichVu()
     {
@@ -657,7 +751,7 @@ class AdminController
             // Hàm Model tạo dịch vụ cần được sửa để nhận mảng $data
             $this->modelCreate->themDichVu($data);
 
-            header('location:' . BASEURL . '?act=lay_dich_vu');
+            header('location:' . BASEURL . '?act=lay_dich_vu_ncc&ncc_id=' . $data['ncc_id']);
             $db = $this->modelGet->conn;
             $loai_dich_vu = $_POST['loai_dich_vu'];
             $ma = $_POST['ma'];
@@ -740,7 +834,7 @@ class AdminController
         require_once './views/admin/gandichvutour.php';
     }
     // Lưu gán dịch vụ cho tour
-    public function luuGanDichVuTour($tour_id)
+public function luuGanDichVuTour($tour_id)
     {
         if (!$tour_id) {
             header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $tour_id . '&error=missing_tour_id');
@@ -748,7 +842,8 @@ class AdminController
         }
 
         $dichVuIds = $_POST['dich_vu_id'] ?? [];
-        $ghiChu = $_POST['ghi_chu'] ?? null;
+        // Giả sử bên HTML bạn đặt name="ghi_chu[ID_DICH_VU]" thì đây sẽ là mảng dạng [ID => 'Nội dung']
+        $ghiChu = $_POST['ghi_chu'] ?? []; 
 
         if (!is_array($dichVuIds) || empty($dichVuIds)) {
             header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $tour_id . '&error=no_services_selected');
@@ -757,12 +852,18 @@ class AdminController
 
         $allSuccess = true;
         foreach ($dichVuIds as $dich_vu_id) {
-            $result = $this->modelCreate->ganDichVuTour($tour_id, $dich_vu_id, $ghiChu);
+            // --- SỬA Ở ĐÂY ---
+            // Lấy ghi chú cụ thể theo ID dịch vụ đang lặp. 
+            // Nếu không có thì để rỗng ''.
+            $note_content = isset($ghiChu[$dich_vu_id]) ? trim($ghiChu[$dich_vu_id]) : ''; 
+
+            // Truyền $note_content (chuỗi) thay vì $ghiChu (mảng)
+            $result = $this->modelCreate->ganDichVuTour($tour_id, $dich_vu_id, $note_content);
+            
             if (!$result) {
                 $allSuccess = false;
             }
         }
-
 
         if ($allSuccess) {
             header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $tour_id . '&msg=success');
