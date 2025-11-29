@@ -49,7 +49,7 @@ public function getAggregatedTourDetail($tour_id)
         hadd.hinh_id, hadd.url AS hinh_url, hadd.alt_text AS hinh_alt_text,
         
         -- 6. Thông tin Dịch vụ (dv, dvt)
-        dv.dich_vu_id, dv.ten_dich_vu, dvt.gia AS gia_dv, dvt.ghi_chu AS dv_ghi_chu
+        dv.dich_vu_id, dv.ten_dich_vu, dv.gia_mac_dinh AS gia_dv, dvt.ghi_chu AS dv_ghi_chu
         
     FROM Tour t
     LEFT JOIN DanhMucTour dmt ON t.danh_muc_id = dmt.danh_muc_id
