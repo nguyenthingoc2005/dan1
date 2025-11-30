@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thêm Dịch Vụ Mới</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css">
+    
+    <link rel="stylesheet" href="./assets/css/sidebar.css">
+    
+    <style>
+        /* MAIN LAYOUT */
+        body { background-color: #f5f7fb; font-family: 'Segoe UI', sans-serif; }
+        .main-content { padding: 30px; margin-top: 70px; margin-left: 0; min-height: 100vh; }
+        
+        /* CARD & FORM STYLE */
+        .card-custom {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            background: #fff;
+        }
+        
+        .form-label { font-weight: 600; color: #495057; font-size: 0.9rem; margin-bottom: 6px; }
+        .required::after { content: " *"; color: #dc3545; }
+        
+        .form-control, .form-select {
+            border-radius: 8px; border: 1px solid #dee2e6; padding: 10px 15px; font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #0d6efd; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+
+        /* INPUT GROUP ICONS */
+        .input-group-text {
+            background-color: #f8f9fa; border: 1px solid #dee2e6; color: #6c757d; border-radius: 8px 0 0 8px;
+        }
+        
+        /* SECTION DIVIDER */
+        .section-title {
+            font-size: 1rem; font-weight: 700; color: #0d6efd;
+            border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 20px; margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <?php include_once './views/parts/sidebar.php'; ?>
+    <div class="overlay"></div>
+
+    <div class="main-content">
+        <div class="container-fluid">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold text-dark mb-1">Thêm Dịch Vụ</h3>
+                    <p class="text-muted mb-0">Khai báo dịch vụ mới từ nhà cung cấp.</p>
+                </div>
+                <a href="<?= BASEURL ?>?act=lay_dich_vu" class="btn btn-outline-secondary px-4">
+                    <i class="bi bi-arrow-left me-2"></i> Quay lại
+                </a>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card card-custom p-4">
+                        <form action="<?= BASEURL ?>?act=them_dich_vu" method="POST">
+                            
+                            <div class="row g-4">
+                                
+                                <div class="col-md-6">
+                                    <div class="section-title"><i class="bi bi-info-circle me-2"></i>Thông tin Dịch vụ</div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label required">Tên Dịch Vụ</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-tag"></i></span>
+                                            <input type="text" class="form-control" name="ten_dich_vu" required placeholder="Ví dụ: Xe 16 chỗ, Phòng Deluxe...">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label required">Mã Dịch Vụ</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+                                            <input type="text" class="form-control" name="ma" required placeholder="Mã quản lý (VD: HOTEL01)">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label required">Loại Dịch Vụ</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-collection"></i></span>
+                                            <input type="text" class="form-control" name="loai_dich_vu" required placeholder="VD: transport, hotel, food...">
+                                            </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label required">Nhà Cung Cấp</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-building"></i></span>
+                                            <select name="ncc_id" class="form-select" required>
+                                                <option value="" disabled selected>-- Chọn Nhà Cung Cấp --</option>
+                                                <?php foreach ($nccList as $ncc): ?>
+                                                    <option value="<?= $ncc['ncc_id'] ?>"><?= htmlspecialchars($ncc['ten']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="section-title"><i class="bi bi-cash-coin me-2"></i>Chi tiết & Giá cả</div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label required">Giá Mặc Định</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control fw-bold text-primary" name="gia_mac_dinh" required placeholder="0">
+                                                <span class="input-group-text fw-bold">VNĐ</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label required">Đơn Vị Tính</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-rulers"></i></span>
+                                                <input type="text" class="form-control" name="don_vi" required placeholder="Lần, Khách, Phòng...">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Mô Tả Chi Tiết</label>
+                                        <textarea class="form-control" name="mo_ta" rows="6" placeholder="Nhập thông tin chi tiết về dịch vụ..."></textarea>
+                                    </div>
+                                </div>
+                                
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="d-flex justify-content-end gap-3">
+                                <a href="<?= BASEURL ?>?act=lay_dich_vu" class="btn btn-light border px-4">Hủy bỏ</a>
+                                <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm">
+                                    <i class="bi bi-check-circle me-2"></i> Lưu Dịch Vụ
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="./assets/js/sidebar.js"></script>
+</body>
+</html>
