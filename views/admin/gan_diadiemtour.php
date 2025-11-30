@@ -1,6 +1,8 @@
 <?php
 // PHP BLOCK: KHỞI TẠO DỮ LIỆU
+
 $tour_id_safe = htmlspecialchars($_GET['tour_id'] ?? '');
+
 $assigned_ids = array_column($diaDiemDaGan ?? [], 'dia_diem_id'); 
 ?>
 

@@ -76,19 +76,46 @@ WHERE dich_vu_id = :id";
         ]);
     }
     public function softDeleteUser($id)
-{
-    $sql = "UPDATE nguoidung SET isdelete = 1 WHERE nguoi_dung_id = ?";
-    $stmt = $this->conn->prepare($sql);
-    return $stmt->execute([$id]);
-}
- public function deleteDatTour($dat_tour_id)
+
+    {
+        $sql = "UPDATE nguoidung SET isdelete = 1 WHERE nguoi_dung_id = ?";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([$id]);
+    }
+    public function deleteDatTour($dat_tour_id)
     {
         // Sửa câu lệnh từ DELETE sang UPDATE, thiết lập cột isdelete = 1
         $sql = "UPDATE `dattour` SET `isdelete` = 1 WHERE `dat_tour_id` = :dat_tour_id";
-        
+
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':dat_tour_id', $dat_tour_id, PDO::PARAM_INT);
-        
+
         return $stmt->execute();
     }
+    public function Scheduledelete($lich_id)
+    {
+        try {
+            // Bắt đầu transaction để đảm bảo an toàn dữ liệu
+            $this->conn->beginTransaction();
+
+            // BƯỚC 1: Cập nhật các đơn đặt tour đang gắn với lịch này thành NULL
+            // (Giữ lại đơn hàng để xem lịch sử, chỉ xóa liên kết lịch)
+            $sql_update = "UPDATE dattour SET lich_id = NULL WHERE lich_id = :id";
+            $stmt = $this->conn->prepare($sql_update);
+            $stmt->execute([':id' => $lich_id]);
+
+            // BƯỚC 2: Sau khi "dọn đường" xong, mới xóa lịch
+            $sql_delete = "DELETE FROM lichkhoihanh WHERE lich_id = :id";
+            $stmt_del = $this->conn->prepare($sql_delete);
+            $stmt_del->execute([':id' => $lich_id]);
+
+            // Hoàn tất
+            $this->conn->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->conn->rollBack(); // Nếu lỗi thì hoàn tác
+            return false;
+        }
+    }
+
 }

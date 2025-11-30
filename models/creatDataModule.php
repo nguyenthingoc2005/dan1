@@ -97,6 +97,7 @@ class creatDataModule
     // ================== HƯỚNG DẪN VIÊN (HDV) ==================
     public function addHDV($data)
     {
+
         // 1. Câu lệnh SQL khớp 100% với Database và biến truyền vào
         // Lưu ý: Đã loại bỏ ho_ten, email... và thêm các trường mới
         $sql = "INSERT INTO `huongdanvien` (
@@ -140,6 +141,7 @@ class creatDataModule
         $stmt->bindParam(':tinh_trang_hoat_dong', $data['tinh_trang_hoat_dong']);
 
         // Lưu ý: Không cần bind :ngay_tao vì đã dùng hàm NOW() trực tiếp trong SQL
+
 
         return $stmt->execute();
     }
@@ -186,9 +188,11 @@ class creatDataModule
 
             // --- Xử lý dữ liệu và Binding các tham số ---
 
+
             $khach_hang_id = (int) ($data['khach_hang_id'] ?? 0);
             $tour_id = (int) ($data['tour_id'] ?? 0);
             $so_nguoi = (int) ($data['so_nguoi'] ?? 0);
+
 
             $stmt->bindParam(':khach_hang_id', $khach_hang_id, PDO::PARAM_INT);
             $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
@@ -212,7 +216,9 @@ class creatDataModule
     }
 
     // ================== HÀNH KHÁCH (Đã hợp nhất) ==================
+
     public function createHanhKhach($data)
+
     {
         $sql = "INSERT INTO `hanhkhachlist` (
                     dat_tour_id, 
@@ -325,6 +331,7 @@ class creatDataModule
 
         return $stmt->execute();
     }
+
     // 1. Sửa hàm storeUser để trả về lastInsertId
     public function storeUser($data)
     {
@@ -334,10 +341,12 @@ class creatDataModule
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':email', $data['email']);
         $stmt->bindParam(':mat_khau', $data['mat_khau']); // Lưu ý: Nên mã hóa password bằng password_hash()
+
         $stmt->bindParam(':ho_ten', $data['ho_ten']);
         $stmt->bindParam(':so_dien_thoai', $data['so_dien_thoai']);
         $stmt->bindParam(':vai_tro_id', $data['vai_tro_id']);
         $stmt->bindParam(':trang_thai', $data['trang_thai']);
+
 
         if ($stmt->execute()) {
             return $this->conn->lastInsertId(); // TRẢ VỀ ID VỪA TẠO
@@ -357,5 +366,26 @@ class creatDataModule
         $stmt->bindParam(':dia_chi', $data['dia_chi']);
 
         return $stmt->execute();
+    }
+    public function createSchedule($data)
+    {
+        $sql = "INSERT INTO LichKhoiHanh 
+            (tour_id, trang_thai, ngay_bat_dau, ngay_ket_thuc, hieu_luc_tu, hieu_luc_den, ghi_chu) 
+            VALUES 
+            (:tour_id, :trang_thai, :ngay_bat_dau, :ngay_ket_thuc, :hieu_luc_tu, :hieu_luc_den, :ghi_chu)";
+
+        $stmt = $this->conn->prepare($sql);
+
+        $stmt->execute([
+            ':tour_id' => $data['tour_id'],
+            ':trang_thai' => $data['trang_thai'],
+            ':ngay_bat_dau' => $data['ngay_bat_dau'],
+            ':ngay_ket_thuc' => $data['ngay_ket_thuc'],
+            ':hieu_luc_tu' => $data['hieu_luc_tu'],
+            ':hieu_luc_den' => $data['hieu_luc_den'],
+            ':ghi_chu' => $data['ghi_chu']
+        ]);
+
+        return $this->conn->lastInsertId();
     }
 }

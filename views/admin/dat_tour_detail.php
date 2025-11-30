@@ -166,8 +166,10 @@ foreach ($dichVuTour as $dv) {
                                         <?php else: ?>
                                             <?= renderStatusBadge($trang_thai_lich) ?>
                                             <div class="ms-2">
-                                                <a href="<?= BASEURL ?>?act=edit_schedule&id=<?= $lich_id ?>" class="text-warning me-1" title="Sửa"><i class="bi bi-pencil-square"></i></a>
-                                                <a href="<?= BASEURL ?>?act=delete_schedule&id=<?= $lich_id ?>" class="text-danger" onclick="return confirm('Xóa lịch?')" title="Xóa"><i class="bi bi-trash"></i></a>
+
+                                                <a href="<?= BASEURL ?>?act=edit_schedule&lich_id=<?= $lich_id ?>" class="text-warning me-1" title="Sửa"><i class="bi bi-pencil-square"></i></a>
+                                                <a href="<?= BASEURL ?>?act=delete_schedule&lich_id=<?= $lich_id ?>" class="text-danger" onclick="return confirm('Xóa lịch?')" title="Xóa"><i class="bi bi-trash"></i></a>
+
                                             </div>
                                         <?php endif; ?>
                                     </div>

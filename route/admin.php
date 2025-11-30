@@ -53,6 +53,13 @@ match ($act) {
     'edithdv' => (new AdminController())->editHDV($_GET['id'] ?? null),
     'updatehdv' => (new AdminController())->updateHDV($_GET['id'] ?? null),
 
+    // ================== LỊCH KHỞI HÀNH ==================
+    'add_schedule' => (new AdminController())->formAddSchedule($_GET['tour_id'] ?? null),
+    'createschedule' => (new AdminController())->createSchedule($_GET['tour_id'] ?? null),
+    'edit_schedule' => (new AdminController())->editSchedule($_GET['lich_id'] ?? null),
+    'update_schedule' => (new AdminController())->updateSchedule($_GET['lich_id'] ?? null),
+    'delete_schedule' => (new AdminController())->deleteSchedule($_GET['lich_id'] ?? null),
+
     // ================== CHÍNH SÁCH TOUR ==================
     'chinhsach' => (new AdminController())->chinhsach($_GET['tour_id'] ?? null),
     'luu_chinh_sach_tour' => (new AdminController())->luuChinhSachTour($_GET['tour_id'] ?? null),
@@ -93,6 +100,7 @@ match ($act) {
     'user_update'   => (new AdminController())->updateUser(),
     'user_delete'   => (new AdminController())->deleteUser(),
 
+
     // --- Route cho HDV (Bổ sung) ---
     'hdv_detail_add'   => (new AdminController())->formAddHDVDetail(),
     'store_hdv_detail' => (new AdminController())->storeHDVDetail(),
@@ -102,6 +110,7 @@ match ($act) {
     'khachhang_detail_add'   => (new AdminController())->formAddKhachHangDetail(),
     'store_khachhang_detail' => (new AdminController())->storeKhachHangDetail(),
     'khach_hang_list'        => (new AdminController())->listKhachHang(), // Tạo view danh sách KH nếu chưa có
+
 
     default => (new AdminController())->index(),
 };

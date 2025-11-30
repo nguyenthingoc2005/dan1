@@ -845,6 +845,14 @@ public function luuChinhSachTour($tour_id)
 
         require_once 'views/admin/editdichvu.php';
     }
+
+    // public function showHK() {
+    //     $keyword = $_GET['keyword'] ?? "";
+    //     $list = $this->modelGet->search($keyword);
+
+    //     require_once "views/admin/hanhkhach_list.php";
+    // }
+
     public function logout()
     {
         unset($_SESSION['user']);
@@ -953,6 +961,7 @@ public function storeUser()
     }
 }
 public function editUser()
+
     {
         $id = $_GET['id'];
         $user = $this->modelGet->find($id);
@@ -978,6 +987,7 @@ public function editUser()
 
         header("Location: " . BASEURL . "?act=user_list");
     }
+
 
 // 2. Các hàm cho Hướng Dẫn Viên (HDV)
 public function formAddHDVDetail() {
@@ -1060,4 +1070,76 @@ public function listKhachHang() {
     
     
     
+
+      public function formAddSchedule($tour_id)
+    {
+        $tour = $this->modelGet->getTourById($tour_id);
+        require_once './views/admin/schedule_add.php';
+    }
+    public function createSchedule()
+    {
+        $tour_id = $_POST['tour_id'];
+
+        $data = [
+            'tour_id'       => $tour_id,
+            'trang_thai'    => $_POST['trang_thai'],
+            'ngay_bat_dau'  => $_POST['ngay_bat_dau'],
+            'ngay_ket_thuc' => $_POST['ngay_ket_thuc'],
+            'hieu_luc_tu'   => $_POST['hieu_luc_tu'],
+            'hieu_luc_den'  => $_POST['hieu_luc_den'],
+            'ngay_tao'     => date('Y-m-d H:i:s'),
+            'ghi_chu'       => $_POST['ghi_chu'],
+        ];
+
+        // 🔥 1. Tạo lịch mới và lấy ID lịch vừa tạo
+        $lich_id = $this->modelCreate->createSchedule($data);
+
+        // 🔥 2. Cập nhật sang dattour
+        $sql = "UPDATE dattour SET lich_id = :lich_id WHERE tour_id = :tour_id";
+        $stmt = $this->modelCreate->conn->prepare($sql);
+        $stmt->execute([
+            ':lich_id' => $lich_id,
+            ':tour_id' => $tour_id
+        ]);
+
+        // Chuyển trang
+        header("Location: " . BASE_URL . "?act=dattourlist");
+    }
+    
+    
+    public function editSchedule($lich_id)
+    {
+        
+        $lich= $this->modelGet->getLichKhoiHanhById($lich_id);
+        require_once './views/admin/schedule_edit.php';
+        var_dump($lich);
+        var_dump($lich_id);
+    }
+    public function updateSchedule($lich_id)
+    {
+        $tour_id = $_POST['tour_id'];
+
+        $data = [
+            'trang_thai'    => $_POST['trang_thai'],
+            'ngay_bat_dau'  => $_POST['ngay_bat_dau'],
+            'ngay_ket_thuc' => $_POST['ngay_ket_thuc'],
+            'hieu_luc_tu'   => $_POST['hieu_luc_tu'],
+            'hieu_luc_den'  => $_POST['hieu_luc_den'],
+            'ghi_chu'       => $_POST['ghi_chu'],
+        ];
+
+        $this->modelUpdate->updateSchedule($lich_id, $data);
+
+        // Chuyển trang
+        header("Location: " . BASE_URL . "?act=dattourlist");
+    }
+    public function deleteSchedule($lich_id)
+    {
+        if ($lich_id !== null) {
+            $this->modelDelete->Scheduledelete($lich_id);
+        }
+        header("Location: " . BASEURL . "?act=dattourlist");
+    }
+
+
 }
