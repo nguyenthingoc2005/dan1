@@ -733,7 +733,7 @@ public function luuChinhSachTour($tour_id)
         // Xử lý chuyển hướng dựa trên nút bấm
         if ($next_step === 'deposit') {
             // Chuyển sang trang tạo đặt cọc
-            header('Location: ' . BASEURL . '?act=dat_coc_create&dat_tour_id=' . $dat_tour_id);
+            header('Location: ' . BASEURL . '?act=dat_tour_detail&dat_tour_id=' . $dat_tour_id);
         } else {
             // Quay về trang chi tiết hoặc danh sách
             header('Location: ' . BASEURL . '?act=dat_tour_detail&dat_tour_id=' . $dat_tour_id);
