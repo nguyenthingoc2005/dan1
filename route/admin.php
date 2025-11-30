@@ -93,5 +93,15 @@ match ($act) {
     'user_update'   => (new AdminController())->updateUser(),
     'user_delete'   => (new AdminController())->deleteUser(),
 
+    // --- Route cho HDV (Bổ sung) ---
+    'hdv_detail_add'   => (new AdminController())->formAddHDVDetail(),
+    'store_hdv_detail' => (new AdminController())->storeHDVDetail(),
+    // 'hdv' -> Đã có sẵn, hiển thị danh sách HDV
+
+    // --- Route cho KHÁCH HÀNG (Bổ sung) ---
+    'khachhang_detail_add'   => (new AdminController())->formAddKhachHangDetail(),
+    'store_khachhang_detail' => (new AdminController())->storeKhachHangDetail(),
+    'khach_hang_list'        => (new AdminController())->listKhachHang(), // Tạo view danh sách KH nếu chưa có
+
     default => (new AdminController())->index(),
 };

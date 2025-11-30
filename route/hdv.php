@@ -1,8 +1,6 @@
 <?php
 
 $act = $_GET['act'] ?? '/';
-
-
 if (!isset($_SESSION['user']) && !in_array($act, ['login', 'login_process'])) {
     header("Location:" . BASEURL . "?act=login");
     exit;

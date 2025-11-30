@@ -94,6 +94,7 @@
                                     </div>
 
                                     <div class="mb-3">
+
                                         <label class="form-label">Mô tả ngắn</label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-card-text"></i></span>

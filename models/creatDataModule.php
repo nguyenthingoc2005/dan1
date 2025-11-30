@@ -97,15 +97,50 @@ class creatDataModule
     // ================== HƯỚNG DẪN VIÊN (HDV) ==================
     public function addHDV($data)
     {
-        $sql = "INSERT INTO `huongdanvien`(`nguoi_dung_id`, `ho_ten`, `so_dien_thoai`, `email`, `kinh_nghiem`, `ngon_ngu`, `ngay_tao`) 
-                    VALUES (:nguoi_dung_id, :ho_ten, :so_dien_thoai, :email, :kinh_nghiem, :ngon_ngu, NOW())";
+        // 1. Câu lệnh SQL khớp 100% với Database và biến truyền vào
+        // Lưu ý: Đã loại bỏ ho_ten, email... và thêm các trường mới
+        $sql = "INSERT INTO `huongdanvien` (
+                `nguoi_dung_id`, 
+                `ngay_sinh`, 
+                `gioi_tinh`, 
+                `dia_chi_lien_he`, 
+                `anh_dai_dien`, 
+                `chung_chi_chuyen_mon`, 
+                `ngon_ngu_su_dung`, 
+                `kinh_nghiem_lam_viec`, 
+                `tinh_trang_suc_khoe`, 
+                `tinh_trang_hoat_dong`, 
+                `ngay_tao`
+            ) VALUES (
+                :nguoi_dung_id, 
+                :ngay_sinh, 
+                :gioi_tinh, 
+                :dia_chi_lien_he, 
+                :anh_dai_dien, 
+                :chung_chi_chuyen_mon, 
+                :ngon_ngu_su_dung, 
+                :kinh_nghiem_lam_viec, 
+                :tinh_trang_suc_khoe, 
+                :tinh_trang_hoat_dong, 
+                NOW()
+            )";
+
         $stmt = $this->conn->prepare($sql);
+
+        // 2. Bind dữ liệu (Phải khớp chính xác với các dấu : ở trên)
         $stmt->bindParam(':nguoi_dung_id', $data['nguoi_dung_id']);
-        $stmt->bindParam(':ho_ten', $data['ho_ten']);
-        $stmt->bindParam(':so_dien_thoai', $data['so_dien_thoai']);
-        $stmt->bindParam(':email', $data['email']);
-        $stmt->bindParam(':kinh_nghiem', $data['kinh_nghiem']);
-        $stmt->bindParam(':ngon_ngu', $data['ngon_ngu']);
+        $stmt->bindParam(':ngay_sinh', $data['ngay_sinh']);
+        $stmt->bindParam(':gioi_tinh', $data['gioi_tinh']);
+        $stmt->bindParam(':dia_chi_lien_he', $data['dia_chi_lien_he']);
+        $stmt->bindParam(':anh_dai_dien', $data['anh_dai_dien']);
+        $stmt->bindParam(':chung_chi_chuyen_mon', $data['chung_chi_chuyen_mon']);
+        $stmt->bindParam(':ngon_ngu_su_dung', $data['ngon_ngu_su_dung']);
+        $stmt->bindParam(':kinh_nghiem_lam_viec', $data['kinh_nghiem_lam_viec']);
+        $stmt->bindParam(':tinh_trang_suc_khoe', $data['tinh_trang_suc_khoe']);
+        $stmt->bindParam(':tinh_trang_hoat_dong', $data['tinh_trang_hoat_dong']);
+
+        // Lưu ý: Không cần bind :ngay_tao vì đã dùng hàm NOW() trực tiếp trong SQL
+
         return $stmt->execute();
     }
 
@@ -151,9 +186,9 @@ class creatDataModule
 
             // --- Xử lý dữ liệu và Binding các tham số ---
 
-            $khach_hang_id = (int)($data['khach_hang_id'] ?? 0);
-            $tour_id = (int)($data['tour_id'] ?? 0);
-            $so_nguoi = (int)($data['so_nguoi'] ?? 0);
+            $khach_hang_id = (int) ($data['khach_hang_id'] ?? 0);
+            $tour_id = (int) ($data['tour_id'] ?? 0);
+            $so_nguoi = (int) ($data['so_nguoi'] ?? 0);
 
             $stmt->bindParam(':khach_hang_id', $khach_hang_id, PDO::PARAM_INT);
             $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
@@ -177,7 +212,7 @@ class creatDataModule
     }
 
     // ================== HÀNH KHÁCH (Đã hợp nhất) ==================
-   public function createHanhKhach($data)
+    public function createHanhKhach($data)
     {
         $sql = "INSERT INTO `hanhkhachlist` (
                     dat_tour_id, 
@@ -198,7 +233,7 @@ class creatDataModule
                 )";
 
         $stmt = $this->conn->prepare($sql);
-        
+
         $stmt->bindParam(':dat_tour_id', $data['dat_tour_id'], PDO::PARAM_INT);
         $stmt->bindParam(':ho_ten', $data['ho_ten']);
         $stmt->bindParam(':gioi_tinh', $data['gioi_tinh']);
@@ -290,18 +325,37 @@ class creatDataModule
 
         return $stmt->execute();
     }
+    // 1. Sửa hàm storeUser để trả về lastInsertId
     public function storeUser($data)
     {
         $sql = "INSERT INTO nguoidung (email, mat_khau, ho_ten, so_dien_thoai, vai_tro_id, trang_thai, ngay_tao)
-                VALUES (:email, :mat_khau, :ho_ten, :so_dien_thoai, :vai_tro_id, :trang_thai, NOW())";
+            VALUES (:email, :mat_khau, :ho_ten, :so_dien_thoai, :vai_tro_id, :trang_thai, NOW())";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':email', $data['email']);
-        $stmt->bindParam(':mat_khau', $data['mat_khau']);
+        $stmt->bindParam(':mat_khau', $data['mat_khau']); // Lưu ý: Nên mã hóa password bằng password_hash()
         $stmt->bindParam(':ho_ten', $data['ho_ten']);
         $stmt->bindParam(':so_dien_thoai', $data['so_dien_thoai']);
         $stmt->bindParam(':vai_tro_id', $data['vai_tro_id']);
         $stmt->bindParam(':trang_thai', $data['trang_thai']);
+
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId(); // TRẢ VỀ ID VỪA TẠO
+        }
+        return false;
+    }
+
+    // 2. Thêm hàm createKhachHang (Hàm addHDV đã có sẵn trong file của bạn rồi)
+    public function createKhachHang($data)
+    {
+        $sql = "INSERT INTO KhachHang (nguoi_dung_id, cccd, dia_chi, ngay_tao) 
+            VALUES (:nguoi_dung_id, :cccd, :dia_chi, NOW())";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':nguoi_dung_id', $data['nguoi_dung_id']);
+        $stmt->bindParam(':cccd', $data['cccd']);
+        $stmt->bindParam(':dia_chi', $data['dia_chi']);
+
         return $stmt->execute();
     }
 }

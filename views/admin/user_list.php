@@ -133,7 +133,7 @@ if (!empty($users)) {
             
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
                 <div>
-                    <h3 class="fw-bold text-dark mb-1">Quản Lý Người Dùng</h3>
+                    <h3 class="fw-bold text-dark mb-1">Quản Lý Tài Khoản</h3>
                     <p class="text-muted mb-0">Danh sách tài khoản quản trị viên, nhân viên và khách hàng.</p>
                 </div>
                 <a href="index.php?act=user_create" class="btn btn-primary d-flex align-items-center px-4 shadow-sm">
