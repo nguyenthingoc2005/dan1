@@ -571,6 +571,13 @@ public function luuChinhSachTour($tour_id)
             exit();
         }
     }
+    public function dat_tour_delete($dat_tour_id)
+    {
+        if ($dat_tour_id !== null) {
+            $this->modelDelete->deleteDatTour($dat_tour_id);
+        }
+        header('Location: ' . BASEURL . '?act=dattourlist');
+    }
 
     public function hanh_khach_add($dat_tour_id)
     {
@@ -578,27 +585,38 @@ public function luuChinhSachTour($tour_id)
         require_once './views/admin/hanh_khach_add.php';
     }
 
-    public function hanh_khach_save($id)
+  public function hanh_khach_save($dat_tour_id)
     {
-        $khach_hang_data = $_POST['hanh_khach'] ?? [];
-        foreach ($khach_hang_data as $khach_hang) {
+        // Lấy ID từ POST nếu có, nếu không dùng tham số truyền vào
+        $dat_tour_id = $_POST['dat_tour_id'] ?? $dat_tour_id;
+        $hanh_khach_data = $_POST['hanh_khach'] ?? [];
+
+        foreach ($hanh_khach_data as $hk) {
+            // Chuẩn bị mảng dữ liệu khớp với tên cột trong Database
             $data = [
-                'dat_tour_id' => $id,
-                'ho_ten' => $khach_hang['ho_ten'] ?? '',
-                'ngay_sinh' => $khach_hang['ngay_sinh'] ?? '',
-                'gioi_tinh' => $khach_hang['gioi_tinh'] ?? '',
-                // Dòng này được hợp nhất từ 2 nhánh (sử dụng cccd và sdt như nhánh HEAD, nhưng giữ tên trường mới nhất là so_cmnd và so_dien_thoai để tránh mất mát dữ liệu nhập nếu form dùng tên đó)
-                'cccd' => $khach_hang['cccd'] ?? $khach_hang['so_cmnd'] ?? '',
-                'sdt' => $khach_hang['sdt'] ?? $khach_hang['so_dien_thoai'] ?? '',
-                'email' => $khach_hang['email'] ?? '',
-                'ghi_chu' => $khach_hang['ghi_chu'] ?? null,
-                'quoc_tich' => $khach_hang['quoc_tich'] ?? '',
+                'dat_tour_id'      => $dat_tour_id,
+                'ho_ten'           => $hk['ho_ten'] ?? '',
+                'gioi_tinh'        => $hk['gioi_tinh'] ?? null,
+                'ngay_sinh'        => $hk['ngay_sinh'] ?? null,
+                
+                // Map: Input form -> Tên cột DB
+                // Ưu tiên lấy 'so_giay_to', nếu không có thì lấy 'cccd' (phòng trường hợp form cũ)
+                'so_giay_to'       => $hk['so_giay_to'] ?? ($hk['cccd'] ?? null),
+                
+                // Ưu tiên lấy 'lien_he', nếu không có thì lấy 'sdt'
+                'lien_he'          => $hk['lien_he'] ?? ($hk['sdt'] ?? null),
+                
+                // Ưu tiên lấy 'yeu_cau_ca_nhan', nếu không có thì lấy 'ghi_chu'
+                'yeu_cau_ca_nhan'  => $hk['yeu_cau_ca_nhan'] ?? ($hk['ghi_chu'] ?? null),
             ];
-            // Loại bỏ các key không dùng trong Model (ví dụ: 'so_cmnd', 'so_dien_thoai') nếu Model chỉ nhận 'cccd', 'sdt'
-            // Chèn vào DB
+
+            // Gọi Model để insert
             $this->modelCreate->createHanhKhach($data);
         }
-        header('Location: ' . BASEURL . '?act=dat_coc&dat_tour_id=' . $id);
+
+        // Sau khi lưu xong, chuyển hướng sang trang Tạo Đặt Cọc
+        header('Location: ' . BASEURL . '?act=dat_coc&dat_tour_id=' . $dat_tour_id);
+        exit();
     }
 
     public function dat_coc($dat_tour_id)
@@ -659,25 +677,33 @@ public function luuChinhSachTour($tour_id)
         require_once './views/admin/hanh_khach_edit.php';
     }
 
-    public function hanh_khach_update($dat_tour_id)
+  public function hanh_khach_update($dat_tour_id)
     {
         $hanh_khach_data = $_POST['hanh_khach'] ?? [];
         $dat_tour_id = $_POST['dat_tour_id'] ?? $dat_tour_id;
+        
+        // Nhận biết bước tiếp theo (nếu có)
+        $next_step = $_POST['next_step'] ?? '';
 
         $success_count = 0;
 
         foreach ($hanh_khach_data as $hanh_khach_input) {
+            // Chuẩn bị dữ liệu map với bảng `hanhkhachlist` trong DB
             $data = [
-                'dat_tour_id' => $dat_tour_id,
-                'ho_ten'      => $hanh_khach_input['ho_ten'] ?? '',
-                'ngay_sinh'   => $hanh_khach_input['ngay_sinh'] ?? null,
-                'cccd'        => $hanh_khach_input['cccd'] ?? null,
-                'sdt'         => $hanh_khach_input['sdt'] ?? null,
-                'ghi_chu'     => $hanh_khach_input['ghi_chu'] ?? null,
-                // Bổ sung các trường thiếu nếu có (email, gioi_tinh, quoc_tich) để tránh lỗi DB
-                'gioi_tinh'   => $hanh_khach_input['gioi_tinh'] ?? '',
-                'email'       => $hanh_khach_input['email'] ?? null,
-                'quoc_tich'   => $hanh_khach_input['quoc_tich'] ?? '',
+                'dat_tour_id'      => $dat_tour_id,
+                'ho_ten'           => $hanh_khach_input['ho_ten'] ?? '',
+                'gioi_tinh'        => $hanh_khach_input['gioi_tinh'] ?? null, // Mới thêm
+                'ngay_sinh'        => $hanh_khach_input['ngay_sinh'] ?? null,
+                
+                // Map các trường input sang tên cột trong DB
+                // Form gửi 'so_giay_to' hoặc 'cccd' -> Lưu vào 'so_giay_to'
+                'so_giay_to'       => $hanh_khach_input['so_giay_to'] ?? ($hanh_khach_input['cccd'] ?? null),
+                
+                // Form gửi 'lien_he' hoặc 'sdt' -> Lưu vào 'lien_he'
+                'lien_he'          => $hanh_khach_input['lien_he'] ?? ($hanh_khach_input['sdt'] ?? null),
+                
+                // Form gửi 'yeu_cau_ca_nhan' hoặc 'ghi_chu' -> Lưu vào 'yeu_cau_ca_nhan'
+                'yeu_cau_ca_nhan'  => $hanh_khach_input['yeu_cau_ca_nhan'] ?? ($hanh_khach_input['ghi_chu'] ?? null),
             ];
 
             $hanh_khach_id = (int)($hanh_khach_input['hanh_khach_id'] ?? 0);
@@ -698,12 +724,19 @@ public function luuChinhSachTour($tour_id)
         }
 
         if ($success_count > 0) {
-            $_SESSION['success'] = "Đã cập nhật/thêm $success_count hành khách thành công!";
+            $_SESSION['success'] = "Đã cập nhật $success_count hành khách thành công!";
         } else {
             $_SESSION['error'] = "Không có hành khách nào được cập nhật.";
         }
 
-        header('Location: ' . BASEURL . '?act=dat_tour_detail&dat_tour_id=' . $dat_tour_id); // Chuyển hướng về danh sách hoặc chi tiết tour
+        // Xử lý chuyển hướng dựa trên nút bấm
+        if ($next_step === 'deposit') {
+            // Chuyển sang trang tạo đặt cọc
+            header('Location: ' . BASEURL . '?act=dat_coc_create&dat_tour_id=' . $dat_tour_id);
+        } else {
+            // Quay về trang chi tiết hoặc danh sách
+            header('Location: ' . BASEURL . '?act=dat_tour_detail&dat_tour_id=' . $dat_tour_id);
+        }
         exit();
     }
     public function dat_tour_detail($dat_tour_id)

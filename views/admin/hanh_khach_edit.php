@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Cập Nhật Danh Sách Hành Khách</title>
+    <title>Cập Nhật Hành Khách</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -16,7 +16,7 @@
         body { background-color: #f5f7fb; font-family: 'Segoe UI', sans-serif; }
         .main-content { padding: 30px; margin-top: 70px; margin-left: 0; min-height: 100vh; }
         
-        /* CARD STYLE */
+        /* CARD & FORM STYLE */
         .card-custom {
             border: none;
             border-radius: 12px;
@@ -43,7 +43,8 @@
             color: #0d6efd;
             box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
         }
-        /* Số thứ tự tròn */
+        
+        /* STT Badge */
         .stt-badge {
             width: 28px; height: 28px;
             background-color: #e9ecef; color: #495057;
@@ -57,12 +58,18 @@
 
         /* FORM ELEMENTS */
         .form-label { font-weight: 600; font-size: 0.9rem; color: #6c757d; margin-bottom: 5px; }
-        .form-control { border-radius: 8px; padding: 10px 15px; border: 1px solid #dee2e6; transition: all 0.2s; }
-        .form-control:focus { border-color: #0d6efd; box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15); }
+        .required::after { content: " *"; color: #dc3545; }
+        
+        .form-control, .form-select { 
+            border-radius: 8px; padding: 10px 15px; border: 1px solid #dee2e6; transition: all 0.2s; 
+        }
+        .form-control:focus, .form-select:focus { 
+            border-color: #0d6efd; box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15); 
+        }
         
         .input-group-text { background-color: #f8f9fa; border: 1px solid #dee2e6; border-right: none; border-radius: 8px 0 0 8px; color: #6c757d; }
         .input-icon-control { border-left: none; border-radius: 0 8px 8px 0; }
-        .input-icon-control:focus { border-color: #dee2e6; border-left-color: #dee2e6; } /* Fix border focus */
+        .input-icon-control:focus { border-color: #dee2e6; border-left-color: #dee2e6; }
     </style>
 </head>
 <body>
@@ -96,17 +103,15 @@
                             
                             <input type="hidden" name="dat_tour_id" value="<?= htmlspecialchars($data['dat_tour_id']) ?>">
                             
-                            <input type="hidden" name="redirect_to" value="self"> 
+                            <input type="hidden" name="next_step" value="deposit"> 
 
                             <div class="accordion" id="accordionPassengers">
                                 <?php 
                                 $so_luong_nguoi = (int)($data['so_nguoi'] ?? 0);
                                 
-                                // VÒNG LẶP: Tạo form cho TẤT CẢ hành khách
                                 for ($i = 0; $i < $so_luong_nguoi; $i++): 
                                     $hk = $hanhKhachList[$i] ?? []; 
                                     $stt = $i + 1;
-                                    // Mở người đầu tiên mặc định cho dễ nhập
                                     $is_expanded = ($i === 0) ? 'true' : 'false'; 
                                     $show_class = ($i === 0) ? 'show' : '';
                                 ?>
@@ -118,8 +123,10 @@
                                                 <?= !empty($hk['ho_ten']) ? htmlspecialchars($hk['ho_ten']) : 'Hành khách #' . $stt ?>
                                             </span>
                                             
-                                            <?php if(!empty($hk['cccd'])): ?>
-                                                <span class="badge bg-light text-secondary ms-3 fw-normal border">CCCD: <?= htmlspecialchars($hk['cccd']) ?></span>
+                                            <?php if(!empty($hk['so_giay_to'])): ?>
+                                                <span class="badge bg-light text-secondary ms-3 fw-normal border">
+                                                    <i class="bi bi-card-heading"></i> <?= htmlspecialchars($hk['so_giay_to']) ?>
+                                                </span>
                                             <?php endif; ?>
                                         </button>
                                     </h2>
@@ -129,8 +136,9 @@
                                             <input type="hidden" name="hanh_khach[<?= $i ?>][hanh_khach_id]" value="<?= htmlspecialchars($hk['hanh_khach_id'] ?? 0) ?>">
 
                                             <div class="row g-3">
+                                                
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Họ và Tên <span class="text-danger">*</span></label>
+                                                    <label class="form-label required">Họ và Tên</label>
                                                     <div class="input-group">
                                                         <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
                                                         <input type="text" class="form-control input-icon-control name-input" 
@@ -142,12 +150,26 @@
                                                 </div>
 
                                                 <div class="col-md-6">
-                                                    <label class="form-label">CCCD / Hộ Chiếu</label>
+                                                    <label class="form-label">Giới Tính</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="bi bi-gender-ambiguous"></i></span>
+                                                        <?php $gender = $hk['gioi_tinh'] ?? ''; ?>
+                                                        <select class="form-select input-icon-control" name="hanh_khach[<?= $i ?>][gioi_tinh]">
+                                                            <option value="" <?= empty($gender) ? 'selected' : '' ?>>-- Chọn --</option>
+                                                            <option value="Nam" <?= $gender == 'Nam' ? 'selected' : '' ?>>Nam</option>
+                                                            <option value="Nữ" <?= $gender == 'Nữ' ? 'selected' : '' ?>>Nữ</option>
+                                                            <option value="Khác" <?= $gender == 'Khác' ? 'selected' : '' ?>>Khác</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Số Giấy Tờ (CCCD/Passport)</label>
                                                     <div class="input-group">
                                                         <span class="input-group-text"><i class="bi bi-card-heading"></i></span>
                                                         <input type="text" class="form-control input-icon-control" 
-                                                               name="hanh_khach[<?= $i ?>][cccd]" 
-                                                               value="<?= htmlspecialchars($hk['cccd'] ?? '') ?>" 
+                                                               name="hanh_khach[<?= $i ?>][so_giay_to]" 
+                                                               value="<?= htmlspecialchars($hk['so_giay_to'] ?? '') ?>" 
                                                                placeholder="Số giấy tờ tùy thân">
                                                     </div>
                                                 </div>
@@ -163,28 +185,27 @@
                                                 </div>
 
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Số Điện Thoại</label>
+                                                    <label class="form-label">Liên Hệ (SĐT)</label>
                                                     <div class="input-group">
                                                         <span class="input-group-text"><i class="bi bi-telephone-fill"></i></span>
                                                         <input type="text" class="form-control input-icon-control" 
-                                                               name="hanh_khach[<?= $i ?>][sdt]" 
-                                                               value="<?= htmlspecialchars($hk['sdt'] ?? '') ?>" 
-                                                               placeholder="Nhập SĐT liên hệ">
+                                                               name="hanh_khach[<?= $i ?>][lien_he]" 
+                                                               value="<?= htmlspecialchars($hk['lien_he'] ?? '') ?>" 
+                                                               placeholder="Nhập số điện thoại liên lạc">
                                                     </div>
                                                 </div>
 
                                                 <div class="col-12">
-                                                    <label class="form-label">Ghi Chú (Ăn kiêng, dị ứng...)</label>
+                                                    <label class="form-label">Yêu Cầu Cá Nhân / Ghi Chú</label>
                                                     <div class="input-group">
-                                                        <span class="input-group-text"><i class="bi bi-pencil-square"></i></span>
-                                                        <input type="text" class="form-control input-icon-control" 
-                                                               name="hanh_khach[<?= $i ?>][ghi_chu]" 
-                                                               value="<?= htmlspecialchars($hk['ghi_chu'] ?? '') ?>" 
-                                                               placeholder="Ghi chú đặc biệt cho hành khách này">
+                                                        <span class="input-group-text"><i class="bi bi-chat-left-text"></i></span>
+                                                        <textarea class="form-control input-icon-control" rows="2"
+                                                                  name="hanh_khach[<?= $i ?>][yeu_cau_ca_nhan]" 
+                                                                  placeholder="Ví dụ: Ăn chay, dị ứng, cần hỗ trợ xe lăn..."><?= htmlspecialchars($hk['yeu_cau_ca_nhan'] ?? '') ?></textarea>
                                                     </div>
                                                 </div>
-                                            </div>
 
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -195,15 +216,16 @@
 
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="text-muted fst-italic small">
-                                    * Nhấn lưu để cập nhật thông tin cho <strong>TẤT CẢ</strong> hành khách.
+                                    * Nhấn "Hoàn thành" để lưu tất cả và chuyển sang bước thanh toán.
                                 </div>
                                 <div class="d-flex gap-2">
-                                    <a href="<?= BASEURL ?>?act=dat_tour_edit&dat_tour_id=<?= htmlspecialchars($data['dat_tour_id']) ?>" class="btn btn-light border px-4">
-                                        Hủy bỏ
+                                    <a href="<?= BASEURL ?>?act=dat_tour_detail&dat_tour_id=<?= htmlspecialchars($data['dat_tour_id']) ?>" 
+                                       class="btn btn-light border px-4">
+                                        <i class="bi bi-x-circle me-2"></i> Bỏ qua
                                     </a>
                                     
                                     <button type="submit" class="btn btn-success px-4 fw-bold shadow-sm">
-                                        <i class="bi bi-save me-2"></i> Hoàn thành
+                                        <i class="bi bi-check-circle-fill me-2"></i> Hoàn thành & Đặt cọc
                                     </button>
                                 </div>
                             </div>
@@ -220,13 +242,13 @@
     <script src="./assets/js/sidebar.js"></script>
     
     <script>
+        // Tự động cập nhật tên trên header accordion khi người dùng nhập
         document.addEventListener('DOMContentLoaded', function() {
             const nameInputs = document.querySelectorAll('.name-input');
             nameInputs.forEach(input => {
                 input.addEventListener('input', function() {
                     const index = this.getAttribute('data-index');
                     const displaySpan = document.querySelector('.name-display-' + index);
-                    // Update text, nếu rỗng thì hiện placeholder
                     if (displaySpan) {
                         displaySpan.textContent = this.value.trim() || ('Hành khách #' + (parseInt(index) + 1));
                     }

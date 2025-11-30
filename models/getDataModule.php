@@ -600,7 +600,7 @@ WHERE
         }
 
         return $bookingDetail;
-    }
+    } ///////
 
  
     public function getAll()
@@ -751,10 +751,15 @@ public function getDatTourDetail($dat_tour_id)
             dt.trang_thai AS trang_thai_dat_tour, 
             dt.so_nguoi AS so_luong_khach,
             dt.ghi_chu AS ghi_chu_booking,
-            (t.gia_co_ban * dt.so_nguoi) AS tong_tien_uoc_tinh,
+            dt.loai AS loai_tour,
+            dt.nguon,
+            
+            -- Tính tổng tiền ước tính (Giá cơ bản * Số người)
+            -- (Lưu ý: Giá dịch vụ sẽ được cộng thêm trong vòng lặp PHP)
+            (t.gia_co_ban * dt.so_nguoi) AS tong_tien_co_ban,
 
             -- 2. Thông tin Lịch & Tour
-            lkh.lich_id, -- Lấy thêm ID để dùng cho link thêm HDV
+            lkh.lich_id, 
             lkh.ngay_bat_dau, 
             lkh.ngay_ket_thuc, 
             lkh.trang_thai AS trang_thai_lich,
@@ -763,41 +768,44 @@ public function getDatTourDetail($dat_tour_id)
             t.gia_co_ban, 
             t.thoi_luong_mac_dinh,
             
-            -- 3. Thông tin Hướng Dẫn Viên
+            -- 3. Thông tin Hướng Dẫn Viên (Lấy từ bảng NGUOIDUNG)
             hdv.hdv_id, 
-            hdv.ho_ten AS ten_hdv, 
-            hdv.email AS email_hdv, 
-            hdv.so_dien_thoai AS sdt_hdv,
+            nd_hdv.ho_ten AS ten_hdv,        -- Bảng nguoidung
+            nd_hdv.email AS email_hdv,       -- Bảng nguoidung
+            nd_hdv.so_dien_thoai AS sdt_hdv, -- Bảng nguoidung
             
-            -- 4. Thông tin Hành Khách & YÊU CẦU PHỤC VỤ (Mới cập nhật)
+            -- 4. Thông tin Hành Khách (Bảng hanhkhachlist)
             hk.hanh_khach_id, 
             hk.ho_ten AS ten_hanh_khach, 
-            hk.sdt AS sdt_hanh_khach, 
-            hk.cccd AS cccd_hanh_khach,
+            hk.lien_he AS sdt_hanh_khach,      -- Cột 'lien_he'
+            hk.so_giay_to AS cccd_hanh_khach,  -- Cột 'so_giay_to'
+            hk.gioi_tinh,                      -- Cột 'gioi_tinh'
             hk.ngay_sinh,
-            ycpv.noi_dung AS yeu_cau_rieng, -- Trường mới lấy từ bảng yeucauphucvu
-            ycpv.yeu_cau_id, -- ID để sửa yêu cầu
+            hk.yeu_cau_ca_nhan AS yeu_cau_rieng, -- Cột 'yeu_cau_ca_nhan'
             
-            -- 5. Dịch Vụ Tour
+            -- 5. Dịch Vụ Tour (Lấy giá từ dichvuncc vì dv_tour không có giá)
             dv.dich_vu_id, 
             dv.ten_dich_vu, 
+            dv.gia_mac_dinh AS gia_dv_tour, -- Lấy giá mặc định
             dvt.ghi_chu AS dv_ghi_chu,
-            dv.gia_mac_dinh AS gia_dv_tour,
             
-            -- 6. Đặt Cọc
-            (SELECT SUM(dc.so_tien) FROM datcoc dc WHERE dc.dat_tour_id = dt.dat_tour_id AND dc.trang_thai = 'confirmed') AS tong_tien_da_dat_coc
+            -- 6. Đặt Cọc & Thanh Toán (Tổng hợp từ cả 2 bảng datcoc và thanhtoan)
+            (
+                IFNULL((SELECT SUM(dc.so_tien) FROM datcoc dc WHERE dc.dat_tour_id = dt.dat_tour_id AND dc.trang_thai = 'confirmed'), 0) +
+                IFNULL((SELECT SUM(tt.so_tien) FROM thanhtoan tt WHERE tt.dat_tour_id = dt.dat_tour_id AND tt.trang_thai = 'success'), 0)
+            ) AS tong_tien_da_thanh_toan
             
         FROM dattour dt
         LEFT JOIN lichkhoihanh lkh ON dt.lich_id = lkh.lich_id
         LEFT JOIN tour t ON dt.tour_id = t.tour_id
+        
+        -- Join HDV -> Người dùng
         LEFT JOIN phanconghdv pc ON lkh.lich_id = pc.lich_id
         LEFT JOIN huongdanvien hdv ON pc.hdv_id = hdv.hdv_id
+        LEFT JOIN nguoidung nd_hdv ON hdv.nguoi_dung_id = nd_hdv.nguoi_dung_id 
         
         -- Join Hành khách
         LEFT JOIN hanhkhachlist hk ON dt.dat_tour_id = hk.dat_tour_id
-        
-        -- Join Yêu Cầu Phục Vụ (MỚI: dựa trên hanh_khach_id)
-        LEFT JOIN yeucauphucvu ycpv ON hk.hanh_khach_id = ycpv.hanh_khach_id
         
         -- Join Dịch vụ
         LEFT JOIN dv_tour dvt ON t.tour_id = dvt.tour_id
@@ -821,7 +829,7 @@ public function getDatTourDetail($dat_tour_id)
         $tong_gia_dich_vu_phu_tro = 0;
 
         foreach ($rawData as $row) {
-            // 1. Thông tin chung
+            // 1. Thông tin chung (Chỉ lấy 1 lần)
             if (empty($datTourDetail)) {
                 $datTourDetail = [
                     'dat_tour_id' => $row['dat_tour_id'],
@@ -829,8 +837,11 @@ public function getDatTourDetail($dat_tour_id)
                     'so_khach' => $row['so_luong_khach'],
                     'trang_thai' => $row['trang_thai_dat_tour'],
                     'ghi_chu' => $row['ghi_chu_booking'],
-                    'da_dat_coc' => $row['tong_tien_da_dat_coc'] ?? 0,
-                    'tong_tien_uoc_tinh' => 0, 
+                    'loai_tour' => $row['loai_tour'],
+                    'nguon' => $row['nguon'],
+                    'da_thanh_toan' => $row['tong_tien_da_thanh_toan'] ?? 0,
+                    'tong_tien_co_ban' => $row['tong_tien_co_ban'] ?? 0,
+                    
                     'tour_info' => [
                         'tour_id' => $row['tour_id'],
                         'ten_tour' => $row['ten_tour'],
@@ -838,7 +849,7 @@ public function getDatTourDetail($dat_tour_id)
                         'thoi_gian' => $row['thoi_luong_mac_dinh'],
                     ],
                     'lich_khoi_hanh' => [
-                        'lich_id' => $row['lich_id'], // Thêm ID lịch
+                        'lich_id' => $row['lich_id'], 
                         'ngay_bat_dau' => $row['ngay_bat_dau'],
                         'ngay_ket_thuc' => $row['ngay_ket_thuc'],
                         'trang_thai' => $row['trang_thai_lich'],
@@ -849,7 +860,7 @@ public function getDatTourDetail($dat_tour_id)
                 ];
             }
 
-            // 2. Dịch vụ
+            // 2. Dịch vụ (Cộng dồn giá vào tổng tiền)
             if ($row['dich_vu_id'] !== null && !in_array($row['dich_vu_id'], $dv_ids)) {
                 $gia_dv = $row['gia_dv_tour'] ?? 0;
                 $datTourDetail['dich_vu_tour'][] = [
@@ -858,21 +869,24 @@ public function getDatTourDetail($dat_tour_id)
                     'gia' => $gia_dv,
                     'ghi_chu' => $row['dv_ghi_chu']
                 ];
-                $tong_gia_dich_vu_phu_tro += $gia_dv;
+                // Cộng giá dịch vụ vào tổng tiền (giả sử tính theo đầu người cho mỗi dịch vụ)
+                // Hoặc nếu dịch vụ tính theo đoàn thì bỏ * so_luong_khach đi. 
+                // Ở đây tạm tính: Giá dịch vụ * Số khách
+                $tong_gia_dich_vu_phu_tro += ($gia_dv * $row['so_luong_khach']); 
+                
                 $dv_ids[] = $row['dich_vu_id'];
             }
 
-            // 3. Hành Khách (Thêm yêu cầu phục vụ)
+            // 3. Hành Khách
             if ($row['hanh_khach_id'] !== null && !in_array($row['hanh_khach_id'], $hanhkhach_ids)) {
                 $datTourDetail['danh_sach_hanh_khach'][] = [
                     'id' => $row['hanh_khach_id'],
                     'ho_ten' => $row['ten_hanh_khach'],
-                    'sdt' => $row['sdt_hanh_khach'],
-                    'cccd' => $row['cccd_hanh_khach'],
+                    'sdt' => $row['sdt_hanh_khach'], // Lấy từ cột lien_he
+                    'cccd' => $row['cccd_hanh_khach'], // Lấy từ cột so_giay_to
+                    'gioi_tinh' => $row['gioi_tinh'],
                     'ngay_sinh' => $row['ngay_sinh'],
-                    // Thông tin yêu cầu phục vụ
-                    'yeu_cau_id' => $row['yeu_cau_id'],
-                    'yeu_cau_noi_dung' => $row['yeu_cau_rieng']
+                    'yeu_cau_noi_dung' => $row['yeu_cau_rieng'] // Lấy từ cột yeu_cau_ca_nhan
                 ];
                 $hanhkhach_ids[] = $row['hanh_khach_id'];
             }
@@ -889,11 +903,9 @@ public function getDatTourDetail($dat_tour_id)
             }
         }
 
-        // Tính tổng tiền
-        $gia_co_ban = $datTourDetail['tour_info']['gia_co_ban'] ?? 0;
-        $so_khach = $datTourDetail['so_khach'] ?? 1;
-        $tong_tien_mot_nguoi = $gia_co_ban + $tong_gia_dich_vu_phu_tro;
-        $datTourDetail['tong_tien_uoc_tinh'] = $tong_tien_mot_nguoi * $so_khach;
+        // Tính tổng tiền cuối cùng
+        // Tổng = Tiền vé cơ bản (đã nhân số người) + Tổng tiền dịch vụ (đã nhân số người)
+        $datTourDetail['tong_tien_uoc_tinh'] = $datTourDetail['tong_tien_co_ban'] + $tong_gia_dich_vu_phu_tro;
 
         return $datTourDetail;
     }

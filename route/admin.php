@@ -69,6 +69,7 @@ match ($act) {
     'dat_coc_save' => (new AdminController())->dat_coc_save($_GET['dat_tour_id'] ?? null),
     'dat_tour_edit' => (new AdminController())->dat_tour_edit($_GET['dat_tour_id'] ?? null),
     'dat_tour_update' => (new AdminController())->dat_tour_update($_GET['dat_tour_id'] ?? null),
+    'dat_tour_delete' => (new AdminController())->dat_tour_delete($_GET['dat_tour_id'] ?? null),
 
     // **ROUTES MỚI HỢP NHẤT TỪ CONTROLLER**
     'hanh_khach_edit' => (new AdminController())->hanh_khach_edit($_GET['dat_tour_id'] ?? null),

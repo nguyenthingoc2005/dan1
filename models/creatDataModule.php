@@ -177,26 +177,35 @@ class creatDataModule
     }
 
     // ================== HÀNH KHÁCH (Đã hợp nhất) ==================
-    public function createHanhKhach($data)
+   public function createHanhKhach($data)
     {
-        // Sử dụng cấu trúc có 'so_ghe' (từ HEAD) và 'sdt' (từ BASE) là không khả thi.
-        // Tôi chọn cấu trúc có vẻ hoàn chỉnh hơn (BASE/cũ) với 'sdt' và thêm 'so_ghe' nếu cần.
-        // Quyết định: Sử dụng 'so_ghe' thay cho 'sdt' như trong phiên bản mới hơn (bc2db65...)
-        // Nếu cần cả 'sdt' và 'so_ghe', bạn cần thêm cột trong DB và thêm vào SQL.
-
-        // **Giữ lại 'so_ghe' (vì nó là phiên bản đã merge/bc2db65...)**
-        $sql = "INSERT INTO `hanhkhachlist`(`dat_tour_id`, `ho_ten`, `cccd`, `ngay_sinh`, `ghi_chu`) 
-                VALUES (:dat_tour_id, :ho_ten, :cccd, :ngay_sinh, :ghi_chu)";
+        $sql = "INSERT INTO `hanhkhachlist` (
+                    dat_tour_id, 
+                    ho_ten, 
+                    gioi_tinh, 
+                    so_giay_to,      -- Thay cho cccd
+                    ngay_sinh, 
+                    lien_he,         -- Thay cho sdt
+                    yeu_cau_ca_nhan  -- Thay cho ghi_chu
+                ) VALUES (
+                    :dat_tour_id, 
+                    :ho_ten, 
+                    :gioi_tinh, 
+                    :so_giay_to, 
+                    :ngay_sinh, 
+                    :lien_he, 
+                    :yeu_cau_ca_nhan
+                )";
 
         $stmt = $this->conn->prepare($sql);
+        
         $stmt->bindParam(':dat_tour_id', $data['dat_tour_id'], PDO::PARAM_INT);
         $stmt->bindParam(':ho_ten', $data['ho_ten']);
-        $stmt->bindParam(':cccd', $data['cccd']);
+        $stmt->bindParam(':gioi_tinh', $data['gioi_tinh']);
+        $stmt->bindParam(':so_giay_to', $data['so_giay_to']);
         $stmt->bindParam(':ngay_sinh', $data['ngay_sinh']);
-
-        // Cột bị xung đột: sử dụng 'so_ghe'
-
-        $stmt->bindParam(':ghi_chu', $data['ghi_chu']);
+        $stmt->bindParam(':lien_he', $data['lien_he']);
+        $stmt->bindParam(':yeu_cau_ca_nhan', $data['yeu_cau_ca_nhan']);
 
         return $stmt->execute();
     }

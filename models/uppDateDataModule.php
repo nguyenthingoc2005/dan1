@@ -197,16 +197,25 @@ class uppDateDataModuleDataModule
     public function updateHanhKhach($hanh_khach_id, $data)
     {
         $sql = "UPDATE `hanhkhachlist` SET 
-                ho_ten = :ho_ten, ngay_sinh = :ngay_sinh, cccd = :cccd, 
-                sdt = :sdt, ghi_chu = :ghi_chu 
+                ho_ten = :ho_ten, 
+                gioi_tinh = :gioi_tinh, 
+                so_giay_to = :so_giay_to,   -- Tên cột trong DB là so_giay_to
+                ngay_sinh = :ngay_sinh, 
+                lien_he = :lien_he,         -- Tên cột trong DB là lien_he
+                yeu_cau_ca_nhan = :yeu_cau_ca_nhan -- Tên cột trong DB là yeu_cau_ca_nhan
             WHERE hanh_khach_id = :hanh_khach_id";
+            
         $stmt = $this->conn->prepare($sql);
+        
+        // Binding dữ liệu từ mảng $data (được map từ controller)
         $stmt->bindParam(':ho_ten', $data['ho_ten']);
+        $stmt->bindParam(':gioi_tinh', $data['gioi_tinh']);
+        $stmt->bindParam(':so_giay_to', $data['so_giay_to']);
         $stmt->bindParam(':ngay_sinh', $data['ngay_sinh']);
-        $stmt->bindParam(':cccd', $data['cccd']);
-        $stmt->bindParam(':sdt', $data['sdt']);
-        $stmt->bindParam(':ghi_chu', $data['ghi_chu']);
+        $stmt->bindParam(':lien_he', $data['lien_he']);
+        $stmt->bindParam(':yeu_cau_ca_nhan', $data['yeu_cau_ca_nhan']);
         $stmt->bindParam(':hanh_khach_id', $hanh_khach_id, PDO::PARAM_INT);
+        
         return $stmt->execute();
     }
     public function updateUser($id, $data)
@@ -225,5 +234,6 @@ class uppDateDataModuleDataModule
             $id
         ]);
     }
+ 
 
 }

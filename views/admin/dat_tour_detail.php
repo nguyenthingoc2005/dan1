@@ -1,44 +1,47 @@
 <?php
 // =================================================================================
-// PHẦN 1: HELPER FUNCTIONS & XỬ LÝ DỮ LIỆU
+// PHẦN 1: HELPER FUNCTIONS & XỬ LÝ AN TOÀN DỮ LIỆU
 // =================================================================================
 
-// Kiểm tra dữ liệu
-if (empty($data)) {
+// 1. Kiểm tra dữ liệu đầu vào
+if (empty($data) || !is_array($data)) {
     echo '<div class="container mt-5"><div class="alert alert-danger shadow-sm">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> Không tìm thấy dữ liệu đơn đặt tour này.
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Không tìm thấy dữ liệu đơn đặt tour hoặc dữ liệu bị lỗi.
           </div></div>';
     return;
 }
 
-// Hàm format tiền tệ
+// 2. Hàm format tiền tệ an toàn
 if (!function_exists('formatCurrency')) {
     function formatCurrency($amount) {
-        return number_format($amount ?? 0, 0, ',', '.') . ' VNĐ';
+        return number_format((float)($amount ?? 0), 0, ',', '.') . ' VNĐ';
     }
 }
 
-// Hàm hiển thị trạng thái (Fix lỗi null cho PHP 8.1+)
+// 3. Hàm hiển thị trạng thái (Fix lỗi null)
 if (!function_exists('renderStatusBadge')) {
     function renderStatusBadge($status) {
-        $s = strtolower($status ?? ''); // Fix lỗi passing null
+        $s = strtolower((string)($status ?? ''));
         return match ($s) {
             'hoàn tất', 'completed', 'success', 'paid' => '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Hoàn tất</span>',
             'chờ xác nhận', 'pending' => '<span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Chờ xác nhận</span>',
-            'đã xác nhận', 'confirmed' => '<span class="badge bg-info text-dark"><i class="bi bi-check2-all"></i> Đã xác nhận</span>',
-            'đã hủy', 'cancelled' => '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Đã hủy</span>',
+            'đã xác nhận', 'confirmed', 'đã đặt cọc' => '<span class="badge bg-info text-dark"><i class="bi bi-check2-all"></i> Đã xác nhận</span>',
+            'đã hủy', 'cancelled', 'hủy' => '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Đã hủy</span>',
             '' => '<span class="badge bg-secondary">Chưa cập nhật</span>',
             default => '<span class="badge bg-secondary">' . htmlspecialchars($s) . '</span>',
         };
     }
 }
 
-// Tính tổng giá dịch vụ phụ trợ để hiển thị
+// 4. Lấy dữ liệu an toàn
+$danhSachHanhKhach = $data['danh_sach_hanh_khach'] ?? [];
+$dichVuTour = $data['dich_vu_tour'] ?? [];
+$huongDanVien = $data['huong_dan_vien'] ?? [];
+
+// 5. Tính tổng giá dịch vụ phụ trợ
 $tong_gia_dv_phu_tro = 0;
-if (!empty($data['dich_vu_tour'])) {
-    foreach ($data['dich_vu_tour'] as $dv) {
-        $tong_gia_dv_phu_tro += $dv['gia'];
-    }
+foreach ($dichVuTour as $dv) {
+    $tong_gia_dv_phu_tro += (float)($dv['gia'] ?? 0);
 }
 ?>
 
@@ -46,7 +49,7 @@ if (!empty($data['dich_vu_tour'])) {
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Chi Tiết Đơn #<?= htmlspecialchars($data['dat_tour_id']) ?></title>
+    <title>Chi Tiết Đơn #<?= htmlspecialchars($data['dat_tour_id'] ?? 'N/A') ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -56,27 +59,30 @@ if (!empty($data['dich_vu_tour'])) {
     <link rel="stylesheet" href="./assets/css/sidebar.css">
     
     <style>
-        body { background-color: #f8f9fa; }
-        .main-content { padding: 20px; min-height: 100vh; }
+        /* MAIN LAYOUT */
+        body { background-color: #f5f7fb; font-family: 'Segoe UI', sans-serif; }
+        .main-content { padding: 30px; margin-top: 70px; margin-left: 0; min-height: 100vh; }
         
-        /* Typography */
-        .text-primary-custom { color: #0d6efd !important; font-weight: 700; }
-        .info-label { font-weight: 600; color: #6c757d; min-width: 140px; display: inline-block; }
-        .price-highlight { font-size: 1.25rem; font-weight: 800; color: #dc3545; }
-        
-        /* Components */
-        .card { border: none; box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 8px; }
+        /* CARD STYLE */
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .card-header { background-color: #fff; border-bottom: 1px solid #eee; font-weight: 600; padding: 15px 20px; }
         
-        /* Tabs */
-        .nav-tabs { border-bottom: 2px solid #dee2e6; margin-bottom: 20px; }
-        .nav-tabs .nav-link { border: none; color: #6c757d; font-weight: 500; padding: 10px 20px; }
+        /* TYPOGRAPHY */
+        .text-primary-custom { color: #0d6efd !important; font-weight: 700; }
+        .price-highlight { font-size: 1.3rem; font-weight: 800; color: #dc3545; }
+        .info-label { font-weight: 600; color: #6c757d; min-width: 130px; display: inline-block; }
+        
+        /* TABS */
+        .nav-tabs .nav-link { border: none; color: #6c757d; font-weight: 500; padding: 10px 20px; transition: all 0.2s; }
+        .nav-tabs .nav-link:hover { color: #0d6efd; background-color: rgba(13, 110, 253, 0.05); }
         .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
         
+        /* TABLE & AVATAR */
         .table-middle td { vertical-align: middle; }
+        .avatar-circle { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem; }
     </style>
 </head>
-<body>
+<body class="bg-light">
 
     <?php include './views/parts/sidebar.php'; ?>
     <div class="overlay"></div>
@@ -87,107 +93,108 @@ if (!empty($data['dich_vu_tour'])) {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="mb-0 text-primary-custom">
-                        <i class="bi bi-ticket-detailed"></i> Đơn Đặt Tour #<?= htmlspecialchars($data['dat_tour_id']) ?>
+                        <i class="bi bi-ticket-detailed"></i> Đơn Đặt Tour #<?= htmlspecialchars($data['dat_tour_id'] ?? 'N/A') ?>
                     </h2>
                     <div class="text-muted mt-1 small">
-                        <i class="bi bi-calendar-event"></i> Ngày tạo: <?= date('H:i - d/m/Y', strtotime($data['ngay_dat'])) ?>
+                        <i class="bi bi-calendar-event"></i> Ngày tạo: 
+                        <?= !empty($data['ngay_dat']) ? date('H:i - d/m/Y', strtotime($data['ngay_dat'])) : '---' ?>
                     </div>
                 </div>
-                <a href="<?= BASEURL ?>?act=dattourlist" class="btn btn-outline-secondary fw-bold">
-                    <i class="bi bi-arrow-return-left"></i> Quay lại danh sách
-                </a>
+                <div>
+                    <a href="<?= BASEURL ?>?act=dattourlist" class="btn btn-outline-secondary fw-bold">
+                        <i class="bi bi-arrow-return-left"></i> Quay lại
+                    </a>
+                </div>
             </div>
 
             <ul class="nav nav-tabs" id="bookingTabs" role="tablist">
-                <li class="nav-item">
-                    <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button">
-                        <i class="bi bi-info-circle me-1"></i> Thông Tin Chung
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" id="passengers-tab" data-bs-toggle="tab" data-bs-target="#passengers" type="button">
-                        <i class="bi bi-people me-1"></i> Hành Khách (<?= count($data['danh_sach_hanh_khach'] ?? []) ?>)
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button">
-                        <i class="bi bi-box-seam me-1"></i> Dịch Vụ Tour
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" id="guide-tab" data-bs-toggle="tab" data-bs-target="#guide" type="button">
-                        <i class="bi bi-person-badge me-1"></i> Hướng Dẫn Viên
-                    </button>
-                </li>
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general">Thông Tin Chung</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#passengers">Hành Khách (<?= count($danhSachHanhKhach) ?>)</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#services">Dịch Vụ</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#guide">HDV & Lịch</button></li>
             </ul>
 
-            <div class="tab-content" id="bookingTabsContent">
+            <div class="tab-content pt-3">
 
                 <div class="tab-pane fade show active" id="general">
-                    <div class="row">
+                    <div class="row g-4">
                         <div class="col-lg-6">
                             <div class="card h-100">
                                 <div class="card-header d-flex justify-content-between align-items-center">
-                                    <span class="text-primary"><i class="bi bi-map"></i> Thông tin Tour</span>
-                                    <a href="<?= BASEURL ?>?act=dat_tour_edit&dat_tour_id=<?= $data['dat_tour_id'] ?>" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-pencil-square"></i> Chỉnh sửa
-                                    </a>
+                                    <span class="text-primary"><i class="bi bi-map"></i> Chi tiết Tour</span>
+                                    <?php if(!empty($data['dat_tour_id'])): ?>
+                                        <a href="<?= BASEURL ?>?act=dat_tour_edit&dat_tour_id=<?= $data['dat_tour_id'] ?>" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i> Sửa Đơn
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="card-body">
-                                    <p><span class="info-label">Tên Tour:</span> <strong><?= htmlspecialchars($data['tour_info']['ten_tour']) ?></strong></p>
-                                    <p><span class="info-label">Mã Tour:</span> #<?= htmlspecialchars($data['tour_info']['tour_id']) ?></p>
-                                    <p><span class="info-label">Thời lượng:</span> <?= htmlspecialchars($data['tour_info']['thoi_gian']) ?> ngày</p>
-                                    <hr>
+                                    <h5 class="fw-bold text-dark mb-3">
+                                        <?= htmlspecialchars($data['tour_info']['ten_tour'] ?? 'Tên tour không xác định') ?>
+                                    </h5>
+                                    
+                                    <p><span class="info-label">Mã Tour:</span> #<?= htmlspecialchars($data['tour_info']['tour_id'] ?? 'N/A') ?></p>
+                                    <p><span class="info-label">Thời lượng:</span> <?= htmlspecialchars($data['tour_info']['thoi_gian'] ?? '0') ?> ngày</p>
+                                    
+                                    <hr class="my-3">
                                     
                                     <div class="mb-2">
+                                        <span class="info-label">Lịch trình:</span>
+                                        <?php 
+                                            $ngayDi = $data['lich_khoi_hanh']['ngay_bat_dau'] ?? null;
+                                            $ngayVe = $data['lich_khoi_hanh']['ngay_ket_thuc'] ?? null;
+                                        ?>
+                                        <?php if($ngayDi): ?>
+                                            <span class="fw-bold text-success">
+                                                <?= date('d/m/Y', strtotime($ngayDi)) ?>
+                                                <?= $ngayVe ? ' - ' . date('d/m/Y', strtotime($ngayVe)) : '' ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="text-muted fst-italic">Chưa lên lịch</span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div class="mb-2 d-flex align-items-center">
                                         <span class="info-label">Tình trạng Lịch:</span>
                                         <?php 
                                             $lich_id = $data['lich_khoi_hanh']['lich_id'] ?? null;
                                             $trang_thai_lich = $data['lich_khoi_hanh']['trang_thai'] ?? '';
                                         ?>
-
                                         <?php if (empty($lich_id)): ?>
-                                            <span class="text-danger fst-italic me-2"><i class="bi bi-exclamation-circle"></i> Chưa được lên lịch</span>
-                                            <a href="<?= BASEURL ?>?act=add_schedule&tour_id=<?= $data['tour_info']['tour_id'] ?>" class="btn btn-sm btn-primary shadow-sm py-0 px-2 fw-bold">
-                                                <i class="bi bi-calendar-plus"></i> Đặt lịch ngay
-                                            </a>
+                                            <span class="text-danger fst-italic me-2"><i class="bi bi-exclamation-circle"></i> Chưa có</span>
+                                            <a href="<?= BASEURL ?>?act=add_schedule&tour_id=<?= $data['tour_info']['tour_id'] ?? '' ?>" class="btn btn-sm btn-primary py-0 px-2 fw-bold">Lên lịch ngay</a>
                                         <?php else: ?>
-                                            <div class="d-inline-flex align-items-center gap-2">
-                                                <?= renderStatusBadge($trang_thai_lich) ?>
-                                                <a href="<?= BASEURL ?>?act=edit_schedule&id=<?= $lich_id ?>" class="btn btn-sm btn-outline-warning py-0 px-2" title="Sửa lịch">
-                                                    <i class="bi bi-pencil-square"></i> Sửa
-                                                </a>
-                                                <a href="<?= BASEURL ?>?act=delete_schedule&id=<?= $lich_id ?>" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="return confirm('Xóa lịch này?')" title="Xóa lịch">
-                                                    <i class="bi bi-trash"></i> Xóa
-                                                </a>
+                                            <?= renderStatusBadge($trang_thai_lich) ?>
+                                            <div class="ms-2">
+                                                <a href="<?= BASEURL ?>?act=edit_schedule&id=<?= $lich_id ?>" class="text-warning me-1" title="Sửa"><i class="bi bi-pencil-square"></i></a>
+                                                <a href="<?= BASEURL ?>?act=delete_schedule&id=<?= $lich_id ?>" class="text-danger" onclick="return confirm('Xóa lịch?')" title="Xóa"><i class="bi bi-trash"></i></a>
                                             </div>
                                         <?php endif; ?>
                                     </div>
-
-                                    <p><span class="info-label">Thời gian:</span> 
-                                        <?php if(!empty($data['lich_khoi_hanh']['ngay_bat_dau'])): ?>
-                                            <?= date('d/m/Y', strtotime($data['lich_khoi_hanh']['ngay_bat_dau'])) ?> - <?= date('d/m/Y', strtotime($data['lich_khoi_hanh']['ngay_ket_thuc'])) ?>
-                                        <?php else: ?>
-                                            <span class="text-muted">...</span>
-                                        <?php endif; ?>
-                                    </p>
                                 </div>
                             </div>
                         </div>
 
                         <div class="col-lg-6">
-                            <div class="card h-100">
-                                <div class="card-header text-success">
+                            <div class="card h-100 border-start border-4 border-success">
+                                <div class="card-header text-success fw-bold">
                                     <i class="bi bi-cash-coin"></i> Tài chính & Trạng thái
                                 </div>
                                 <div class="card-body">
-                                    <p><span class="info-label">Trạng thái Đơn:</span> <?= renderStatusBadge($data['trang_thai']) ?></p>
-                                    <p><span class="info-label">Số khách:</span> <strong><?= htmlspecialchars($data['so_khach']) ?></strong> người</p>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="info-label">Trạng thái Đơn:</span> 
+                                        <?= renderStatusBadge($data['trang_thai'] ?? '') ?>
+                                    </div>
                                     
-                                    <div class="bg-light p-3 rounded border mt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="info-label">Số khách:</span> 
+                                        <strong class="fs-5"><?= htmlspecialchars($data['so_khach'] ?? 0) ?></strong>
+                                    </div>
+                                    
+                                    <div class="bg-light p-3 rounded border">
                                         <div class="d-flex justify-content-between mb-1">
                                             <span>Giá vé cơ bản:</span>
-                                            <span><?= formatCurrency($data['tour_info']['gia_co_ban']) ?> / khách</span>
+                                            <span><?= formatCurrency($data['tour_info']['gia_co_ban'] ?? 0) ?> / khách</span>
                                         </div>
                                         <div class="d-flex justify-content-between mb-1">
                                             <span>Dịch vụ đi kèm:</span>
@@ -195,15 +202,16 @@ if (!empty($data['dich_vu_tour'])) {
                                         </div>
                                         <hr class="my-2">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <span class="fw-bold">TỔNG TIỀN (Ước tính):</span>
-                                            <span class="price-highlight"><?= formatCurrency($data['tong_tien_uoc_tinh']) ?></span>
+                                            <span class="fw-bold text-dark">TỔNG TIỀN (Ước tính):</span>
+                                            <span class="price-highlight"><?= formatCurrency($data['tong_tien_uoc_tinh'] ?? 0) ?></span>
                                         </div>
                                     </div>
                                     
-                                    <div class="mt-3 d-flex justify-content-between align-items-center">
+                                    <div class="mt-4 d-flex justify-content-between align-items-center">
                                         <span class="info-label">Đã thanh toán/cọc:</span> 
-                                        <span class="badge bg-success fs-6"><?= formatCurrency($data['da_dat_coc']) ?></span>
+                                        <span class="badge bg-success fs-6 px-3 py-2"><?= formatCurrency($data['da_dat_coc'] ?? 0) ?></span>
                                     </div>
+
                                     <?php if(!empty($data['ghi_chu'])): ?>
                                         <div class="alert alert-warning mt-3 mb-0 py-2 small">
                                             <i class="bi bi-sticky-fill"></i> <strong>Ghi chú:</strong> <?= htmlspecialchars($data['ghi_chu']) ?>
@@ -217,53 +225,49 @@ if (!empty($data['dich_vu_tour'])) {
 
                 <div class="tab-pane fade" id="passengers">
                     <div class="card">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 text-dark"><i class="bi bi-person-lines-fill"></i> Danh sách hành khách</h6>
-                            <a href="<?= BASEURL ?>?act=hanh_khach_edit&dat_tour_id=<?= $data['dat_tour_id'] ?>" class="btn btn-sm btn-warning fw-bold">
-                                <i class="bi bi-person-fill-gear"></i> Sửa thông tin khách
-                            </a>
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white">
+                            <h6 class="mb-0"><i class="bi bi-people-fill text-primary"></i> Danh sách hành khách</h6>
+                            <?php if(!empty($data['dat_tour_id'])): ?>
+                                <a href="<?= BASEURL ?>?act=hanh_khach_edit&dat_tour_id=<?= $data['dat_tour_id'] ?>" class="btn btn-sm btn-warning fw-bold shadow-sm">
+                                    <i class="bi bi-person-gear"></i> Cập nhật khách
+                                </a>
+                            <?php endif; ?>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover table-bordered mb-0 table-middle">
+                                <table class="table table-hover mb-0 table-middle">
                                     <thead class="table-light">
                                         <tr>
                                             <th class="text-center" width="50">#</th>
-                                            <th width="25%">Họ và Tên</th>
-                                            <th width="20%">Thông tin cá nhân</th>
-                                            <th width="35%">Yêu cầu phục vụ</th>
-                                            <th class="text-center" width="15%">Thao tác</th>
+                                            <th>Họ Tên & Giới tính</th>
+                                            <th>Liên hệ / Giấy tờ</th>
+                                            <th>Yêu cầu đặc biệt</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php if(empty($data['danh_sach_hanh_khach'])): ?>
-                                            <tr><td colspan="5" class="text-center py-4 text-muted">Chưa có thông tin hành khách</td></tr>
+                                        <?php if(empty($danhSachHanhKhach)): ?>
+                                            <tr><td colspan="4" class="text-center text-muted py-5">Chưa có thông tin hành khách.</td></tr>
                                         <?php else: ?>
-                                            <?php foreach ($data['danh_sach_hanh_khach'] as $idx => $hk): ?>
+                                            <?php foreach ($danhSachHanhKhach as $i => $hk): ?>
                                             <tr>
-                                                <td class="text-center fw-bold text-muted"><?= $idx + 1 ?></td>
-                                                <td><div class="fw-bold text-primary"><?= htmlspecialchars($hk['ho_ten'] ?? 'Chưa cập nhật') ?></div></td>
+                                                <td class="text-center text-secondary fw-bold"><?= $i + 1 ?></td>
                                                 <td>
-                                                    <div class="small text-muted"><i class="bi bi-telephone"></i> <?= htmlspecialchars($hk['sdt'] ?? '-') ?></div>
-                                                    <div class="small text-muted"><i class="bi bi-card-heading"></i> <?= htmlspecialchars($hk['cccd'] ?? '-') ?></div>
+                                                    <div class="fw-bold text-primary"><?= htmlspecialchars($hk['ho_ten'] ?? '---') ?></div>
+                                                    <small class="text-muted"><?= htmlspecialchars($hk['gioi_tinh'] ?? '') ?></small>
+                                                </td>
+                                                <td>
+                                                    <div class="small text-muted"><i class="bi bi-telephone me-1"></i> <?= htmlspecialchars($hk['sdt'] ?? '---') ?></div>
+                                                    <div class="small text-muted"><i class="bi bi-card-heading me-1"></i> <?= htmlspecialchars($hk['cccd'] ?? '---') ?></div>
+                                                    <div class="small text-muted"><i class="bi bi-cake2 me-1"></i> <?= !empty($hk['ngay_sinh']) ? date('d/m/Y', strtotime($hk['ngay_sinh'])) : '---' ?></div>
                                                 </td>
                                                 <td>
                                                     <?php if(!empty($hk['yeu_cau_noi_dung'])): ?>
-                                                        <div class="alert alert-info py-1 px-2 mb-0 small border-0 bg-opacity-10">
-                                                            <i class="bi bi-chat-quote-fill me-1"></i> <?= htmlspecialchars($hk['yeu_cau_noi_dung']) ?>
+                                                        <div class="alert alert-info py-1 px-2 mb-0 small border-0 bg-opacity-10 text-dark">
+                                                            <i class="bi bi-chat-quote-fill me-1 text-info"></i> <?= htmlspecialchars($hk['yeu_cau_noi_dung']) ?>
                                                         </div>
                                                     <?php else: ?>
                                                         <span class="text-muted small fst-italic">Không có yêu cầu</span>
                                                     <?php endif; ?>
-                                                </td>
-                                                <td class="text-center">
-                                                    <?php 
-                                                        $action = !empty($hk['yeu_cau_id']) ? 'edit_request' : 'add_request';
-                                                        $param_id = !empty($hk['yeu_cau_id']) ? '&id=' . $hk['yeu_cau_id'] : '&hanh_khach_id=' . $hk['id'] . '&dat_tour_id=' . $data['dat_tour_id'];
-                                                    ?>
-                                                    <a href="<?= BASEURL ?>?act=<?= $action . $param_id ?>" class="btn btn-sm btn-outline-secondary" title="Chỉnh sửa yêu cầu">
-                                                        <i class="bi bi-pencil-square"></i> Yêu cầu
-                                                    </a>
                                                 </td>
                                             </tr>
                                             <?php endforeach; ?>
@@ -278,34 +282,32 @@ if (!empty($data['dich_vu_tour'])) {
                 <div class="tab-pane fade" id="services">
                     <div class="card">
                         <div class="card-header bg-white">
-                            <h6 class="mb-0 text-dark"><i class="bi bi-box-seam"></i> Dịch vụ đi kèm</h6>
+                            <h6 class="mb-0 text-dark"><i class="bi bi-box-seam text-primary"></i> Dịch vụ đi kèm (Mặc định theo Tour)</h6>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-striped mb-0 table-middle">
                                     <thead class="table-light">
                                         <tr>
-                                            <th class="text-center" width="50">#</th>
-                                            <th>Tên Dịch Vụ</th>
-                                            <th class="text-end">Đơn giá</th>
-                                            <th>Ghi chú</th>
+                                            <th class="ps-4">Tên Dịch Vụ</th>
+                                            <th class="text-end">Đơn Giá</th>
+                                            <th>Ghi Chú</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php if(empty($data['dich_vu_tour'])): ?>
-                                            <tr><td colspan="4" class="text-center py-3 text-muted">Không có dịch vụ đi kèm</td></tr>
+                                        <?php if(empty($dichVuTour)): ?>
+                                            <tr><td colspan="3" class="text-center text-muted py-4">Không có dịch vụ đi kèm nào.</td></tr>
                                         <?php else: ?>
-                                            <?php foreach ($data['dich_vu_tour'] as $idx => $dv): ?>
+                                            <?php foreach ($dichVuTour as $dv): ?>
                                             <tr>
-                                                <td class="text-center"><?= $idx + 1 ?></td>
-                                                <td><?= htmlspecialchars($dv['ten']) ?></td>
-                                                <td class="text-end fw-bold text-primary"><?= formatCurrency($dv['gia']) ?></td>
-                                                <td class="text-muted small"><?= htmlspecialchars($dv['ghi_chu'] ?? '') ?></td>
+                                                <td class="ps-4 fw-medium"><?= htmlspecialchars($dv['ten'] ?? 'Dịch vụ') ?></td>
+                                                <td class="text-end fw-bold text-success"><?= formatCurrency($dv['gia'] ?? 0) ?></td>
+                                                <td class="text-muted small fst-italic"><?= htmlspecialchars($dv['ghi_chu'] ?? '') ?></td>
                                             </tr>
                                             <?php endforeach; ?>
-                                            <tr class="table-active">
-                                                <td colspan="2" class="text-end fw-bold">TỔNG CỘNG:</td>
-                                                <td class="text-end fw-bold text-danger"><?= formatCurrency($tong_gia_dv_phu_tro) ?></td>
+                                            <tr class="table-active border-top border-2">
+                                                <td class="ps-4 fw-bold text-end">TỔNG CỘNG DỊCH VỤ:</td>
+                                                <td class="text-end fw-bold text-danger fs-6"><?= formatCurrency($tong_gia_dv_phu_tro) ?></td>
                                                 <td></td>
                                             </tr>
                                         <?php endif; ?>
@@ -318,62 +320,51 @@ if (!empty($data['dich_vu_tour'])) {
 
                 <div class="tab-pane fade" id="guide">
                     <div class="card">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 text-dark"><i class="bi bi-person-badge"></i> Hướng dẫn viên</h6>
-                            
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white">
+                            <h6 class="mb-0"><i class="bi bi-person-badge text-primary"></i> Hướng Dẫn Viên & Lịch Trình</h6>
                             <?php 
-                                $has_schedule = !empty($data['lich_khoi_hanh']['lich_id']);
-                                $has_guide = !empty($data['huong_dan_vien']);
+                                $lich_id = $data['lich_khoi_hanh']['lich_id'] ?? null;
+                                $has_guide = !empty($huongDanVien);
+                                if ($lich_id && empty($huongDanVien)): 
                             ?>
-                            <?php if ($has_schedule && !$has_guide): ?>
-                                <a href="<?= BASEURL ?>?act=assign_guide&lich_id=<?= $data['lich_khoi_hanh']['lich_id'] ?>" class="btn btn-sm btn-success fw-bold">
-                                    <i class="bi bi-person-plus-fill"></i> Thêm HDV
+                                <a href="<?= BASEURL ?>?act=assign_guide&lich_id=<?= $lich_id ?>" class="btn btn-sm btn-success fw-bold shadow-sm">
+                                    <i class="bi bi-person-plus-fill"></i> Phân công HDV
                                 </a>
                             <?php endif; ?>
                         </div>
-
                         <div class="card-body">
-                            <?php if (!$has_schedule): ?>
-                                <div class="alert alert-danger border-danger text-center py-4 mb-0">
-                                    <i class="bi bi-calendar-x display-4 text-danger opacity-50"></i>
-                                    <h5 class="mt-2 text-danger">Chưa có lịch trình</h5>
-                                    <p class="mb-0 text-muted">Vui lòng <strong>Lên lịch khởi hành</strong> (Tab Thông tin chung) trước.</p>
+                            <?php if (!$lich_id): ?>
+                                <div class="alert alert-danger border-0 shadow-sm text-center">
+                                    <i class="bi bi-exclamation-circle-fill me-2"></i> Tour này chưa được lên lịch khởi hành.
+                                    <div class="mt-2"><a href="<?= BASEURL ?>?act=add_schedule&tour_id=<?= $data['tour_info']['tour_id'] ?? '' ?>" class="btn btn-sm btn-danger">Lên lịch ngay</a></div>
                                 </div>
-                            <?php elseif (!$has_guide): ?>
-                                <div class="alert alert-light border text-center py-4 mb-0">
-                                    <i class="bi bi-person-x display-4 text-muted"></i>
-                                    <p class="mt-2 mb-0 text-muted">Chưa có HDV nào được phân công.</p>
+                            <?php elseif (empty($huongDanVien)): ?>
+                                <div class="text-center text-muted py-4 border rounded bg-light">
+                                    <i class="bi bi-person-x display-4 opacity-25"></i>
+                                    <p class="mt-2 mb-0">Chưa có hướng dẫn viên nào được phân công.</p>
                                 </div>
                             <?php else: ?>
-                                <div class="row g-4">
-                                    <?php foreach ($data['huong_dan_vien'] as $hdv): ?>
-                                    <div class="col-md-6 col-lg-4">
-                                        <div class="card h-100 shadow-sm border border-success bg-light">
-                                            <div class="card-body position-relative">
-                                                <div class="position-absolute top-0 end-0 m-2 bg-white rounded shadow-sm p-1 border">
-                                                    <a href="<?= BASEURL ?>?act=edit_guide_assignment&phan_cong_id=<?= $hdv['id'] ?>" class="btn btn-sm btn-link text-warning p-1" title="Đổi HDV">
-                                                        <i class="bi bi-pencil-square fs-6"></i>
-                                                    </a>
-                                                    <a href="<?= BASEURL ?>?act=remove_guide&hdv_id=<?= $hdv['id'] ?>&lich_id=<?= $data['lich_khoi_hanh']['lich_id'] ?>" class="btn btn-sm btn-link text-danger p-1" onclick="return confirm('Gỡ HDV này?')" title="Gỡ HDV">
-                                                        <i class="bi bi-trash fs-6"></i>
-                                                    </a>
-                                                </div>
+                                <div class="row g-3">
+                                    <?php foreach ($huongDanVien as $hdv): ?>
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="border rounded p-3 d-flex align-items-center shadow-sm h-100 bg-white position-relative">
                                                 
-                                                <div class="d-flex align-items-center mt-2">
-                                                    <div class="flex-shrink-0">
-                                                        <div class="bg-success text-white rounded-circle d-flex justify-content-center align-items-center shadow-sm" style="width: 55px; height: 55px; font-size: 22px; font-weight: bold;">
-                                                            <?= strtoupper(substr($hdv['ho_ten'] ?? 'G', 0, 1)) ?>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex-grow-1 ms-3">
-                                                        <h6 class="mb-1 fw-bold text-success"><?= htmlspecialchars($hdv['ho_ten']) ?></h6>
-                                                        <div class="small text-muted mb-1"><i class="bi bi-telephone-fill me-1"></i> <?= htmlspecialchars($hdv['sdt'] ?? '---') ?></div>
-                                                        <div class="small text-muted"><i class="bi bi-envelope-fill me-1"></i> <?= htmlspecialchars($hdv['email'] ?? '---') ?></div>
-                                                    </div>
+                                                <a href="<?= BASEURL ?>?act=remove_guide&hdv_id=<?= $hdv['id'] ?? 0 ?>&lich_id=<?= $lich_id ?>" 
+                                                   onclick="return confirm('Gỡ HDV này khỏi lịch trình?')"
+                                                   class="position-absolute top-0 end-0 m-2 text-secondary" title="Gỡ bỏ">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </a>
+
+                                                <div class="avatar-circle bg-success me-3 flex-shrink-0">
+                                                    <?= strtoupper(substr($hdv['ho_ten'] ?? 'G', 0, 1)) ?>
+                                                </div>
+                                                <div>
+                                                    <h6 class="fw-bold text-success mb-1"><?= htmlspecialchars($hdv['ho_ten'] ?? 'Chưa cập nhật') ?></h6>
+                                                    <div class="small text-muted mb-1"><i class="bi bi-phone me-1"></i> <?= htmlspecialchars($hdv['sdt'] ?? '---') ?></div>
+                                                    <div class="small text-muted"><i class="bi bi-envelope me-1"></i> <?= htmlspecialchars($hdv['email'] ?? '---') ?></div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                     <?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
@@ -381,7 +372,8 @@ if (!empty($data['dich_vu_tour'])) {
                     </div>
                 </div>
 
-            </div> </div>
+            </div> 
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

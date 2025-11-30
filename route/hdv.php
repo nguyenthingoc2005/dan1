@@ -2,6 +2,11 @@
 
 $act = $_GET['act'] ?? '/';
 
+
+if (!isset($_SESSION['user']) && !in_array($act, ['login', 'login_process'])) {
+    header("Location:" . BASEURL . "?act=login");
+    exit;
+}
 match ($act) {
     'login' => (new HdvController())->loginForm(),
     'login_process' => (new HdvController())->loginProcess(),
@@ -13,7 +18,4 @@ match ($act) {
     'list_Khach_hang' => (new HdvController())->list_Khach_hang(),
     default => (new HdvController())->home()
 };
-if (!isset($_SESSION['user']) && !in_array($act, ['login', 'login_process'])) {
-    header("Location:" . BASEURL . "?act=login");
-    exit;
-}
+
