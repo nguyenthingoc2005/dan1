@@ -13,7 +13,7 @@ match ($act) {
     'dashboard_HDV' => (new HdvController())->home(),
     'xemtour' => (new HdvController())->xemtour(),
     'xem_chitiet_tour' => (new HdvController())->xem_chitiet_tour(),
+    'luu_diem_danh' => (new HdvController())->luu_diem_danh(),
     'list_Khach_hang' => (new HdvController())->list_Khach_hang(),
     default => (new HdvController())->home()
 };
-

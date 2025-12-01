@@ -31,4 +31,8 @@ class hdvModel
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    /**
+     * Lưu thông tin điểm danh (Tự động Insert hoặc Update)
+     */
 }

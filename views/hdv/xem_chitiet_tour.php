@@ -1,128 +1,138 @@
+<?php
+// --- PHẦN XỬ LÝ DỮ LIỆU ĐẦU VÀO (GIỮ NGUYÊN ĐỂ TRÁNH LỖI VIEW) ---
+// Đảm bảo các biến này được truyền từ Controller. 
+// Nếu chưa có, khởi tạo mảng rỗng để không bị lỗi "Undefined variable".
+
+$listKhachHang = $listKhachHang ?? [];
+$tourDetails = $tourDetails ?? [];
+$lich_trinh = isset($tourDetails['lich_trinh']) ? $tourDetails['lich_trinh'] : [];
+
+// Định nghĩa BASEURL nếu chưa có (tránh lỗi khi chạy độc lập)
+if (!defined('BASEURL')) define('BASEURL', '');
+?>
+
 <!DOCTYPE html>
 <html lang="vi">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi Tiết Tour Du Lịch</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <title>Chi Tiết Tour & Điểm Danh</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css">
 
     <link rel="stylesheet" href="./assets/css/sidebar.css">
+
     <style>
         body {
             background-color: #f5f7fb;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         .main-content {
             margin-left: 0;
+            /* Lưu ý: Chỉnh lại theo sidebar của bạn nếu cần (250px) */
             padding: 30px;
-            transition: margin-left .32s ease;
             min-height: 100vh;
         }
 
+        /* --- Custom Styles cho Card --- */
         .card-detail {
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             margin-bottom: 20px;
+            border: none;
+            background: #fff;
         }
 
+        /* --- Styles cho Lịch trình (Timeline) --- */
         .schedule-item {
             border-left: 3px solid #0d6efd;
             padding-left: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        /* Chấm tròn trang trí trên timeline */
+        .schedule-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #0d6efd;
         }
 
         .schedule-day {
-            font-weight: bold;
+            font-weight: 700;
             color: #0d6efd;
-            margin-bottom: 5px;
+            font-size: 1.05rem;
         }
 
-        .nav-tabs .nav-link.active {
-            font-weight: bold;
-            color: #0d6efd;
-            border-color: #0d6efd #dee2e6 #fff;
+        /* --- Styles cho Modal Điểm Danh --- */
+        #modalDiemDanh .modal-header {
+            background: linear-gradient(135deg, #0d6efd, #0a58ca);
+            color: white;
+        }
+
+        /* Checkbox to hơn một chút cho dễ bấm */
+        .form-check-input-lg {
+            width: 1.3em;
+            height: 1.3em;
+            margin-top: 0.2em;
+            cursor: pointer;
         }
     </style>
 </head>
 
 <body>
-    <?php
-    // Giả lập dữ liệu chi tiết Tour (Bạn cần thay thế bằng logic database)
-    $tourDetail = [
-        "id" => 1,
-        "ten_tour" => "Hà Nội - Sapa 3 Ngày 2 Đêm (Khởi hành 05/12/2025)",
-        "danh_muc" => "Tour Miền Bắc",
-        "mo_ta_ngan" => "Khám phá Fansipan, bản Cát Cát và tận hưởng không khí núi rừng Tây Bắc.",
-        "diem_khoi_hanh" => "Hà Nội",
-        "ngay_khoi_hanh" => "2025-12-05",
-        "thoi_luong" => 3,
-        "gia" => 3500000,
-        "huong_dan_vien" => "Nguyễn Văn Tèo",
-        "tong_so_khach" => 25,
-        "lich_trinh" => [
-            ["ngay" => 1, "tieu_de" => "Hà Nội - Sapa: Chinh phục đèo Ô Quy Hồ", "chi_tiet" => "Đón khách, di chuyển lên Sapa. Chiều tham quan Thác Bạc và đèo Ô Quy Hồ. Tối nghỉ tại khách sạn."],
-            ["ngay" => 2, "tieu_de" => "Fansipan - Bản Cát Cát: Mái nhà Đông Dương", "chi_tiet" => "Sáng đi cáp treo lên đỉnh Fansipan. Chiều thăm bản Cát Cát của người H'Mông. Tối tự do khám phá chợ đêm."],
-            ["ngay" => 3, "tieu_de" => "Sapa - Hà Nội: Kết thúc hành trình", "chi_tiet" => "Tham quan nhà thờ đá Sapa và chợ. Trưa trả phòng, lên xe về Hà Nội. Kết thúc tour."],
-        ],
-        "danh_sach_khach" => [
-            ["stt" => 1, "ten_khach" => "Trần Văn A", "sdt" => "090xxxxxxx", "so_luong" => 2, "trang_thai" => "Đã thanh toán"],
-            ["stt" => 2, "ten_khach" => "Nguyễn Thị B", "sdt" => "091xxxxxxx", "so_luong" => 4, "trang_thai" => "Đã thanh toán"],
-            ["stt" => 3, "ten_khach" => "Phạm Văn C", "sdt" => "092xxxxxxx", "so_luong" => 1, "trang_thai" => "Đã thanh toán"],
-            ["stt" => 4, "ten_khach" => "Lê Thị D", "sdt" => "093xxxxxxx", "so_luong" => 3, "trang_thai" => "Đã thanh toán"],
-        ]
-    ];
-
-    // Đặt BASEURL giả định nếu chưa có
-    if (!defined('BASEURL')) {
-        define('BASEURL', '');
-    }
-    ?>
     <?php include './views/parts/sidebarhdv.php'; ?>
 
     <div class="main-content">
         <div class="container-fluid">
 
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold text-dark"><i class="bi bi-map-fill me-2"></i>Chi Tiết Tour: <?= htmlspecialchars($tourDetail['ten_tour']) ?></h2>
-                <a href="<?= BASEURL ?>?act=tourlist" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left-circle me-1"></i> Quay lại Danh sách
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-map-fill me-2 text-primary"></i>Chi Tiết Chuyến Đi
+                    </h2>
+                    <p class="text-muted mb-0"><?= htmlspecialchars($tourDetails['ten'] ?? 'Đang cập nhật...') ?></p>
+                </div>
+                <a href="<?= BASEURL ?>?act=danh_sach_tour" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="bi bi-arrow-left me-1"></i> Quay lại
                 </a>
             </div>
 
             <div class="row">
                 <div class="col-lg-4">
                     <div class="card card-detail h-100">
-                        <div class="card-header bg-primary text-white py-3">
-                            <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Thông Tin Chung</h5>
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-info-circle me-2"></i>Thông Tin Tour</h5>
                         </div>
                         <div class="card-body">
                             <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <strong><i class="bi bi-calendar-check me-2"></i>Khởi Hành:</strong>
-                                    <span><?= date('d/m/Y', strtotime($tourDetail['ngay_khoi_hanh'])) ?></span>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                    <span class="text-muted"><i class="bi bi-geo-alt-fill me-2"></i>Khởi Hành:</span>
+                                    <span class="fw-medium text-end"><?= htmlspecialchars($tourDetails['diem_khoi_hanh'] ?? '---') ?></span>
                                 </li>
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <strong><i class="bi bi-clock me-2"></i>Thời Lượng:</strong>
-                                    <span><?= $tourDetail['thoi_luong'] ?> Ngày</span>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                    <span class="text-muted"><i class="bi bi-clock-history me-2"></i>Thời Lượng:</span>
+                                    <span class="fw-medium"><?= $tourDetails['thoi_luong_mac_dinh'] ?? 0 ?> Ngày</span>
                                 </li>
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <strong><i class="bi bi-person-badge me-2"></i>HDV Phụ Trách:</strong>
-                                    <span class="fw-bold text-success"><?= htmlspecialchars($tourDetail['huong_dan_vien']) ?></span>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                    <span class="text-muted"><i class="bi bi-people-fill me-2"></i>Tổng khách:</span>
+                                    <span class="badge bg-primary rounded-pill"><?= count($listKhachHang) ?> người</span>
                                 </li>
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <strong><i class="bi bi-people-fill me-2"></i>Tổng Khách:</strong>
-                                    <span class="badge bg-danger fs-6"><?= $tourDetail['tong_so_khach'] ?></span>
-                                </li>
-                                <li class="list-group-item">
-                                    <strong><i class="bi bi-tag-fill me-2"></i>Danh Mục:</strong>
-                                    <span><?= htmlspecialchars($tourDetail['danh_muc']) ?></span>
-                                </li>
-                                <li class="list-group-item">
-                                    <strong><i class="bi bi-journal-text me-2"></i>Mô Tả:</strong>
-                                    <p class="mt-2 text-muted"><?= htmlspecialchars($tourDetail['mo_ta_ngan']) ?></p>
+                                <li class="list-group-item px-0 py-3">
+                                    <span class="text-muted d-block mb-2"><i class="bi bi-file-text me-2"></i>Ghi chú ngắn:</span>
+                                    <div class="bg-light p-3 rounded small text-secondary">
+                                        <?= htmlspecialchars($tourDetails['mo_ta_ngan'] ?? 'Không có mô tả.') ?>
+                                    </div>
                                 </li>
                             </ul>
                         </div>
@@ -131,59 +141,121 @@
 
                 <div class="col-lg-8">
                     <div class="card card-detail">
-                        <div class="card-header p-0">
-                            <ul class="nav nav-tabs" id="tourTab" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule" type="button" role="tab" aria-controls="schedule" aria-selected="true"><i class="bi bi-list-task me-1"></i>Lịch Trình Chi Tiết</button>
+                        <div class="card-header bg-white p-0 border-bottom-0">
+                            <ul class="nav nav-tabs px-3 pt-3" id="tourTab" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active fw-bold" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule" type="button">
+                                        <i class="bi bi-calendar3 me-1"></i>Lịch Trình
+                                    </button>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="guests-tab" data-bs-toggle="tab" data-bs-target="#guests" type="button" role="tab" aria-controls="guests" aria-selected="false"><i class="bi bi-person-check-fill me-1"></i>Danh Sách Khách Hàng</button>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="guests-tab" data-bs-toggle="tab" data-bs-target="#guests" type="button">
+                                        <i class="bi bi-person-lines-fill me-1"></i>Danh Sách Khách
+                                    </button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="desc-tab" data-bs-toggle="tab" data-bs-target="#full-desc" type="button">
+                                        <i class="bi bi-file-text me-1"></i>Chi Tiết
+                                    </button>
                                 </li>
                             </ul>
                         </div>
-                        <div class="card-body">
-                            <div class="tab-content" id="tourTabContent">
 
-                                <div class="tab-pane fade show active" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
-                                    <?php foreach ($tourDetail['lich_trinh'] as $item): ?>
-                                        <div class="schedule-item">
-                                            <div class="schedule-day">Ngày <?= $item['ngay'] ?>: <?= htmlspecialchars($item['tieu_de']) ?></div>
-                                            <p class="text-muted small mb-0"><?= htmlspecialchars($item['chi_tiet']) ?></p>
+                        <div class="card-body p-4">
+                            <div class="tab-content">
+
+                                <div class="tab-pane fade show active" id="schedule">
+                                    <?php if (!empty($lich_trinh)): ?>
+                                        <div class="timeline ps-2">
+                                            <?php foreach ($lich_trinh as $item): ?>
+                                                <div class="schedule-item">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <div class="schedule-day">
+                                                            Ngày <?= $item['ngay_thu'] ?>: <?= htmlspecialchars($item['tieu_de']) ?>
+                                                        </div>
+
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-outline-primary fw-bold px-3 shadow-sm"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalDiemDanh"
+                                                            data-id="<?= $item['lich_trinh_id'] ?? $item['ngay_thu'] ?>"
+                                                            data-title="Ngày <?= $item['ngay_thu'] ?>: <?= htmlspecialchars($item['tieu_de']) ?>">
+                                                            <i class="bi bi-clipboard-check me-1"></i>Điểm danh
+                                                        </button>
+                                                    </div>
+
+                                                    <p class="text-secondary mb-0"><?= htmlspecialchars($item['noi_dung']) ?></p>
+                                                </div>
+                                            <?php endforeach; ?>
                                         </div>
-                                    <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <div class="text-center py-5 text-muted">
+                                            <i class="bi bi-calendar-x fs-1 opacity-50"></i>
+                                            <p class="mt-2">Chưa có dữ liệu lịch trình.</p>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
 
-                                <div class="tab-pane fade" id="guests" role="tabpanel" aria-labelledby="guests-tab">
-                                    <div class="d-flex justify-content-between mb-3">
-                                        <p class="text-muted mb-0">Hiển thị các booking **Đã thanh toán/Xác nhận** để HDV tiện quản lý.</p>
-                                        <button class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Xuất Excel</button>
-                                    </div>
-
-                                    <div class="table-responsive">
-                                        <table class="table table-striped table-hover align-middle">
-                                            <thead>
-                                                <tr class="table-light">
-                                                    <th>#</th>
-                                                    <th>Tên Khách Hàng (Booking)</th>
-                                                    <th>SĐT</th>
-                                                    <th class="text-center">Số Lượng Khách</th>
-                                                    <th>Trạng Thái</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php foreach ($tourDetail['danh_sach_khach'] as $guest): ?>
+                                <div class="tab-pane fade" id="guests">
+                                    <?php if (!empty($listKhachHang)): ?>
+                                        <div class="table-responsive">
+                                            <table class="table table-hover align-middle">
+                                                <thead class="table-light">
                                                     <tr>
-                                                        <td><?= $guest['stt'] ?></td>
-                                                        <td class="fw-bold"><?= htmlspecialchars($guest['ten_khach']) ?></td>
-                                                        <td><?= $guest['sdt'] ?></td>
-                                                        <td class="text-center"><span class="badge bg-primary"><?= $guest['so_luong'] ?></span></td>
-                                                        <td><span class="badge bg-success"><?= htmlspecialchars($guest['trang_thai']) ?></span></td>
+                                                        <th width="5%">STT</th>
+                                                        <th>Họ Tên & CCCD</th>
+                                                        <th>Giới tính</th>
+                                                        <th>Liên hệ</th>
+                                                        <th>Ghi chú</th>
+                                                        <th>Trạng thái Đơn</th>
                                                     </tr>
-                                                <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                    <?php foreach ($listKhachHang as $index => $khach): ?>
+                                                        <tr>
+                                                            <td class="text-center fw-bold text-muted"><?= $index + 1 ?></td>
+                                                            <td>
+                                                                <div class="fw-bold text-dark"><?= htmlspecialchars($khach['ho_ten']) ?></div>
+                                                                <small class="text-muted"><i class="bi bi-card-heading me-1"></i><?= htmlspecialchars($khach['so_giay_to']) ?></small>
+                                                            </td>
+                                                            <td>
+                                                                <?= (strtolower($khach['gioi_tinh']) == 'nam')
+                                                                    ? '<span class="badge bg-primary bg-opacity-10 text-primary">Nam</span>'
+                                                                    : '<span class="badge bg-danger bg-opacity-10 text-danger">Nữ</span>' ?>
+                                                            </td>
+                                                            <td>
+                                                                <a href="tel:<?= $khach['lien_he'] ?>" class="text-decoration-none">
+                                                                    <?= htmlspecialchars($khach['lien_he']) ?>
+                                                                </a>
+                                                            </td>
+                                                            <td>
+                                                                <?php if (!empty($khach['yeu_cau_ca_nhan'])): ?>
+                                                                    <span class="text-danger small"><i class="bi bi-exclamation-circle me-1"></i><?= htmlspecialchars($khach['yeu_cau_ca_nhan']) ?></span>
+                                                                <?php else: ?>
+                                                                    <span class="text-muted small">---</span>
+                                                                <?php endif; ?>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge bg-success rounded-pill px-3">
+                                                                    <?= htmlspecialchars($khach['trang_thai_don'] ?? 'Active') ?>
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="alert alert-info text-center m-3">
+                                            Chưa có khách hàng nào trong danh sách.
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="tab-pane fade" id="full-desc">
+                                    <div class="p-3 bg-light rounded text-secondary">
+                                        <?= htmlspecialchars_decode($tourDetails['mo_ta'] ?? 'Đang cập nhật...') ?>
                                     </div>
-                                    <div class="text-end text-muted small mt-3">Tổng cộng: <?= count($tourDetail['danh_sach_khach']) ?> Booking</div>
                                 </div>
 
                             </div>
@@ -195,8 +267,100 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalDiemDanh" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+
+                <form action="<?= BASEURL ?>?act=luu_diem_danh" method="POST">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-clipboard-check me-2"></i>Điểm Danh: <span id="modalDateTitle" class="text-warning">...</span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body p-0">
+                        <input type="hidden" name="lich_trinh_id" id="inputLichTrinhId" value="">
+                        <input type="hidden" name="tour_id" value="<?= $_GET['tour_id'] ?? $tourDetails['tour_id'] ?>">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0 align-middle">
+                                <thead class="table-light sticky-top" style="z-index: 1;">
+                                    <tr>
+                                        <th class="ps-4">Họ và Tên</th>
+                                        <th>Liên hệ</th>
+                                        <th class="text-center">Xác nhận</th>
+                                        <th>Ghi chú (Lý do vắng)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($listKhachHang)): ?>
+                                        <?php foreach ($listKhachHang as $kh): ?>
+                                            <tr>
+                                                <td class="ps-4">
+                                                    <div class="fw-bold"><?= htmlspecialchars($kh['ho_ten']) ?></div>
+                                                    <small class="text-muted">Nhóm: #<?= $kh['dat_tour_id'] ?></small>
+                                                </td>
+                                                <td><?= htmlspecialchars($kh['lien_he']) ?></td>
+
+                                                <td class="text-center">
+                                                    <input class="form-check-input form-check-input-lg border-2 border-primary"
+                                                        type="checkbox"
+                                                        name="status[<?= $kh['hanh_khach_id'] ?>]"
+                                                        value="present"
+                                                        checked
+                                                        title="Bỏ chọn nếu khách vắng">
+                                                </td>
+
+                                                <td>
+                                                    <input type="text" class="form-control form-control-sm"
+                                                        name="note[<?= $kh['hanh_khach_id'] ?>]"
+                                                        placeholder="...">
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4 text-muted">Không có khách nào để điểm danh.</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold">
+                            <i class="bi bi-save me-1"></i> Lưu Điểm Danh
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="./assets/js/sidebar.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var modalDiemDanh = document.getElementById('modalDiemDanh');
+
+            modalDiemDanh.addEventListener('show.bs.modal', function(event) {
+                // Nút bấm kích hoạt modal
+                var button = event.relatedTarget;
+
+                // Lấy dữ liệu từ data attribute của nút
+                var dateTitle = button.getAttribute('data-title');
+                var scheduleId = button.getAttribute('data-id');
+
+                // Cập nhật tiêu đề và input ẩn trong modal
+                modalDiemDanh.querySelector('#modalDateTitle').textContent = dateTitle;
+                modalDiemDanh.querySelector('#inputLichTrinhId').value = scheduleId;
+            });
+        });
+    </script>
 </body>
 
 </html>

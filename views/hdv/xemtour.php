@@ -1,64 +1,179 @@
+<?php
+// Giả định dữ liệu (giữ nguyên logic của bạn)
+// $tours = [...]; 
+$tours = $tours ?? [];
+?>
+
 <!DOCTYPE html>
 <html lang="vi">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh sách Tour Du lịch</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <title>Danh sách Tour được Phân công</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css">
 
     <link rel="stylesheet" href="./assets/css/sidebar.css">
+
     <style>
+        /* --- Cấu trúc chung --- */
         body {
-            background-color: #f5f7fb;
+            background-color: #f0f2f5;
+            /* Màu nền xám xanh hiện đại */
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         .main-content {
             margin-left: 0;
-            padding: 30px;
-            transition: margin-left .32s ease;
+            /* Sẽ thay đổi theo JS của sidebar */
+            padding: 2rem;
             min-height: 100vh;
+            transition: all 0.3s ease;
         }
 
-        .table-tour-header-custom {
-            background-color: #0d6efd !important;
-            color: white !important;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
+        /* --- Card Container --- */
         .tour-table-container {
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            background: #fff;
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            /* Đổ bóng mềm */
             overflow: hidden;
-            background-color: #fff;
+            /* Để bo góc hoạt động với bảng bên trong */
         }
 
-        .table> :not(caption)>*>* {
-            padding: 1rem 1rem;
+        .card-header {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+        .card-title {
+            font-weight: 700;
+            color: #1a1a1a;
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        /* --- Table Styling --- */
+        .table {
+            margin-bottom: 0;
+        }
+
+        /* Header Bảng */
+        .table-tour-header-custom th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* Gradient tím xanh */
+            /* Hoặc dùng màu xanh FPT: background: linear-gradient(135deg, #f37021 0%, #00529c 100%); */
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            padding: 15px;
+            border: none;
+            white-space: nowrap;
+        }
+
+        /* Dữ liệu Bảng */
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            color: #555;
+            border-bottom: 1px solid #f8f9fa;
+            font-size: 0.95rem;
+        }
+
+        /* Hiệu ứng Hover dòng */
+        .table tbody tr {
+            transition: all 0.2s ease;
         }
 
         .table tbody tr:hover {
-            background-color: #e9ecef;
+            background-color: #f8f9ff;
+            transform: scale(1.005);
+            /* Phóng to cực nhẹ khi hover */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 1;
+            position: relative;
         }
 
-        .col-price {
-            text-align: right;
-            font-weight: bold;
-            color: #198754;
+        /* --- Custom Columns --- */
+        .tour-name {
+            font-weight: 600;
+            color: #2c3e50;
+            min-width: 200px;
         }
 
-        .col-duration {
-            text-align: center;
+        .tour-date {
+            font-family: 'Consolas', monospace;
+            /* Font số cho ngày tháng */
+            color: #666;
+            font-size: 0.9rem;
         }
 
-        /* Căn giữa cột hành động */
-        .col-action {
-            text-align: center;
-            width: 100px;
+        /* --- Badges (Trạng thái) --- */
+        /* Ghi đè style của bootstrap badge để làm Soft UI */
+        .badge {
+            padding: 8px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.8rem;
+            letter-spacing: 0.3px;
+        }
+
+        .badge.bg-success {
+            background-color: rgba(25, 135, 84, 0.1) !important;
+            color: #198754 !important;
+            border: 1px solid rgba(25, 135, 84, 0.2);
+        }
+
+        .badge.bg-warning {
+            background-color: rgba(255, 193, 7, 0.1) !important;
+            color: #d68100 !important;
+            /* Màu cam đậm hơn cho dễ đọc */
+            border: 1px solid rgba(255, 193, 7, 0.2);
+        }
+
+        .badge.bg-secondary {
+            background-color: rgba(108, 117, 125, 0.1) !important;
+            color: #6c757d !important;
+        }
+
+        /* --- Button Action --- */
+        .btn-view-detail {
+            background-color: #fff;
+            color: #667eea;
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-view-detail:hover {
+            background-color: #667eea;
+            color: #fff;
+            border-color: #667eea;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* --- Responsive fix --- */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 15px;
+            }
+
+            .table-responsive {
+                border-radius: 15px;
+            }
         }
     </style>
 </head>
@@ -68,88 +183,115 @@
 
     <div class="main-content">
         <div class="container-fluid">
-            <h2 class="mb-4 fw-bold text-dark">🌍 Danh Sách Tour Du Lịch</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark m-0">Lịch Trình Của Tôi</h2>
+                    <p class="text-muted m-0 mt-1 small">Quản lý các tour du lịch bạn được phân công</p>
+                </div>
+            </div>
 
             <div class="card tour-table-container">
-                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 text-primary"><i class="bi bi-list-stars me-2"></i>Quản lý sản phẩm Tour</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title">
+                        <i class="bi bi-briefcase me-2 text-primary"></i> Danh sách Tour hiện có
+                    </h5>
+                    <span class="badge bg-primary rounded-pill"><?= count($tours) ?> Tour</span>
                 </div>
+
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover mb-0">
+                        <table class="table mb-0">
                             <thead class="table-tour-header-custom">
                                 <tr>
-                                    <th><i class="bi bi-card-heading"></i> Tên tour</th>
-                                    <th><i class="bi bi-folder-fill"></i> Danh mục</th>
-                                    <th><i class="bi bi-journals"></i> Mô tả ngắn</th>
-                                    <th><i class="bi bi-geo-alt-fill"></i> Khởi hành</th>
-                                    <th class="col-price"><i class="bi bi-cash-coin"></i> Giá</th>
-                                    <th class="col-duration"><i class="bi bi-clock-fill"></i> Thời lượng</th>
-                                    <th class="col-action"><i class="bi bi-gear-fill"></i> Hành động</th>
+                                    <th>Tên Tour</th>
+                                    <th class="text-center">Ngày Khởi Hành</th>
+                                    <th class="text-center">Ngày Kết Thúc</th>
+                                    <th>Hướng Dẫn Viên</th>
+                                    <th class="text-center">Trạng Thái</th>
+                                    <th class="text-center">Hành động</th>
                                 </tr>
                             </thead>
 
                             <tbody>
-                                <?php
-                                // Dữ liệu giả lập cho biến $tours (Đã thêm trường "id" giả định)
-                                $tours = $tours ?? [
-                                    [
-                                        "id" => 1, // ID giả định
-                                        "ten" => "Hà Nội - Sapa 3N2D",
-                                        "ten_danh_muc" => "Tour Miền Bắc",
-                                        "mo_ta_ngan" => "Khám phá Fansipan và nét văn hóa độc đáo của Sapa.",
-                                        "diem_khoi_hanh" => "Hà Nội",
-                                        "gia_co_ban" => 3500000,
-                                        "thoi_luong_mac_dinh" => 3
-                                    ],
-                                    [
-                                        "id" => 2, // ID giả định
-                                        "ten" => "Đà Nẵng - Hội An 4N3D",
-                                        "ten_danh_muc" => "Tour Miền Trung",
-                                        "mo_ta_ngan" => "Tận hưởng biển Mỹ Khê và phố cổ Hội An lãng mạn.",
-                                        "diem_khoi_hanh" => "Đà Nẵng",
-                                        "gia_co_ban" => 5200000,
-                                        "thoi_luong_mac_dinh" => 4
-                                    ],
-                                    [
-                                        "id" => 3, // ID giả định
-                                        "ten" => "TP.HCM - Phú Quốc 3N2D",
-                                        "ten_danh_muc" => "Tour Miền Nam",
-                                        "mo_ta_ngan" => "Nghỉ dưỡng tại đảo ngọc, vui chơi tại VinWonders.",
-                                        "diem_khoi_hanh" => "TP.HCM",
-                                        "gia_co_ban" => 4800000,
-                                        "thoi_luong_mac_dinh" => 3
-                                    ],
-                                ];
-                                ?>
-                                <?php foreach ($tours as $tour): ?>
-                                    <tr>
-                                        <td class="fw-bold text-primary"><?= htmlspecialchars($tour["ten"]) ?></td>
-                                        <td><?= htmlspecialchars($tour["ten_danh_muc"]) ?></td>
-                                        <td><?= htmlspecialchars($tour["mo_ta_ngan"]) ?></td>
-                                        <td><?= htmlspecialchars($tour["diem_khoi_hanh"]) ?></td>
-                                        <td class="col-price"><?= number_format($tour["gia_co_ban"], 0, ',', '.') ?> đ</td>
-                                        <td class="col-duration"><?= htmlspecialchars($tour["thoi_luong_mac_dinh"]) ?> ngày</td>
-                                        <td class="col-action">
-                                            <a href="<?= BASEURL ?>?act=xem_chitiet_tour&id=<?= $tour["tour_id"] ?>" class="btn btn-sm btn-primary"> Xem chi tiết </a>
+                                <?php if (!empty($tours)): ?>
+                                    <?php foreach ($tours as $tour): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="d-flex justify-content-center align-items-center bg-light rounded-circle me-3" style="width: 40px; height: 40px; min-width: 40px;">
+                                                        <i class="bi bi-geo-alt-fill text-danger"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="tour-name"><?= htmlspecialchars($tour["Ten_Tour"]) ?></div>
+                                                        <small class="text-muted">Mã: #<?= $tour["tour_id"] ?? 'N/A' ?></small>
+                                                    </div>
+                                                </div>
+                                            </td>
 
+                                            <td class="text-center tour-date">
+                                                <i class="bi bi-calendar2-event me-1 text-info"></i>
+                                                <?= date('d/m/Y', strtotime($tour["Ngay_Khoi_Hanh"])) ?>
+                                            </td>
+
+                                            <td class="text-center tour-date">
+                                                <i class="bi bi-calendar2-check me-1 text-danger"></i>
+                                                <?= date('d/m/Y', strtotime($tour["Ngay_Ket_Thuc"])) ?>
+                                            </td>
+
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-person-circle fs-5 me-2 text-secondary"></i>
+                                                    <span class="fw-medium"><?= htmlspecialchars($tour["Ten_HDV"]) ?></span>
+                                                </div>
+                                            </td>
+
+                                            <td class="text-center">
+                                                <?php
+                                                $status = strtolower($tour["Trang_Thai_Phan_Cong"]);
+                                                if ($status == 'confirmed' || $status == 'is_active') {
+                                                    echo '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Đã xác nhận</span>';
+                                                } elseif ($status == 'pending') {
+                                                    echo '<span class="badge bg-warning"><i class="bi bi-hourglass-split me-1"></i>Chờ duyệt</span>';
+                                                } else {
+                                                    echo '<span class="badge bg-secondary">' . htmlspecialchars($tour["Trang_Thai_Phan_Cong"]) . '</span>';
+                                                }
+                                                ?>
+                                            </td>
+
+
+                                            <td class="text-center">
+                                                <a
+                                                    href="<?= BASEURL ?>?act=xem_chitiet_tour&tour_id=<?= $tour['tour_id'] ?? '' ?>"
+                                                    class="btn-view-detail text-decoration-none">
+                                                    Xem chi tiết <i class="bi bi-arrow-right"></i>
+                                                </a>
+                                            </td>
+
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5">
+                                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486754.png" alt="Empty" width="80" class="mb-3 opacity-50">
+                                            <p class="text-muted fw-bold">Chưa có lịch trình nào được phân công.</p>
                                         </td>
                                     </tr>
-                                <?php endforeach; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div class="card-footer bg-light border-0 py-3 text-muted">
-                    Tổng cộng: <?= count($tours) ?> tour đang hoạt động.
-                </div>
+                <?php if (!empty($tours)): ?>
+                    <div class="card-footer bg-white border-top-0 py-3">
+                        <small class="text-muted">Hiển thị <?= count($tours) ?> kết quả</small>
+                    </div>
+                <?php endif; ?>
             </div>
-
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="./assets/js/sidebar.js"></script>
 </body>
 
