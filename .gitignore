@@ -1,0 +1,21 @@
+# Logs
+logs/
+*.log
+
+# Uploads
+uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Laravel/PHP specific
+composer.lock
+vendor/

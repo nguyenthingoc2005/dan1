@@ -1,32 +1,243 @@
-<?php 
-// Require toàn bộ các file khai báo môi trường, thực thi,...(không require view)
+<?php
+/**
+ * ==============================================================================
+ * TOUR MANAGEMENT SYSTEM - MAIN APPLICATION ROUTER
+ * ==============================================================================
+ * 
+ * Entry point cho toàn bộ ứng dụng.
+ * Xử lý routing theo parameter ?act=
+ * 
+ * Theo Vibe Coding: Simple is Best
+ * 
+ * @version 1.0
+ * @date 2024-12-01
+ * ==============================================================================
+ */
 
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
 
+// Start session
 session_start();
-const BASEURL='http://localhost/DAN1/';
-require_once './commons/env.php';
-require_once './commons/function.php';
 
-//Controller
-require_once './controllers/AdminController.php';
-require_once './controllers/HdvController.php';
+// Load bootstrap (database, helpers, config)
+require_once __DIR__ . '/bootstrap.php';
 
+// ============================================================================
+// PARSE ROUTE PARAMETERS
+// ============================================================================
 
-//model
-require_once './models/creatDataModule.php';
-require_once './models/uppDateDataModule.php';
-require_once './models/deleteDataModule.php';
-require_once './models/getDataModule.php';
+// Lấy action từ query string: ?act=login, ?act=admin-dashboard, etc.
+$act = $_GET['act'] ?? '';
 
-// // Route
+// Lấy HTTP method
+$method = $_SERVER['REQUEST_METHOD'];
 
-// require_once './route/admin.php';
+// ============================================================================
+// PUBLIC ROUTES (Không cần login)
+// ============================================================================
 
-if(isset($_SESSION['user'])&&$_SESSION['user']['vai_tro_id']==1){
-    require_once './route/admin.php';
+// Route: Login
+if ($act === 'login' || $act === '') {
+    if ($method === 'GET') {
+        // Nếu đã login rồi thì redirect về dashboard
+        if (is_logged_in()) {
+            redirect_to_dashboard();
+            exit;
+        }
+        require VIEWS_PATH . '/auth/login.php';
+        exit;
+    } elseif ($method === 'POST') {
+        require_once CONTROLLERS_PATH . '/AuthController.php';
+        $authController = new AuthController($pdo);
+        $authController->handleLogin();
+        exit;
+    }
 }
-else{
-    require_once './route/hdv.php';
+
+// Route: Logout
+if ($act === 'logout') {
+    require_once CONTROLLERS_PATH . '/AuthController.php';
+    $authController = new AuthController($pdo);
+    $authController->logout();
+    exit;
 }
 
+// Route: Access denied
+if ($act === 'access-denied') {
+    require VIEWS_PATH . '/errors/access-denied.php';
+    exit;
+}
+
+// ============================================================================
+// AUTHENTICATED ROUTES (Cần login)
+// ============================================================================
+
+require_login(); // Từ đây trở xuống phải login
+
+// ============================================================================
+// ADMIN ROUTES
+// ============================================================================
+
+if (strpos($act, 'admin-') === 0) {
+    require_admin(); // Check admin permission
+
+    require_once CONTROLLERS_PATH . '/DashboardController.php';
+    $dashboardController = new DashboardController($pdo);
+
+    switch ($act) {
+        case 'admin-dashboard':
+            $dashboardController->adminDashboard();
+            break;
+
+        case 'admin-tours':
+            echo "Admin Tours - Coming soon";
+            break;
+
+        case 'admin-tours-pending':
+            echo "Admin Tours Pending - Coming soon";
+            break;
+
+        case 'admin-bookings':
+            echo "Admin Bookings - Coming soon";
+            break;
+
+        case 'admin-bookings-pending':
+            echo "Admin Bookings Pending - Coming soon";
+            break;
+
+        case 'admin-users':
+            echo "Admin Users - Coming soon";
+            break;
+
+        case 'admin-suppliers':
+            echo "Admin Suppliers - Coming soon";
+            break;
+
+        case 'admin-services':
+            echo "Admin Services - Coming soon";
+            break;
+
+        case 'admin-categories':
+            echo "Admin Categories - Coming soon";
+            break;
+
+        case 'admin-destinations':
+            echo "Admin Destinations - Coming soon";
+            break;
+
+        case 'admin-reports':
+            echo "Admin Reports - Coming soon";
+            break;
+
+        default:
+            http_response_code(404);
+            require VIEWS_PATH . '/errors/404.php';
+            break;
+    }
+    exit;
+}
+
+// ============================================================================
+// STAFF ROUTES
+// ============================================================================
+
+if (strpos($act, 'staff-') === 0) {
+    require_staff(); // Check staff permission
+
+    require_once CONTROLLERS_PATH . '/DashboardController.php';
+    $dashboardController = new DashboardController($pdo);
+
+    switch ($act) {
+        case 'staff-dashboard':
+            $dashboardController->staffDashboard();
+            break;
+
+        case 'staff-tours':
+            echo "Staff Tours - Coming soon";
+            break;
+
+        case 'staff-tours-create':
+            echo "Staff Create Tour - Coming soon";
+            break;
+
+        case 'staff-bookings':
+            echo "Staff Bookings - Coming soon";
+            break;
+
+        case 'staff-bookings-create':
+            echo "Staff Create Booking - Coming soon";
+            break;
+
+        case 'staff-customers':
+            echo "Staff Customers - Coming soon";
+            break;
+
+        case 'staff-customers-create':
+            echo "Staff Create Customer - Coming soon";
+            break;
+
+        case 'staff-customers-import':
+            echo "Staff Import Customers - Coming soon";
+            break;
+
+        case 'staff-payments':
+            echo "Staff Payments - Coming soon";
+            break;
+
+        default:
+            http_response_code(404);
+            require VIEWS_PATH . '/errors/404.php';
+            break;
+    }
+    exit;
+}
+
+// ============================================================================
+// GUIDE ROUTES
+// ============================================================================
+
+if (strpos($act, 'guide-') === 0) {
+    require_guide(); // Check guide permission
+
+    require_once CONTROLLERS_PATH . '/DashboardController.php';
+    $dashboardController = new DashboardController($pdo);
+
+    switch ($act) {
+        case 'guide-dashboard':
+            $dashboardController->guideDashboard();
+            break;
+
+        case 'guide-tours':
+            echo "Guide Tours - Coming soon";
+            break;
+
+        case 'guide-checkin':
+            echo "Guide Check-in - Coming soon";
+            break;
+
+        case 'guide-journal':
+            echo "Guide Journal - Coming soon";
+            break;
+
+        case 'guide-expenses':
+            echo "Guide Expenses - Coming soon";
+            break;
+
+        default:
+            http_response_code(404);
+            require VIEWS_PATH . '/errors/404.php';
+            break;
+    }
+    exit;
+}
+
+// ============================================================================
+// 404 NOT FOUND
+// ============================================================================
+
+http_response_code(404);
+require VIEWS_PATH . '/errors/404.php';
+exit;
 
