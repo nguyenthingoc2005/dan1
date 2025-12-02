@@ -32,7 +32,8 @@ $search = $_GET['search'] ?? '';
         <h1 class="text-2xl font-bold text-primary">Quản lý nhân viên</h1>
         <p class="text-gray-600 mt-1">Tổng số: <?= number_format($total) ?> nhân viên</p>
     </div>
-    <a href="?act=admin/users/create" class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 transition">
+    <a href="?act=admin&module=users&action=create"
+        class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 transition">
         + Thêm nhân viên mới
     </a>
 </div>
@@ -40,7 +41,8 @@ $search = $_GET['search'] ?? '';
 <!-- Filter Bar -->
 <div class="bg-white p-4 rounded mb-4">
     <form method="GET" class="flex gap-4 items-end">
-        <input type="hidden" name="act" value="admin/users">
+        <input type="hidden" name="act" value="admin">
+        <input type="hidden" name="module" value="users">
 
         <!-- Search -->
         <div class="flex-1">
@@ -78,7 +80,7 @@ $search = $_GET['search'] ?? '';
             <button type="submit" class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600">
                 Lọc
             </button>
-            <a href="?act=admin/users" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+            <a href="?act=admin&module=users" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
                 Reset
             </a>
         </div>
@@ -151,13 +153,14 @@ $search = $_GET['search'] ?? '';
                         </td>
                         <td class="px-4 py-3 text-sm">
                             <div class="flex gap-2">
-                                <a href="?act=admin/users/edit&id=<?= $user['id'] ?>" class="text-accent hover:text-blue-700"
-                                    title="Sửa">
+                                <a href="?act=admin&module=users&action=edit&id=<?= $user['id'] ?>"
+                                    class="text-accent hover:text-blue-700" title="Sửa">
                                     ✏️
                                 </a>
                                 <?php if ($user['id'] != get_user_id()): ?>
-                                    <a href="?act=admin/users/delete&id=<?= $user['id'] ?>" class="text-red-500 hover:text-red-700"
-                                        title="Xóa" onclick="return confirm('Bạn có chắc muốn xóa nhân viên này?')">
+                                    <a href="?act=admin&module=users&action=delete&id=<?= $user['id'] ?>"
+                                        class="text-red-500 hover:text-red-700" title="Xóa"
+                                        onclick="return confirm('Bạn có chắc muốn xóa nhân viên này?')">
                                         🗑️
                                     </a>
                                 <?php endif; ?>
@@ -174,7 +177,7 @@ $search = $_GET['search'] ?? '';
 <?php if ($total_pages > 1): ?>
     <div class="mt-4 flex justify-center gap-2">
         <?php
-        $base_url = '?act=admin/users';
+        $base_url = '?act=admin&module=users';
         if ($search)
             $base_url .= '&search=' . urlencode($search);
         if ($filter_role)

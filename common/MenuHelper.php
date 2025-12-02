@@ -31,8 +31,8 @@ function get_menu_items($role)
             [
                 'icon' => '📊',
                 'label' => 'Dashboard',
-                'url' => $base_url . '/?act=admin-dashboard',
-                'active_pattern' => 'admin-dashboard'
+                'url' => $base_url . '/?act=admin',
+                'active_pattern' => 'admin'
             ],
             [
                 'icon' => '✈️',
@@ -74,27 +74,21 @@ function get_menu_items($role)
             ],
             [
                 'icon' => '🏢',
-                'label' => 'Suppliers',
-                'url' => $base_url . '/?act=admin-suppliers',
-                'active_pattern' => 'admin-suppliers'
+                'label' => 'Nhà cung cấp',
+                'url' => $base_url . '/?act=admin&module=suppliers',
+                'active_pattern' => 'admin:suppliers'
             ],
             [
-                'icon' => '🛎️',
-                'label' => 'Services',
-                'url' => $base_url . '/?act=admin-services',
-                'active_pattern' => 'admin-services'
-            ],
-            [
-                'icon' => '📂',
-                'label' => 'Categories',
-                'url' => $base_url . '/?act=admin-categories',
-                'active_pattern' => 'admin-categories'
+                'icon' => '🛠️',
+                'label' => 'Dịch vụ',
+                'url' => $base_url . '/?act=admin&module=services',
+                'active_pattern' => 'admin:services'
             ],
             [
                 'icon' => '🌍',
-                'label' => 'Destinations',
-                'url' => $base_url . '/?act=admin-destinations',
-                'active_pattern' => 'admin-destinations'
+                'label' => 'Địa điểm',
+                'url' => $base_url . '/?act=admin&module=destinations',
+                'active_pattern' => 'admin:destinations'
             ],
             [
                 'icon' => '📈',

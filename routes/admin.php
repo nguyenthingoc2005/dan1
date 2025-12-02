@@ -6,9 +6,9 @@
  * 
  * Pattern: ?act=admin&module=X&action=Y
  * 
- * Modules: categories, users, service-types, suppliers, destinations
+ * Modules: categories, users, service-types, suppliers, services, destinations
  * 
- * @version 2.0
+ * @version 2.1
  * @date 2024-12-02
  * ==============================================================================
  */
@@ -121,17 +121,99 @@ switch ($module) {
         break;
 
     // ==========================================================================
-    // SUPPLIERS MODULE (Coming soon)
+    // SUPPLIERS MODULE
     // ==========================================================================
     case 'suppliers':
-        echo "Admin Suppliers - Coming soon";
+        require_once CONTROLLERS_PATH . '/admin/SupplierController.php';
+        $controller = new SupplierController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $controller->index();
+                break;
+            case 'create':
+                $controller->create();
+                break;
+            case 'store':
+                $controller->store();
+                break;
+            case 'edit':
+                $controller->edit();
+                break;
+            case 'update':
+                $controller->update();
+                break;
+            case 'delete':
+                $controller->delete();
+                break;
+            default:
+                http_response_code(404);
+                require VIEWS_PATH . '/errors/404.php';
+        }
+        break;
+
+    // ==========================================================================
+    // SERVICES MODULE
+    // ==========================================================================
+    case 'services':
+        require_once CONTROLLERS_PATH . '/admin/ServiceController.php';
+        $controller = new ServiceController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $controller->index();
+                break;
+            case 'create':
+                $controller->create();
+                break;
+            case 'store':
+                $controller->store();
+                break;
+            case 'edit':
+                $controller->edit();
+                break;
+            case 'update':
+                $controller->update();
+                break;
+            case 'delete':
+                $controller->delete();
+                break;
+            default:
+                http_response_code(404);
+                require VIEWS_PATH . '/errors/404.php';
+        }
         break;
 
     // ==========================================================================
     // DESTINATIONS MODULE (Coming soon)
     // ==========================================================================
     case 'destinations':
-        echo "Admin Destinations - Coming soon";
+        require_once CONTROLLERS_PATH . '/admin/DestinationController.php';
+        $controller = new DestinationController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $controller->index();
+                break;
+            case 'create':
+                $controller->create();
+                break;
+            case 'store':
+                $controller->store();
+                break;
+            case 'edit':
+                $controller->edit();
+                break;
+            case 'update':
+                $controller->update();
+                break;
+            case 'delete':
+                $controller->delete();
+                break;
+            default:
+                http_response_code(404);
+                require VIEWS_PATH . '/errors/404.php';
+        }
         break;
 
     // ==========================================================================

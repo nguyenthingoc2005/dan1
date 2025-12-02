@@ -11,7 +11,8 @@ if (!is_admin())
 <div class="max-w-3xl">
     <h1 class="text-2xl font-bold text-primary mb-6">Thêm nhân viên mới</h1>
 
-    <form method="POST" action="?act=admin/users/store" enctype="multipart/form-data" class="bg-white p-6 rounded">
+    <form method="POST" action="?act=admin&module=users&action=store" enctype="multipart/form-data"
+        class="bg-white p-6 rounded">
 
         <!-- Email -->
         <div class="mb-4">
@@ -106,7 +107,7 @@ if (!is_admin())
             <button type="submit" class="px-6 py-2 bg-accent text-white rounded hover:bg-blue-600">
                 Tạo nhân viên
             </button>
-            <a href="?act=admin/users" class="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+            <a href="?act=admin&module=users" class="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
                 Hủy
             </a>
         </div>

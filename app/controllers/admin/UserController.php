@@ -124,14 +124,14 @@ class UserController
 
             if ($this->userModel->create($data)) {
                 set_success("Tạo nhân viên thành công!");
-                redirect('?act=admin/users');
+                redirect('?act=admin&module=users');
             } else {
                 throw new Exception("Không thể tạo nhân viên.");
             }
 
         } catch (Exception $e) {
             set_error($e->getMessage());
-            redirect('?act=admin/users/create');
+            redirect('?act=admin&module=users&action=create');
         }
     }
 
@@ -144,14 +144,14 @@ class UserController
 
         if (empty($_GET['id'])) {
             set_error("Không tìm thấy nhân viên.");
-            redirect('?act=admin/users');
+            redirect('?act=admin&module=users');
             return;
         }
 
         $user = $this->userModel->findById((int) $_GET['id']);
         if (!$user) {
             set_error("Không tìm thấy nhân viên.");
-            redirect('?act=admin/users');
+            redirect('?act=admin&module=users');
             return;
         }
 
@@ -221,11 +221,11 @@ class UserController
                 throw new Exception("Không thể cập nhật.");
             }
 
-            redirect('?act=admin/users');
+            redirect('?act=admin&module=users');
 
         } catch (Exception $e) {
             set_error($e->getMessage());
-            redirect('?act=admin/users/edit&id=' . ($user_id ?? 0));
+            redirect('?act=admin&module=users&action=edit&id=' . ($user_id ?? 0));
         }
     }
 
@@ -256,7 +256,7 @@ class UserController
             set_error($e->getMessage());
         }
 
-        redirect('?act=admin/users');
+        redirect('?act=admin&module=users');
     }
 
     /**
