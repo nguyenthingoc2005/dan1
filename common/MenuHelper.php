@@ -35,24 +35,22 @@ function get_menu_items($role)
                 'active_pattern' => 'admin'
             ],
             [
-                'icon' => '✈️',
-                'label' => 'Tours',
-                'url' => $base_url . '/?act=admin-tours',
-                'active_pattern' => 'admin-tours',
-                'submenu' => [
-                    ['label' => 'Tất cả Tours', 'url' => $base_url . '/?act=admin-tours'],
-                    ['label' => 'Chờ duyệt', 'url' => $base_url . '/?act=admin-tours-pending'],
-                ]
+                'icon' => '🗺️',
+                'label' => 'Quản lý Tour',
+                'url' => $base_url . '/?act=admin&module=tours',
+                'active_pattern' => 'admin:tours'
             ],
             [
                 'icon' => '📝',
-                'label' => 'Bookings',
-                'url' => $base_url . '/?act=admin-bookings',
-                'active_pattern' => 'admin-bookings',
-                'submenu' => [
-                    ['label' => 'Tất cả Bookings', 'url' => $base_url . '/?act=admin-bookings'],
-                    ['label' => 'Chờ duyệt', 'url' => $base_url . '/?act=admin-bookings-pending'],
-                ]
+                'label' => 'Quản lý Đặt Tour',
+                'url' => $base_url . '/?act=admin&module=bookings',
+                'active_pattern' => 'admin:bookings'
+            ],
+            [
+                'icon' => '📅',
+                'label' => 'Lịch Khởi Hành',
+                'url' => $base_url . '/?act=admin&module=schedules',
+                'active_pattern' => 'admin:schedules'
             ],
             [
                 'icon' => '👥',

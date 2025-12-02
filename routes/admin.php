@@ -211,8 +211,95 @@ switch ($module) {
                 $controller->delete();
                 break;
             default:
-                http_response_code(404);
                 require VIEWS_PATH . '/errors/404.php';
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: TOURS
+    // ==========================================================================
+    case 'tours':
+        require_once CONTROLLERS_PATH . '/admin/TourController.php';
+        $tourController = new TourController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $tourController->index();
+                break;
+            case 'create':
+                $tourController->create();
+                break;
+            case 'store':
+                $tourController->store();
+                break;
+            case 'show':
+                $tourController->show();
+                break;
+            case 'edit':
+                $tourController->edit();
+                break;
+            case 'update':
+                $tourController->update();
+                break;
+            case 'changeStatus':
+                $tourController->changeStatus();
+                break;
+            case 'delete':
+                $tourController->delete();
+                break;
+            default:
+                $tourController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: BOOKINGS
+    // ==========================================================================
+    case 'bookings':
+        require_once CONTROLLERS_PATH . '/admin/BookingController.php';
+        $bookingController = new BookingController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $bookingController->index();
+                break;
+            case 'create':
+                $bookingController->create();
+                break;
+            case 'store':
+                $bookingController->store();
+                break;
+            case 'show':
+                $bookingController->show();
+                break;
+            case 'changeStatus':
+                $bookingController->changeStatus();
+                break;
+            default:
+                $bookingController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: SCHEDULES
+    // ==========================================================================
+    case 'schedules':
+        require_once CONTROLLERS_PATH . '/admin/TourScheduleController.php';
+        $scheduleController = new TourScheduleController($pdo);
+
+        $action = $_GET['action'] ?? 'index';
+        switch ($action) {
+            case 'create':
+                $scheduleController->create();
+                break;
+            case 'store':
+                $scheduleController->store();
+                break;
+            default:
+                $scheduleController->index();
+                break;
         }
         break;
 

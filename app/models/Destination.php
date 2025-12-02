@@ -312,4 +312,25 @@ class Destination
             throw $e;
         }
     }
+    /**
+     * Lấy destinations cho dropdown (id => name)
+     */
+    public function getForDropdown()
+    {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT id, name
+                FROM destinations
+                WHERE status = 'active'
+                ORDER BY name ASC
+            ");
+
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_KEY_PAIR); // [id => name]
+
+        } catch (PDOException $e) {
+            error_log("Destination::getForDropdown() Error: " . $e->getMessage());
+            return [];
+        }
+    }
 }
