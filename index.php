@@ -77,7 +77,91 @@ if ($act === 'access-denied') {
 require_login(); // Từ đây trở xuống phải login
 
 // ============================================================================
-// ADMIN ROUTES
+// ADMIN ROUTES - MODULE BASED (act=admin&module=X&action=Y)
+// ============================================================================
+
+if ($act === 'admin') {
+    require_admin();
+
+    $module = $_GET['module'] ?? '';
+    $action = $_GET['action'] ?? 'index';
+
+    switch ($module) {
+        // ========== CATEGORIES MODULE ==========
+        case 'categories':
+            require_once CONTROLLERS_PATH . '/admin/CategoryController.php';
+            $controller = new CategoryController($pdo);
+
+            switch ($action) {
+                case 'index':
+                    $controller->index();
+                    break;
+                case 'create':
+                    $controller->create();
+                    break;
+                case 'store':
+                    $controller->store();
+                    break;
+                case 'edit':
+                    $controller->edit();
+                    break;
+                case 'update':
+                    $controller->update();
+                    break;
+                case 'delete':
+                    $controller->delete();
+                    break;
+                default:
+                    http_response_code(404);
+                    require VIEWS_PATH . '/errors/404.php';
+            }
+            break;
+
+        // ========== USERS MODULE ==========
+        case 'users':
+            require_once CONTROLLERS_PATH . '/admin/UserController.php';
+            $controller = new UserController($pdo);
+
+            switch ($action) {
+                case 'index':
+                    $controller->index();
+                    break;
+                case 'create':
+                    $controller->create();
+                    break;
+                case 'store':
+                    $controller->store();
+                    break;
+                case 'edit':
+                    $controller->edit();
+                    break;
+                case 'update':
+                    $controller->update();
+                    break;
+                case 'delete':
+                    $controller->delete();
+                    break;
+                case 'toggle-status':
+                    $controller->toggleStatus();
+                    break;
+                default:
+                    http_response_code(404);
+                    require VIEWS_PATH . '/errors/404.php';
+            }
+            break;
+
+        // ========== DEFAULT: DASHBOARD ==========
+        default:
+            require_once CONTROLLERS_PATH . '/DashboardController.php';
+            $dashboardController = new DashboardController($pdo);
+            $dashboardController->adminDashboard();
+            break;
+    }
+    exit;
+}
+
+// ============================================================================
+// ADMIN ROUTES - OLD STYLE (Backward compatibility)
 // ============================================================================
 
 if (strpos($act, 'admin-') === 0 || strpos($act, 'admin/') === 0) {

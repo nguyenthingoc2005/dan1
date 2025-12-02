@@ -57,8 +57,14 @@ function get_menu_items($role)
             [
                 'icon' => '👥',
                 'label' => 'Quản lý nhân viên',
-                'url' => $base_url . '/?act=admin/users',
-                'active_pattern' => 'admin/users'
+                'url' => $base_url . '/?act=admin&module=users',
+                'active_pattern' => 'admin:users'
+            ],
+            [
+                'icon' => '📂',
+                'label' => 'Danh mục',
+                'url' => $base_url . '/?act=admin&module=categories',
+                'active_pattern' => 'admin:categories'
             ],
             [
                 'icon' => '🏢',
@@ -190,12 +196,23 @@ function get_menu_items($role)
 /**
  * Check if route is active
  * 
- * @param string $pattern Route pattern to match
+ * Supports both old-style (?act=admin-dashboard) and new module-based (?act=admin&module=users)
+ * 
+ * @param string $pattern Route pattern to match (e.g., 'admin-dashboard' or 'admin:users')
  * @return bool
  */
 function is_active_route($pattern)
 {
     $current_act = $_GET['act'] ?? '';
+    $current_module = $_GET['module'] ?? '';
+
+    // New pattern: "act:module" (e.g., "admin:users")
+    if (strpos($pattern, ':') !== false) {
+        list($act_pattern, $module_pattern) = explode(':', $pattern, 2);
+        return $current_act === $act_pattern && $current_module === $module_pattern;
+    }
+
+    // Old pattern: exact match or starts with
     return strpos($current_act, $pattern) === 0;
 }
 
