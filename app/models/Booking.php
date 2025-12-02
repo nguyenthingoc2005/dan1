@@ -247,6 +247,155 @@ class Booking
         return $stmt->execute($params);
     }
 
+    /**
+     * Lấy lịch sử trạng thái
+     */
+    public function getHistory($id)
+    {
+        $sql = "SELECT h.*, u.full_name as user_name 
+                FROM booking_status_history h
+                LEFT JOIN users u ON h.changed_by = u.id
+                WHERE h.booking_id = :id 
+                ORDER BY h.created_at DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Ghi log lịch sử
+     */
+    public function logHistory($bookingId, $oldStatus, $newStatus, $userId, $reason = null, $notes = null)
+    {
+        $sql = "INSERT INTO booking_status_history (booking_id, old_status, new_status, changed_by, reason, notes)
+                VALUES (:booking_id, :old_status, :new_status, :changed_by, :reason, :notes)";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'booking_id' => $bookingId,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'changed_by' => $userId,
+            'reason' => $reason,
+            'notes' => $notes
+        ]);
+    }
+
+    /**
+     * Cập nhật trạng thái thanh toán dựa trên tổng tiền đã đóng
+     */
+    public function updatePaymentStatus($id)
+    {
+        // 1. Get Booking Info
+        $stmt = $this->pdo->prepare("SELECT final_amount, deposit_amount FROM bookings WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$booking)
+            return;
+
+        // 2. Sum Completed Payments
+        $stmt = $this->pdo->prepare("SELECT SUM(amount) FROM payments WHERE booking_id = :id AND status = 'completed'");
+        $stmt->execute(['id' => $id]);
+        $paidAmount = (float) $stmt->fetchColumn();
+
+        // 3. Calculate Status
+        $finalAmount = (float) $booking['final_amount'];
+        $remaining = max(0, $finalAmount - $paidAmount);
+
+        $status = 'unpaid';
+        if ($paidAmount >= $finalAmount) {
+            $status = 'paid';
+        } elseif ($paidAmount > 0) {
+            $status = 'partial';
+        }
+
+        // 4. Update Booking
+        $sql = "UPDATE bookings SET 
+                paid_amount = :paid, 
+                remaining_amount = :remaining, 
+                payment_status = :status 
+                WHERE id = :id";
+
+        $this->pdo->prepare($sql)->execute([
+            'paid' => $paidAmount,
+            'remaining' => $remaining,
+            'status' => $status,
+            'id' => $id
+        ]);
+    }
+
+    /**
+     * Hủy Booking (Có tính phí)
+     */
+    public function cancel($id, $reason, $userId)
+    {
+        try {
+            $this->pdo->beginTransaction();
+
+            // 1. Get Booking Info
+            $booking = $this->getById($id);
+            if (!$booking)
+                throw new Exception("Booking not found");
+
+            // 2. Calculate Days Before Departure
+            $startDate = new DateTime($booking['start_date']);
+            $today = new DateTime();
+            $interval = $today->diff($startDate);
+            $daysBefore = (int) $interval->format('%r%a'); // %r for sign (negative if passed)
+
+            if ($daysBefore < 0)
+                $daysBefore = 0;
+
+            // 3. Find Policy
+            $sql = "SELECT * FROM cancellation_policies 
+                    WHERE days_before <= :days 
+                    ORDER BY days_before DESC 
+                    LIMIT 1";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['days' => $daysBefore]);
+            $policy = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            $feePercentage = $policy ? (float) $policy['fee_percentage'] : 0;
+            $feeAmount = ($booking['final_amount'] * $feePercentage) / 100;
+            $refundAmount = $booking['paid_amount'] - $feeAmount;
+
+            // 4. Update Booking
+            $sql = "UPDATE bookings SET 
+                    approval_status = 'cancelled',
+                    cancellation_date = NOW(),
+                    cancellation_reason = :reason,
+                    cancellation_policy_id = :policy_id,
+                    cancellation_fee = :fee,
+                    refund_amount = :refund
+                    WHERE id = :id";
+
+            $this->pdo->prepare($sql)->execute([
+                'reason' => $reason,
+                'policy_id' => $policy['id'] ?? null,
+                'fee' => $feeAmount,
+                'refund' => $refundAmount,
+                'id' => $id
+            ]);
+
+            // 5. Log History
+            $this->logHistory($id, $booking['approval_status'], 'cancelled', $userId, $reason, "Phí hủy: " . number_format($feeAmount) . " (" . $feePercentage . "%)");
+
+            // 6. Return Quota (Optional - if needed)
+            // Logic to increase schedule quota back goes here if using TourSchedule
+
+            $this->pdo->commit();
+            return [
+                'fee' => $feeAmount,
+                'refund' => $refundAmount,
+                'policy' => $policy['name'] ?? 'Mặc định'
+            ];
+
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
     private function generateBookingCode()
     {
         // Format: BK-YYYYMMDD-XXXX

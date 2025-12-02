@@ -141,6 +141,16 @@ if (!is_admin())
                                 <?php else: ?>
                                     <span class="text-[10px] font-bold text-gray-400 uppercase">Chưa thanh toán</span>
                                 <?php endif; ?>
+
+                                <?php
+                                $daysToStart = (strtotime($b['start_date']) - time()) / (60 * 60 * 24);
+                                if ($daysToStart <= 1 && $b['payment_status'] != 'paid' && $b['approval_status'] != 'cancelled'):
+                                    ?>
+                                    <div
+                                        class="mt-1 text-[10px] font-bold text-red-600 flex items-center justify-center gap-1 animate-pulse">
+                                        <span>⚠ Sắp khởi hành</span>
+                                    </div>
+                                <?php endif; ?>
                             </td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
                                 <a href="?act=admin&module=bookings&action=show&id=<?= $b['id'] ?>"

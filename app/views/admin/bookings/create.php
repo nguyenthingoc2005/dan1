@@ -8,7 +8,7 @@ $old = $_SESSION['old'] ?? [];
 unset($_SESSION['old']);
 ?>
 
-<div class="max-w-5xl mx-auto">
+<div class="max-w-[95%] mx-auto">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-primary">Tạo Booking Mới</h1>
         <a href="?act=admin&module=bookings" class="text-gray-600 hover:text-gray-800">
@@ -16,18 +16,18 @@ unset($_SESSION['old']);
         </a>
     </div>
 
-    <form action="?act=admin&module=bookings&action=store" method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-6"
+    <form action="?act=admin&module=bookings&action=store" method="POST" class="grid grid-cols-1 lg:grid-cols-4 gap-6"
         id="bookingForm">
 
         <!-- LEFT COLUMN: TOUR & CUSTOMER -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 h-fit">
 
             <!-- 1. Tour Selection -->
-            <div class="bg-white p-6 rounded shadow-sm">
+            <div class="bg-white p-6 rounded shadow-sm h-full">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">1. Thông tin Tour</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="col-span-2">
+                <div class="space-y-4">
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Chọn Tour <span
                                 class="text-red-500">*</span></label>
                         <select name="tour_id" id="tour_id"
@@ -35,71 +35,103 @@ unset($_SESSION['old']);
                             required>
                             <option value="">-- Chọn Tour --</option>
                             <?php foreach ($tours as $t): ?>
-                                <option value="<?= $t['id'] ?>" data-price-adult="<?= $t['adult_price'] ?>"
-                                    data-price-child="<?= $t['child_price'] ?>"
-                                    data-price-infant="<?= $t['infant_price'] ?>" data-duration="<?= $t['duration_days'] ?>"
-                                    <?= ($old['tour_id'] ?? '') == $t['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($t['tour_code'] . ' - ' . $t['name']) ?>
-                                </option>
+                                    <option value="<?= $t['id'] ?>" data-price-adult="<?= $t['adult_price'] ?>"
+                                        data-price-child="<?= $t['child_price'] ?>"
+                                        data-price-infant="<?= $t['infant_price'] ?>" data-duration="<?= $t['duration_days'] ?>"
+                                        <?= ($old['tour_id'] ?? '') == $t['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($t['tour_code'] . ' - ' . $t['name']) ?>
+                                    </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Lịch khởi hành <span
-                                class="text-red-500">*</span></label>
-                        <select name="start_date" id="start_date"
-                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
-                            required>
-                            <option value="">-- Chọn ngày đi --</option>
-                            <?php foreach ($schedules as $s): ?>
-                                <option value="<?= $s['start_date'] ?>" data-tour-id="<?= $s['tour_id'] ?>"
-                                    data-end-date="<?= $s['end_date'] ?>" data-quota="<?= $s['quota'] ?>"
-                                    data-booked="<?= $s['booked'] ?>" data-price-adult="<?= $s['adult_price'] ?>"
-                                    data-price-child="<?= $s['child_price'] ?>"
-                                    data-price-infant="<?= $s['infant_price'] ?>" class="schedule-option hidden">
-                                    <?= date('d/m/Y', strtotime($s['start_date'])) ?> (Còn <?= $s['quota'] - $s['booked'] ?>
-                                    chỗ)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <input type="hidden" name="end_date" id="end_date">
-                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Lịch khởi hành <span
+                                    class="text-red-500">*</span></label>
+                            <select name="start_date" id="start_date"
+                                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
+                                required>
+                                <option value="">-- Chọn ngày đi --</option>
+                                <?php foreach ($schedules as $s): ?>
+                                        <option value="<?= $s['start_date'] ?>" data-tour-id="<?= $s['tour_id'] ?>"
+                                            data-end-date="<?= $s['end_date'] ?>" data-quota="<?= $s['quota'] ?>"
+                                            data-booked="<?= $s['booked'] ?>" data-price-adult="<?= $s['adult_price'] ?>"
+                                            data-price-child="<?= $s['child_price'] ?>"
+                                            data-price-infant="<?= $s['infant_price'] ?>" class="schedule-option hidden">
+                                            <?= date('d/m/Y', strtotime($s['start_date'])) ?> (Còn <?= $s['quota'] - $s['booked'] ?>
+                                            chỗ)
+                                        </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <input type="hidden" name="end_date" id="end_date">
+                        </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc</label>
-                        <input type="text" id="end_date_display" value="<?= $old['end_date'] ?? '' ?>"
-                            class="w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded focus:outline-none"
-                            readonly>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc</label>
+                            <input type="text" id="end_date_display" value="<?= $old['end_date'] ?? '' ?>"
+                                class="w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded focus:outline-none"
+                                readonly>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- 2. Customer Info -->
-            <div class="bg-white p-6 rounded shadow-sm">
+            <div class="bg-white p-6 rounded shadow-sm h-full">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">2. Khách hàng</h2>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Khách hàng đại diện <span
-                            class="text-red-500">*</span></label>
-                    <select name="customer_id"
-                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
-                        required>
-                        <option value="">-- Chọn Khách hàng --</option>
-                        <?php foreach ($customers as $c): ?>
-                            <option value="<?= $c['id'] ?>" <?= ($old['customer_id'] ?? '') == $c['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($c['full_name'] . ' - ' . $c['phone']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <p class="text-xs text-gray-500 mt-1">Chưa có khách? <a
-                            href="?act=admin&module=customers&action=create" target="_blank"
-                            class="text-blue-600 hover:underline">Tạo mới tại đây</a></p>
-                </div>
+                    <div class="flex gap-4 mb-4">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="customer_mode" value="existing" class="form-radio text-accent" checked onchange="toggleCustomerMode()">
+                            <span class="ml-2">Khách hàng cũ</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="customer_mode" value="new" class="form-radio text-accent" onchange="toggleCustomerMode()">
+                            <span class="ml-2">Tạo khách mới</span>
+                        </label>
+                    </div>
+
+                    <!-- EXISTING CUSTOMER SELECT -->
+                    <div id="existing_customer_section">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tìm khách hàng <span class="text-red-500">*</span></label>
+                        <select name="customer_id" id="customer_id" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                            <option value="">-- Chọn Khách hàng --</option>
+                            <?php foreach ($customers as $c): ?>
+                                    <option value="<?= $c['id'] ?>" <?= ($old['customer_id'] ?? '') == $c['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($c['full_name'] . ' - ' . $c['phone']) ?>
+                                    </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- NEW CUSTOMER FORM -->
+                    <div id="new_customer_section" class="hidden space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên <span class="text-red-500">*</span></label>
+                                <input type="text" name="new_customer_name" class="w-full px-3 py-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại <span class="text-red-500">*</span></label>
+                                <input type="text" name="new_customer_phone" class="w-full px-3 py-2 border rounded">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" name="new_customer_email" class="w-full px-3 py-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                                <input type="text" name="new_customer_address" class="w-full px-3 py-2 border rounded">
+                            </div>
+                        </div>
+                    </div>
             </div>
 
             <!-- 3. Passengers & Notes -->
-            <div class="bg-white p-6 rounded shadow-sm">
+            <div class="bg-white p-6 rounded shadow-sm md:col-span-2">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">3. Số lượng & Ghi chú</h2>
 
                 <div class="grid grid-cols-3 gap-4 mb-4">
@@ -116,14 +148,36 @@ unset($_SESSION['old']);
                             class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent text-center">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Em bé (<5t)< /label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Em bé (<5t)</label>
                                 <input type="number" name="infant_count" id="infant_count"
                                     value="<?= $old['infant_count'] ?? 0 ?>" min="0"
                                     class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent text-center">
                     </div>
                 </div>
 
-                <div>
+                <!-- PASSENGER LIST -->
+                <div class="mt-6 border-t pt-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold text-gray-700">Danh sách đoàn (Tùy chọn)</h3>
+                        <button type="button" onclick="addPassengerRow()" class="text-sm text-blue-600 hover:underline">+ Thêm người</button>
+                    </div>
+                    <table class="w-full text-sm text-left text-gray-500 border rounded">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-2 py-2">Họ tên</th>
+                                <th class="px-2 py-2 w-24">Loại</th>
+                                <th class="px-2 py-2 w-32">Ngày sinh</th>
+                                <th class="px-2 py-2 w-24">Giới tính</th>
+                                <th class="px-2 py-2 w-10"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="passenger-container">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú đơn hàng</label>
                     <textarea name="notes" rows="3"
                         class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"><?= $old['notes'] ?? '' ?></textarea>
@@ -321,5 +375,105 @@ unset($_SESSION['old']);
             filterSchedules();
             calculateTotal();
         }
+        toggleCustomerMode(); // Initialize customer mode
     });
+
+    // CUSTOMER MODE TOGGLE
+    function toggleCustomerMode() {
+        const mode = document.querySelector('input[name="customer_mode"]:checked').value;
+        const existingSection = document.getElementById('existing_customer_section');
+        const newSection = document.getElementById('new_customer_section');
+        const customerSelect = document.getElementById('customer_id');
+        const newInputs = newSection.querySelectorAll('input');
+
+        if (mode === 'existing') {
+            existingSection.classList.remove('hidden');
+            newSection.classList.add('hidden');
+            customerSelect.setAttribute('required', 'required');
+            newInputs.forEach(i => i.removeAttribute('required'));
+        } else {
+            existingSection.classList.add('hidden');
+            newSection.classList.remove('hidden');
+            customerSelect.removeAttribute('required');
+            newSection.querySelector('input[name="new_customer_name"]').setAttribute('required', 'required');
+            newSection.querySelector('input[name="new_customer_phone"]').setAttribute('required', 'required');
+        }
+    }
+
+    // PASSENGER LOGIC
+    function addPassengerRow() {
+        const container = document.getElementById('passenger-container');
+        const html = `
+            <tr class="border-b passenger-row">
+                <td class="px-2 py-2">
+                    <input type="text" name="passenger_names[]" class="w-full px-2 py-1 border rounded" placeholder="Họ tên" required>
+                </td>
+                <td class="px-2 py-2">
+                    <select name="passenger_types[]" class="w-full px-2 py-1 border rounded passenger-type" onchange="handleTypeChange(this)">
+                        <option value="adult">Người lớn</option>
+                        <option value="child">Trẻ em</option>
+                        <option value="infant">Em bé</option>
+                    </select>
+                </td>
+                <td class="px-2 py-2">
+                    <input type="date" name="passenger_dobs[]" class="w-full px-2 py-1 border rounded">
+                </td>
+                <td class="px-2 py-2">
+                    <select name="passenger_genders[]" class="w-full px-2 py-1 border rounded">
+                        <option value="male">Nam</option>
+                        <option value="female">Nữ</option>
+                    </select>
+                </td>
+                <td class="px-2 py-2 text-center">
+                    <button type="button" onclick="removePassengerRow(this)" class="text-red-500">×</button>
+                </td>
+            </tr>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+        
+        // Default is Adult, so increment Adult count
+        updateCount('adult', 1);
+    }
+
+    function removePassengerRow(btn) {
+        const row = btn.closest('tr');
+        const type = row.querySelector('.passenger-type').value;
+        row.remove();
+        updateCount(type, -1);
+    }
+
+    // Store previous value to handle change
+    document.addEventListener('focusin', function(e) {
+        if (e.target.classList.contains('passenger-type')) {
+            e.target.dataset.oldValue = e.target.value;
+        }
+    });
+
+    function handleTypeChange(select) {
+        const oldValue = select.dataset.oldValue || 'adult';
+        const newValue = select.value;
+        
+        if (oldValue !== newValue) {
+            updateCount(oldValue, -1);
+            updateCount(newValue, 1);
+            select.dataset.oldValue = newValue;
+        }
+    }
+
+    function updateCount(type, change) {
+        let inputId = '';
+        if (type === 'adult') inputId = 'adult_count';
+        else if (type === 'child') inputId = 'child_count';
+        else if (type === 'infant') inputId = 'infant_count';
+
+        const input = document.getElementById(inputId);
+        let currentVal = parseInt(input.value) || 0;
+        let newVal = currentVal + change;
+        if (newVal < 0) newVal = 0;
+        
+        input.value = newVal;
+        
+        // Trigger calculation
+        input.dispatchEvent(new Event('input'));
+    }
 </script>

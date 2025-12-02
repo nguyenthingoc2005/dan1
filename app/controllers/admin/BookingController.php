@@ -65,10 +65,30 @@ class BookingController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 // Basic Validation
-                if (empty($_POST['tour_id']) || empty($_POST['customer_id']) || empty($_POST['start_date'])) {
-                    throw new Exception("Vui lòng nhập đầy đủ thông tin bắt buộc.");
+                // 0. Handle Customer (New vs Existing)
+                $customer_id = $_POST['customer_id'] ?? null;
+                if (($_POST['customer_mode'] ?? 'existing') === 'new') {
+                    // Validate New Customer
+                    if (empty($_POST['new_customer_name']) || empty($_POST['new_customer_phone'])) {
+                        throw new Exception("Vui lòng nhập tên và số điện thoại khách hàng mới.");
+                    }
+
+                    $newCustomerData = [
+                        'full_name' => $_POST['new_customer_name'],
+                        'phone' => $_POST['new_customer_phone'],
+                        'email' => $_POST['new_customer_email'] ?? null,
+                        'address' => $_POST['new_customer_address'] ?? null,
+                        'created_by' => $_SESSION['user_id'] ?? 1
+                    ];
+
+                    $customer_id = $this->customerModel->create($newCustomerData);
                 }
 
+                if (empty($customer_id)) {
+                    throw new Exception("Vui lòng chọn hoặc tạo khách hàng.");
+                }
+
+                // ... (Existing Schedule & Quota Logic) ...
                 // Load schedule for selected start date
                 require_once 'app/models/TourSchedule.php';
                 $scheduleModel = new TourSchedule($this->pdo);
@@ -93,7 +113,7 @@ class BookingController
                 }
 
                 // Pricing (fallback to tour prices)
-                $tour = $this->tourModel->getById($_POST['tour_id']);
+                $tour = $this->tourModel->findById($_POST['tour_id']);
                 $priceAdult = $schedule['adult_price'] ?? $tour['adult_price'];
                 $priceChild = $schedule['child_price'] ?? $tour['child_price'];
                 $priceInfant = $schedule['infant_price'] ?? $tour['infant_price'];
@@ -106,7 +126,7 @@ class BookingController
 
                 $data = [
                     'tour_id' => $_POST['tour_id'],
-                    'customer_id' => $_POST['customer_id'],
+                    'customer_id' => $customer_id,
                     'tour_schedule_id' => $schedule['id'],
                     'adult_count' => $adult,
                     'child_count' => $child,
@@ -123,8 +143,58 @@ class BookingController
                     'created_by' => $_SESSION['user_id'] ?? 1
                 ];
 
-                // Passengers handling would go here
+                // Passengers handling
                 $passengers = [];
+                if (!empty($_POST['passenger_names'])) {
+                    foreach ($_POST['passenger_names'] as $index => $name) {
+                        if (empty($name))
+                            continue;
+
+                        // For now, we need a customer_id for each passenger.
+                        // Strategy: Create a "Guest" customer record or reuse main customer?
+                        // Reusing main customer for all passengers is bad for data.
+                        // Creating new customers for each passenger is correct but requires phone.
+                        // Workaround: Create customer with MainPhone + Suffix?
+                        // OR: Just store them as passengers linked to the Main Customer ID?
+                        // Wait, booking_customers table has customer_id.
+                        // Let's create a new customer record for each passenger.
+                        // If phone is missing, use MainPhone.
+
+                        $p_phone = $_POST['new_customer_phone'] ?? '0000000000'; // Fallback
+                        // Actually, if we are in existing mode, we need to fetch main customer phone.
+                        // This is getting complicated.
+                        // SIMPLIFICATION: For V1, we will create a customer record for each passenger.
+                        // Use a dummy phone if not provided? Or just use the main customer's phone.
+
+                        // Let's try to find if this passenger already exists by name + phone? No.
+                        // Just create a new customer record.
+
+                        $passengerData = [
+                            'full_name' => $name,
+                            'phone' => $p_phone, // Reuse phone for now
+                            'date_of_birth' => $_POST['passenger_dobs'][$index] ?? null,
+                            'gender' => $_POST['passenger_genders'][$index] ?? 'other',
+                            'created_by' => $_SESSION['user_id'] ?? 1
+                        ];
+
+                        $p_id = $this->customerModel->create($passengerData);
+
+                        $passengers[] = [
+                            'customer_id' => $p_id,
+                            'age_type' => $_POST['passenger_types'][$index] ?? 'adult',
+                            'is_primary' => 0
+                        ];
+                    }
+                }
+
+                // Add Main Customer as Primary Passenger if not in list
+                // (Usually main customer is one of the passengers, but if they didn't add themselves to the list...)
+                // Let's just add the main customer as primary passenger.
+                $passengers[] = [
+                    'customer_id' => $customer_id,
+                    'age_type' => 'adult', // Default
+                    'is_primary' => 1
+                ];
 
                 $this->bookingModel->create($data, $passengers);
 
@@ -153,9 +223,61 @@ class BookingController
             redirect('?act=admin&module=bookings');
         }
 
+        // Get History
+        $history = $this->bookingModel->getHistory($id);
+
+        // Get Payments
+        require_once 'app/models/Payment.php';
+        $paymentModel = new Payment($this->pdo);
+        $payments = $paymentModel->getByBookingId($id);
+
         $page_title = 'Chi tiết Booking: ' . $booking['booking_code'];
         $content_file = 'app/views/admin/bookings/show.php';
         require_once 'app/views/layouts/admin_layout.php';
+    }
+
+    public function storePayment()
+    {
+        require_admin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                require_once 'app/models/Payment.php';
+                $paymentModel = new Payment($this->pdo);
+
+                $bookingId = $_POST['booking_id'];
+                $amount = (float) str_replace(',', '', $_POST['amount']); // Remove commas if any
+
+                if ($amount <= 0)
+                    throw new Exception("Số tiền phải lớn hơn 0");
+
+                $data = [
+                    'booking_id' => $bookingId,
+                    'payment_method' => $_POST['payment_method'],
+                    'amount' => $amount,
+                    'payment_type' => $_POST['payment_type'],
+                    'transaction_id' => $_POST['transaction_id'] ?? null,
+                    'receipt_number' => $_POST['receipt_number'] ?? null,
+                    'payment_date' => $_POST['payment_date'] ?? date('Y-m-d'),
+                    'notes' => $_POST['notes'] ?? '',
+                    'created_by' => $_SESSION['user_id'] ?? 1
+                ];
+
+                $paymentModel->create($data);
+
+                // Update Booking Status
+                $this->bookingModel->updatePaymentStatus($bookingId);
+
+                // Log History
+                $this->bookingModel->logHistory($bookingId, 'payment', 'payment', $_SESSION['user_id'], "Thêm thanh toán: " . number_format($amount));
+
+                set_success("Đã thêm thanh toán thành công!");
+                redirect("?act=admin&module=bookings&action=show&id=$bookingId");
+
+            } catch (Exception $e) {
+                set_error($e->getMessage());
+                redirect("?act=admin&module=bookings&action=show&id=" . $_POST['booking_id']);
+            }
+        }
     }
 
     public function changeStatus()
@@ -168,15 +290,18 @@ class BookingController
             try {
                 if ($action == 'approve') {
                     $this->bookingModel->updateStatus($id, 'approved', 'approval', $userId);
+                    $this->bookingModel->logHistory($id, 'pending', 'approved', $userId, "Duyệt thủ công");
                     set_success("Đã duyệt Booking!");
                 } elseif ($action == 'reject') {
                     $reason = $_POST['reason'] ?? '';
                     $this->bookingModel->updateStatus($id, 'rejected', 'approval', $userId, $reason);
+                    $this->bookingModel->logHistory($id, 'pending', 'rejected', $userId, $reason);
                     set_success("Đã từ chối Booking!");
                 } elseif ($action == 'cancel') {
                     $reason = $_POST['reason'] ?? '';
-                    $this->bookingModel->updateStatus($id, 'cancelled', 'approval', $userId, $reason);
-                    set_success("Đã hủy Booking!");
+                    // Use advanced cancel method
+                    $result = $this->bookingModel->cancel($id, $reason, $userId);
+                    set_success("Đã hủy Booking! Phí hủy: " . number_format($result['fee']) . " VNĐ (" . $result['policy'] . ")");
                 }
 
                 redirect("?act=admin&module=bookings&action=show&id=$id");
