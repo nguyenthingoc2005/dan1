@@ -13,14 +13,16 @@ if (empty($data) || !is_array($data)) {
 
 // 2. Hàm format tiền tệ an toàn
 if (!function_exists('formatCurrency')) {
-    function formatCurrency($amount) {
+    function formatCurrency($amount)
+    {
         return number_format((float)($amount ?? 0), 0, ',', '.') . ' VNĐ';
     }
 }
 
-// 3. Hàm hiển thị trạng thái (Fix lỗi null)
+// 3. Hàm hiển thị trạng thái
 if (!function_exists('renderStatusBadge')) {
-    function renderStatusBadge($status) {
+    function renderStatusBadge($status)
+    {
         $s = strtolower((string)($status ?? ''));
         return match ($s) {
             'hoàn tất', 'completed', 'success', 'paid' => '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Hoàn tất</span>',
@@ -47,41 +49,105 @@ foreach ($dichVuTour as $dv) {
 
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <title>Chi Tiết Đơn #<?= htmlspecialchars($data['dat_tour_id'] ?? 'N/A') ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css">
-    
+
     <link rel="stylesheet" href="./assets/css/sidebar.css">
-    
+
     <style>
         /* MAIN LAYOUT */
-        body { background-color: #f5f7fb; font-family: 'Segoe UI', sans-serif; }
-        .main-content { padding: 30px; margin-top: 70px; margin-left: 0; min-height: 100vh; }
-        
+        body {
+            background-color: #f5f7fb;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .main-content {
+            padding: 30px;
+            margin-top: 70px;
+            margin-left: 0;
+            min-height: 100vh;
+        }
+
         /* CARD STYLE */
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .card-header { background-color: #fff; border-bottom: 1px solid #eee; font-weight: 600; padding: 15px 20px; }
-        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            padding: 15px 20px;
+        }
+
         /* TYPOGRAPHY */
-        .text-primary-custom { color: #0d6efd !important; font-weight: 700; }
-        .price-highlight { font-size: 1.3rem; font-weight: 800; color: #dc3545; }
-        .info-label { font-weight: 600; color: #6c757d; min-width: 130px; display: inline-block; }
-        
+        .text-primary-custom {
+            color: #0d6efd !important;
+            font-weight: 700;
+        }
+
+        .price-highlight {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #dc3545;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+            min-width: 130px;
+            display: inline-block;
+        }
+
         /* TABS */
-        .nav-tabs .nav-link { border: none; color: #6c757d; font-weight: 500; padding: 10px 20px; transition: all 0.2s; }
-        .nav-tabs .nav-link:hover { color: #0d6efd; background-color: rgba(13, 110, 253, 0.05); }
-        .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
-        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 10px 20px;
+            transition: all 0.2s;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            border-bottom: 3px solid #0d6efd;
+            background: transparent;
+        }
+
         /* TABLE & AVATAR */
-        .table-middle td { vertical-align: middle; }
-        .avatar-circle { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem; }
+        .table-middle td {
+            vertical-align: middle;
+        }
+
+        .avatar-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
+
 <body class="bg-light">
 
     <?php include './views/parts/sidebar.php'; ?>
@@ -89,14 +155,14 @@ foreach ($dichVuTour as $dv) {
 
     <div class="main-content">
         <div class="container-fluid">
-            
+
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="mb-0 text-primary-custom">
                         <i class="bi bi-ticket-detailed"></i> Đơn Đặt Tour #<?= htmlspecialchars($data['dat_tour_id'] ?? 'N/A') ?>
                     </h2>
                     <div class="text-muted mt-1 small">
-                        <i class="bi bi-calendar-event"></i> Ngày tạo: 
+                        <i class="bi bi-calendar-event"></i> Ngày tạo:
                         <?= !empty($data['ngay_dat']) ? date('H:i - d/m/Y', strtotime($data['ngay_dat'])) : '---' ?>
                     </div>
                 </div>
@@ -122,7 +188,7 @@ foreach ($dichVuTour as $dv) {
                             <div class="card h-100">
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <span class="text-primary"><i class="bi bi-map"></i> Chi tiết Tour</span>
-                                    <?php if(!empty($data['dat_tour_id'])): ?>
+                                    <?php if (!empty($data['dat_tour_id'])): ?>
                                         <a href="<?= BASEURL ?>?act=dat_tour_edit&dat_tour_id=<?= $data['dat_tour_id'] ?>" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-pencil"></i> Sửa Đơn
                                         </a>
@@ -132,19 +198,19 @@ foreach ($dichVuTour as $dv) {
                                     <h5 class="fw-bold text-dark mb-3">
                                         <?= htmlspecialchars($data['tour_info']['ten_tour'] ?? 'Tên tour không xác định') ?>
                                     </h5>
-                                    
+
                                     <p><span class="info-label">Mã Tour:</span> #<?= htmlspecialchars($data['tour_info']['tour_id'] ?? 'N/A') ?></p>
                                     <p><span class="info-label">Thời lượng:</span> <?= htmlspecialchars($data['tour_info']['thoi_gian'] ?? '0') ?> ngày</p>
-                                    
+
                                     <hr class="my-3">
-                                    
+
                                     <div class="mb-2">
                                         <span class="info-label">Lịch trình:</span>
-                                        <?php 
-                                            $ngayDi = $data['lich_khoi_hanh']['ngay_bat_dau'] ?? null;
-                                            $ngayVe = $data['lich_khoi_hanh']['ngay_ket_thuc'] ?? null;
+                                        <?php
+                                        $ngayDi = $data['lich_khoi_hanh']['ngay_bat_dau'] ?? null;
+                                        $ngayVe = $data['lich_khoi_hanh']['ngay_ket_thuc'] ?? null;
                                         ?>
-                                        <?php if($ngayDi): ?>
+                                        <?php if ($ngayDi): ?>
                                             <span class="fw-bold text-success">
                                                 <?= date('d/m/Y', strtotime($ngayDi)) ?>
                                                 <?= $ngayVe ? ' - ' . date('d/m/Y', strtotime($ngayVe)) : '' ?>
@@ -156,9 +222,9 @@ foreach ($dichVuTour as $dv) {
 
                                     <div class="mb-2 d-flex align-items-center">
                                         <span class="info-label">Tình trạng Lịch:</span>
-                                        <?php 
-                                            $lich_id = $data['lich_khoi_hanh']['lich_id'] ?? null;
-                                            $trang_thai_lich = $data['lich_khoi_hanh']['trang_thai'] ?? '';
+                                        <?php
+                                        $lich_id = $data['lich_khoi_hanh']['lich_id'] ?? null;
+                                        $trang_thai_lich = $data['lich_khoi_hanh']['trang_thai'] ?? '';
                                         ?>
                                         <?php if (empty($lich_id)): ?>
                                             <span class="text-danger fst-italic me-2"><i class="bi bi-exclamation-circle"></i> Chưa có</span>
@@ -182,15 +248,15 @@ foreach ($dichVuTour as $dv) {
                                 </div>
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <span class="info-label">Trạng thái Đơn:</span> 
+                                        <span class="info-label">Trạng thái Đơn:</span>
                                         <?= renderStatusBadge($data['trang_thai'] ?? '') ?>
                                     </div>
-                                    
+
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <span class="info-label">Số khách:</span> 
+                                        <span class="info-label">Số khách:</span>
                                         <strong class="fs-5"><?= htmlspecialchars($data['so_khach'] ?? 0) ?></strong>
                                     </div>
-                                    
+
                                     <div class="bg-light p-3 rounded border">
                                         <div class="d-flex justify-content-between mb-1">
                                             <span>Giá vé cơ bản:</span>
@@ -206,13 +272,13 @@ foreach ($dichVuTour as $dv) {
                                             <span class="price-highlight"><?= formatCurrency($data['tong_tien_uoc_tinh'] ?? 0) ?></span>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="mt-4 d-flex justify-content-between align-items-center">
-                                        <span class="info-label">Đã thanh toán/cọc:</span> 
+                                        <span class="info-label">Đã thanh toán/cọc:</span>
                                         <span class="badge bg-success fs-6 px-3 py-2"><?= formatCurrency($data['da_dat_coc'] ?? 0) ?></span>
                                     </div>
 
-                                    <?php if(!empty($data['ghi_chu'])): ?>
+                                    <?php if (!empty($data['ghi_chu'])): ?>
                                         <div class="alert alert-warning mt-3 mb-0 py-2 small">
                                             <i class="bi bi-sticky-fill"></i> <strong>Ghi chú:</strong> <?= htmlspecialchars($data['ghi_chu']) ?>
                                         </div>
@@ -227,7 +293,7 @@ foreach ($dichVuTour as $dv) {
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center bg-white">
                             <h6 class="mb-0"><i class="bi bi-people-fill text-primary"></i> Danh sách hành khách</h6>
-                            <?php if(!empty($data['dat_tour_id'])): ?>
+                            <?php if (!empty($data['dat_tour_id'])): ?>
                                 <a href="<?= BASEURL ?>?act=hanh_khach_edit&dat_tour_id=<?= $data['dat_tour_id'] ?>" class="btn btn-sm btn-warning fw-bold shadow-sm">
                                     <i class="bi bi-person-gear"></i> Cập nhật khách
                                 </a>
@@ -239,37 +305,39 @@ foreach ($dichVuTour as $dv) {
                                     <thead class="table-light">
                                         <tr>
                                             <th class="text-center" width="50">#</th>
-                                            <th>Họ Tên & Giới tính</th>
-                                            <th>Liên hệ / Giấy tờ</th>
-                                            <th>Yêu cầu đặc biệt</th>
+                                            <th width="30%">Họ Tên & Giới tính</th>
+                                            <th width="35%">Liên hệ / Giấy tờ</th>
+                                            <th>Ghi chú</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php if(empty($danhSachHanhKhach)): ?>
-                                            <tr><td colspan="4" class="text-center text-muted py-5">Chưa có thông tin hành khách.</td></tr>
+                                        <?php if (empty($danhSachHanhKhach)): ?>
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-5">Chưa có thông tin hành khách.</td>
+                                            </tr>
                                         <?php else: ?>
                                             <?php foreach ($danhSachHanhKhach as $i => $hk): ?>
-                                            <tr>
-                                                <td class="text-center text-secondary fw-bold"><?= $i + 1 ?></td>
-                                                <td>
-                                                    <div class="fw-bold text-primary"><?= htmlspecialchars($hk['ho_ten'] ?? '---') ?></div>
-                                                    <small class="text-muted"><?= htmlspecialchars($hk['gioi_tinh'] ?? '') ?></small>
-                                                </td>
-                                                <td>
-                                                    <div class="small text-muted"><i class="bi bi-telephone me-1"></i> <?= htmlspecialchars($hk['sdt'] ?? '---') ?></div>
-                                                    <div class="small text-muted"><i class="bi bi-card-heading me-1"></i> <?= htmlspecialchars($hk['cccd'] ?? '---') ?></div>
-                                                    <div class="small text-muted"><i class="bi bi-cake2 me-1"></i> <?= !empty($hk['ngay_sinh']) ? date('d/m/Y', strtotime($hk['ngay_sinh'])) : '---' ?></div>
-                                                </td>
-                                                <td>
-                                                    <?php if(!empty($hk['yeu_cau_noi_dung'])): ?>
-                                                        <div class="alert alert-info py-1 px-2 mb-0 small border-0 bg-opacity-10 text-dark">
-                                                            <i class="bi bi-chat-quote-fill me-1 text-info"></i> <?= htmlspecialchars($hk['yeu_cau_noi_dung']) ?>
-                                                        </div>
-                                                    <?php else: ?>
-                                                        <span class="text-muted small fst-italic">Không có yêu cầu</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
+                                                <tr>
+                                                    <td class="text-center text-secondary fw-bold"><?= $i + 1 ?></td>
+                                                    <td>
+                                                        <div class="fw-bold text-primary"><?= htmlspecialchars($hk['ho_ten'] ?? '---') ?></div>
+                                                        <small class="text-muted"><?= htmlspecialchars($hk['gioi_tinh'] ?? '') ?></small>
+                                                    </td>
+                                                    <td>
+                                                        <div class="small text-muted"><i class="bi bi-telephone me-1"></i> <?= htmlspecialchars($hk['sdt'] ?? '---') ?></div>
+                                                        <div class="small text-muted"><i class="bi bi-card-heading me-1"></i> <?= htmlspecialchars($hk['cccd'] ?? '---') ?></div>
+                                                    </td>
+
+                                                    <td>
+                                                        <?php if (!empty($hk['yeu_cau_noi_dung'])): ?>
+                                                            <span class="d-inline-block bg-light text-dark small px-2 py-1 rounded border">
+                                                                <?= htmlspecialchars($hk['yeu_cau_noi_dung']) ?>
+                                                            </span>
+                                                        <?php else: ?>
+                                                            <span class="text-muted small fst-italic opacity-50">---</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                </tr>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </tbody>
@@ -295,15 +363,17 @@ foreach ($dichVuTour as $dv) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php if(empty($dichVuTour)): ?>
-                                            <tr><td colspan="3" class="text-center text-muted py-4">Không có dịch vụ đi kèm nào.</td></tr>
+                                        <?php if (empty($dichVuTour)): ?>
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted py-4">Không có dịch vụ đi kèm nào.</td>
+                                            </tr>
                                         <?php else: ?>
                                             <?php foreach ($dichVuTour as $dv): ?>
-                                            <tr>
-                                                <td class="ps-4 fw-medium"><?= htmlspecialchars($dv['ten'] ?? 'Dịch vụ') ?></td>
-                                                <td class="text-end fw-bold text-success"><?= formatCurrency($dv['gia'] ?? 0) ?></td>
-                                                <td class="text-muted small fst-italic"><?= htmlspecialchars($dv['ghi_chu'] ?? '') ?></td>
-                                            </tr>
+                                                <tr>
+                                                    <td class="ps-4 fw-medium"><?= htmlspecialchars($dv['ten'] ?? 'Dịch vụ') ?></td>
+                                                    <td class="text-end fw-bold text-success"><?= formatCurrency($dv['gia'] ?? 0) ?></td>
+                                                    <td class="text-muted small fst-italic"><?= htmlspecialchars($dv['ghi_chu'] ?? '') ?></td>
+                                                </tr>
                                             <?php endforeach; ?>
                                             <tr class="table-active border-top border-2">
                                                 <td class="ps-4 fw-bold text-end">TỔNG CỘNG DỊCH VỤ:</td>
@@ -322,10 +392,10 @@ foreach ($dichVuTour as $dv) {
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center bg-white">
                             <h6 class="mb-0"><i class="bi bi-person-badge text-primary"></i> Hướng Dẫn Viên & Lịch Trình</h6>
-                            <?php 
-                                $lich_id = $data['lich_khoi_hanh']['lich_id'] ?? null;
-                                $has_guide = !empty($huongDanVien);
-                                if ($lich_id && empty($huongDanVien)): 
+                            <?php
+                            $lich_id = $data['lich_khoi_hanh']['lich_id'] ?? null;
+                            $has_guide = !empty($huongDanVien);
+                            if ($lich_id && empty($huongDanVien)):
                             ?>
                                 <a href="<?= BASEURL ?>?act=assign_guide&lich_id=<?= $lich_id ?>" class="btn btn-sm btn-success fw-bold shadow-sm">
                                     <i class="bi bi-person-plus-fill"></i> Phân công HDV
@@ -348,10 +418,10 @@ foreach ($dichVuTour as $dv) {
                                     <?php foreach ($huongDanVien as $hdv): ?>
                                         <div class="col-md-6 col-lg-4">
                                             <div class="border rounded p-3 d-flex align-items-center shadow-sm h-100 bg-white position-relative">
-                                                
-                                                <a href="<?= BASEURL ?>?act=remove_guide&hdv_id=<?= $hdv['id'] ?? 0 ?>&lich_id=<?= $lich_id ?>" 
-                                                   onclick="return confirm('Gỡ HDV này khỏi lịch trình?')"
-                                                   class="position-absolute top-0 end-0 m-2 text-secondary" title="Gỡ bỏ">
+
+                                                <a href="<?= BASEURL ?>?act=remove_guide&hdv_id=<?= $hdv['id'] ?? 0 ?>&lich_id=<?= $lich_id ?>"
+                                                    onclick="return confirm('Gỡ HDV này khỏi lịch trình?')"
+                                                    class="position-absolute top-0 end-0 m-2 text-secondary" title="Gỡ bỏ">
                                                     <i class="bi bi-x-lg"></i>
                                                 </a>
 
@@ -372,11 +442,12 @@ foreach ($dichVuTour as $dv) {
                     </div>
                 </div>
 
-            </div> 
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="./assets/js/sidebar.js"></script>
 </body>
+
 </html>

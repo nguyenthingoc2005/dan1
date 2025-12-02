@@ -42,13 +42,6 @@ class HdvController
 
         require_once './views/hdv/xem_chitiet_tour.php';
     }
-    public function list_Khach_hang()
-    {
-        $khachhang = $this->modelGet->getAllKhachHang();
-
-        require_once './views/hdv/list_khachhang.php';
-    }
-
     public function luu_diem_danh()
     {
         // 1. Kiểm tra method POST
@@ -102,6 +95,30 @@ class HdvController
         } else {
             echo "Lỗi: Thiếu thông tin Lịch trình hoặc HDV.";
             die();
+        }
+    }
+    public function chitiet_khach_hang()
+    {
+        // 1. Lấy ID khách hàng từ URL
+        // (Ở view danh sách, link sẽ là: ?act=chitiet_khach_hang&id=...)
+        $hanh_khach_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+        if ($hanh_khach_id > 0) {
+            // 2. Gọi Model lấy thông tin chi tiết
+            $khachhang = $this->modelGet->getPassengerDetail($hanh_khach_id);
+
+            // 3. Kiểm tra dữ liệu
+            if ($khachhang) {
+                // Nếu có dữ liệu thì gọi View hiển thị
+                require_once './views/hdv/xem_chitiet_khach_hang.php';
+            } else {
+                // Nếu ID không tồn tại trong DB
+                echo "Không tìm thấy thông tin hành khách này.";
+            }
+        } else {
+            // Nếu không truyền ID hoặc ID = 0
+            header("Location: " . BASEURL . "?act=danh_sach_tour");
+            exit;
         }
     }
 

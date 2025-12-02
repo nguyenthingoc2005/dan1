@@ -163,6 +163,23 @@ class getDataModule
             ]);
         }
     }
+    // Thêm vào class getDataModule
+    public function getPassengerDetail($hanh_khach_id)
+    {
+        // JOIN bảng hành khách với bảng đặt tour để lấy thêm thông tin chuyến đi (lich_id)
+        $sql = "SELECT 
+                hk.*, 
+                dt.lich_id,
+                dt.trang_thai as trang_thai_don
+            FROM hanhkhachlist hk
+            JOIN dattour dt ON hk.dat_tour_id = dt.dat_tour_id
+            WHERE hk.hanh_khach_id = :id";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':id' => $hanh_khach_id]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 
     // Trong Model
     public function getListKhachHangByLichId($lich_id)

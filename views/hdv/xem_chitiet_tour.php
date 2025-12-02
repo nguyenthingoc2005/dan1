@@ -240,6 +240,14 @@ if (!defined('BASEURL')) define('BASEURL', '');
                                                                     <?= htmlspecialchars($khach['trang_thai_don'] ?? 'Active') ?>
                                                                 </span>
                                                             </td>
+                                                            <td class="text-center">
+                                                                <a href="<?= BASEURL ?>?act=chitiet_khach_hang&id=<?= $khach['hanh_khach_id'] ?>"
+                                                                    class="btn btn-sm btn-outline-info"
+                                                                    title="Xem hồ sơ chi tiết">
+                                                                    <i class="bi bi-person-lines-fill me-1"></i> Chi tiết
+                                                                </a>
+                                                            </td>
+
                                                         </tr>
                                                     <?php endforeach; ?>
                                                 </tbody>
