@@ -9,8 +9,8 @@
  * 
  * Theo Vibe Coding: Simple is Best
  * 
- * @version 1.0
- * @date 2024-12-01
+ * @version 2.0 - Refactored routing
+ * @date 2024-12-02
  * ==============================================================================
  */
 
@@ -28,7 +28,7 @@ require_once __DIR__ . '/bootstrap.php';
 // PARSE ROUTE PARAMETERS
 // ============================================================================
 
-// Lấy action từ query string: ?act=login, ?act=admin-dashboard, etc.
+// Lấy action từ query string: ?act=login, ?act=admin, etc.
 $act = $_GET['act'] ?? '';
 
 // Lấy HTTP method
@@ -77,327 +77,38 @@ if ($act === 'access-denied') {
 require_login(); // Từ đây trở xuống phải login
 
 // ============================================================================
-// ADMIN ROUTES - MODULE BASED (act=admin&module=X&action=Y)
+// ADMIN ROUTES - Module Based (act=admin&module=X&action=Y)
 // ============================================================================
 
 if ($act === 'admin') {
-    require_admin();
-
-    $module = $_GET['module'] ?? '';
-    $action = $_GET['action'] ?? 'index';
-
-    switch ($module) {
-        // ========== CATEGORIES MODULE ==========
-        case 'categories':
-            require_once CONTROLLERS_PATH . '/admin/CategoryController.php';
-            $controller = new CategoryController($pdo);
-
-            switch ($action) {
-                case 'index':
-                    $controller->index();
-                    break;
-                case 'create':
-                    $controller->create();
-                    break;
-                case 'store':
-                    $controller->store();
-                    break;
-                case 'edit':
-                    $controller->edit();
-                    break;
-                case 'update':
-                    $controller->update();
-                    break;
-                case 'delete':
-                    $controller->delete();
-                    break;
-                default:
-                    http_response_code(404);
-                    require VIEWS_PATH . '/errors/404.php';
-            }
-            break;
-
-        // ========== USERS MODULE ==========
-        case 'users':
-            require_once CONTROLLERS_PATH . '/admin/UserController.php';
-            $controller = new UserController($pdo);
-
-            switch ($action) {
-                case 'index':
-                    $controller->index();
-                    break;
-                case 'create':
-                    $controller->create();
-                    break;
-                case 'store':
-                    $controller->store();
-                    break;
-                case 'edit':
-                    $controller->edit();
-                    break;
-                case 'update':
-                    $controller->update();
-                    break;
-                case 'delete':
-                    $controller->delete();
-                    break;
-                case 'toggle-status':
-                    $controller->toggleStatus();
-                    break;
-                default:
-                    http_response_code(404);
-                    require VIEWS_PATH . '/errors/404.php';
-            }
-            break;
-
-        // ========== DEFAULT: DASHBOARD ==========
-        default:
-            require_once CONTROLLERS_PATH . '/DashboardController.php';
-            $dashboardController = new DashboardController($pdo);
-            $dashboardController->adminDashboard();
-            break;
-    }
+    require __DIR__ . '/routes/admin.php';
     exit;
 }
 
 // ============================================================================
-// ADMIN ROUTES - OLD STYLE (Backward compatibility)
-// ============================================================================
-
-if (strpos($act, 'admin-') === 0 || strpos($act, 'admin/') === 0) {
-    require_admin(); // Check admin permission
-
-    require_once CONTROLLERS_PATH . '/DashboardController.php';
-    $dashboardController = new DashboardController($pdo);
-
-    switch ($act) {
-        case 'admin-dashboard':
-            $dashboardController->adminDashboard();
-            break;
-
-        // ========== USER MANAGEMENT ==========
-        case 'admin/users':
-        case 'admin/users/index':
-            require_once CONTROLLERS_PATH . '/admin/UserController.php';
-            $userController = new UserController($pdo);
-            $userController->index();
-            break;
-
-        case 'admin/users/create':
-            require_once CONTROLLERS_PATH . '/admin/UserController.php';
-            $userController = new UserController($pdo);
-            $userController->create();
-            break;
-
-        case 'admin/users/store':
-            require_once CONTROLLERS_PATH . '/admin/UserController.php';
-            $userController = new UserController($pdo);
-            $userController->store();
-            break;
-
-        case 'admin/users/edit':
-            require_once CONTROLLERS_PATH . '/admin/UserController.php';
-            $userController = new UserController($pdo);
-            $userController->edit();
-            break;
-
-        case 'admin/users/update':
-            require_once CONTROLLERS_PATH . '/admin/UserController.php';
-            $userController = new UserController($pdo);
-            $userController->update();
-            break;
-
-        case 'admin/users/delete':
-            require_once CONTROLLERS_PATH . '/admin/UserController.php';
-            $userController = new UserController($pdo);
-            $userController->delete();
-            break;
-
-        case 'admin/users/toggle-status':
-            require_once CONTROLLERS_PATH . '/admin/UserController.php';
-            $userController = new UserController($pdo);
-            $userController->toggleStatus();
-            break;
-
-        // ========== OTHER ADMIN ROUTES ==========
-        case 'admin-tours':
-            echo "Admin Tours - Coming soon";
-            break;
-
-        case 'admin-tours-pending':
-            echo "Admin Tours Pending - Coming soon";
-            break;
-
-        case 'admin-bookings':
-            echo "Admin Bookings - Coming soon";
-            break;
-
-        case 'admin-bookings-pending':
-            echo "Admin Bookings Pending - Coming soon";
-            break;
-
-        case 'admin-users':
-            echo "Admin Users - Coming soon";
-            break;
-
-        case 'admin-suppliers':
-            echo "Admin Suppliers - Coming soon";
-            break;
-
-        case 'admin-services':
-            echo "Admin Services - Coming soon";
-            break;
-
-        case 'admin-categories':
-            echo "Admin Categories - Coming soon";
-            break;
-
-        case 'admin-destinations':
-            echo "Admin Destinations - Coming soon";
-            break;
-
-        case 'admin-reports':
-            echo "Admin Reports - Coming soon";
-            break;
-
-        default:
-            http_response_code(404);
-            require VIEWS_PATH . '/errors/404.php';
-            break;
-    }
-    exit;
-}
-
-
-// ============================================================================
-// STAFF ROUTES
+// STAFF ROUTES (act=staff-X)
 // ============================================================================
 
 if (strpos($act, 'staff-') === 0) {
-    require_staff(); // Check staff permission
-
-    require_once CONTROLLERS_PATH . '/DashboardController.php';
-    $dashboardController = new DashboardController($pdo);
-
-    switch ($act) {
-        case 'staff-dashboard':
-            $dashboardController->staffDashboard();
-            break;
-
-        case 'staff-tours':
-            echo "Staff Tours - Coming soon";
-            break;
-
-        case 'staff-tours-create':
-            echo "Staff Create Tour - Coming soon";
-            break;
-
-        case 'staff-bookings':
-            echo "Staff Bookings - Coming soon";
-            break;
-
-        case 'staff-bookings-create':
-            echo "Staff Create Booking - Coming soon";
-            break;
-
-        case 'staff-customers':
-            echo "Staff Customers - Coming soon";
-            break;
-
-        case 'staff-customers-create':
-            echo "Staff Create Customer - Coming soon";
-            break;
-
-        case 'staff-customers-import':
-            echo "Staff Import Customers - Coming soon";
-            break;
-
-        case 'staff-payments':
-            echo "Staff Payments - Coming soon";
-            break;
-
-        default:
-            http_response_code(404);
-            require VIEWS_PATH . '/errors/404.php';
-            break;
-    }
+    require __DIR__ . '/routes/staff.php';
     exit;
 }
 
 // ============================================================================
-// PROFILE ROUTES (All roles)
-// ============================================================================
-
-if (strpos($act, 'profile') === 0) {
-    require_once CONTROLLERS_PATH . '/ProfileController.php';
-    $profileController = new ProfileController($pdo);
-
-    switch ($act) {
-        case 'profile':
-        case 'profile/index':
-            $profileController->index();
-            break;
-
-        case 'profile/edit':
-            $profileController->edit();
-            break;
-
-        case 'profile/update':
-            $profileController->update();
-            break;
-
-        case 'profile/change-password':
-            $profileController->changePassword();
-            break;
-
-        case 'profile/update-password':
-            $profileController->updatePassword();
-            break;
-
-        default:
-            http_response_code(404);
-            require VIEWS_PATH . '/errors/404.php';
-            break;
-    }
-    exit;
-}
-
-// ============================================================================
-// GUIDE ROUTES
+// GUIDE ROUTES (act=guide-X)
 // ============================================================================
 
 if (strpos($act, 'guide-') === 0) {
-    require_guide(); // Check guide permission
+    require __DIR__ . '/routes/guide.php';
+    exit;
+}
 
-    require_once CONTROLLERS_PATH . '/DashboardController.php';
-    $dashboardController = new DashboardController($pdo);
+// ============================================================================
+// PROFILE ROUTES (act=profile/X) - All roles
+// ============================================================================
 
-    switch ($act) {
-        case 'guide-dashboard':
-            $dashboardController->guideDashboard();
-            break;
-
-        case 'guide-tours':
-            echo "Guide Tours - Coming soon";
-            break;
-
-        case 'guide-checkin':
-            echo "Guide Check-in - Coming soon";
-            break;
-
-        case 'guide-journal':
-            echo "Guide Journal - Coming soon";
-            break;
-
-        case 'guide-expenses':
-            echo "Guide Expenses - Coming soon";
-            break;
-
-        default:
-            http_response_code(404);
-            require VIEWS_PATH . '/errors/404.php';
-            break;
-    }
+if (strpos($act, 'profile') === 0) {
+    require __DIR__ . '/routes/profile.php';
     exit;
 }
 
@@ -408,4 +119,3 @@ if (strpos($act, 'guide-') === 0) {
 http_response_code(404);
 require VIEWS_PATH . '/errors/404.php';
 exit;
-

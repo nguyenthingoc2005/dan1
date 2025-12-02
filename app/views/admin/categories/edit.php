@@ -8,7 +8,7 @@ if (!is_admin())
     redirect('?act=access-denied');
 ?>
 
-<div class="max-w-3xl">
+<div class="max-w-8xl mx-auto">
     <h1 class="text-2xl font-bold text-primary mb-6">Sửa danh mục</h1>
 
     <form method="POST" action="?act=admin&module=categories&action=update" class="bg-white p-6 rounded">

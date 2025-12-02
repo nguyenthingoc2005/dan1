@@ -8,7 +8,7 @@ if (!is_admin())
     redirect('?act=access-denied');
 ?>
 
-<div class="max-w-6xl">
+<div class="max-w-8xl mx-auto">
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-primary">Quản lý danh mục</h1>

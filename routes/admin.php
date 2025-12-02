@@ -1,95 +1,145 @@
 <?php
 /**
  * ==============================================================================
- * ADMIN ROUTES - Admin Section Routing
+ * ADMIN ROUTES - Module Based Routing
+ * ==============================================================================
+ * 
+ * Pattern: ?act=admin&module=X&action=Y
+ * 
+ * Modules: categories, users, service-types, suppliers, destinations
+ * 
+ * @version 2.0
+ * @date 2024-12-02
  * ==============================================================================
  */
 
-require_once CONTROLLERS_PATH . '/DashboardController.php';
+// Only admin can access
+require_admin();
 
-// Get request URI
-$request_uri = $_SERVER['REQUEST_URI'];
-$base_path = dirname($_SERVER['SCRIPT_NAME']);
-if ($base_path !== '/') {
-    $request_uri = substr($request_uri, strlen($base_path));
+// Get module and action from query string
+$module = $_GET['module'] ?? '';
+$action = $_GET['action'] ?? 'index';
+
+switch ($module) {
+    // ==========================================================================
+    // CATEGORIES MODULE
+    // ==========================================================================
+    case 'categories':
+        require_once CONTROLLERS_PATH . '/admin/CategoryController.php';
+        $controller = new CategoryController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $controller->index();
+                break;
+            case 'create':
+                $controller->create();
+                break;
+            case 'store':
+                $controller->store();
+                break;
+            case 'edit':
+                $controller->edit();
+                break;
+            case 'update':
+                $controller->update();
+                break;
+            case 'delete':
+                $controller->delete();
+                break;
+            default:
+                http_response_code(404);
+                require VIEWS_PATH . '/errors/404.php';
+        }
+        break;
+
+    // ==========================================================================
+    // USERS MODULE
+    // ==========================================================================
+    case 'users':
+        require_once CONTROLLERS_PATH . '/admin/UserController.php';
+        $controller = new UserController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $controller->index();
+                break;
+            case 'create':
+                $controller->create();
+                break;
+            case 'store':
+                $controller->store();
+                break;
+            case 'edit':
+                $controller->edit();
+                break;
+            case 'update':
+                $controller->update();
+                break;
+            case 'delete':
+                $controller->delete();
+                break;
+            case 'toggle-status':
+                $controller->toggleStatus();
+                break;
+            default:
+                http_response_code(404);
+                require VIEWS_PATH . '/errors/404.php';
+        }
+        break;
+
+    // ==========================================================================
+    // SERVICE TYPES MODULE
+    // ==========================================================================
+    case 'service-types':
+        require_once CONTROLLERS_PATH . '/admin/ServiceTypeController.php';
+        $controller = new ServiceTypeController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $controller->index();
+                break;
+            case 'create':
+                $controller->create();
+                break;
+            case 'store':
+                $controller->store();
+                break;
+            case 'edit':
+                $controller->edit();
+                break;
+            case 'update':
+                $controller->update();
+                break;
+            case 'delete':
+                $controller->delete();
+                break;
+            default:
+                http_response_code(404);
+                require VIEWS_PATH . '/errors/404.php';
+        }
+        break;
+
+    // ==========================================================================
+    // SUPPLIERS MODULE (Coming soon)
+    // ==========================================================================
+    case 'suppliers':
+        echo "Admin Suppliers - Coming soon";
+        break;
+
+    // ==========================================================================
+    // DESTINATIONS MODULE (Coming soon)
+    // ==========================================================================
+    case 'destinations':
+        echo "Admin Destinations - Coming soon";
+        break;
+
+    // ==========================================================================
+    // DEFAULT: DASHBOARD
+    // ==========================================================================
+    default:
+        require_once CONTROLLERS_PATH . '/DashboardController.php';
+        $dashboardController = new DashboardController($pdo);
+        $dashboardController->adminDashboard();
+        break;
 }
-$request_uri = strtok($request_uri, '?');
-
-// Remove /admin prefix
-$route = str_replace('/admin', '', $request_uri);
-if (empty($route)) {
-    $route = '/';
-}
-
-// Instantiate controllers
-$dashboardController = new DashboardController($pdo);
-
-// ============================================================================
-// ADMIN ROUTES
-// ============================================================================
-
-// Dashboard
-if ($route === '/' || $route === '/dashboard') {
-    $dashboardController->adminDashboard();
-    exit;
-}
-
-// Tours
-if (strpos($route, '/tours') === 0) {
-    // TODO: TourController
-    echo "Admin Tours - Coming soon";
-    exit;
-}
-
-// Bookings
-if (strpos($route, '/bookings') === 0) {
-    // TODO: BookingController
-    echo "Admin Bookings - Coming soon";
-    exit;
-}
-
-// Users
-if (strpos($route, '/users') === 0) {
-    // TODO: UserController
-    echo "Admin Users - Coming soon";
-    exit;
-}
-
-// Suppliers
-if (strpos($route, '/suppliers') === 0) {
-    // TODO: SupplierController
-    echo "Admin Suppliers - Coming soon";
-    exit;
-}
-
-// Services
-if (strpos($route, '/services') === 0) {
-    // TODO: ServiceController
-    echo "Admin Services - Coming soon";
-    exit;
-}
-
-// Categories
-if (strpos($route, '/categories') === 0) {
-    // TODO: CategoryController
-    echo "Admin Categories - Coming soon";
-    exit;
-}
-
-// Destinations
-if (strpos($route, '/destinations') === 0) {
-    // TODO: DestinationController
-    echo "Admin Destinations - Coming soon";
-    exit;
-}
-
-// Reports
-if (strpos($route, '/reports') === 0) {
-    // TODO: ReportController
-    echo "Admin Reports - Coming soon";
-    exit;
-}
-
-// 404
-http_response_code(404);
-echo "404 - Admin route not found";

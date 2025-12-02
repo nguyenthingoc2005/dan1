@@ -67,6 +67,12 @@ function get_menu_items($role)
                 'active_pattern' => 'admin:categories'
             ],
             [
+                'icon' => '🛎️',
+                'label' => 'Loại dịch vụ',
+                'url' => $base_url . '/?act=admin&module=service-types',
+                'active_pattern' => 'admin:service-types'
+            ],
+            [
                 'icon' => '🏢',
                 'label' => 'Suppliers',
                 'url' => $base_url . '/?act=admin-suppliers',
