@@ -96,12 +96,17 @@ match ($act) {
     // --- Route cho HDV (Bổ sung) ---
     'hdv_detail_add'   => (new AdminController())->formAddHDVDetail(),
     'store_hdv_detail' => (new AdminController())->storeHDVDetail(),
-    // 'hdv' -> Đã có sẵn, hiển thị danh sách HDV
+    'update_hdv_submit' => (new AdminController())->updateHDVSubmit(),
 
-    // --- Route cho KHÁCH HÀNG (Bổ sung) ---
-    'khachhang_detail_add'   => (new AdminController())->formAddKhachHangDetail(),
-    'store_khachhang_detail' => (new AdminController())->storeKhachHangDetail(),
-    'khach_hang_list'        => (new AdminController())->listKhachHang(), // Tạo view danh sách KH nếu chưa có
+// GROUP KHACH HANG
+'add_khach_hang_detail' => (new AdminController())->formAddKhachHangDetail(),
+'store_khach_hang_detail' => (new AdminController())->storeKhachHangDetail(),
+'khachhang_list' => (new AdminController())->khachhang_list(),
+'edit_khach_hang' => (new AdminController())->editKhachHang(),
+'update_khach_hang_submit' => (new AdminController())->updateKhachHangSubmit(),
+
+// ...
+
 
     default => (new AdminController())->index(),
 };

@@ -51,9 +51,7 @@
                 <div class="col-lg-10">
                     <div class="card card-custom p-4">
                         
-                        <form action="index.php?act=update_hdv_submit" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
-                            
-                            <input type="hidden" name="hdv_id" value="<?= $hdv['hdv_id'] ?>">
+<form action="index.php?act=update_hdv_submit" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>                            <input type="hidden" name="hdv_id" value="<?= $hdv['hdv_id'] ?>">
                             <input type="hidden" name="old_img" value="<?= $hdv['anh_dai_dien'] ?? '' ?>">
 
                             <div class="row">
@@ -93,25 +91,34 @@
                                 </div>
 
                                 <div class="col-md-8">
-                                    <div class="section-title"><i class="bi bi-person-vcard me-2"></i>Thông Tin Cá Nhân</div>
-                                    
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Họ tên (User)</label>
-                                            <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($hdv['ho_ten'] ?? '') ?>" readonly>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">Email (User)</label>
-                                            <input type="text" class="form-control bg-light" value="<?= htmlspecialchars($hdv['email'] ?? '') ?>" readonly>
-                                        </div>
-                                    </div>
+    <div class="section-title"><i class="bi bi-person-vcard me-2"></i>Thông Tin Cá Nhân</div>
+    
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label required">Họ tên (User)</label>
+            <input type="text" class="form-control" name="ho_ten" 
+                   value="<?= htmlspecialchars($hdv['ho_ten'] ?? '') ?>" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label required">Email (User)</label>
+            <input type="email" class="form-control" name="email" 
+                   value="<?= htmlspecialchars($hdv['email'] ?? '') ?>" required>
+        </div>
+    </div>
 
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="ngay_sinh" class="form-label required">Ngày sinh</label>
-                                            <input type="date" class="form-control" id="ngay_sinh" name="ngay_sinh" 
-                                                   value="<?= $hdv['ngay_sinh'] ?? '' ?>" required>
-                                        </div>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label required">Số điện thoại</label>
+            <input type="text" class="form-control" name="so_dien_thoai" 
+                   value="<?= htmlspecialchars($hdv['so_dien_thoai'] ?? '') ?>" required>
+        </div>
+        
+        <div class="col-md-6">
+            <label for="ngay_sinh" class="form-label required">Ngày sinh</label>
+            <input type="date" class="form-control" id="ngay_sinh" name="ngay_sinh" 
+                   value="<?= $hdv['ngay_sinh'] ?? '' ?>" required>
+        </div>
+    </div>
                                         <div class="col-md-6">
                                             <label for="gioi_tinh" class="form-label required">Giới tính</label>
                                             <select class="form-select" name="gioi_tinh" required>

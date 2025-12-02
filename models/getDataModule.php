@@ -339,20 +339,34 @@ public function getAggregatedTourDetail($tour_id)
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    public function getAllHDV()
+    {
+        // JOIN bảng huongdanvien với nguoidung để lấy thông tin mới nhất từ tài khoản
+        $sql = "SELECT hdv.*, nd.email, nd.so_dien_thoai, nd.ho_ten, nd.trang_thai 
+                FROM huongdanvien hdv
+                JOIN nguoidung nd ON hdv.nguoi_dung_id = nd.nguoi_dung_id
+                WHERE nd.isdelete = 0
+                ORDER BY hdv.hdv_id DESC";
+        $stmt = $this->conn->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Tìm hàm getHDVById và thay thế bằng code này
     public function getHDVById($id)
     {
-        $sql = "SELECT * FROM `huongdanvien` WHERE `hdv_id` = :id";
+        // Cũng JOIN để khi edit sẽ hiện data từ bảng User
+        $sql = "SELECT hdv.*, nd.email, nd.so_dien_thoai, nd.ho_ten 
+                FROM huongdanvien hdv
+                JOIN nguoidung nd ON hdv.nguoi_dung_id = nd.nguoi_dung_id
+                WHERE hdv.hdv_id = :id";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    public function getAllHDV()
-    {
-        $sql = "SELECT * FROM `huongdanvien`";
-        $stmt = $this->conn->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+
+    // Thêm hàm này vào class uppDateDataModuleDataModule
+    
     public function getChinhSachByTourId($tour_id)
     {
         $sql = "SELECT 
@@ -431,40 +445,6 @@ WHERE
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("Lỗi khi lấy danh sách đơn đặt tour: " . $e->getMessage());
-            return [];
-        }
-    }
-    public function getAllKhachHang()
-    {
-        $sql = "SELECT
-        KH.khach_hang_id,
-        KH.cccd,
-        KH.dia_chi,
-        KH.ngay_tao AS ngay_tao_khach_hang,
-
-        ND.nguoi_dung_id,
-        ND.email,
-        ND.ho_ten,
-        ND.so_dien_thoai,
-        ND.trang_thai AS trang_thai_tai_khoan
-        
-    FROM
-        KhachHang KH
-    INNER JOIN
-        NguoiDung ND ON KH.nguoi_dung_id = ND.nguoi_dung_id
-    
-    WHERE 
-        ND.isdelete = 0
-        
-    ORDER BY
-        KH.khach_hang_id DESC";
-
-        try {
-            $stmt = $this->conn->prepare($sql);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Lỗi khi lấy danh sách khách hàng: " . $e->getMessage());
             return [];
         }
     }
@@ -909,4 +889,32 @@ public function getDatTourDetail($dat_tour_id)
 
         return $datTourDetail;
     }
+    // File: models/getDataModule.php
+
+// 1. Lấy danh sách khách hàng đầy đủ
+public function getAllKhachHang()
+{
+    $sql = "SELECT kh.*, nd.ho_ten, nd.email, nd.so_dien_thoai, nd.trang_thai 
+            FROM KhachHang kh
+            JOIN NguoiDung nd ON kh.nguoi_dung_id = nd.nguoi_dung_id
+            WHERE nd.isdelete = 0
+            ORDER BY kh.khach_hang_id DESC";
+            
+    $stmt = $this->conn->query($sql);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// 2. Lấy chi tiết 1 khách hàng theo ID
+public function getKhachHangById($khach_hang_id)
+{
+    $sql = "SELECT kh.*, nd.ho_ten, nd.email, nd.so_dien_thoai, nd.trang_thai 
+            FROM KhachHang kh
+            JOIN NguoiDung nd ON kh.nguoi_dung_id = nd.nguoi_dung_id
+            WHERE kh.khach_hang_id = :id";
+            
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':id', $khach_hang_id);
+    $stmt->execute();
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
 }

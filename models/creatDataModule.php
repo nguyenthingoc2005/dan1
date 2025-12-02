@@ -95,6 +95,15 @@ class creatDataModule
     }
 
     // ================== HƯỚNG DẪN VIÊN (HDV) ==================
+    public function createhdvid($data){
+        $sql="INSERT INTO huongdanvien(nguoi_dung_id)VALUE(:nguoi_dung_id)";
+        $stmt = $this->conn->prepare($sql);
+        $stmt ->bindParam(":nguoi_dung_id",$data);
+         $stmt->execute();
+        return $this->conn->lastInsertId();
+
+    }
+
     public function addHDV($data)
     {
         // 1. Câu lệnh SQL khớp 100% với Database và biến truyền vào
@@ -346,16 +355,17 @@ class creatDataModule
     }
 
     // 2. Thêm hàm createKhachHang (Hàm addHDV đã có sẵn trong file của bạn rồi)
-    public function createKhachHang($data)
+    public function createkhachhangid($nguoi_dung_id)
     {
-        $sql = "INSERT INTO KhachHang (nguoi_dung_id, cccd, dia_chi, ngay_tao) 
-            VALUES (:nguoi_dung_id, :cccd, :dia_chi, NOW())";
+        $sql = "INSERT INTO KhachHang (nguoi_dung_id, ngay_tao) 
+            VALUES (:nguoi_dung_id, NOW())";
 
         $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':nguoi_dung_id', $data['nguoi_dung_id']);
-        $stmt->bindParam(':cccd', $data['cccd']);
-        $stmt->bindParam(':dia_chi', $data['dia_chi']);
+        $stmt->bindParam(':nguoi_dung_id', $nguoi_dung_id);
 
-        return $stmt->execute();
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId(); // TRẢ VỀ ID VỪA TẠO
+        }
+        return false;
     }
 }
