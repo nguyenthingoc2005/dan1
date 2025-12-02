@@ -322,6 +322,19 @@ class Booking
             'status' => $status,
             'id' => $id
         ]);
+
+        // 5. AUTO-APPROVE LOGIC
+        // If payment is made (partial or paid) AND booking is pending -> Approve it
+        if ($paidAmount > 0) {
+            $stmt = $this->pdo->prepare("SELECT approval_status FROM bookings WHERE id = :id");
+            $stmt->execute(['id' => $id]);
+            $currentStatus = $stmt->fetchColumn();
+
+            if ($currentStatus == 'pending') {
+                $this->updateStatus($id, 'approved', 'approval', null); // null user for System
+                $this->logHistory($id, 'pending', 'approved', null, "Tự động duyệt do đã thanh toán");
+            }
+        }
     }
 
     /**
