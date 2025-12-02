@@ -80,7 +80,7 @@ require_login(); // Từ đây trở xuống phải login
 // ADMIN ROUTES
 // ============================================================================
 
-if (strpos($act, 'admin-') === 0) {
+if (strpos($act, 'admin-') === 0 || strpos($act, 'admin/') === 0) {
     require_admin(); // Check admin permission
 
     require_once CONTROLLERS_PATH . '/DashboardController.php';
@@ -91,6 +91,51 @@ if (strpos($act, 'admin-') === 0) {
             $dashboardController->adminDashboard();
             break;
 
+        // ========== USER MANAGEMENT ==========
+        case 'admin/users':
+        case 'admin/users/index':
+            require_once CONTROLLERS_PATH . '/admin/UserController.php';
+            $userController = new UserController($pdo);
+            $userController->index();
+            break;
+
+        case 'admin/users/create':
+            require_once CONTROLLERS_PATH . '/admin/UserController.php';
+            $userController = new UserController($pdo);
+            $userController->create();
+            break;
+
+        case 'admin/users/store':
+            require_once CONTROLLERS_PATH . '/admin/UserController.php';
+            $userController = new UserController($pdo);
+            $userController->store();
+            break;
+
+        case 'admin/users/edit':
+            require_once CONTROLLERS_PATH . '/admin/UserController.php';
+            $userController = new UserController($pdo);
+            $userController->edit();
+            break;
+
+        case 'admin/users/update':
+            require_once CONTROLLERS_PATH . '/admin/UserController.php';
+            $userController = new UserController($pdo);
+            $userController->update();
+            break;
+
+        case 'admin/users/delete':
+            require_once CONTROLLERS_PATH . '/admin/UserController.php';
+            $userController = new UserController($pdo);
+            $userController->delete();
+            break;
+
+        case 'admin/users/toggle-status':
+            require_once CONTROLLERS_PATH . '/admin/UserController.php';
+            $userController = new UserController($pdo);
+            $userController->toggleStatus();
+            break;
+
+        // ========== OTHER ADMIN ROUTES ==========
         case 'admin-tours':
             echo "Admin Tours - Coming soon";
             break;
@@ -139,6 +184,7 @@ if (strpos($act, 'admin-') === 0) {
     exit;
 }
 
+
 // ============================================================================
 // STAFF ROUTES
 // ============================================================================
@@ -184,6 +230,44 @@ if (strpos($act, 'staff-') === 0) {
 
         case 'staff-payments':
             echo "Staff Payments - Coming soon";
+            break;
+
+        default:
+            http_response_code(404);
+            require VIEWS_PATH . '/errors/404.php';
+            break;
+    }
+    exit;
+}
+
+// ============================================================================
+// PROFILE ROUTES (All roles)
+// ============================================================================
+
+if (strpos($act, 'profile') === 0) {
+    require_once CONTROLLERS_PATH . '/ProfileController.php';
+    $profileController = new ProfileController($pdo);
+
+    switch ($act) {
+        case 'profile':
+        case 'profile/index':
+            $profileController->index();
+            break;
+
+        case 'profile/edit':
+            $profileController->edit();
+            break;
+
+        case 'profile/update':
+            $profileController->update();
+            break;
+
+        case 'profile/change-password':
+            $profileController->changePassword();
+            break;
+
+        case 'profile/update-password':
+            $profileController->updatePassword();
             break;
 
         default:

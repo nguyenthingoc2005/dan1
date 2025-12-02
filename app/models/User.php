@@ -43,18 +43,22 @@ class User
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT u.*, r.name as role, r.display_name as role_display
+                SELECT 
+                    u.id, u.role_id, u.email, u.password, u.full_name, 
+                    u.phone, u.date_of_birth, u.gender, u.address, u.avatar, 
+                    u.status, u.last_login, u.created_by, u.created_at, u.updated_at,
+                    r.name as role, r.display_name as role_display
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 WHERE u.email = :email
                 LIMIT 1
             ");
-            
+
             $stmt->execute(['email' => $email]);
             $user = $stmt->fetch();
-            
+
             return $user ?: null;
-            
+
         } catch (PDOException $e) {
             logError("User::findByEmail() Error: " . $e->getMessage());
             return null;
@@ -71,18 +75,22 @@ class User
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT u.*, r.name as role, r.display_name as role_display
+                SELECT 
+                    u.id, u.role_id, u.email, u.password, u.full_name, 
+                    u.phone, u.date_of_birth, u.gender, u.address, u.avatar, 
+                    u.status, u.last_login, u.created_by, u.created_at, u.updated_at,
+                    r.name as role, r.display_name as role_display
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 WHERE u.id = :id
                 LIMIT 1
             ");
-            
+
             $stmt->execute(['id' => $id]);
             $user = $stmt->fetch();
-            
+
             return $user ?: null;
-            
+
         } catch (PDOException $e) {
             logError("User::findById() Error: " . $e->getMessage());
             return null;
@@ -115,9 +123,9 @@ class User
                 SET last_login = NOW()
                 WHERE id = :id
             ");
-            
+
             return $stmt->execute(['id' => $user_id]);
-            
+
         } catch (PDOException $e) {
             logError("User::updateLastLogin() Error: " . $e->getMessage());
             return false;
@@ -173,7 +181,11 @@ class User
             $params['limit'] = $per_page;
 
             $data_sql = "
-                SELECT u.*, r.name as role, r.display_name as role_display
+                SELECT 
+                    u.id, u.role_id, u.email, u.password, u.full_name, 
+                    u.phone, u.date_of_birth, u.gender, u.address, u.avatar, 
+                    u.status, u.last_login, u.created_by, u.created_at, u.updated_at,
+                    r.name as role, r.display_name as role_display
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 {$where_clause}

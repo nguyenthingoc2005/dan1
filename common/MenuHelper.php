@@ -56,9 +56,9 @@ function get_menu_items($role)
             ],
             [
                 'icon' => '👥',
-                'label' => 'Users',
-                'url' => $base_url . '/?act=admin-users',
-                'active_pattern' => 'admin-users'
+                'label' => 'Quản lý nhân viên',
+                'url' => $base_url . '/?act=admin/users',
+                'active_pattern' => 'admin/users'
             ],
             [
                 'icon' => '🏢',
@@ -136,6 +136,12 @@ function get_menu_items($role)
                 'url' => $base_url . '/?act=staff-payments',
                 'active_pattern' => 'staff-payments'
             ],
+            [
+                'icon' => '👤',
+                'label' => 'Thông tin cá nhân',
+                'url' => $base_url . '/?act=profile',
+                'active_pattern' => 'profile'
+            ],
         ],
 
         'guide' => [
@@ -168,6 +174,12 @@ function get_menu_items($role)
                 'label' => 'Expenses',
                 'url' => $base_url . '/?act=guide-expenses',
                 'active_pattern' => 'guide-expenses'
+            ],
+            [
+                'icon' => '👤',
+                'label' => 'Thông tin cá nhân',
+                'url' => $base_url . '/?act=profile',
+                'active_pattern' => 'profile'
             ],
         ],
     ];
