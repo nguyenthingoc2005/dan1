@@ -97,30 +97,91 @@ class HdvController
             die();
         }
     }
+    // --- 1. HIỂN THỊ CHI TIẾT KHÁCH HÀNG ---
     public function chitiet_khach_hang()
     {
-        // 1. Lấy ID khách hàng từ URL
-        // (Ở view danh sách, link sẽ là: ?act=chitiet_khach_hang&id=...)
         $hanh_khach_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
         if ($hanh_khach_id > 0) {
-            // 2. Gọi Model lấy thông tin chi tiết
+            // Lấy thông tin khách
             $khachhang = $this->modelGet->getPassengerDetail($hanh_khach_id);
 
-            // 3. Kiểm tra dữ liệu
+            // [MỚI] Lấy danh sách yêu cầu phục vụ của khách này
+            $listYeuCau = $this->modelGet->getServiceRequestsByCustomer($hanh_khach_id);
+
             if ($khachhang) {
-                // Nếu có dữ liệu thì gọi View hiển thị
-                require_once './views/hdv/xem_chitiet_khach_hang.php';
+                require_once 'views/hdv/xem_chitiet_khach_hang.php';
             } else {
-                // Nếu ID không tồn tại trong DB
-                echo "Không tìm thấy thông tin hành khách này.";
+                echo "Không tìm thấy khách hàng.";
             }
         } else {
-            // Nếu không truyền ID hoặc ID = 0
             header("Location: " . BASEURL . "?act=danh_sach_tour");
-            exit;
         }
     }
+
+    // --- 2. XỬ LÝ LƯU YÊU CẦU ---
+    public function luuyeucau()
+    {
+        // 1. Kiểm tra phương thức gửi
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: " . BASEURL);
+            exit;
+        }
+
+        // 2. Lấy dữ liệu
+        $yeu_cau_id = isset($_POST['yeu_cau_id']) ? intval($_POST['yeu_cau_id']) : 0;
+        $hanh_khach_id = isset($_POST['hanh_khach_id']) ? intval($_POST['hanh_khach_id']) : 0;
+
+        // Chuẩn bị dữ liệu để lưu
+        $data = [
+            ':noi_dung' => $_POST['noi_dung'] ?? '',
+            ':muc_do' => $_POST['muc_do_uu_tien'] ?? 'trung_binh',
+            ':da_chuan_bi' => isset($_POST['da_chuan_bi']) ? 1 : 0,
+            ':ghi_chu' => $_POST['ghi_chu'] ?? ''
+        ];
+
+        // Nếu là Thêm mới (INSERT) thì cần thêm khóa ngoại
+        if ($yeu_cau_id == 0) {
+            $data[':dat_tour_id'] = $_POST['dat_tour_id'] ?? 0;
+            $data[':hanh_khach_id'] = $hanh_khach_id;
+        }
+
+        // 3. Gọi Model lưu dữ liệu
+        $this->modelGet->luu_yeu_cau($yeu_cau_id, $data);
+
+        // 4. Chuyển hướng quay lại trang chi tiết khách hàng
+        if ($hanh_khach_id > 0) {
+            header("Location: " . BASEURL . "?act=chitiet_khach_hang&id=" . $hanh_khach_id . "&msg=saved");
+        } else {
+            // Dự phòng nếu mất ID khách
+            header("Location: " . BASEURL . "?act=danh_sach_tour");
+        }
+        exit;
+    }
+
+    // --- XỬ LÝ XÓA YÊU CẦU ---
+    public function xoayeucau()
+    {
+        // 1. Lấy ID yêu cầu cần xóa (req_id) và ID khách hàng (hk_id) để quay lại
+        $yc_id = isset($_GET['req_id']) ? intval($_GET['yc_id']) : 0;
+        $hk_id = isset($_GET['hk_id']) ? intval($_GET['hk_id']) : 0;
+
+        // 2. Gọi Model xóa
+        if ($yc_id > 0) {
+            $this->modelGet->xoa_yeu_cau($yc_id);
+        }
+
+        // 3. Quay lại trang chi tiết khách hàng
+        if ($hk_id > 0) {
+            header("Location: " . BASEURL . "?act=xem_chitiet_khach_hang&id=" . $hk_id . "&msg=deleted");
+        } else {
+            // Dự phòng nếu mất ID khách thì về danh sách tour
+            header("Location: " . BASEURL . "?act=danh_sach_tour");
+        }
+        exit;
+    }
+
+
 
 
     public function loginProcess()

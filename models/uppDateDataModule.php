@@ -78,21 +78,6 @@ class uppDateDataModuleDataModule
 
         return $stmt->execute();
     }
-    public function updateHDV($id, $data)
-    {
-        $sql = "UPDATE `huongdanvien` 
-                    SET `ho_ten` = :ho_ten, `so_dien_thoai` = :so_dien_thoai, `email` = :email, 
-                        `kinh_nghiem` = :kinh_nghiem, `ngon_ngu` = :ngon_ngu 
-                    WHERE `hdv_id` = :id";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':ho_ten', $data['ho_ten']);
-        $stmt->bindParam(':so_dien_thoai', $data['so_dien_thoai']);
-        $stmt->bindParam(':email', $data['email']);
-        $stmt->bindParam(':kinh_nghiem', $data['kinh_nghiem']);
-        $stmt->bindParam(':ngon_ngu', $data['ngon_ngu']);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        return $stmt->execute();
-    }
     public function updateDatTour($dat_tour_id, $data)
     {
 
@@ -204,9 +189,9 @@ class uppDateDataModuleDataModule
                 lien_he = :lien_he,         -- Tên cột trong DB là lien_he
                 yeu_cau_ca_nhan = :yeu_cau_ca_nhan -- Tên cột trong DB là yeu_cau_ca_nhan
             WHERE hanh_khach_id = :hanh_khach_id";
-            
+
         $stmt = $this->conn->prepare($sql);
-        
+
         // Binding dữ liệu từ mảng $data (được map từ controller)
         $stmt->bindParam(':ho_ten', $data['ho_ten']);
         $stmt->bindParam(':gioi_tinh', $data['gioi_tinh']);
@@ -215,7 +200,7 @@ class uppDateDataModuleDataModule
         $stmt->bindParam(':lien_he', $data['lien_he']);
         $stmt->bindParam(':yeu_cau_ca_nhan', $data['yeu_cau_ca_nhan']);
         $stmt->bindParam(':hanh_khach_id', $hanh_khach_id, PDO::PARAM_INT);
-        
+
         return $stmt->execute();
     }
     public function updateUser($id, $data)
@@ -234,6 +219,79 @@ class uppDateDataModuleDataModule
             $id
         ]);
     }
- 
+    // File: models/uppDateDataModule.php
 
+    public function updateThongTinCoBanUser($nguoi_dung_id, $ho_ten, $email, $so_dien_thoai)
+    {
+        $sql = "UPDATE nguoidung 
+            SET ho_ten = :ho_ten, 
+                email = :email, 
+                so_dien_thoai = :so_dien_thoai 
+            WHERE nguoi_dung_id = :nguoi_dung_id";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':ho_ten', $ho_ten);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':so_dien_thoai', $so_dien_thoai);
+        $stmt->bindParam(':nguoi_dung_id', $nguoi_dung_id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+    public function updateHDV($id, $data)
+    {
+        // Cập nhật các trường thông tin dựa trên cấu trúc bảng mới
+        // Lưu ý: Đã đổi tên các cột kinh_nghiem_lam_viec, ngon_ngu_su_dung cho khớp DB
+        $sql = "UPDATE `huongdanvien` 
+            SET `ngay_sinh` = :ngay_sinh,
+                `gioi_tinh` = :gioi_tinh,
+                `dia_chi_lien_he` = :dia_chi_lien_he,
+                `chung_chi_chuyen_mon` = :chung_chi_chuyen_mon,
+                `ngon_ngu_su_dung` = :ngon_ngu_su_dung,
+                `kinh_nghiem_lam_viec` = :kinh_nghiem_lam_viec,
+                `tinh_trang_suc_khoe` = :tinh_trang_suc_khoe,
+                `tinh_trang_hoat_dong` = :tinh_trang_hoat_dong,
+                `ngay_cap_nhat` = NOW() 
+            " . (!empty($data['anh_dai_dien']) ? ", `anh_dai_dien` = :anh_dai_dien" : "") . "
+            WHERE `hdv_id` = :id";
+
+        $stmt = $this->conn->prepare($sql);
+
+        // Bind param
+        // Lưu ý: Key của mảng $data nên khớp với tên cột hoặc form name của bạn
+        $stmt->bindParam(':ngay_sinh', $data['ngay_sinh']);
+        $stmt->bindParam(':gioi_tinh', $data['gioi_tinh']);
+        $stmt->bindParam(':dia_chi_lien_he', $data['dia_chi_lien_he']);
+        $stmt->bindParam(':chung_chi_chuyen_mon', $data['chung_chi_chuyen_mon']);
+        $stmt->bindParam(':ngon_ngu_su_dung', $data['ngon_ngu_su_dung']);
+        $stmt->bindParam(':kinh_nghiem_lam_viec', $data['kinh_nghiem_lam_viec']);
+        $stmt->bindParam(':tinh_trang_suc_khoe', $data['tinh_trang_suc_khoe']);
+        $stmt->bindParam(':tinh_trang_hoat_dong', $data['tinh_trang_hoat_dong']);
+
+        // ID dùng cho mệnh đề WHERE
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        // Chỉ bind ảnh đại diện nếu có dữ liệu (tránh lỗi "number of bound variables does not match")
+        if (!empty($data['anh_dai_dien'])) {
+            $stmt->bindParam(':anh_dai_dien', $data['anh_dai_dien']);
+        }
+
+        return $stmt->execute();
+    }
+    // File: models/uppDateDataModule.php
+
+    public function updateKhachHangDetail($khach_hang_id, $data)
+    {
+        // Giả định bảng khachhang có các cột này. Bạn hãy kiểm tra lại DB của mình.
+        $sql = "UPDATE khachhang SET 
+            dia_chi = :dia_chi,
+            cccd = :cccd
+            WHERE khach_hang_id = :khach_hang_id";
+
+        $stmt = $this->conn->prepare($sql);
+
+        $stmt->bindParam(':dia_chi', $data['dia_chi']);
+        $stmt->bindParam(':cccd', $data['cccd']);
+        $stmt->bindParam(':khach_hang_id', $khach_hang_id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }

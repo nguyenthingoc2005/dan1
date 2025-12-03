@@ -13,8 +13,7 @@
             <ul class="lists">
                 <li class="list"><a href="<?= BASEURL ?>?act=dashboard_HDV" class="nav-link"><i class="bx bx-home-alt icon"></i><span class="link">Dashboard HDV</span></a></li>
                 <li class="list"><a href="<?= BASEURL ?>?act=Ho_so_canhan" class="nav-link"><i class="bx bx-user icon"></i><span class="link">Hồ sơ cá nhân</span></a></li>
-                <li class="list"><a href="<?= BASEURL ?>?act=xemtour" class="nav-link"><i class="bx bx-map icon"></i><span class="link">Tour của tôi</span></a></li>
-                <li class="list"><a href="<?= BASEURL ?>?act=lich_lam_viec" class="nav-link"><i class="bx bx-building icon"></i><span class="link">Lịch làm việc</span></a></li>
+                <li class="list"><a href="<?= BASEURL ?>?act=xemtour" class="nav-link"><i class="bx bx-map icon"></i><span class="link">Lịch làm việc của tôi</span></a></li>
 
             </ul>
 

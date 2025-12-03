@@ -208,6 +208,7 @@ if (!defined('BASEURL')) define('BASEURL', '');
                                                         <th>Liên hệ</th>
                                                         <th>Ghi chú</th>
                                                         <th>Trạng thái Đơn</th>
+                                                        <th>Hành động</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>

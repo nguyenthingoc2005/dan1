@@ -21,7 +21,7 @@ class AdminController
     // I. TOUR
     // ===================================================================
 
- public function index()
+    public function index()
     {
         // 1. LẤY DỮ LIỆU TỪ MODEL
         // Lưu ý: Đảm bảo modelGet đã được khởi tạo trong __construct
@@ -38,7 +38,7 @@ class AdminController
         ];
 
         // 3. TÍNH TOÁN SỐ LIỆU
-        
+
         // A. Đếm Tour đang hoạt động (hoat_dong = 1)
         foreach ($allTours as $tour) {
             if (isset($tour['hoat_dong']) && $tour['hoat_dong'] == 1) {
@@ -69,15 +69,15 @@ class AdminController
         }
 
         // 4. SẮP XẾP & CẮT DỮ LIỆU HIỂN THỊ
-        
+
         // A. 5 Đơn hàng mới nhất (Sắp xếp theo ID giảm dần)
-        usort($allBookings, function($a, $b) {
+        usort($allBookings, function ($a, $b) {
             return $b['dat_tour_id'] <=> $a['dat_tour_id'];
         });
         $recentBookings = array_slice($allBookings, 0, 5);
 
         // B. 5 Tour sắp khởi hành (Sắp xếp ngày tăng dần - gần nhất lên đầu)
-        usort($upcomingTours, function($a, $b) {
+        usort($upcomingTours, function ($a, $b) {
             return strtotime($a['ngay_bat_dau']) - strtotime($b['ngay_bat_dau']);
         });
         $upcomingTours = array_slice($upcomingTours, 0, 5);
@@ -139,7 +139,6 @@ class AdminController
         $data = $this->modelGet->getAllDanh_muc_tour();
         $tour = $this->modelGet->getTourById($tour_id);
         require_once './views/admin/tourupdate.php';
-
     }
     public function uppdatetour1($tour_id)
     {
@@ -167,22 +166,22 @@ class AdminController
         $diadiemList = $this->modelGet->getDiaDiemByTourId($tour_id);
         require_once './views/admin/diadiemtour.php';
     }
-  public function gan_diadiem($tour_id)
-{
-    $datatour = $this->modelGet->getTourById($tour_id);
+    public function gan_diadiem($tour_id)
+    {
+        $datatour = $this->modelGet->getTourById($tour_id);
 
-    if (isset($datatour['danh_muc_id']) && $datatour['danh_muc_id'] == 1) {
-        $data = $this->modelGet->getAllDiaDiemtn(); // Lấy data Trong nước
-    } else {
-        $data = $this->modelGet->getAllDiaDiemqt(); // Lấy data Quốc tế (hoặc các loại khác)
+        if (isset($datatour['danh_muc_id']) && $datatour['danh_muc_id'] == 1) {
+            $data = $this->modelGet->getAllDiaDiemtn(); // Lấy data Trong nước
+        } else {
+            $data = $this->modelGet->getAllDiaDiemqt(); // Lấy data Quốc tế (hoặc các loại khác)
+        }
+
+        // 3. Lấy các địa điểm đã gán (dùng để hiển thị và loại trừ khỏi danh sách chọn)
+        $diaDiemDaGan = $this->modelGet->getDiaDiemByTourId($tour_id);
+
+        // 4. Chuẩn bị View
+        require_once './views/admin/gan_diadiemtour.php';
     }
-
-    // 3. Lấy các địa điểm đã gán (dùng để hiển thị và loại trừ khỏi danh sách chọn)
-    $diaDiemDaGan = $this->modelGet->getDiaDiemByTourId($tour_id);
-    
-    // 4. Chuẩn bị View
-    require_once './views/admin/gan_diadiemtour.php';
-}
     public function luu_gan_diadiem($tour_id)
     {
         $diaDiemIds = $_POST['dia_diem_id'] ?? [];
@@ -216,7 +215,7 @@ class AdminController
         }
         header('Location: ' . BASEURL . '?act=gan_diadiem&tour_id=' . ($tour_id ?? 0));
     }
-  
+
     public function sua_diadiem_tour($dia_diem_tour_id, $tour_id)
     {
         $info = $this->modelGet->getDiaDiemTourById($dia_diem_tour_id);
@@ -456,41 +455,41 @@ class AdminController
         $danhsachchinhsach = $this->modelGet->getDanhSachChinhSach();
         require_once './views/admin/chinhsachtour.php';
     }
-public function luuChinhSachTour($tour_id)
-{
-    // Lấy mảng ID chính sách được chọn
-    $chinhSachIds = $_POST['chinh_sach_ids'] ?? [];
-    
-    // Lấy mảng ghi chú (dạng key-value: [id_chinh_sach => 'nội dung ghi chú'])
-    $ghi_chu_list = $_POST['ghi_chu'] ?? []; 
-    
-    $allSuccess = true;
+    public function luuChinhSachTour($tour_id)
+    {
+        // Lấy mảng ID chính sách được chọn
+        $chinhSachIds = $_POST['chinh_sach_ids'] ?? [];
 
-    if (!empty($chinhSachIds) && is_array($chinhSachIds)) {
-        foreach ($chinhSachIds as $csId) {
-            // Lấy ghi chú tương ứng với ID chính sách. 
-            // Nếu không có thì gán chuỗi rỗng.
-            $noi_dung_ghi_chu = isset($ghi_chu_list[$csId]) ? trim($ghi_chu_list[$csId]) : ''; 
-            
-            // Gọi Model để lưu (truyền chuỗi ghi chú, không truyền mảng)
-            $result = $this->modelCreate->luuChinhSachTour($tour_id, $csId, $noi_dung_ghi_chu);
-            
-            if (!$result) {
-                $allSuccess = false;
+        // Lấy mảng ghi chú (dạng key-value: [id_chinh_sach => 'nội dung ghi chú'])
+        $ghi_chu_list = $_POST['ghi_chu'] ?? [];
+
+        $allSuccess = true;
+
+        if (!empty($chinhSachIds) && is_array($chinhSachIds)) {
+            foreach ($chinhSachIds as $csId) {
+                // Lấy ghi chú tương ứng với ID chính sách. 
+                // Nếu không có thì gán chuỗi rỗng.
+                $noi_dung_ghi_chu = isset($ghi_chu_list[$csId]) ? trim($ghi_chu_list[$csId]) : '';
+
+                // Gọi Model để lưu (truyền chuỗi ghi chú, không truyền mảng)
+                $result = $this->modelCreate->luuChinhSachTour($tour_id, $csId, $noi_dung_ghi_chu);
+
+                if (!$result) {
+                    $allSuccess = false;
+                }
             }
+        } else {
+            // Trường hợp không chọn chính sách nào
+            $allSuccess = false;
         }
-    } else {
-        // Trường hợp không chọn chính sách nào
-        $allSuccess = false; 
-    }
 
-    if ($allSuccess) {
-        header('Location: ' . BASEURL . '?act=chinhsach&tour_id=' . $tour_id . '&msg=success');
-    } else {
-        header('Location: ' . BASEURL . '?act=chinhsach&tour_id=' . $tour_id . '&msg=db_fail');
+        if ($allSuccess) {
+            header('Location: ' . BASEURL . '?act=chinhsach&tour_id=' . $tour_id . '&msg=success');
+        } else {
+            header('Location: ' . BASEURL . '?act=chinhsach&tour_id=' . $tour_id . '&msg=db_fail');
+        }
+        exit;
     }
-    exit;
-}
     public function xoaChinhSachTour($tour_chinh_sach_id)
     {
         if ($tour_chinh_sach_id !== null) {
@@ -586,7 +585,7 @@ public function luuChinhSachTour($tour_id)
         require_once './views/admin/hanh_khach_add.php';
     }
 
-  public function hanh_khach_save($dat_tour_id)
+    public function hanh_khach_save($dat_tour_id)
     {
         // Lấy ID từ POST nếu có, nếu không dùng tham số truyền vào
         $dat_tour_id = $_POST['dat_tour_id'] ?? $dat_tour_id;
@@ -599,14 +598,14 @@ public function luuChinhSachTour($tour_id)
                 'ho_ten'           => $hk['ho_ten'] ?? '',
                 'gioi_tinh'        => $hk['gioi_tinh'] ?? null,
                 'ngay_sinh'        => $hk['ngay_sinh'] ?? null,
-                
+
                 // Map: Input form -> Tên cột DB
                 // Ưu tiên lấy 'so_giay_to', nếu không có thì lấy 'cccd' (phòng trường hợp form cũ)
                 'so_giay_to'       => $hk['so_giay_to'] ?? ($hk['cccd'] ?? null),
-                
+
                 // Ưu tiên lấy 'lien_he', nếu không có thì lấy 'sdt'
                 'lien_he'          => $hk['lien_he'] ?? ($hk['sdt'] ?? null),
-                
+
                 // Ưu tiên lấy 'yeu_cau_ca_nhan', nếu không có thì lấy 'ghi_chu'
                 'yeu_cau_ca_nhan'  => $hk['yeu_cau_ca_nhan'] ?? ($hk['ghi_chu'] ?? null),
             ];
@@ -678,11 +677,11 @@ public function luuChinhSachTour($tour_id)
         require_once './views/admin/hanh_khach_edit.php';
     }
 
-  public function hanh_khach_update($dat_tour_id)
+    public function hanh_khach_update($dat_tour_id)
     {
         $hanh_khach_data = $_POST['hanh_khach'] ?? [];
         $dat_tour_id = $_POST['dat_tour_id'] ?? $dat_tour_id;
-        
+
         // Nhận biết bước tiếp theo (nếu có)
         $next_step = $_POST['next_step'] ?? '';
 
@@ -695,14 +694,14 @@ public function luuChinhSachTour($tour_id)
                 'ho_ten'           => $hanh_khach_input['ho_ten'] ?? '',
                 'gioi_tinh'        => $hanh_khach_input['gioi_tinh'] ?? null, // Mới thêm
                 'ngay_sinh'        => $hanh_khach_input['ngay_sinh'] ?? null,
-                
+
                 // Map các trường input sang tên cột trong DB
                 // Form gửi 'so_giay_to' hoặc 'cccd' -> Lưu vào 'so_giay_to'
                 'so_giay_to'       => $hanh_khach_input['so_giay_to'] ?? ($hanh_khach_input['cccd'] ?? null),
-                
+
                 // Form gửi 'lien_he' hoặc 'sdt' -> Lưu vào 'lien_he'
                 'lien_he'          => $hanh_khach_input['lien_he'] ?? ($hanh_khach_input['sdt'] ?? null),
-                
+
                 // Form gửi 'yeu_cau_ca_nhan' hoặc 'ghi_chu' -> Lưu vào 'yeu_cau_ca_nhan'
                 'yeu_cau_ca_nhan'  => $hanh_khach_input['yeu_cau_ca_nhan'] ?? ($hanh_khach_input['ghi_chu'] ?? null),
             ];
@@ -742,9 +741,8 @@ public function luuChinhSachTour($tour_id)
     }
     public function dat_tour_detail($dat_tour_id)
     {
-        $data= $this->modelGet->getDatTourDetail($dat_tour_id);
+        $data = $this->modelGet->getDatTourDetail($dat_tour_id);
         include './views/admin/dat_tour_detail.php';
-        
     }
 
     // ===================================================================
@@ -862,7 +860,7 @@ public function luuChinhSachTour($tour_id)
         require_once './views/admin/gandichvutour.php';
     }
     // Lưu gán dịch vụ cho tour
-public function luuGanDichVuTour($tour_id)
+    public function luuGanDichVuTour($tour_id)
     {
         if (!$tour_id) {
             header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $tour_id . '&error=missing_tour_id');
@@ -871,7 +869,7 @@ public function luuGanDichVuTour($tour_id)
 
         $dichVuIds = $_POST['dich_vu_id'] ?? [];
         // Giả sử bên HTML bạn đặt name="ghi_chu[ID_DICH_VU]" thì đây sẽ là mảng dạng [ID => 'Nội dung']
-        $ghiChu = $_POST['ghi_chu'] ?? []; 
+        $ghiChu = $_POST['ghi_chu'] ?? [];
 
         if (!is_array($dichVuIds) || empty($dichVuIds)) {
             header('Location: ' . BASEURL . '?act=gandichvu&tour_id=' . $tour_id . '&error=no_services_selected');
@@ -883,11 +881,11 @@ public function luuGanDichVuTour($tour_id)
             // --- SỬA Ở ĐÂY ---
             // Lấy ghi chú cụ thể theo ID dịch vụ đang lặp. 
             // Nếu không có thì để rỗng ''.
-            $note_content = isset($ghiChu[$dich_vu_id]) ? trim($ghiChu[$dich_vu_id]) : ''; 
+            $note_content = isset($ghiChu[$dich_vu_id]) ? trim($ghiChu[$dich_vu_id]) : '';
 
             // Truyền $note_content (chuỗi) thay vì $ghiChu (mảng)
             $result = $this->modelCreate->ganDichVuTour($tour_id, $dich_vu_id, $note_content);
-            
+
             if (!$result) {
                 $allSuccess = false;
             }
@@ -915,44 +913,42 @@ public function luuGanDichVuTour($tour_id)
         $users = $this->modelGet->getAllUsers();
         require './views/admin/user_list.php';
     }
-     public function createUser()
+    public function createUser()
     {
         $roles = $this->modelRole->getAllVaiTro();
         require './views/admin/user_create.php';
     }
 
 
-// 1. Cập nhật storeUser
-public function storeUser()
-{
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $data = $_POST;
-        
-        // Tạo user và lấy ID trả về
-        $newUserId = $this->modelCreate->storeUser($data);
+    // 1. Cập nhật storeUser
+    public function storeUser()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = $_POST;
+            $newUserId = $this->modelCreate->storeUser($data);
 
-        if ($newUserId) {
-            // Kiểm tra vai trò để chuyển hướng
-            if ($data['vai_tro_id'] == 3) { 
-                // Vai trò HDV -> Chuyển sang form chi tiết HDV kèm user_id
-                header("Location: " . BASEURL . "?act=hdv_detail_add&user_id=" . $newUserId);
-                exit;
-            } else if ($data['vai_tro_id'] == 4) {
-                // Vai trò Khách hàng -> Chuyển sang form chi tiết KH kèm user_id
-                header("Location: " . BASEURL . "?act=khachhang_detail_add&user_id=" . $newUserId);
-                exit;
+
+            if ($newUserId) {
+                if ($data['vai_tro_id'] == 3) {
+                    $idhdv = $this->modelCreate->createhdvid($newUserId);
+                    header("Location: " . BASEURL . "?act=edithdv&id=" . $idhdv);
+                    exit;
+                } else if ($data['vai_tro_id'] == 4) {
+                    $idkhachhang = $this->modelCreate->createkhachhangid($newUserId);
+                    header("Location: " . BASEURL . "?act=edit_khach_hang&khach_hang_id=" . $idkhachhang);
+                    exit;
+                } else {
+                    header("Location: " . BASEURL . "?act=user_list");
+                    exit;
+                }
             } else {
-                // Các vai trò khác (Admin/Staff) -> Về danh sách user
-                header("Location: " . BASEURL . "?act=user_list");
-                exit;
+                echo "Lỗi tạo tài khoản!";
             }
-        } else {
-            // Xử lý lỗi nếu không tạo được user
-            echo "Lỗi tạo tài khoản!";
         }
     }
-}
-public function editUser()
+
+
+    public function editUser()
     {
         $id = $_GET['id'];
         $user = $this->modelGet->find($id);
@@ -979,85 +975,186 @@ public function editUser()
         header("Location: " . BASEURL . "?act=user_list");
     }
 
-// 2. Các hàm cho Hướng Dẫn Viên (HDV)
-public function formAddHDVDetail() {
-    $user_id = $_GET['user_id'] ?? 0;
-    // Lấy thông tin cơ bản để hiển thị tên (nếu cần)
-    $user = $this->modelGet->find($user_id); 
-    require './views/admin/hdv_detail_add.php';
-}
-
-public function storeHDVDetail() {
-    // 1. Xử lý Upload Ảnh đại diện
-    $filename = null;
-    if (isset($_FILES['anh_dai_dien']) && $_FILES['anh_dai_dien']['error'] == 0) {
-        $uploadDir = './assets/uploads/hdv/'; // Đường dẫn thư mục lưu ảnh
-        
-        // Tạo thư mục nếu chưa tồn tại
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        // Tạo tên file duy nhất để tránh trùng lặp
-        $fileExtension = pathinfo($_FILES['anh_dai_dien']['name'], PATHINFO_EXTENSION);
-        $filename = 'hdv_' . time() . '_' . rand(100, 999) . '.' . $fileExtension;
-        
-        // Di chuyển file từ thư mục tạm sang thư mục đích
-        move_uploaded_file($_FILES['anh_dai_dien']['tmp_name'], $uploadDir . $filename);
+    // 2. Các hàm cho Hướng Dẫn Viên (HDV)
+    public function formAddHDVDetail()
+    {
+        $user_id = $_GET['user_id'] ?? 0;
+        // Lấy thông tin cơ bản để hiển thị tên (nếu cần)
+        $user = $this->modelGet->find($user_id);
+        require './views/admin/hdv_detail_add.php';
     }
 
-    // 2. Chuẩn bị dữ liệu để insert vào bảng 'huongdanvien'
-    // Lưu ý: Key của mảng phải TRÙNG KHỚP với tên cột trong Database
-    $data = [
-        'nguoi_dung_id'         => $_POST['nguoi_dung_id'],
-        'ngay_sinh'             => $_POST['ngay_sinh'],
-        'gioi_tinh'             => $_POST['gioi_tinh'], // Enum: 'Nam' hoặc 'Nữ'
-        'dia_chi_lien_he'       => $_POST['dia_chi_lien_he'],
-        'anh_dai_dien'          => $filename, // Lưu tên file ảnh
-        'chung_chi_chuyen_mon'  => $_POST['chung_chi_chuyen_mon'],
-        'ngon_ngu_su_dung'      => $_POST['ngon_ngu_su_dung'],
-        'kinh_nghiem_lam_viec'  => $_POST['kinh_nghiem_lam_viec'],
-        'tinh_trang_suc_khoe'   => $_POST['tinh_trang_suc_khoe'],
-        'ngay_tao'              => date('Y-m-d H:i:s'), // Lấy thời gian hiện tại
-        'tinh_trang_hoat_dong'  => 'Sẵn sàng' // Mặc định khi mới tạo
-    ];
-    
-    // 3. Gọi Model để insert
-    // Hàm addHDV trong model phải viết câu lệnh INSERT INTO huongdanvien ...
-    $this->modelCreate->addHDV($data);
-    
-    // 4. Lưu xong -> Chuyển hướng
-    // Có thể thêm thông báo thành công vào Session nếu muốn
-    header("Location: " . BASEURL . "?act=hdvlist"); 
-    exit();
-}
+    public function storeHDVDetail()
+    {
+        // 1. Xử lý Upload Ảnh đại diện
+        $filename = null;
+        if (isset($_FILES['anh_dai_dien']) && $_FILES['anh_dai_dien']['error'] == 0) {
+            $uploadDir = './assets/uploads/hdv/'; // Đường dẫn thư mục lưu ảnh
 
-// 3. Các hàm cho Khách Hàng
-public function formAddKhachHangDetail() {
-    $user_id = $_GET['user_id'] ?? 0;
-    $user = $this->modelGet->find($user_id);
-    require './views/admin/khachhang_detail_add.php';
-}
+            // Tạo thư mục nếu chưa tồn tại
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
 
-public function storeKhachHangDetail() {
-    $data = [
-        'nguoi_dung_id' => $_POST['nguoi_dung_id'],
-        'cccd'          => $_POST['cccd'],
-        'dia_chi'       => $_POST['dia_chi']
-    ];
-    
-    $this->modelCreate->createKhachHang($data);
-    
-    // Lưu xong -> Chuyển về danh sách Khách hàng
-    header("Location: " . BASEURL . "?act=khach_hang_list");
-}
+            // Tạo tên file duy nhất để tránh trùng lặp
+            $fileExtension = pathinfo($_FILES['anh_dai_dien']['name'], PATHINFO_EXTENSION);
+            $filename = 'hdv_' . time() . '_' . rand(100, 999) . '.' . $fileExtension;
 
-public function listKhachHang() {
-    $data = $this->modelGet->getAllKhachHang();
-    require './views/admin/khachhang_list.php';
-}
+            // Di chuyển file từ thư mục tạm sang thư mục đích
+            move_uploaded_file($_FILES['anh_dai_dien']['tmp_name'], $uploadDir . $filename);
+        }
 
-    
-    
-    
+        // 2. Chuẩn bị dữ liệu để insert vào bảng 'huongdanvien'
+        // Lưu ý: Key của mảng phải TRÙNG KHỚP với tên cột trong Database
+        $data = [
+            'nguoi_dung_id'         => $_POST['nguoi_dung_id'],
+            'ngay_sinh'             => $_POST['ngay_sinh'],
+            'gioi_tinh'             => $_POST['gioi_tinh'], // Enum: 'Nam' hoặc 'Nữ'
+            'dia_chi_lien_he'       => $_POST['dia_chi_lien_he'],
+            'anh_dai_dien'          => $filename, // Lưu tên file ảnh
+            'chung_chi_chuyen_mon'  => $_POST['chung_chi_chuyen_mon'],
+            'ngon_ngu_su_dung'      => $_POST['ngon_ngu_su_dung'],
+            'kinh_nghiem_lam_viec'  => $_POST['kinh_nghiem_lam_viec'],
+            'tinh_trang_suc_khoe'   => $_POST['tinh_trang_suc_khoe'],
+            'ngay_tao'              => date('Y-m-d H:i:s'), // Lấy thời gian hiện tại
+            'tinh_trang_hoat_dong'  => 'Sẵn sàng' // Mặc định khi mới tạo
+        ];
+
+        // 3. Gọi Model để insert
+        // Hàm addHDV trong model phải viết câu lệnh INSERT INTO huongdanvien ...
+        $this->modelCreate->addHDV($data);
+
+        // 4. Lưu xong -> Chuyển hướng
+        // Có thể thêm thông báo thành công vào Session nếu muốn
+        header("Location: " . BASEURL . "?act=hdvlist");
+        exit();
+    }
+    public function updateHDVSubmit()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = $_POST['hdv_id'] ?? 0;
+
+            if ($id > 0) {
+                $oldHDV = $this->modelGet->getHDVById($id);
+                if (!$oldHDV) {
+                    header("Location: " . BASEURL . "?act=hdv&msg=not_found");
+                    exit;
+                }
+                $nguoi_dung_id = $oldHDV['nguoi_dung_id'];
+                $ho_ten        = $_POST['ho_ten'] ?? $oldHDV['ho_ten'];
+                $email         = $_POST['email'] ?? $oldHDV['email'];
+                $so_dien_thoai = $_POST['so_dien_thoai'] ?? $oldHDV['so_dien_thoai'];
+
+                $this->modelUpdate->updateThongTinCoBanUser($nguoi_dung_id, $ho_ten, $email, $so_dien_thoai);
+                $anh_dai_dien = $_POST['old_img'] ?? '';
+                if (isset($_FILES['anh_dai_dien']) && $_FILES['anh_dai_dien']['error'] == 0) {
+                    $uploadDir = './assets/uploads/hdv/';
+                    $filename = 'hdv_' . time() . '_' . rand(100, 999) . '.' . pathinfo($_FILES['anh_dai_dien']['name'], PATHINFO_EXTENSION);
+                    if (move_uploaded_file($_FILES['anh_dai_dien']['tmp_name'], $uploadDir . $filename)) {
+                        $anh_dai_dien = $filename;
+                    }
+                }
+
+                $dataHDV = [
+                    'ngay_sinh'             => $_POST['ngay_sinh'] ?? null,
+                    'gioi_tinh'             => $_POST['gioi_tinh'] ?? 'Nam',
+                    'dia_chi_lien_he'       => $_POST['dia_chi_lien_he'] ?? '',
+                    'chung_chi_chuyen_mon'  => $_POST['chung_chi_chuyen_mon'] ?? '',
+                    'ngon_ngu_su_dung'      => $_POST['ngon_ngu_su_dung'] ?? '',
+                    'kinh_nghiem_lam_viec'  => $_POST['kinh_nghiem_lam_viec'] ?? '',
+                    'tinh_trang_suc_khoe'   => $_POST['tinh_trang_suc_khoe'] ?? '',
+                    'tinh_trang_hoat_dong'  => $_POST['tinh_trang_hoat_dong'] ?? 'Sẵn sàng',
+                    'anh_dai_dien'          => $anh_dai_dien
+                ];
+                $result = $this->modelUpdate->updateHDV($id, $dataHDV);
+
+                if ($result) {
+                    header("Location: " . BASEURL . "?act=hdv&msg=updated");
+                    exit;
+                } else {
+                    echo "Lỗi khi cập nhật thông tin chi tiết HDV.";
+                    exit;
+                }
+            }
+        }
+        header("Location: " . BASEURL . "?act=hdv");
+        exit;
+    }
+
+    // 3. Các hàm cho Khách Hàng
+    public function formAddKhachHangDetail()
+    {
+        $khach_hang_id = $_GET['khach_hang_id'] ?? 0;
+        // Lấy thông tin cơ bản để hiển thị tên (nếu cần)
+        $khachhang = $this->modelGet->getKhachHangById($khach_hang_id);
+        require './views/admin/khach_hang_detail_add.php';
+    }
+
+    public function storeKhachHangDetail()
+    {
+        $khach_hang_id = $_POST['khach_hang_id'] ?? 0;
+
+        // Nếu ấn nút "Bỏ qua"
+        if (isset($_POST['btn_skip'])) {
+            header("Location: " . BASEURL . "?act=khachhang_list");
+            exit;
+        }
+
+        // Nếu ấn nút "Lưu"
+        if (isset($_POST['btn_save'])) {
+            $data = [
+                'ngay_sinh' => $_POST['ngay_sinh'] ?? null,
+                'gioi_tinh' => $_POST['gioi_tinh'] ?? null,
+                'dia_chi'   => $_POST['dia_chi'] ?? '',
+                'cccd'      => $_POST['cccd'] ?? '',
+                'sdt'       => $_POST['sdt'] ?? '' // Nếu bảng KhachHang có cột sdt riêng, hoặc update ngược lại bảng User
+            ];
+
+            // Gọi model update thông tin chi tiết
+            $this->modelUpdate->updateKhachHangDetail($khach_hang_id, $data);
+
+            header("Location: " . BASEURL . "?act=khachhang_list&msg=success");
+            exit;
+        }
+    }
+    public function khachhang_list()
+    {
+        $data = $this->modelGet->getAllKhachHang();
+        require './views/admin/khachhang_list.php';
+    }
+    public function editKhachHang()
+    {
+        $khach_hang_id = $_GET['khach_hang_id'] ?? 0;
+        $info = $this->modelGet->getKhachHangById($khach_hang_id);
+        require './views/admin/khach_hang_edit.php';
+    }
+
+    // Xử lý cập nhật khách hàng (Đồng bộ cả bảng NguoiDung và KhachHang)
+    public function updateKhachHangSubmit()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $khach_hang_id = $_POST['khach_hang_id'] ?? 0;
+            $nguoi_dung_id = $_POST['nguoi_dung_id'] ?? 0;
+
+            // 1. Cập nhật bảng NGUOIDUNG (Tên, Email, SĐT, Trạng thái)
+            $ho_ten = $_POST['ho_ten'];
+            $email = $_POST['email'];
+            $so_dien_thoai = $_POST['so_dien_thoai'];
+
+            $this->modelUpdate->updateThongTinCoBanUser($nguoi_dung_id, $ho_ten, $email, $so_dien_thoai);
+
+            // 2. Cập nhật bảng KHACHHANG (CCCD, Ngày sinh, Địa chỉ...)
+            $dataDetail = [
+                'ngay_sinh' => $_POST['ngay_sinh'] ?? null,
+                'gioi_tinh' => $_POST['gioi_tinh'] ?? null,
+                'dia_chi'   => $_POST['dia_chi'] ?? '',
+                'cccd'      => $_POST['cccd'] ?? ''
+            ];
+
+            $this->modelUpdate->updateKhachHangDetail($khach_hang_id, $dataDetail);
+
+            header("Location: " . BASEURL . "?act=khachhang_list&msg=updated");
+            exit;
+        }
+    }
 }
