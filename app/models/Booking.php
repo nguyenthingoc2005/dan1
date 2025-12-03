@@ -51,6 +51,11 @@ class Booking
             $params['start_date'] = $filters['start_date'];
         }
 
+        if (!empty($filters['created_by'])) {
+            $sql .= " AND b.created_by = :created_by";
+            $params['created_by'] = $filters['created_by'];
+        }
+
         // Order by newest
         $sql .= " ORDER BY b.created_at DESC LIMIT $limit OFFSET $offset";
 
@@ -89,6 +94,11 @@ class Booking
             $params['tour_id'] = $filters['tour_id'];
         }
 
+        if (!empty($filters['created_by'])) {
+            $sql .= " AND b.created_by = :created_by";
+            $params['created_by'] = $filters['created_by'];
+        }
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchColumn();
@@ -121,6 +131,21 @@ class Booking
         }
 
         return $booking;
+    }
+
+    /**
+     * Lấy danh sách Booking theo Customer ID
+     */
+    public function getByCustomerId($customerId)
+    {
+        $sql = "SELECT b.*, t.name as tour_name, t.tour_code 
+                FROM bookings b
+                LEFT JOIN tours t ON b.tour_id = t.id
+                WHERE b.customer_id = :customer_id
+                ORDER BY b.created_at DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['customer_id' => $customerId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -162,7 +187,7 @@ class Booking
                 total_amount, discount_amount, final_amount, 
                 deposit_amount, remaining_amount,
                 payment_status, approval_status,
-                notes, created_by" . 
+                notes, created_by" .
                 (!empty($data['tour_schedule_id']) ? ", tour_schedule_id" : "") . "
             ) VALUES (
                 :booking_code, :tour_id, :customer_id,

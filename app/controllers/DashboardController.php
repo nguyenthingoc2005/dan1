@@ -69,19 +69,30 @@ class DashboardController
         // Require staff permission
         require_staff();
 
-        // TODO: Load thống kê cho staff
-        // - Tours của tôi
-        // - Bookings của tôi
-        // - Khách hàng của tôi
+        $user_id = get_user_id();
 
-        // Placeholder data
+        // Load Models
+        require_once MODELS_PATH . '/Tour.php';
+        require_once MODELS_PATH . '/Booking.php';
+        require_once MODELS_PATH . '/Customer.php';
+
+        $tourModel = new Tour($this->db);
+        $bookingModel = new Booking($this->db);
+        $customerModel = new Customer($this->db);
+
+        // Fetch Stats
+        $my_tours_data = $tourModel->getAll(['created_by' => $user_id], 1, 5);
+        $my_tours = $my_tours_data['data'];
+        $my_tours_count = $my_tours_data['total'];
+
+        $my_bookings_count = $bookingModel->count(['created_by' => $user_id]);
+        $my_customers_count = $customerModel->count(['created_by' => $user_id]);
+
         $stats = [
-            'my_tours' => 0,
-            'my_bookings' => 0,
-            'my_customers' => 0
+            'my_tours' => $my_tours_count,
+            'my_bookings' => $my_bookings_count,
+            'my_customers' => $my_customers_count
         ];
-        $my_tours = [];
-        $recent_bookings = [];
 
         $page_title = 'Dashboard Staff';
         $content_file = VIEWS_PATH . '/staff/dashboard.php';

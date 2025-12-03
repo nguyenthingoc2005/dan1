@@ -57,6 +57,12 @@ class Tour
                 $params['search'] = '%' . $filters['search'] . '%';
             }
 
+            // Filter by Creator
+            if (!empty($filters['created_by'])) {
+                $where_conditions[] = "t.created_by = :created_by";
+                $params['created_by'] = $filters['created_by'];
+            }
+
             $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
             // Count total

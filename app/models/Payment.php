@@ -47,6 +47,11 @@ class Payment
             $params['type'] = $filters['payment_type'];
         }
 
+        if (!empty($filters['created_by_booking'])) {
+            $sql .= " AND b.created_by = :created_by_booking";
+            $params['created_by_booking'] = $filters['created_by_booking'];
+        }
+
         // Count total
         $countSql = "SELECT COUNT(*) FROM (" . $sql . ") as count_table";
         $stmt = $this->pdo->prepare($countSql);
@@ -75,6 +80,39 @@ class Payment
         ];
     }
 
+    public function count($filters = [])
+    {
+        $sql = "SELECT COUNT(*) FROM payments p
+                JOIN bookings b ON p.booking_id = b.id
+                WHERE 1=1";
+        $params = [];
+
+        if (!empty($filters['start_date'])) {
+            $sql .= " AND p.payment_date >= :start_date";
+            $params['start_date'] = $filters['start_date'];
+        }
+        if (!empty($filters['end_date'])) {
+            $sql .= " AND p.payment_date <= :end_date";
+            $params['end_date'] = $filters['end_date'];
+        }
+        if (!empty($filters['payment_method'])) {
+            $sql .= " AND p.payment_method = :method";
+            $params['method'] = $filters['payment_method'];
+        }
+        if (!empty($filters['payment_type'])) {
+            $sql .= " AND p.payment_type = :type";
+            $params['type'] = $filters['payment_type'];
+        }
+        if (!empty($filters['created_by_booking'])) {
+            $sql .= " AND b.created_by = :created_by_booking";
+            $params['created_by_booking'] = $filters['created_by_booking'];
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchColumn();
+    }
+
     /**
      * Lấy chi tiết payment
      */
@@ -90,6 +128,11 @@ class Payment
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function findById($id)
+    {
+        return $this->getById($id);
     }
 
     /**

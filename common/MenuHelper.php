@@ -135,7 +135,7 @@ function get_menu_items($role)
                 'active_pattern' => 'staff-tours',
                 'submenu' => [
                     ['label' => 'Tours của tôi', 'url' => $base_url . '/?act=staff-tours'],
-                    ['label' => 'Tạo Tour mới', 'url' => $base_url . '/?act=staff-tours-create'],
+                    ['label' => 'Tạo Tour mới', 'url' => $base_url . '/?act=staff-tours&action=create'],
                 ]
             ],
             [
@@ -145,7 +145,7 @@ function get_menu_items($role)
                 'active_pattern' => 'staff-bookings',
                 'submenu' => [
                     ['label' => 'Bookings của tôi', 'url' => $base_url . '/?act=staff-bookings'],
-                    ['label' => 'Tạo Booking mới', 'url' => $base_url . '/?act=staff-bookings-create'],
+                    ['label' => 'Tạo Booking mới', 'url' => $base_url . '/?act=staff-bookings&action=create'],
                 ]
             ],
             [
@@ -155,8 +155,7 @@ function get_menu_items($role)
                 'active_pattern' => 'staff-customers',
                 'submenu' => [
                     ['label' => 'Danh sách khách', 'url' => $base_url . '/?act=staff-customers'],
-                    ['label' => 'Thêm khách mới', 'url' => $base_url . '/?act=staff-customers-create'],
-                    ['label' => 'Import Excel', 'url' => $base_url . '/?act=staff-customers-import'],
+                    ['label' => 'Thêm khách mới', 'url' => $base_url . '/?act=staff-customers&action=create'],
                 ]
             ],
             [

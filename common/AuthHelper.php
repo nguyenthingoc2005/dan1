@@ -233,6 +233,16 @@ function require_admin_or_staff()
 }
 
 /**
+ * Alias for require_admin_or_staff()
+ * 
+ * @return void
+ */
+function require_staff_or_admin()
+{
+    require_admin_or_staff();
+}
+
+/**
  * Redirect user về dashboard theo role
  * 
  * @return void
