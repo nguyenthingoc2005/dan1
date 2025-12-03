@@ -15,7 +15,7 @@ match ($act) {
     'xem_chitiet_tour' => (new HdvController())->xem_chitiet_tour(),
     'luu_diem_danh' => (new HdvController())->luu_diem_danh(),
     'chitiet_khach_hang' => (new HdvController())->chitiet_khach_hang(),
-    // 'sua_yeu_cau'=> (new HdvController())-> 
+    'sua_yeu_cau' => (new HdvController())->sua_yeu_cau(),
     'luu_yeu_cau' => (new HdvController())->luuyeucau(),
     'xoa_yeu_cau' => (new HdvController())->xoayeucau(),
     default => (new HdvController())->home()

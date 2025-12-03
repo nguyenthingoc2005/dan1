@@ -294,4 +294,16 @@ class uppDateDataModuleDataModule
         $stmt->bindParam(':khach_hang_id', $khach_hang_id, PDO::PARAM_INT);
         return $stmt->execute();
     }
+    public function cap_nhat_yeu_cau($id, $noi_dung, $muc_do, $da_chuan_bi, $ghi_chu)
+    {
+        $sql = "UPDATE yeucaukhachhang 
+                SET noi_dung = '$noi_dung', 
+                    muc_do_uu_tien = '$muc_do', 
+                    da_chuan_bi = '$da_chuan_bi', 
+                    ghi_chu = '$ghi_chu' 
+                WHERE id = $id";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+    }
 }

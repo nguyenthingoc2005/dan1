@@ -1,4 +1,4 @@
-<!-- <div class="main-content">
+<div class="main-content">
     <h3 class="title-page">Bổ sung thông tin khách hàng: <?= $khachhang['ho_ten'] ?? 'Mới' ?></h3>
 
     <form action="<?= BASEURL ?>?act=store_khach_hang_detail" method="POST">
@@ -34,4 +34,4 @@
             <button type="submit" name="btn_skip" class="btn btn-secondary" formnovalidate>Bỏ qua</button>
         </div>
     </form>
-</div> -->
+</div>

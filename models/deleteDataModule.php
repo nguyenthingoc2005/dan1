@@ -76,19 +76,25 @@ WHERE dich_vu_id = :id";
         ]);
     }
     public function softDeleteUser($id)
-{
-    $sql = "UPDATE nguoidung SET isdelete = 1 WHERE nguoi_dung_id = ?";
-    $stmt = $this->conn->prepare($sql);
-    return $stmt->execute([$id]);
-}
- public function deleteDatTour($dat_tour_id)
+    {
+        $sql = "UPDATE nguoidung SET isdelete = 1 WHERE nguoi_dung_id = ?";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([$id]);
+    }
+    public function deleteDatTour($dat_tour_id)
     {
         // Sửa câu lệnh từ DELETE sang UPDATE, thiết lập cột isdelete = 1
         $sql = "UPDATE `dattour` SET `isdelete` = 1 WHERE `dat_tour_id` = :dat_tour_id";
-        
+
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':dat_tour_id', $dat_tour_id, PDO::PARAM_INT);
-        
+
         return $stmt->execute();
+    }
+    public function xoa_yeu_cau($id)
+    {
+        $sql = "DELETE FROM yeucauphucvu WHERE id = " . $id;
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
     }
 }

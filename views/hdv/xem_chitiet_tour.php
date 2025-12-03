@@ -243,10 +243,7 @@ if (!defined('BASEURL')) define('BASEURL', '');
                                                             </td>
                                                             <td class="text-center">
                                                                 <a href="<?= BASEURL ?>?act=chitiet_khach_hang&id=<?= $khach['hanh_khach_id'] ?>"
-                                                                    class="btn btn-sm btn-outline-info"
-                                                                    title="Xem hồ sơ chi tiết">
-                                                                    <i class="bi bi-person-lines-fill me-1"></i> Chi tiết
-                                                                </a>
+                                                                    class="btn btn-sm btn-outline-info">Chi tiết</a>
                                                             </td>
 
                                                         </tr>
@@ -317,9 +314,10 @@ if (!defined('BASEURL')) define('BASEURL', '');
                                                         type="checkbox"
                                                         name="status[<?= $kh['hanh_khach_id'] ?>]"
                                                         value="present"
-                                                        checked
+                                                        <?= !empty($kh['da_den']) ? 'checked' : ""  ?>
                                                         title="Bỏ chọn nếu khách vắng">
                                                 </td>
+
 
                                                 <td>
                                                     <input type="text" class="form-control form-control-sm"
