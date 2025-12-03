@@ -74,7 +74,15 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <a href="#" class="text-blue-600 hover:underline">Sửa</a>
+                                <a href="?act=admin&module=schedules&action=edit&id=<?= $s['id'] ?>"
+                                    class="text-blue-600 hover:text-blue-800 mr-3" title="Sửa">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="?act=admin&module=schedules&action=delete&id=<?= $s['id'] ?>"
+                                    class="text-red-600 hover:text-red-800" title="Xóa"
+                                    onclick="return confirm('Bạn có chắc chắn muốn xóa lịch này?');">
+                                    <i class="fas fa-trash"></i>
+                                </a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

@@ -520,4 +520,42 @@ class TourController
             }
         }
     }
+    /**
+     * Xóa Tour
+     */
+    public function delete()
+    {
+        require_admin();
+        $id = $_GET['id'] ?? 0;
+
+        // Check if tour exists
+        $tour = $this->tourModel->findById($id);
+        if (!$tour) {
+            set_error('Tour không tồn tại!');
+            redirect('?act=admin&module=tours');
+        }
+
+        // Check for dependencies (Bookings)
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM bookings WHERE tour_id = :id");
+        $stmt->execute(['id' => $id]);
+        if ($stmt->fetchColumn() > 0) {
+            set_error('Không thể xóa tour này vì đã có Booking phát sinh. Hãy chuyển trạng thái sang "Ngừng hoạt động".');
+            redirect('?act=admin&module=tours');
+        }
+
+        // Check for Schedules
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM tour_schedules WHERE tour_id = :id");
+        $stmt->execute(['id' => $id]);
+        if ($stmt->fetchColumn() > 0) {
+            set_error('Không thể xóa tour này vì đang có Lịch khởi hành. Hãy xóa lịch trước.');
+            redirect('?act=admin&module=tours');
+        }
+
+        if ($this->tourModel->delete($id)) {
+            set_success('Đã xóa tour thành công!');
+        } else {
+            set_error('Có lỗi xảy ra khi xóa tour.');
+        }
+        redirect('?act=admin&module=tours');
+    }
 }

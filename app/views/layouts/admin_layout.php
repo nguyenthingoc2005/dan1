@@ -48,6 +48,7 @@ $user = get_auth_user();
             background: rgba(255, 255, 255, 0.3);
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body class="bg-main font-sans text-slate-800">

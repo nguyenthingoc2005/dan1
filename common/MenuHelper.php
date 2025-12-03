@@ -41,28 +41,71 @@ function get_menu_items($role)
                 'active_pattern' => 'admin:tours'
             ],
             [
-                'icon' => '📝',
-                'label' => 'Quản lý Đặt Tour',
-                'url' => $base_url . '/?act=admin&module=bookings',
-                'active_pattern' => 'admin:bookings'
-            ],
-            [
                 'icon' => '📅',
                 'label' => 'Lịch Khởi Hành',
                 'url' => $base_url . '/?act=admin&module=schedules',
                 'active_pattern' => 'admin:schedules'
             ],
             [
+                'icon' => '👷',
+                'label' => 'Phân công HDV',
+                'url' => $base_url . '/?act=admin&module=assignments',
+                'active_pattern' => 'admin:assignments'
+            ],
+            [
+                'icon' => '📝',
+                'label' => 'Quản lý Đặt Tour',
+                'url' => $base_url . '/?act=admin&module=bookings',
+                'active_pattern' => 'admin:bookings'
+            ],
+            [
                 'icon' => '👥',
-                'label' => 'Quản lý nhân viên',
+                'label' => 'Khách hàng',
+                'url' => $base_url . '/?act=admin&module=customers',
+                'active_pattern' => 'admin:customers'
+            ],
+            [
+                'icon' => '💰',
+                'label' => 'Thanh toán',
+                'url' => $base_url . '/?act=admin&module=payments',
+                'active_pattern' => 'admin:payments'
+            ],
+            [
+                'icon' => '📔',
+                'label' => 'Nhật ký Tour',
+                'url' => $base_url . '/?act=admin&module=journals',
+                'active_pattern' => 'admin:journals'
+            ],
+            [
+                'icon' => '📈',
+                'label' => 'Báo cáo',
+                'url' => $base_url . '/?act=admin&module=reports',
+                'active_pattern' => 'admin:reports'
+            ],
+            [
+                'icon' => '👔',
+                'label' => 'Nhân viên',
                 'url' => $base_url . '/?act=admin&module=users',
                 'active_pattern' => 'admin:users'
             ],
+            // Danh mục & Cấu hình khác
             [
                 'icon' => '📂',
-                'label' => 'Danh mục',
+                'label' => 'Danh mục Tour',
                 'url' => $base_url . '/?act=admin&module=categories',
                 'active_pattern' => 'admin:categories'
+            ],
+            [
+                'icon' => '🌍',
+                'label' => 'Địa điểm',
+                'url' => $base_url . '/?act=admin&module=destinations',
+                'active_pattern' => 'admin:destinations'
+            ],
+            [
+                'icon' => '🛠️',
+                'label' => 'Dịch vụ',
+                'url' => $base_url . '/?act=admin&module=services',
+                'active_pattern' => 'admin:services'
             ],
             [
                 'icon' => '🛎️',
@@ -75,24 +118,6 @@ function get_menu_items($role)
                 'label' => 'Nhà cung cấp',
                 'url' => $base_url . '/?act=admin&module=suppliers',
                 'active_pattern' => 'admin:suppliers'
-            ],
-            [
-                'icon' => '🛠️',
-                'label' => 'Dịch vụ',
-                'url' => $base_url . '/?act=admin&module=services',
-                'active_pattern' => 'admin:services'
-            ],
-            [
-                'icon' => '🌍',
-                'label' => 'Địa điểm',
-                'url' => $base_url . '/?act=admin&module=destinations',
-                'active_pattern' => 'admin:destinations'
-            ],
-            [
-                'icon' => '📈',
-                'label' => 'Reports',
-                'url' => $base_url . '/?act=admin-reports',
-                'active_pattern' => 'admin-reports'
             ],
         ],
 

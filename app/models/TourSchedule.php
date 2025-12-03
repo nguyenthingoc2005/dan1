@@ -23,6 +23,18 @@ class TourSchedule
             $params['start_date'] = $filters['start_date'];
         }
 
+        if (!empty($filters['status'])) {
+            // Assuming status column exists or logic derived from dates
+            // For now, ignore status filter if column doesn't exist or map it
+        }
+
+        // Count total
+        $countSql = "SELECT COUNT(*) FROM tour_schedules ts WHERE " . implode(" AND ", $where);
+        $stmt = $this->pdo->prepare($countSql);
+        $stmt->execute($params);
+        $total = $stmt->fetchColumn();
+
+        // Get Data
         $offset = ($page - 1) * $limit;
         $sql = "SELECT ts.*, t.name as tour_name, t.tour_code 
                 FROM tour_schedules ts
@@ -33,7 +45,14 @@ class TourSchedule
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'data' => $data,
+            'total' => $total,
+            'pages' => ceil($total / $limit),
+            'current_page' => $page
+        ];
     }
 
     public function count($filters = [])
@@ -60,21 +79,43 @@ class TourSchedule
         return $stmt->execute($data);
     }
 
-    /**
-     * Kiểm tra lịch trùng cho một tour.
-     * Trả về true nếu có lịch nào có ngày bắt đầu hoặc kết thúc chồng lấn.
-     */
-    public function checkOverlap($tour_id, $start_date, $end_date)
+    public function findById($id)
+    {
+        return $this->getById($id);
+    }
+
+    public function update($id, $data)
+    {
+        $fields = [];
+        foreach ($data as $key => $value) {
+            $fields[] = "$key = :$key";
+        }
+        $sql = "UPDATE tour_schedules SET " . implode(', ', $fields) . " WHERE id = :id";
+        $data['id'] = $id;
+
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($data);
+    }
+
+    public function checkOverlap($tour_id, $start_date, $end_date, $exclude_id = null)
     {
         $sql = "SELECT COUNT(*) FROM tour_schedules
                 WHERE tour_id = :tour_id
                   AND (start_date <= :end_date AND end_date >= :start_date)";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
+
+        $params = [
             'tour_id' => $tour_id,
             'start_date' => $start_date,
             'end_date' => $end_date
-        ]);
+        ];
+
+        if ($exclude_id) {
+            $sql .= " AND id != :exclude_id";
+            $params['exclude_id'] = $exclude_id;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchColumn() > 0;
     }
 
@@ -84,6 +125,7 @@ class TourSchedule
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
+
     /**
      * Get schedule by tour ID and start date.
      */
@@ -98,6 +140,9 @@ class TourSchedule
     /**
      * Increment booked count for a schedule.
      */
+    /**
+     * Increment booked count for a schedule.
+     */
     public function incrementBooked($schedule_id, $increment = 1)
     {
         $sql = "UPDATE tour_schedules SET booked = booked + :inc WHERE id = :id";
@@ -105,4 +150,10 @@ class TourSchedule
         return $stmt->execute(['inc' => $increment, 'id' => $schedule_id]);
     }
 
+    public function delete($id)
+    {
+        $sql = "DELETE FROM tour_schedules WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute(['id' => $id]);
+    }
 }

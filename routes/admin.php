@@ -286,6 +286,41 @@ switch ($module) {
         break;
 
     // ==========================================================================
+    // MODULE: CUSTOMERS (Quản lý Khách hàng)
+    // ==========================================================================
+    case 'customers':
+        require_once CONTROLLERS_PATH . '/admin/CustomerController.php';
+        $customerController = new CustomerController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $customerController->index();
+                break;
+            case 'create':
+                $customerController->create();
+                break;
+            case 'store':
+                $customerController->store();
+                break;
+            case 'show':
+                $customerController->show();
+                break;
+            case 'edit':
+                $customerController->edit();
+                break;
+            case 'update':
+                $customerController->update();
+                break;
+            case 'delete':
+                $customerController->delete();
+                break;
+            default:
+                $customerController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
     // MODULE: SCHEDULES (Tour Schedules / Lịch khởi hành)
     // ==========================================================================
     case 'schedules':
@@ -316,6 +351,121 @@ switch ($module) {
                 break;
             default:
                 $scheduleController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: PAYMENTS (Quản lý Thanh toán)
+    // ==========================================================================
+    case 'payments':
+        require_once CONTROLLERS_PATH . '/admin/PaymentController.php';
+        $paymentController = new PaymentController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $paymentController->index();
+                break;
+            case 'create':
+                $paymentController->create();
+                break;
+            case 'show':
+                $paymentController->show();
+                break;
+            default:
+                $paymentController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: ASSIGNMENTS (Phân công HDV)
+    // ==========================================================================
+    case 'assignments':
+        require_once CONTROLLERS_PATH . '/admin/TourAssignmentController.php';
+        $assignmentController = new TourAssignmentController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $assignmentController->index();
+                break;
+            case 'assign':
+                $assignmentController->assign();
+                break;
+            case 'remove':
+                $assignmentController->remove();
+                break;
+            default:
+                $assignmentController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: JOURNALS (Nhật ký Tour)
+    // ==========================================================================
+    case 'journals':
+        require_once CONTROLLERS_PATH . '/admin/JournalController.php';
+        $journalController = new JournalController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $journalController->index();
+                break;
+            case 'create':
+                $journalController->create();
+                break;
+            case 'store':
+                $journalController->store();
+                break;
+            case 'show':
+                $journalController->show();
+                break;
+            default:
+                $journalController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: REPORTS (Báo cáo)
+    // ==========================================================================
+    case 'reports':
+        require_once CONTROLLERS_PATH . '/admin/ReportController.php';
+        $reportController = new ReportController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $reportController->index();
+                break;
+            case 'revenue':
+                $reportController->revenue();
+                break;
+            case 'bookings':
+                $reportController->bookings();
+                break;
+            default:
+                $reportController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: SETTINGS (Cài đặt)
+    // ==========================================================================
+    case 'settings':
+        require_once CONTROLLERS_PATH . '/admin/SettingController.php';
+        $settingController = new SettingController($pdo);
+
+        switch ($action) {
+            case 'general':
+                $settingController->general();
+                break;
+            case 'email':
+                $settingController->email();
+                break;
+            default:
+                $settingController->general();
                 break;
         }
         break;
