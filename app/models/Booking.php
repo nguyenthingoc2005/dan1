@@ -47,8 +47,19 @@ class Booking
         }
 
         if (!empty($filters['start_date'])) {
-            $sql .= " AND b.start_date >= :start_date";
+            // If exact_date is true, use exact match, otherwise >=
+            if (!empty($filters['exact_date'])) {
+                $sql .= " AND b.start_date = :start_date";
+            } else {
+                $sql .= " AND b.start_date >= :start_date";
+            }
             $params['start_date'] = $filters['start_date'];
+        }
+
+        // Filter by schedule: tour_id + exact start_date
+        if (!empty($filters['schedule_id'])) {
+            // We need to get schedule info first, but for now use tour_id + start_date
+            // This will be handled in controller
         }
 
         if (!empty($filters['created_by'])) {
@@ -92,6 +103,16 @@ class Booking
         if (!empty($filters['tour_id'])) {
             $sql .= " AND b.tour_id = :tour_id";
             $params['tour_id'] = $filters['tour_id'];
+        }
+
+        if (!empty($filters['start_date'])) {
+            // If exact_date is true, use exact match, otherwise >=
+            if (!empty($filters['exact_date'])) {
+                $sql .= " AND b.start_date = :start_date";
+            } else {
+                $sql .= " AND b.start_date >= :start_date";
+            }
+            $params['start_date'] = $filters['start_date'];
         }
 
         if (!empty($filters['created_by'])) {

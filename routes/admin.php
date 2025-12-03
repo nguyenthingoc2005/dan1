@@ -366,6 +366,9 @@ switch ($module) {
             case 'delete':
                 $scheduleController->delete();
                 break;
+            case 'changeStatus':
+                $scheduleController->changeStatus();
+                break;
             default:
                 $scheduleController->index();
                 break;

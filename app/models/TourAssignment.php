@@ -48,10 +48,11 @@ class TourAssignment
      * @param int $guideId
      * @param string $startDate
      * @param string $endDate
-     * @param int|null $excludeAssignmentId - Loại trừ khi update
+     * @param int|null $excludeAssignmentId - Loại trừ assignment khi update
+     * @param int|null $excludeScheduleId - Loại trừ schedule khi update
      * @return array ['available' => bool, 'conflict' => null|array]
      */
-    public function checkGuideAvailability($guideId, $startDate, $endDate, $excludeAssignmentId = null)
+    public function checkGuideAvailability($guideId, $startDate, $endDate, $excludeAssignmentId = null, $excludeScheduleId = null)
     {
         // Tìm các assignment của guide trong khoảng thời gian trùng
         // Trùng lịch: (start1 <= end2) AND (end1 >= start2)
@@ -96,12 +97,19 @@ class TourAssignment
                    AND ts.start_date <= :end_date
                    AND ts.end_date >= :start_date";
         
-        $stmt2 = $this->pdo->prepare($sql2);
-        $stmt2->execute([
+        $params2 = [
             'guide_id' => $guideId,
             'start_date' => $startDate,
             'end_date' => $endDate
-        ]);
+        ];
+        
+        if ($excludeScheduleId) {
+            $sql2 .= " AND ts.id != :exclude_schedule_id";
+            $params2['exclude_schedule_id'] = $excludeScheduleId;
+        }
+        
+        $stmt2 = $this->pdo->prepare($sql2);
+        $stmt2->execute($params2);
         $conflict2 = $stmt2->fetch(PDO::FETCH_ASSOC);
         
         if ($conflict2) {
