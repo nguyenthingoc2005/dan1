@@ -133,6 +133,17 @@ class Booking
         return $booking;
     }
 
+    public function getPassengers($bookingId)
+    {
+        $sql = "SELECT bc.*, c.full_name, c.phone, c.date_of_birth, c.gender 
+                FROM booking_customers bc
+                LEFT JOIN customers c ON bc.customer_id = c.id
+                WHERE bc.booking_id = :booking_id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['booking_id' => $bookingId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /**
      * Lấy danh sách Booking theo Customer ID
      */

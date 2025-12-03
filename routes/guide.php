@@ -5,63 +5,43 @@
  * ==============================================================================
  */
 
-require_once CONTROLLERS_PATH . '/DashboardController.php';
+// Only guide or admin can access
+require_guide();
 
-// Get request URI
-$request_uri = $_SERVER['REQUEST_URI'];
-$base_path = dirname($_SERVER['SCRIPT_NAME']);
-if ($base_path !== '/') {
-    $request_uri = substr($request_uri, strlen($base_path));
+// Parse act parameter to extract module
+// Example: ?act=guide-tours -> module = tours
+$act = $_GET['act'] ?? '';
+$module = str_replace('guide-', '', $act);
+$action = $_GET['action'] ?? 'index';
+
+switch ($module) {
+    // ==========================================================================
+    // TOURS MODULE
+    // ==========================================================================
+    case 'tours':
+        require_once CONTROLLERS_PATH . '/guide/TourController.php';
+        $controller = new Guide\TourController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $controller->index();
+                break;
+            case 'show':
+                $controller->show();
+                break;
+            default:
+                $controller->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // DEFAULT: DASHBOARD
+    // ==========================================================================
+    case 'dashboard':
+    default:
+        require_once CONTROLLERS_PATH . '/guide/DashboardController.php';
+        $dashboardController = new Guide\DashboardController($pdo);
+        $dashboardController->index();
+        break;
 }
-$request_uri = strtok($request_uri, '?');
-
-// Remove /guide prefix
-$route = str_replace('/guide', '', $request_uri);
-if (empty($route)) {
-    $route = '/';
-}
-
-// Instantiate controllers
-$dashboardController = new DashboardController($pdo);
-
-// ============================================================================
-// GUIDE ROUTES
-// ============================================================================
-
-// Dashboard
-if ($route === '/' || $route === '/dashboard') {
-    $dashboardController->guideDashboard();
-    exit;
-}
-
-// Tours
-if (strpos($route, '/tours') === 0) {
-    // TODO: GuideController
-    echo "Guide Tours - Coming soon";
-    exit;
-}
-
-// Check-in
-if (strpos($route, '/checkin') === 0) {
-    // TODO: CheckinController
-    echo "Guide Check-in - Coming soon";
-    exit;
-}
-
-// Journal
-if (strpos($route, '/journal') === 0) {
-    // TODO: JournalController
-    echo "Guide Journal - Coming soon";
-    exit;
-}
-
-// Expenses
-if (strpos($route, '/expenses') === 0) {
-    // TODO: ExpenseController
-    echo "Guide Expenses - Coming soon";
-    exit;
-}
-
-// 404
-http_response_code(404);
-echo "404 - Guide route not found";

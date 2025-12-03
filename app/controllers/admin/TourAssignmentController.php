@@ -74,6 +74,7 @@ class TourAssignmentController
 
             $schedule_id = (int) $_POST['schedule_id'];
             $guide_id = (int) $_POST['guide_id'];
+            $notes = $_POST['notes'] ?? null;
 
             // Get schedule info
             require_once MODELS_PATH . '/TourSchedule.php';
@@ -84,43 +85,8 @@ class TourAssignmentController
                 throw new Exception("Không tìm thấy lịch khởi hành.");
             }
 
-            // Find booking for this schedule (same tour + start_date)
-            // If no booking exists yet, we need to decide: create one or throw error?
-            // For now, let's find existing bookings
-            require_once MODELS_PATH . '/Booking.php';
-            $bookingModel = new Booking($this->db);
-
-            $sql = "SELECT id FROM bookings 
-                    WHERE tour_id = :tour_id 
-                      AND start_date = :start_date 
-                      AND approval_status IN ('pending', 'approved')
-                    LIMIT 1";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                'tour_id' => $schedule['tour_id'],
-                'start_date' => $schedule['start_date']
-            ]);
-            $booking = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$booking) {
-                throw new Exception("Chưa có booking nào cho lịch này. Vui lòng tạo booking trước khi phân công HDV.");
-            }
-
-            // Assign guide to booking
-            if (!isset($this->assignmentModel)) {
-                require_once MODELS_PATH . '/TourAssignment.php';
-                $this->assignmentModel = new TourAssignment($this->db);
-            }
-
-            // Pass booking_id, guide_id, and assignment_date
-            if (
-                $this->assignmentModel->assign(
-                    $booking['id'],
-                    $guide_id,
-                    $schedule['start_date'], // assignment_date from schedule
-                    ['created_by' => $_SESSION['user_id'] ?? null]
-                )
-            ) {
+            // Assign guide directly to schedule
+            if ($scheduleModel->assignGuide($schedule_id, $guide_id, $notes)) {
                 set_success("Phân công hướng dẫn viên thành công!");
             } else {
                 throw new Exception("Không thể phân công.");

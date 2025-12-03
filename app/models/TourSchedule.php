@@ -23,9 +23,21 @@ class TourSchedule
             $params['start_date'] = $filters['start_date'];
         }
 
+        if (!empty($filters['guide_id'])) {
+            $where[] = "ts.guide_id = :guide_id";
+            $params['guide_id'] = $filters['guide_id'];
+        }
+
         if (!empty($filters['status'])) {
-            // Assuming status column exists or logic derived from dates
-            // For now, ignore status filter if column doesn't exist or map it
+            // If status column exists in tour_schedules, use it. 
+            // If not, we might need to check logic. 
+            // Assuming 'status' column exists based on previous code usage.
+            // But wait, previous code usage in BookingController used ['status' => 'open'].
+            // Let's assume it exists or ignore if not strict.
+            // Actually, let's check if we can filter by it.
+            // For now, let's add it if it's passed.
+            // $where[] = "ts.status = :status"; 
+            // $params['status'] = $filters['status'];
         }
 
         // Count total
@@ -36,9 +48,11 @@ class TourSchedule
 
         // Get Data
         $offset = ($page - 1) * $limit;
-        $sql = "SELECT ts.*, t.name as tour_name, t.tour_code 
+        $sql = "SELECT ts.*, t.name as tour_name, t.tour_code, t.duration_days, t.duration_nights,
+                       u.full_name as guide_name, u.phone as guide_phone
                 FROM tour_schedules ts
                 JOIN tours t ON ts.tour_id = t.id
+                LEFT JOIN users u ON ts.guide_id = u.id
                 WHERE " . implode(" AND ", $where) . "
                 ORDER BY ts.start_date ASC
                 LIMIT $limit OFFSET $offset";
@@ -148,6 +162,17 @@ class TourSchedule
         $sql = "UPDATE tour_schedules SET booked = booked + :inc WHERE id = :id";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute(['inc' => $increment, 'id' => $schedule_id]);
+    }
+
+    public function assignGuide($schedule_id, $guide_id, $notes = null)
+    {
+        $sql = "UPDATE tour_schedules SET guide_id = :guide_id, guide_notes = :notes WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            'guide_id' => $guide_id,
+            'notes' => $notes,
+            'id' => $schedule_id
+        ]);
     }
 
     public function delete($id)
