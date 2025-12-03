@@ -286,6 +286,41 @@ switch ($module) {
         break;
 
     // ==========================================================================
+    // MODULE: SCHEDULES (Tour Schedules / Lịch khởi hành)
+    // ==========================================================================
+    case 'schedules':
+        require_once CONTROLLERS_PATH . '/admin/TourScheduleController.php';
+        $scheduleController = new TourScheduleController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $scheduleController->index();
+                break;
+            case 'create':
+                $scheduleController->create();
+                break;
+            case 'store':
+                $scheduleController->store();
+                break;
+            case 'show':
+                $scheduleController->show();
+                break;
+            case 'edit':
+                $scheduleController->edit();
+                break;
+            case 'update':
+                $scheduleController->update();
+                break;
+            case 'delete':
+                $scheduleController->delete();
+                break;
+            default:
+                $scheduleController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
     // DEFAULT: DASHBOARD
     // ==========================================================================
     default:

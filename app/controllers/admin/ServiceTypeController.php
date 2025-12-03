@@ -71,6 +71,22 @@ class ServiceTypeController
     {
         require_admin();
 
+        try {
+            // Validate name
+            if (empty($_POST['name'])) {
+                throw new Exception("Vui lòng nhập tên loại dịch vụ.");
+            }
+
+            $name = sanitize($_POST['name']);
+
+            // Auto-generate code from name
+            $code = strtoupper(str_replace(' ', '_', remove_accents($name)));
+
+            // Check for duplicate code
+            $counter = 1;
+            $original_code = $code;
+            while ($this->serviceTypeModel->findByCode($code)) {
+                $code = $original_code . '_' . $counter;
                 $counter++;
             }
 
