@@ -62,8 +62,13 @@ $errs = $errors ?? [];
 
             <!-- STEP 1: INFO -->
             <div id="step-1" class="step-content block">
+                <!-- Hidden fields -->
+                <input type="hidden" name="code" value="AUTO">
+                <input type="hidden" name="tour_type" value="public">
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
+                    <!-- Tên Tour -->
+                    <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-slate-700 mb-1">Tên Tour <span
                                 class="text-red-500">*</span></label>
                         <input type="text" name="name" id="name" value="<?= htmlspecialchars($old['name'] ?? '') ?>"
@@ -77,7 +82,6 @@ $errs = $errors ?? [];
                             <span class="text-green-600"><i class="fas fa-check-circle"></i></span>
                             <span>Tự động tạo khi lưu (TOUR_<?= date('Y') ?>_XXX)</span>
                         </div>
-                        <input type="hidden" name="code" value="AUTO">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Danh mục</label>
@@ -97,24 +101,8 @@ $errs = $errors ?? [];
                         <label class="block text-sm font-medium text-slate-700 mb-1">Điểm khởi hành</label>
                         <input type="text" name="departure_location"
                             value="<?= htmlspecialchars($old['departure_location'] ?? '') ?>"
-                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Loại Tour <span
-                                class="text-red-500">*</span></label>
-                        <select name="tour_type" required
-                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all <?= isset($errs['tour_type']) ? 'border-red-500' : '' ?>">
-                            <option value="public" <?= ($old['tour_type'] ?? 'public') == 'public' ? 'selected' : '' ?>>
-                                Tour Công Khai (Public) - Có lịch cố định
-                            </option>
-                            <option value="custom" <?= ($old['tour_type'] ?? '') == 'custom' ? 'selected' : '' ?>>
-                                Tour Tùy Chỉnh (Custom) - Theo yêu cầu khách
-                            </option>
-                        </select>
-                        <p class="text-xs text-slate-500 mt-1">
-                            <strong>Public:</strong> Tour có lịch khởi hành cố định.<br>
-                            <strong>Custom:</strong> Tour thiết kế riêng theo yêu cầu.
-                        </p>
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
+                            placeholder="VD: TP. Hồ Chí Minh">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -132,6 +120,41 @@ $errs = $errors ?? [];
                                 class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all">
                         </div>
                     </div>
+
+                    <!-- Số lượng khách & Đặt cọc -->
+                    <div class="mt-5 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h4 class="font-medium text-blue-800 mb-3">📊 Số lượng khách & Đặt cọc</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Số khách tối thiểu</label>
+                                <input type="number" name="min_participants" min="1" value="<?= $old['min_participants'] ?? '10' ?>"
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-center">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Số khách tối đa</label>
+                                <input type="number" name="max_participants" min="1" value="<?= $old['max_participants'] ?? '45' ?>"
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-center">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Giá tính cho</label>
+                                <div class="flex items-center">
+                                    <input type="number" name="price_based_on_pax" min="1" value="<?= $old['price_based_on_pax'] ?? '30' ?>"
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-l-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-center">
+                                    <span class="px-3 py-2 bg-slate-100 border border-l-0 rounded-r-lg text-sm text-slate-600">khách</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Tỷ lệ đặt cọc</label>
+                                <div class="flex items-center">
+                                    <input type="number" name="deposit_percentage" min="0" max="100" value="<?= $old['deposit_percentage'] ?? '30' ?>"
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-l-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-center">
+                                    <span class="px-3 py-2 bg-slate-100 border border-l-0 rounded-r-lg text-sm text-slate-600">%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-blue-600 mt-2">💡 Giá tour sẽ được tính dựa trên số khách cơ sở. Tỷ lệ đặt cọc áp dụng khi tạo booking.</p>
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Trạng thái</label>
                         <select name="status"
@@ -327,9 +350,11 @@ $errs = $errors ?? [];
 
 <script>
     let currentStep = 1;
-    const totalSteps = 5;
-    const destinations = <?= json_encode($destinations ?? []) ?>;
+    const totalSteps = 6; // Updated to 6 steps
+    let currentDestinations = <?= json_encode($destinations ?? []) ?>; // Mutable
+    const allDestinations = <?= json_encode($destinations ?? []) ?>; // Original
     const servicesList = <?= json_encode($services ?? []) ?>;
+    const serviceUnits = <?= json_encode(get_service_units()) ?>;
 
     // Old Input Data for Itinerary
     const oldItinerary = <?= json_encode($old['itinerary'] ?? []) ?>;
@@ -666,6 +691,130 @@ $errs = $errors ?? [];
             warningEl.classList.add('hidden');
         }
     }
+
+    // ==============================================================================
+    // INCLUDED / EXCLUDED LOGIC
+    // ==============================================================================
+    const templates = {
+        domestic: {
+            included: [
+                'Xe đưa đón theo chương trình',
+                'Khách sạn tiêu chuẩn 3* hoặc tương đương (2 khách/phòng)',
+                'Các bữa ăn theo chương trình',
+                'Vé tham quan các điểm trong chương trình',
+                'Hướng dẫn viên suốt tuyến',
+                'Bảo hiểm du lịch (mức bồi thường tối đa 20.000.000đ/vụ)',
+                'Nước suối trên xe (1 chai/ngày)'
+            ],
+            excluded: [
+                'Chi phí cá nhân: giặt ủi, điện thoại, đồ uống...',
+                'Các chi phí không đề cập trong mục "Bao gồm"',
+                'Phụ thu phòng đơn',
+                'Tiền tip cho lái xe, HDV (tùy tâm)'
+            ]
+        },
+        international: {
+            included: [
+                'Vé máy bay khứ hồi (bao gồm thuế sân bay)',
+                'Khách sạn tiêu chuẩn 3-4* (2 khách/phòng)',
+                'Xe đưa đón theo chương trình',
+                'Các bữa ăn theo chương trình',
+                'Vé tham quan các điểm',
+                'Hướng dẫn viên Việt Nam suốt tuyến',
+                'Bảo hiểm du lịch quốc tế',
+                'Visa (nếu có)'
+            ],
+            excluded: [
+                'Hộ chiếu còn hạn trên 6 tháng',
+                'Chi phí cá nhân: giặt ủi, điện thoại, đồ uống...',
+                'Phụ thu phòng đơn',
+                'Tiền tip cho lái xe, HDV ($5/ngày/khách)',
+                'Chi phí ngoài chương trình'
+            ]
+        }
+    };
+
+    let includedInitialized = false;
+
+    function initIncludedExcluded() {
+        if (includedInitialized) return;
+        includedInitialized = true;
+
+        // Load old data or default template
+        if (oldIncluded && oldIncluded.length > 0) {
+            oldIncluded.forEach(item => addIncludedItem(item));
+        }
+        if (oldExcluded && oldExcluded.length > 0) {
+            oldExcluded.forEach(item => addExcludedItem(item));
+        }
+
+        // If empty, add some default rows
+        if ((!oldIncluded || oldIncluded.length === 0) && (!oldExcluded || oldExcluded.length === 0)) {
+            applyTemplate('domestic');
+        }
+    }
+
+    function addIncludedItem(text = '') {
+        const container = document.getElementById('included-container');
+        const html = `
+            <div class="flex items-center gap-2 included-item">
+                <span class="text-green-600">✓</span>
+                <input type="text" name="included[]" value="${text}" placeholder="Nhập nội dung bao gồm..."
+                    class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all text-sm">
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600">✕</button>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    function addExcludedItem(text = '') {
+        const container = document.getElementById('excluded-container');
+        const html = `
+            <div class="flex items-center gap-2 excluded-item">
+                <span class="text-red-600">✗</span>
+                <input type="text" name="excluded[]" value="${text}" placeholder="Nhập nội dung không bao gồm..."
+                    class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all text-sm">
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600">✕</button>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    function applyTemplate(type) {
+        const template = templates[type];
+        if (!template) return;
+
+        // Clear existing
+        document.getElementById('included-container').innerHTML = '';
+        document.getElementById('excluded-container').innerHTML = '';
+
+        // Add items from template
+        template.included.forEach(item => addIncludedItem(item));
+        template.excluded.forEach(item => addExcludedItem(item));
+    }
+
+    // Update changeStep to init included/excluded
+    const originalChangeStep = changeStep;
+    changeStep = function(direction) {
+        if (direction === 1 && !validateStep(currentStep)) return;
+
+        currentStep += direction;
+
+        if (currentStep === 2) {
+            generateItinerary();
+        }
+        if (currentStep === 3 && oldServices.length === 0 && document.getElementById('services-container').children.length === 0) {
+            addServiceRow();
+        }
+        if (currentStep === 4) {
+            initIncludedExcluded();
+        }
+        if (currentStep === 6) {
+            updateSuggestedPricing();
+        }
+
+        showStep(currentStep);
+    };
 
     // Initialize
     showStep(1);

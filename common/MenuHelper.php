@@ -143,6 +143,12 @@ function get_menu_items($role)
                 ]
             ],
             [
+                'icon' => '📅',
+                'label' => 'Lịch Tour',
+                'url' => $base_url . '/?act=staff-schedules',
+                'active_pattern' => 'staff-schedules'
+            ],
+            [
                 'icon' => '👥',
                 'label' => 'Customers',
                 'url' => $base_url . '/?act=staff-customers',

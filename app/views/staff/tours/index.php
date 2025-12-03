@@ -10,7 +10,7 @@ require_staff_or_admin();
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-primary">Quản lý Tour của tôi</h1>
-        <a href="?act=staff-tours&action=create"
+        <a href="?act=staff-tours&action=selectTemplate"
             class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow transition-colors">
             + Thêm Tour mới
         </a>

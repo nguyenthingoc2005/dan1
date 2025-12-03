@@ -34,8 +34,14 @@ switch ($module) {
             case 'index':
                 $controller->index();
                 break;
+            case 'selectTemplate':
+                $controller->selectTemplate();
+                break;
             case 'create':
                 $controller->create();
+                break;
+            case 'createFromTemplate':
+                $controller->createFromTemplate();
                 break;
             case 'store':
                 $controller->store();
@@ -48,6 +54,12 @@ switch ($module) {
                 break;
             case 'update':
                 $controller->update();
+                break;
+            case 'getDestinations':
+                $controller->getDestinations();
+                break;
+            case 'getServiceInfo':
+                $controller->getServiceInfo();
                 break;
             default:
                 $controller->index();
@@ -77,6 +89,12 @@ switch ($module) {
                 break;
             case 'storePayment':
                 $controller->storePayment();
+                break;
+            case 'previewPassengers':
+                $controller->previewPassengers();
+                break;
+            case 'downloadTemplate':
+                $controller->downloadTemplate();
                 break;
             default:
                 $controller->index();
@@ -122,6 +140,26 @@ switch ($module) {
     case 'payments':
         require_once CONTROLLERS_PATH . '/staff/PaymentController.php';
         $controller = new Staff\PaymentController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $controller->index();
+                break;
+            case 'show':
+                $controller->show();
+                break;
+            default:
+                $controller->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // SCHEDULES MODULE (READ ONLY - ĐỂ TƯ VẤN KHÁCH HÀNG)
+    // ==========================================================================
+    case 'schedules':
+        require_once CONTROLLERS_PATH . '/staff/ScheduleController.php';
+        $controller = new Staff\ScheduleController($pdo);
 
         switch ($action) {
             case 'index':

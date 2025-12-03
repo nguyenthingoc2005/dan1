@@ -79,7 +79,20 @@ class TourController
     }
 
     /**
-     * Form tạo Tour
+     * Hiển thị form chọn template hoặc tạo mới
+     */
+    public function selectTemplate()
+    {
+        // Lấy danh sách templates (public + approved tours)
+        $templates = $this->tourModel->getTemplates();
+
+        $page_title = 'Tạo Tour - Chọn phương thức';
+        $content_file = VIEWS_PATH . '/staff/tours/select_template.php';
+        require VIEWS_PATH . '/layouts/staff_layout.php';
+    }
+
+    /**
+     * Form tạo Tour (Public - từ đầu)
      */
     public function create()
     {
@@ -89,6 +102,68 @@ class TourController
 
         $page_title = 'Tạo Tour Mới';
         $content_file = VIEWS_PATH . '/staff/tours/create.php';
+        require VIEWS_PATH . '/layouts/staff_layout.php';
+    }
+
+    /**
+     * Form tạo Tour từ Template (Clone & Customize - Custom)
+     */
+    public function createFromTemplate()
+    {
+        $template_id = $_GET['template_id'] ?? 0;
+
+        if (!$template_id) {
+            set_error('Vui lòng chọn một template.');
+            redirect('?act=staff-tours&action=selectTemplate');
+            return;
+        }
+
+        // Lấy thông tin đầy đủ của template
+        $template = $this->tourModel->getForClone($template_id);
+        if (!$template) {
+            set_error('Không tìm thấy tour template.');
+            redirect('?act=staff-tours&action=selectTemplate');
+            return;
+        }
+
+        // Prepare old_input từ template để pre-fill form
+        $old_input = [
+            'name' => '[Custom] ' . $template['name'],
+            'category_id' => $template['category_id'],
+            'description' => $template['description'],
+            'duration_days' => $template['duration_days'],
+            'duration_nights' => $template['duration_nights'],
+            'departure_location' => $template['departure_location'],
+            'adult_price' => $template['adult_price'],
+            'child_price' => $template['child_price'],
+            'infant_price' => $template['infant_price'],
+            'min_participants' => $template['min_participants'] ?? 10,
+            'max_participants' => $template['max_participants'] ?? 45,
+            'price_based_on_pax' => $template['price_based_on_pax'] ?? 30,
+            'deposit_percentage' => $template['deposit_percentage'] ?? 30,
+            'tour_type' => 'custom', // Force custom type
+            'status' => 'draft',
+            'parent_tour_id' => $template_id,
+            'itinerary' => $template['itinerary'] ?? [],
+            'highlights' => $template['highlights'] ?? [],
+            'services' => $template['services'] ?? [],
+            'included' => $template['includes'] ?? [],
+            'excluded' => $template['excludes'] ?? []
+        ];
+
+        $categories = $this->categoryModel->getForDropdown();
+        $destinations = $this->destinationModel->getForDropdown();
+        $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
+
+        $is_from_template = true;
+        $template_info = [
+            'id' => $template['id'],
+            'code' => $template['tour_code'],
+            'name' => $template['name']
+        ];
+
+        $page_title = 'Tạo Tour Custom từ Template';
+        $content_file = VIEWS_PATH . '/staff/tours/create_from_template.php';
         require VIEWS_PATH . '/layouts/staff_layout.php';
     }
 
@@ -159,6 +234,19 @@ class TourController
                 }
             }
 
+            // Validate Service IDs (nếu có chọn services)
+            if (!empty($_POST['service_ids'])) {
+                foreach ($_POST['service_ids'] as $key => $service_id) {
+                    if (!empty($service_id)) {
+                        $service = $this->serviceModel->findById($service_id);
+                        if (!$service) {
+                            $errors['services'] = "Dịch vụ ID $service_id không tồn tại";
+                            break;
+                        }
+                    }
+                }
+            }
+
             // If errors, return to form
             if (!empty($errors)) {
                 $old_input = $_POST;
@@ -186,11 +274,16 @@ class TourController
                 'duration_days' => (int) $_POST['duration_days'],
                 'duration_nights' => (int) $_POST['duration_nights'],
                 'departure_location' => sanitize($_POST['departure_location']),
+                'min_participants' => (int) ($_POST['min_participants'] ?? 10),
+                'max_participants' => (int) ($_POST['max_participants'] ?? 45),
+                'price_based_on_pax' => (int) ($_POST['price_based_on_pax'] ?? 30),
                 'adult_price' => (float) $_POST['adult_price'],
                 'child_price' => !empty($_POST['child_price']) ? (float) $_POST['child_price'] : 0,
                 'infant_price' => !empty($_POST['infant_price']) ? (float) $_POST['infant_price'] : 0,
+                'deposit_percentage' => (float) ($_POST['deposit_percentage'] ?? 30),
                 'tour_type' => $tour_type,
                 'status' => $status,
+                'parent_tour_id' => !empty($_POST['parent_tour_id']) ? (int) $_POST['parent_tour_id'] : null,
                 'created_by' => get_user_id() // KEY: Set created_by
             ];
 
@@ -211,6 +304,14 @@ class TourController
             // Prepare Highlights
             if (!empty($_POST['highlights'])) {
                 $data['highlights'] = array_map('sanitize', explode("\n", $_POST['highlights']));
+            }
+
+            // Prepare Included/Excluded
+            if (!empty($_POST['included'])) {
+                $data['included'] = array_filter(array_map('sanitize', $_POST['included']));
+            }
+            if (!empty($_POST['excluded'])) {
+                $data['excluded'] = array_filter(array_map('sanitize', $_POST['excluded']));
             }
 
             // Save to DB
@@ -333,9 +434,13 @@ class TourController
                 'duration_days' => (int) $_POST['duration_days'],
                 'duration_nights' => (int) $_POST['duration_nights'],
                 'departure_location' => sanitize($_POST['departure_location']),
+                'min_participants' => (int) ($_POST['min_participants'] ?? 10),
+                'max_participants' => (int) ($_POST['max_participants'] ?? 45),
+                'price_based_on_pax' => (int) ($_POST['price_based_on_pax'] ?? 30),
                 'adult_price' => (float) $_POST['adult_price'],
                 'child_price' => (float) ($_POST['child_price'] ?? 0),
                 'infant_price' => (float) ($_POST['infant_price'] ?? 0),
+                'deposit_percentage' => (float) ($_POST['deposit_percentage'] ?? 30),
                 'tour_type' => $tour_type,
                 'status' => $status
             ];
@@ -357,6 +462,14 @@ class TourController
             // Highlights
             if (!empty($_POST['highlights'])) {
                 $data['highlights'] = array_map('sanitize', explode("\n", $_POST['highlights']));
+            }
+
+            // Included/Excluded
+            if (isset($_POST['included'])) {
+                $data['included'] = array_filter(array_map('sanitize', $_POST['included']));
+            }
+            if (isset($_POST['excluded'])) {
+                $data['excluded'] = array_filter(array_map('sanitize', $_POST['excluded']));
             }
 
             // Update DB

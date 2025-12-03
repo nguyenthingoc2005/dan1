@@ -23,14 +23,36 @@ class TourSchedule
             $params['start_date'] = $filters['start_date'];
         }
 
+        if (!empty($filters['end_date'])) {
+            $where[] = "ts.start_date <= :end_date";
+            $params['end_date'] = $filters['end_date'];
+        }
+
         if (!empty($filters['guide_id'])) {
             $where[] = "ts.guide_id = :guide_id";
             $params['guide_id'] = $filters['guide_id'];
         }
 
         if (!empty($filters['status'])) {
-            $where[] = "ts.status = :status";
-            $params['status'] = $filters['status'];
+            // Support multiple statuses (comma-separated)
+            if (strpos($filters['status'], ',') !== false) {
+                $statuses = explode(',', $filters['status']);
+                $status_placeholders = [];
+                foreach ($statuses as $idx => $status) {
+                    $key = 'status_' . $idx;
+                    $status_placeholders[] = ":{$key}";
+                    $params[$key] = trim($status);
+                }
+                $where[] = "ts.status IN (" . implode(', ', $status_placeholders) . ")";
+            } else {
+                $where[] = "ts.status = :status";
+                $params['status'] = $filters['status'];
+            }
+        }
+
+        if (!empty($filters['category_id'])) {
+            $where[] = "t.category_id = :category_id";
+            $params['category_id'] = $filters['category_id'];
         }
 
         // Count total
@@ -42,9 +64,11 @@ class TourSchedule
         // Get Data
         $offset = ($page - 1) * $limit;
         $sql = "SELECT ts.*, t.name as tour_name, t.tour_code, t.duration_days, t.duration_nights,
-                       u.full_name as guide_name, u.phone as guide_phone
+                       t.departure_location, t.category_id, c.name as category_name,
+                       u.full_name as guide_name, u.phone as guide_phone, u.email as guide_email
                 FROM tour_schedules ts
                 JOIN tours t ON ts.tour_id = t.id
+                LEFT JOIN categories c ON t.category_id = c.id
                 LEFT JOIN users u ON ts.guide_id = u.id
                 WHERE " . implode(" AND ", $where) . "
                 ORDER BY ts.start_date ASC
