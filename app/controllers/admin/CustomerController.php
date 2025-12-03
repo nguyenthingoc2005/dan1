@@ -79,32 +79,38 @@ class CustomerController
         require_admin();
 
         try {
-            if (empty($_POST['full_name']) || empty($_POST['phone'])) {
-                throw new Exception("Vui lòng nhập tên và số điện thoại.");
-            }
-
+            // Prepare data
             $data = [
-                'full_name' => sanitize($_POST['full_name']),
-                'phone' => sanitize($_POST['phone']),
+                'full_name' => sanitize($_POST['full_name'] ?? ''),
+                'phone' => sanitize($_POST['phone'] ?? ''),
                 'email' => !empty($_POST['email']) ? sanitize($_POST['email']) : null,
                 'address' => !empty($_POST['address']) ? sanitize($_POST['address']) : null,
                 'date_of_birth' => !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null,
-                'gender' => $_POST['gender'] ?? 'other',
+                'gender' => $_POST['gender'] ?? null,
                 'id_card' => !empty($_POST['id_card']) ? sanitize($_POST['id_card']) : null,
                 'passport' => !empty($_POST['passport']) ? sanitize($_POST['passport']) : null,
                 'nationality' => !empty($_POST['nationality']) ? sanitize($_POST['nationality']) : 'Vietnam',
                 'customer_type' => $_POST['customer_type'] ?? 'individual',
                 'source' => $_POST['source'] ?? 'other',
+                'special_requirements' => !empty($_POST['special_requirements']) ? sanitize($_POST['special_requirements']) : null,
                 'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
                 'created_by' => $_SESSION['user_id'] ?? 1
             ];
 
-            // Check duplicate phone/email
-            // Model should handle this or we check here.
-            // Let's assume model create handles basic insert.
+            // Validate using Model
+            $validation = $this->customerModel->validate($data);
+            
+            if (!$validation['valid']) {
+                // Get first error message to display
+                $firstError = reset($validation['errors']);
+                throw new Exception($firstError);
+            }
 
-            if ($this->customerModel->create($data)) {
-                set_success("Thêm khách hàng thành công!");
+            // Create customer
+            $customerId = $this->customerModel->create($data);
+            
+            if ($customerId) {
+                set_success("Thêm khách hàng thành công! Mã KH: " . $this->customerModel->getById($customerId)['customer_code']);
                 redirect('?act=admin&module=customers');
             } else {
                 throw new Exception("Không thể thêm khách hàng.");
@@ -112,6 +118,7 @@ class CustomerController
 
         } catch (Exception $e) {
             set_error($e->getMessage());
+            $_SESSION['old'] = $_POST; // Keep old input
             redirect('?act=admin&module=customers&action=create');
         }
     }
@@ -180,30 +187,51 @@ class CustomerController
 
         try {
             if (empty($_POST['id'])) {
-                throw new Exception("Missing ID.");
+                throw new Exception("Thiếu ID khách hàng.");
             }
 
             $id = (int) $_POST['id'];
-
-            if (empty($_POST['full_name']) || empty($_POST['phone'])) {
-                throw new Exception("Vui lòng nhập tên và số điện thoại.");
+            
+            // Check customer exists
+            $existing = $this->customerModel->getById($id);
+            if (!$existing) {
+                throw new Exception("Khách hàng không tồn tại.");
             }
 
+            // Prepare data
             $data = [
-                'full_name' => sanitize($_POST['full_name']),
-                'phone' => sanitize($_POST['phone']),
+                'full_name' => sanitize($_POST['full_name'] ?? ''),
+                'phone' => sanitize($_POST['phone'] ?? ''),
                 'email' => !empty($_POST['email']) ? sanitize($_POST['email']) : null,
                 'address' => !empty($_POST['address']) ? sanitize($_POST['address']) : null,
                 'date_of_birth' => !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null,
-                'gender' => $_POST['gender'] ?? 'other',
+                'gender' => $_POST['gender'] ?? null,
                 'id_card' => !empty($_POST['id_card']) ? sanitize($_POST['id_card']) : null,
                 'passport' => !empty($_POST['passport']) ? sanitize($_POST['passport']) : null,
                 'nationality' => !empty($_POST['nationality']) ? sanitize($_POST['nationality']) : 'Vietnam',
                 'customer_type' => $_POST['customer_type'] ?? 'individual',
                 'source' => $_POST['source'] ?? 'other',
+                'special_requirements' => !empty($_POST['special_requirements']) ? sanitize($_POST['special_requirements']) : null,
                 'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
                 'status' => $_POST['status'] ?? 'active'
             ];
+
+            // Validate using Model (pass excludeId to skip current customer in unique checks)
+            $validation = $this->customerModel->validate($data, $id);
+            
+            if (!$validation['valid']) {
+                $firstError = reset($validation['errors']);
+                throw new Exception($firstError);
+            }
+
+            // Normalize phone
+            $data['phone'] = preg_replace('/[\s\-\(\)]/', '', $data['phone']);
+            if (!empty($data['id_card'])) {
+                $data['id_card'] = preg_replace('/\s/', '', $data['id_card']);
+            }
+            if (!empty($data['passport'])) {
+                $data['passport'] = strtoupper($data['passport']);
+            }
 
             if ($this->customerModel->update($id, $data)) {
                 set_success("Cập nhật thành công!");
@@ -214,7 +242,7 @@ class CustomerController
 
         } catch (Exception $e) {
             set_error($e->getMessage());
-            redirect('?act=admin&module=customers&action=edit&id=' . $_POST['id']);
+            redirect('?act=admin&module=customers&action=edit&id=' . ($_POST['id'] ?? 0));
         }
     }
 

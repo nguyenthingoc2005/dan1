@@ -206,11 +206,16 @@ class TourController
                 'duration_days' => (int) $_POST['duration_days'],
                 'duration_nights' => (int) $_POST['duration_nights'],
                 'departure_location' => sanitize($_POST['departure_location']),
+                'min_participants' => (int) ($_POST['min_participants'] ?? 10),
+                'max_participants' => (int) ($_POST['max_participants'] ?? 45),
+                'price_based_on_pax' => (int) ($_POST['price_based_on_pax'] ?? 30),
                 'adult_price' => (float) $_POST['adult_price'],
                 'child_price' => !empty($_POST['child_price']) ? (float) $_POST['child_price'] : 0,
                 'infant_price' => !empty($_POST['infant_price']) ? (float) $_POST['infant_price'] : 0,
+                'deposit_percentage' => (float) ($_POST['deposit_percentage'] ?? 30),
                 'tour_type' => $tour_type,
-                'status' => $_POST['status'] ?? 'draft'
+                'status' => $_POST['status'] ?? 'draft',
+                'parent_tour_id' => !empty($_POST['parent_tour_id']) ? (int) $_POST['parent_tour_id'] : null
             ];
 
             // 3. Prepare Itinerary Data
@@ -230,6 +235,14 @@ class TourController
             // 4. Prepare Highlights
             if (!empty($_POST['highlights'])) {
                 $data['highlights'] = array_map('sanitize', explode("\n", $_POST['highlights']));
+            }
+
+            // 5. Prepare Included/Excluded
+            if (!empty($_POST['included'])) {
+                $data['included'] = array_filter(array_map('sanitize', $_POST['included']));
+            }
+            if (!empty($_POST['excluded'])) {
+                $data['excluded'] = array_filter(array_map('sanitize', $_POST['excluded']));
             }
 
             // 5. Save to DB
@@ -317,7 +330,7 @@ class TourController
                 throw new Exception('Loại tour không hợp lệ');
             }
 
-            // 1. Prepare Data (Similar to store)
+            // 2. Prepare Data
             $data = [
                 'category_id' => !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null,
                 'name' => sanitize($_POST['name']),
@@ -325,14 +338,18 @@ class TourController
                 'duration_days' => (int) $_POST['duration_days'],
                 'duration_nights' => (int) $_POST['duration_nights'],
                 'departure_location' => sanitize($_POST['departure_location']),
+                'min_participants' => (int) ($_POST['min_participants'] ?? 10),
+                'max_participants' => (int) ($_POST['max_participants'] ?? 45),
+                'price_based_on_pax' => (int) ($_POST['price_based_on_pax'] ?? 30),
                 'adult_price' => (float) $_POST['adult_price'],
                 'child_price' => (float) ($_POST['child_price'] ?? 0),
                 'infant_price' => (float) ($_POST['infant_price'] ?? 0),
+                'deposit_percentage' => (float) ($_POST['deposit_percentage'] ?? 30),
                 'tour_type' => $tour_type,
                 'status' => $_POST['status']
             ];
 
-            // Itinerary
+            // 3. Itinerary
             $itinerary = [];
             if (!empty($_POST['itinerary_day'])) {
                 foreach ($_POST['itinerary_day'] as $key => $day) {
@@ -346,20 +363,28 @@ class TourController
             }
             $data['itinerary'] = $itinerary;
 
-            // Highlights
+            // 4. Highlights
             if (!empty($_POST['highlights'])) {
                 $data['highlights'] = array_map('sanitize', explode("\n", $_POST['highlights']));
             }
 
-            // 2. Update DB
+            // 5. Included/Excluded
+            if (isset($_POST['included'])) {
+                $data['included'] = array_filter(array_map('sanitize', $_POST['included']));
+            }
+            if (isset($_POST['excluded'])) {
+                $data['excluded'] = array_filter(array_map('sanitize', $_POST['excluded']));
+            }
+
+            // 6. Update DB
             $this->tourModel->update($id, $data);
 
-            // 3. Handle New Images
+            // 7. Handle New Images
             if (!empty($_FILES['images']['name'][0])) {
                 $this->handleImageUploads($id, $_FILES['images']);
             }
 
-            // [NEW] 4. Handle Services (Delete All & Re-insert)
+            // 8. Handle Services (Delete All & Re-insert)
             $this->tourServiceModel->deleteAllByTourId($id);
             if (!empty($_POST['service_ids'])) {
                 foreach ($_POST['service_ids'] as $key => $service_id) {
@@ -557,5 +582,177 @@ class TourController
             set_error('Có lỗi xảy ra khi xóa tour.');
         }
         redirect('?act=admin&module=tours');
+    }
+
+    // ==========================================================================
+    // CUSTOM TOUR FROM TEMPLATE
+    // ==========================================================================
+
+    /**
+     * Hiển thị form chọn template hoặc tạo mới
+     */
+    public function selectTemplate()
+    {
+        require_admin();
+
+        // Lấy danh sách templates (public + approved tours)
+        $templates = $this->tourModel->getTemplates();
+
+        $page_title = 'Tạo Tour - Chọn phương thức';
+        $content_file = VIEWS_PATH . '/admin/tours/select_template.php';
+        require VIEWS_PATH . '/layouts/admin_layout.php';
+    }
+
+    /**
+     * Form tạo Tour từ Template (Clone & Customize)
+     */
+    public function createFromTemplate()
+    {
+        require_admin();
+
+        $template_id = $_GET['template_id'] ?? 0;
+
+        if (!$template_id) {
+            set_error('Vui lòng chọn một template.');
+            redirect('?act=admin&module=tours&action=selectTemplate');
+            return;
+        }
+
+        // Lấy thông tin đầy đủ của template
+        $template = $this->tourModel->getForClone($template_id);
+        if (!$template) {
+            set_error('Không tìm thấy tour template.');
+            redirect('?act=admin&module=tours&action=selectTemplate');
+            return;
+        }
+
+        // Prepare old_input từ template để pre-fill form
+        $old_input = [
+            'name' => '[Custom] ' . $template['name'],
+            'category_id' => $template['category_id'],
+            'description' => $template['description'],
+            'duration_days' => $template['duration_days'],
+            'duration_nights' => $template['duration_nights'],
+            'departure_location' => $template['departure_location'],
+            'adult_price' => $template['adult_price'],
+            'child_price' => $template['child_price'],
+            'infant_price' => $template['infant_price'],
+            'tour_type' => 'custom', // Force custom type
+            'status' => 'draft',
+            'parent_tour_id' => $template_id,
+            'itinerary' => $template['itinerary'] ?? [],
+            'highlights' => $template['highlights'] ?? [],
+            'services' => $template['services'] ?? []
+        ];
+
+        $categories = $this->categoryModel->getForDropdown();
+        $destinations = $this->destinationModel->getForDropdown();
+        $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
+
+        $is_from_template = true;
+        $template_info = [
+            'id' => $template['id'],
+            'code' => $template['tour_code'],
+            'name' => $template['name']
+        ];
+
+        $page_title = 'Tạo Tour Custom từ Template';
+        $content_file = VIEWS_PATH . '/admin/tours/create_from_template.php';
+        require VIEWS_PATH . '/layouts/admin_layout.php';
+    }
+
+    /**
+     * API: Lấy thông tin tour để clone (AJAX)
+     */
+    public function getTemplateData()
+    {
+        require_admin();
+
+        header('Content-Type: application/json');
+
+        $template_id = $_GET['id'] ?? 0;
+        if (!$template_id) {
+            echo json_encode(['success' => false, 'message' => 'ID template không hợp lệ']);
+            exit;
+        }
+
+        $template = $this->tourModel->getForClone($template_id);
+        if (!$template) {
+            echo json_encode(['success' => false, 'message' => 'Không tìm thấy template']);
+            exit;
+        }
+
+        // Format data for JavaScript
+        $data = [
+            'success' => true,
+            'tour' => [
+                'id' => $template['id'],
+                'tour_code' => $template['tour_code'],
+                'name' => $template['name'],
+                'category_id' => $template['category_id'],
+                'description' => $template['description'],
+                'duration_days' => $template['duration_days'],
+                'duration_nights' => $template['duration_nights'],
+                'departure_location' => $template['departure_location'],
+                'adult_price' => $template['adult_price'],
+                'child_price' => $template['child_price'],
+                'infant_price' => $template['infant_price']
+            ],
+            'itinerary' => $template['itinerary'] ?? [],
+            'services' => $template['services'] ?? [],
+            'highlights' => $template['highlights'] ?? []
+        ];
+
+        echo json_encode($data);
+        exit;
+    }
+
+    /**
+     * API: Lấy destinations theo category (AJAX)
+     */
+    public function getDestinations()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        $category_id = $_GET['category_id'] ?? null;
+        $destinations = $this->destinationModel->getByCategory($category_id);
+
+        echo json_encode([
+            'success' => true,
+            'data' => $destinations
+        ]);
+        exit;
+    }
+
+    /**
+     * API: Lấy thông tin service theo ID (AJAX)
+     */
+    public function getServiceInfo()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        $service_id = $_GET['id'] ?? 0;
+        if (!$service_id) {
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $service = $this->serviceModel->findById($service_id);
+        if ($service) {
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'id' => $service['id'],
+                    'name' => $service['name'],
+                    'unit_price' => $service['unit_price'],
+                    'unit' => $service['unit']
+                ]
+            ]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
+        exit;
     }
 }

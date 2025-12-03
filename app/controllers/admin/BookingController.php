@@ -409,20 +409,67 @@ class BookingController
             $userId = $_SESSION['user_id'] ?? 1;
 
             try {
+                // Validate booking exists
+                $booking = $this->bookingModel->getById($id);
+                if (!$booking) {
+                    throw new Exception("Booking không tồn tại");
+                }
+
                 if ($action == 'approve') {
+                    // Check if booking is pending
+                    if ($booking['approval_status'] !== 'pending') {
+                        throw new Exception("Chỉ có thể duyệt booking đang chờ duyệt");
+                    }
+                    
+                    // Check quota availability before approving
+                    require_once 'app/models/TourSchedule.php';
+                    $scheduleModel = new TourSchedule($this->pdo);
+                    $schedule = $scheduleModel->getByTourAndDateRange(
+                        $booking['tour_id'], 
+                        $booking['start_date'], 
+                        $booking['end_date']
+                    );
+                    
+                    if ($schedule) {
+                        $totalParticipants = $booking['adult_count'] + $booking['child_count'] + $booking['infant_count'];
+                        $available = $schedule['quota'] - $schedule['booked'] + $totalParticipants; // +participants vì đã bị trừ khi tạo
+                        
+                        if ($totalParticipants > $available) {
+                            throw new Exception("Không đủ chỗ trống để duyệt booking này (Còn $available chỗ)");
+                        }
+                    }
+                    
                     $this->bookingModel->updateStatus($id, 'approved', 'approval', $userId);
                     $this->bookingModel->logHistory($id, 'pending', 'approved', $userId, "Duyệt thủ công");
                     set_success("Đã duyệt Booking!");
+                    
                 } elseif ($action == 'reject') {
                     $reason = $_POST['reason'] ?? '';
-                    $this->bookingModel->updateStatus($id, 'rejected', 'approval', $userId, $reason);
-                    $this->bookingModel->logHistory($id, 'pending', 'rejected', $userId, $reason);
-                    set_success("Đã từ chối Booking!");
+                    if (empty($reason)) {
+                        throw new Exception("Vui lòng nhập lý do từ chối");
+                    }
+                    
+                    // Use new reject method that returns quota
+                    $this->bookingModel->reject($id, $reason, $userId);
+                    set_success("Đã từ chối Booking và trả lại chỗ trống!");
+                    
                 } elseif ($action == 'cancel') {
                     $reason = $_POST['reason'] ?? '';
-                    // Use advanced cancel method
+                    if (empty($reason)) {
+                        throw new Exception("Vui lòng nhập lý do hủy");
+                    }
+                    
+                    // Use cancel method that calculates fee and returns quota
                     $result = $this->bookingModel->cancel($id, $reason, $userId);
-                    set_success("Đã hủy Booking! Phí hủy: " . number_format($result['fee']) . " VNĐ (" . $result['policy'] . ")");
+                    
+                    $message = "Đã hủy Booking!";
+                    if ($result['fee'] > 0) {
+                        $message .= " Phí hủy: " . number_format($result['fee']) . " VNĐ (" . $result['policy'] . ")";
+                    }
+                    if ($result['refund'] > 0) {
+                        $message .= " - Hoàn trả: " . number_format($result['refund']) . " VNĐ";
+                    }
+                    set_success($message);
                 }
 
                 redirect("?act=admin&module=bookings&action=show&id=$id");

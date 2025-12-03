@@ -10,132 +10,193 @@ if (!is_admin())
 <div class="max-w-6xl mx-auto">
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-primary">Chi tiết Tour</h1>
+        <div>
+            <h1 class="text-2xl font-bold text-primary">Chi tiết Tour</h1>
+            <p class="text-sm text-gray-500 mt-1">
+                Mã: <span class="font-mono bg-gray-100 px-2 py-0.5 rounded"><?= htmlspecialchars($tour['tour_code']) ?></span>
+                <?php if ($tour['tour_type'] == 'custom'): ?>
+                    <span class="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">Custom Tour</span>
+                <?php else: ?>
+                    <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">Public Tour</span>
+                <?php endif; ?>
+            </p>
+        </div>
         <div class="flex gap-2">
-            <a href="?act=admin&module=tours"
-                class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
-                ← Quay lại
-            </a>
-            <a href="?act=admin&module=tours&action=edit&id=<?= $tour['id'] ?>"
-                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow">
-                ✏️ Chỉnh sửa
-            </a>
+            <a href="?act=admin&module=tours" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50">← Quay lại</a>
+            <a href="?act=admin&module=tours&action=edit&id=<?= $tour['id'] ?>" class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow">✏️ Chỉnh sửa</a>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <!-- LEFT COLUMN: INFO & PRICING -->
+        <!-- LEFT COLUMN -->
         <div class="lg:col-span-2 space-y-6">
 
             <!-- Basic Info -->
-            <div class="bg-white rounded shadow-sm p-6">
+            <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Thông tin chung</h2>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
+                    <div class="col-span-2">
                         <span class="block text-sm text-gray-500">Tên Tour</span>
-                        <span class="font-medium text-gray-900"><?= htmlspecialchars($tour['name']) ?></span>
-                    </div>
-                    <div>
-                        <span class="block text-sm text-gray-500">Mã Tour</span>
-                        <span class="font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded text-sm"><?= htmlspecialchars($tour['tour_code']) ?></span>
+                        <span class="font-bold text-lg text-gray-900"><?= htmlspecialchars($tour['name']) ?></span>
                     </div>
                     <div>
                         <span class="block text-sm text-gray-500">Danh mục</span>
-                        <span class="text-blue-600"><?= htmlspecialchars($tour['category_name'] ?? 'N/A') ?></span>
+                        <span class="text-blue-600"><?= htmlspecialchars($tour['category_name'] ?? 'Chưa phân loại') ?></span>
                     </div>
                     <div>
-                        <span class="block text-sm text-gray-500">Trạng thái</span>
-                        <?php if ($tour['status'] == 'active'): ?>
-                            <span class="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Active</span>
-                        <?php elseif ($tour['status'] == 'draft'): ?>
-                            <span class="inline-block px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">Draft</span>
-                        <?php else: ?>
-                            <span class="inline-block px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">Inactive</span>
-                        <?php endif; ?>
-                    </div>
-                    <div class="col-span-2">
                         <span class="block text-sm text-gray-500">Điểm khởi hành</span>
-                        <span class="text-gray-900"><?= htmlspecialchars($tour['departure_location']) ?></span>
+                        <span class="text-gray-900"><?= htmlspecialchars($tour['departure_location'] ?: '-') ?></span>
+                    </div>
+                    <div>
+                        <span class="block text-sm text-gray-500">Thời gian</span>
+                        <span class="font-medium"><?= $tour['duration_days'] ?> ngày <?= $tour['duration_nights'] ?> đêm</span>
+                    </div>
+                    <div>
+                        <span class="block text-sm text-gray-500">Số khách</span>
+                        <span class="font-medium"><?= $tour['min_participants'] ?? 10 ?> - <?= $tour['max_participants'] ?? 45 ?> người</span>
                     </div>
                     <div class="col-span-2">
-                        <span class="block text-sm text-gray-500">Mô tả ngắn</span>
-                        <p class="text-gray-700 mt-1 text-sm"><?= nl2br(htmlspecialchars($tour['description'])) ?></p>
+                        <span class="block text-sm text-gray-500">Mô tả</span>
+                        <p class="text-gray-700 mt-1 text-sm"><?= nl2br(htmlspecialchars($tour['description'] ?: 'Chưa có mô tả')) ?></p>
                     </div>
                 </div>
             </div>
 
             <!-- Itinerary -->
-            <div class="bg-white rounded shadow-sm p-6">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Lịch trình
-                    (<?= $tour['duration_days'] ?>N<?= $tour['duration_nights'] ?>Đ)</h2>
-                <div
-                    class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-                    <?php if (!empty($tour['itinerary'])): ?>
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">
+                    Lịch trình (<?= $tour['duration_days'] ?>N<?= $tour['duration_nights'] ?>Đ)
+                </h2>
+                <?php if (!empty($tour['itinerary'])): ?>
+                    <div class="space-y-4">
                         <?php foreach ($tour['itinerary'] as $item): ?>
-                            <div
-                                class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                <div
-                                    class="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-accent text-slate-500 group-[.is-active]:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-                                    <span class="font-bold text-sm"><?= $item['day_number'] ?></span>
+                            <div class="flex gap-4 p-3 bg-gray-50 rounded-lg">
+                                <div class="w-10 h-10 bg-accent text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                                    <?= $item['day_number'] ?>
                                 </div>
-                                <div
-                                    class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded border border-slate-200 shadow-sm">
-                                    <div class="flex items-center justify-between space-x-2 mb-1">
-                                        <div class="font-bold text-slate-900"><?= htmlspecialchars($item['title']) ?></div>
-                                    </div>
-                                    <div class="text-slate-500 text-sm mb-2">📍
-                                        <?= htmlspecialchars($item['destination_name'] ?? 'Chưa xác định') ?></div>
-                                    <div class="text-slate-600 text-sm"><?= nl2br(htmlspecialchars($item['description'])) ?>
-                                    </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-gray-800"><?= htmlspecialchars($item['title']) ?></h4>
+                                    <?php if (!empty($item['destination_name'])): ?>
+                                        <p class="text-sm text-blue-600">📍 <?= htmlspecialchars($item['destination_name']) ?></p>
+                                    <?php endif; ?>
+                                    <p class="text-sm text-gray-600 mt-1"><?= nl2br(htmlspecialchars($item['description'])) ?></p>
                                 </div>
                             </div>
                         <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="text-gray-500 italic text-center">Chưa có lịch trình.</p>
-                    <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <p class="text-gray-500 italic text-center py-4">Chưa có lịch trình.</p>
+                <?php endif; ?>
+            </div>
+
+            <!-- Included / Excluded -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Bao gồm / Không bao gồm</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Included -->
+                    <div>
+                        <h3 class="font-medium text-green-700 mb-2">✅ Giá tour BAO GỒM:</h3>
+                        <?php if (!empty($tour['includes'])): ?>
+                            <ul class="space-y-1">
+                                <?php foreach ($tour['includes'] as $item): ?>
+                                    <li class="text-sm text-gray-700 flex items-start gap-2">
+                                        <span class="text-green-500 mt-0.5">✓</span>
+                                        <span><?= htmlspecialchars($item) ?></span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php else: ?>
+                            <p class="text-gray-400 italic text-sm">Chưa cập nhật</p>
+                        <?php endif; ?>
+                    </div>
+                    <!-- Excluded -->
+                    <div>
+                        <h3 class="font-medium text-red-700 mb-2">❌ Giá tour KHÔNG BAO GỒM:</h3>
+                        <?php if (!empty($tour['excludes'])): ?>
+                            <ul class="space-y-1">
+                                <?php foreach ($tour['excludes'] as $item): ?>
+                                    <li class="text-sm text-gray-700 flex items-start gap-2">
+                                        <span class="text-red-500 mt-0.5">✗</span>
+                                        <span><?= htmlspecialchars($item) ?></span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php else: ?>
+                            <p class="text-gray-400 italic text-sm">Chưa cập nhật</p>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
 
         </div>
 
-        <!-- RIGHT COLUMN: IMAGES & HIGHLIGHTS -->
+        <!-- RIGHT COLUMN -->
         <div class="space-y-6">
 
-            <!-- ADMIN ACTIONS PANEL -->
-            <div class="bg-white rounded shadow-sm p-6 border-l-4 border-accent">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Xử lý Tour</h2>
+            <!-- Status & Actions -->
+            <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 <?= $tour['status'] == 'active' ? 'border-green-500' : ($tour['status'] == 'draft' ? 'border-yellow-500' : 'border-red-500') ?>">
+                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Trạng thái</h2>
+                
+                <div class="space-y-3 mb-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Trạng thái:</span>
+                        <?php if ($tour['status'] == 'active'): ?>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full font-medium">✓ Đang hoạt động</span>
+                        <?php elseif ($tour['status'] == 'draft'): ?>
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-sm rounded-full font-medium">📝 Bản nháp</span>
+                        <?php else: ?>
+                            <span class="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full font-medium">⛔ Tạm dừng</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Duyệt:</span>
+                        <?php if ($tour['approval_status'] == 'approved'): ?>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">Đã duyệt</span>
+                        <?php elseif ($tour['approval_status'] == 'rejected'): ?>
+                            <span class="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full">Từ chối</span>
+                        <?php else: ?>
+                            <span class="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">Chờ duyệt</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Actions -->
                 <form method="POST" action="?act=admin&module=tours&action=changeStatus">
                     <input type="hidden" name="id" value="<?= $tour['id'] ?>">
-                    
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Chọn hành động</label>
-                        <select name="action" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-                            <option value="">-- Chọn trạng thái --</option>
-                            <?php if ($tour['status'] != 'active'): ?>
-                                <option value="approve">✅ Duyệt Tour (Mở bán)</option>
-                            <?php endif; ?>
-                            <?php if ($tour['status'] != 'inactive'): ?>
-                                <option value="reject">⛔ Từ chối / Ẩn Tour</option>
-                            <?php endif; ?>
-                        </select>
+                    <div class="space-y-2">
+                        <?php if ($tour['approval_status'] == 'pending'): ?>
+                            <button type="submit" name="action" value="approve" class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700" 
+                                onclick="return confirm('Duyệt tour này?')">
+                                ✅ Duyệt Tour
+                            </button>
+                            <button type="submit" name="action" value="reject" class="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                                onclick="return confirm('Từ chối tour này?')">
+                                ⛔ Từ chối
+                            </button>
+                        <?php endif; ?>
+                        <?php if ($tour['status'] == 'active'): ?>
+                            <button type="submit" name="action" value="hide" class="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                                onclick="return confirm('Ẩn tour này?')">
+                                🙈 Ẩn Tour
+                            </button>
+                        <?php elseif ($tour['status'] == 'inactive' && $tour['approval_status'] == 'approved'): ?>
+                            <button type="submit" name="action" value="show" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                onclick="return confirm('Hiện lại tour này?')">
+                                👁️ Hiện Tour
+                            </button>
+                        <?php endif; ?>
                     </div>
-
-                    <button type="submit" class="w-full px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 font-medium shadow" onclick="return confirm('Bạn có chắc chắn muốn cập nhật trạng thái?')">
-                        Cập nhật trạng thái
-                    </button>
                 </form>
             </div>
 
             <!-- Pricing -->
-            <div class="bg-white rounded shadow-sm p-6">
+            <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Bảng giá</h2>
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
                         <span class="text-gray-600">Người lớn</span>
-                        <span
-                            class="font-bold text-accent text-lg"><?= number_format($tour['adult_price'], 0, ',', '.') ?>
-                            đ</span>
+                        <span class="font-bold text-accent text-lg"><?= number_format($tour['adult_price'], 0, ',', '.') ?> đ</span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-gray-600">Trẻ em</span>
@@ -145,45 +206,63 @@ if (!is_admin())
                         <span class="text-gray-600">Em bé</span>
                         <span class="font-medium"><?= number_format($tour['infant_price'], 0, ',', '.') ?> đ</span>
                     </div>
+                    <hr>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-500">Giá tính cho</span>
+                        <span class="text-gray-700"><?= $tour['price_based_on_pax'] ?? 30 ?> khách</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-500">Đặt cọc</span>
+                        <span class="text-gray-700"><?= $tour['deposit_percentage'] ?? 30 ?>%</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Highlights -->
-            <div class="bg-white rounded shadow-sm p-6">
+            <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Điểm nổi bật</h2>
-                <ul class="space-y-2">
-                    <?php if (!empty($tour['highlights'])): ?>
+                <?php if (!empty($tour['highlights'])): ?>
+                    <ul class="space-y-2">
                         <?php foreach ($tour['highlights'] as $hl): ?>
                             <li class="flex items-start gap-2 text-sm text-gray-700">
-                                <span class="text-green-500 mt-0.5">✓</span>
+                                <span class="text-yellow-500 mt-0.5">⭐</span>
                                 <span><?= htmlspecialchars($hl) ?></span>
                             </li>
                         <?php endforeach; ?>
-                    <?php else: ?>
-                        <li class="text-gray-500 italic">Chưa cập nhật.</li>
-                    <?php endif; ?>
-                </ul>
+                    </ul>
+                <?php else: ?>
+                    <p class="text-gray-400 italic">Chưa cập nhật.</p>
+                <?php endif; ?>
             </div>
 
             <!-- Images -->
-            <div class="bg-white rounded shadow-sm p-6">
+            <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Thư viện ảnh</h2>
-                <div class="grid grid-cols-2 gap-2">
-                    <?php if (!empty($tour['images'])): ?>
+                <?php if (!empty($tour['images'])): ?>
+                    <div class="grid grid-cols-2 gap-2">
                         <?php foreach ($tour['images'] as $img): ?>
                             <div class="relative aspect-square rounded overflow-hidden group cursor-pointer">
-                                <img src="<?= htmlspecialchars($img['image_url']) ?>"
-                                    class="w-full h-full object-cover transition duration-300 group-hover:scale-110">
+                                <img src="<?= htmlspecialchars($img['image_url']) ?>" class="w-full h-full object-cover transition duration-300 group-hover:scale-110">
                                 <?php if ($img['is_primary']): ?>
-                                    <span
-                                        class="absolute top-1 right-1 bg-accent text-white text-[10px] px-1.5 py-0.5 rounded">Main</span>
+                                    <span class="absolute top-1 right-1 bg-accent text-white text-[10px] px-1.5 py-0.5 rounded">Main</span>
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="col-span-2 text-gray-500 italic text-center py-4">Chưa có hình ảnh.</p>
-                    <?php endif; ?>
-                </div>
+                    </div>
+                <?php else: ?>
+                    <p class="text-gray-400 italic text-center py-4">Chưa có hình ảnh.</p>
+                <?php endif; ?>
+            </div>
+
+            <!-- Delete -->
+            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                <h3 class="font-medium text-red-800 mb-2">Xóa Tour</h3>
+                <p class="text-sm text-red-600 mb-3">Hành động này không thể hoàn tác. Tour đã có booking sẽ không thể xóa.</p>
+                <a href="?act=admin&module=tours&action=delete&id=<?= $tour['id'] ?>" 
+                   class="block w-full text-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                   onclick="return confirm('Bạn có chắc chắn muốn xóa tour này? Hành động này không thể hoàn tác!')">
+                    🗑️ Xóa Tour
+                </a>
             </div>
 
         </div>

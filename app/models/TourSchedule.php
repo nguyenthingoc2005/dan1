@@ -154,14 +154,49 @@ class TourSchedule
     /**
      * Increment booked count for a schedule.
      */
-    /**
-     * Increment booked count for a schedule.
-     */
     public function incrementBooked($schedule_id, $increment = 1)
     {
         $sql = "UPDATE tour_schedules SET booked = booked + :inc WHERE id = :id";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute(['inc' => $increment, 'id' => $schedule_id]);
+    }
+
+    /**
+     * Decrement booked count for a schedule (when booking is cancelled/rejected).
+     * Ensures booked doesn't go below 0.
+     */
+    public function decrementBooked($schedule_id, $decrement = 1)
+    {
+        // First check current booked value to prevent negative
+        $schedule = $this->getById($schedule_id);
+        if (!$schedule) {
+            return false;
+        }
+        
+        $newBooked = max(0, $schedule['booked'] - $decrement);
+        
+        $sql = "UPDATE tour_schedules SET booked = :booked WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute(['booked' => $newBooked, 'id' => $schedule_id]);
+    }
+
+    /**
+     * Get schedule by tour ID and date range.
+     * Useful for finding which schedule a booking belongs to.
+     */
+    public function getByTourAndDateRange($tour_id, $start_date, $end_date)
+    {
+        $sql = "SELECT * FROM tour_schedules 
+                WHERE tour_id = :tour_id 
+                AND start_date = :start_date 
+                AND end_date = :end_date";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'tour_id' => $tour_id, 
+            'start_date' => $start_date,
+            'end_date' => $end_date
+        ]);
+        return $stmt->fetch();
     }
 
     public function assignGuide($schedule_id, $guide_id, $notes = null)

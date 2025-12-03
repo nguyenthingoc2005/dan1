@@ -73,12 +73,15 @@ if (!is_admin())
                 <!-- Unit -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Đơn vị tính
+                        Đơn vị tính <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="unit"
-                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
-                        placeholder="VD: phòng/đêm, suất, xe/ngày, vé">
-                    <small class="text-gray-500">Đơn vị tính cho dịch vụ này</small>
+                    <select name="unit" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                        <option value="">-- Chọn đơn vị --</option>
+                        <?php foreach (get_service_units() as $value => $label): ?>
+                            <option value="<?= $value ?>"><?= htmlspecialchars($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
                 <!-- Estimated Price -->

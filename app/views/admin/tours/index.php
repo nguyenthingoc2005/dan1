@@ -11,9 +11,12 @@ if (!is_admin())
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-primary">Quản lý Tour du lịch</h1>
-        <a href="?act=admin&module=tours&action=create"
-            class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow">
-            + Thêm Tour mới
+        <a href="?act=admin&module=tours&action=selectTemplate"
+            class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            Thêm Tour mới
         </a>
     </div>
 

@@ -74,12 +74,26 @@ if (!is_admin()) redirect('?act=access-denied');
                 <!-- Unit -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Đơn vị tính
+                        Đơn vị tính <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="unit" value="<?= htmlspecialchars($service['unit'] ?? '') ?>" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
-                           placeholder="VD: phòng/đêm, suất, xe/ngày, vé">
-                    <small class="text-gray-500">Đơn vị tính cho dịch vụ này</small>
+                    <select name="unit" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                        <option value="">-- Chọn đơn vị --</option>
+                        <?php 
+                        $currentUnit = $service['unit'] ?? '';
+                        $units = get_service_units();
+                        foreach ($units as $value => $label): ?>
+                            <option value="<?= $value ?>" <?= $currentUnit == $value ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($label) ?>
+                            </option>
+                        <?php endforeach; 
+                        // Nếu unit hiện tại không có trong list, thêm vào
+                        if ($currentUnit && !isset($units[$currentUnit])): ?>
+                            <option value="<?= htmlspecialchars($currentUnit) ?>" selected>
+                                <?= htmlspecialchars($currentUnit) ?>
+                            </option>
+                        <?php endif; ?>
+                    </select>
                 </div>
                 
                 <!-- Estimated Price -->

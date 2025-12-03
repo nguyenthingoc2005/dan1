@@ -94,6 +94,79 @@ function formatTime($time)
 }
 
 // ============================================================================
+// SERVICE UNITS - Đơn vị dịch vụ chuẩn
+// ============================================================================
+
+/**
+ * Lấy danh sách đơn vị dịch vụ chuẩn
+ * Sử dụng trong dropdown khi tạo tour/dịch vụ
+ */
+function get_service_units()
+{
+    return [
+        // Lưu trú
+        'phòng/đêm' => 'Phòng/đêm',
+        'giường/đêm' => 'Giường/đêm',
+        'villa/đêm' => 'Villa/đêm',
+        
+        // Vận chuyển
+        'xe/ngày' => 'Xe/ngày',
+        'xe/chuyến' => 'Xe/chuyến',
+        'ghế' => 'Ghế',
+        'chuyến' => 'Chuyến',
+        'km' => 'Km',
+        
+        // Ăn uống
+        'suất' => 'Suất',
+        'phần' => 'Phần',
+        'bàn' => 'Bàn',
+        'set' => 'Set',
+        
+        // Nhân sự
+        'ngày' => 'Ngày',
+        'tour' => 'Tour',
+        'buổi' => 'Buổi',
+        
+        // Vé/Tham quan
+        'vé' => 'Vé',
+        'lượt' => 'Lượt',
+        'người' => 'Người',
+        
+        // Bảo hiểm/Khác
+        'gói' => 'Gói',
+        'cái' => 'Cái',
+        'lần' => 'Lần',
+        'bộ' => 'Bộ'
+    ];
+}
+
+/**
+ * Lấy đơn vị mặc định theo loại dịch vụ
+ * 
+ * @param string $service_type_code Mã loại dịch vụ
+ * @return string Đơn vị mặc định
+ */
+function get_default_unit_by_service_type($service_type_code)
+{
+    $defaults = [
+        'HOTEL' => 'phòng/đêm',
+        'ACCOMMODATION' => 'phòng/đêm',
+        'TRANSPORT' => 'xe/ngày',
+        'VEHICLE' => 'xe/ngày',
+        'MEAL' => 'suất',
+        'FOOD' => 'suất',
+        'GUIDE' => 'ngày',
+        'HDV' => 'ngày',
+        'TICKET' => 'vé',
+        'ENTRANCE' => 'vé',
+        'INSURANCE' => 'người',
+        'OTHER' => 'cái'
+    ];
+    
+    return $defaults[strtoupper($service_type_code)] ?? 'cái';
+}
+
+// ============================================================================
 // STATUS HELPERS
 // ============================================================================
 

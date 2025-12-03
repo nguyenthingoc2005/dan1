@@ -5,9 +5,13 @@
  * ==============================================================================
  * 
  * Quản lý phân công hướng dẫn viên
+ * - Kiểm tra lịch trùng HDV
+ * - Tự động tính lương
+ * - Validate role HDV
+ * 
  * Routing: ?act=admin&module=assignments&action=index
  * 
- * @version 1.0
+ * @version 1.1
  * @date 2024-12-03
  * ==============================================================================
  */
@@ -20,11 +24,8 @@ class TourAssignmentController
     public function __construct($pdo)
     {
         $this->db = $pdo;
-        // Check if TourAssignment model exists, if not create it
-        if (file_exists(MODELS_PATH . '/TourAssignment.php')) {
-            require_once MODELS_PATH . '/TourAssignment.php';
-            $this->assignmentModel = new TourAssignment($pdo);
-        }
+        require_once MODELS_PATH . '/TourAssignment.php';
+        $this->assignmentModel = new TourAssignment($pdo);
     }
 
     /**
@@ -38,10 +39,9 @@ class TourAssignmentController
         require_once MODELS_PATH . '/TourSchedule.php';
         $scheduleModel = new TourSchedule($this->db);
 
-        // Filter: upcoming tours
+        // Filter: upcoming tours (from today)
         $filters = [
-            'start_date' => date('Y-m-d'),
-            'status' => 'open'
+            'start_date' => date('Y-m-d')
         ];
 
         $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
@@ -49,11 +49,17 @@ class TourAssignmentController
 
         $result = $scheduleModel->getAll($filters, $page, $limit);
         $schedules = $result['data'];
+        $total_pages = $result['pages'];
 
-        // Get guides list for assignment modal
-        require_once MODELS_PATH . '/User.php';
-        $userModel = new User($this->db);
-        $guides = $userModel->getAll(['role' => 'guide', 'status' => 'active']);
+        // Get all active guides for dropdown
+        $sql = "SELECT u.id, u.full_name, u.phone, u.email
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE r.name = 'guide' AND u.status = 'active'
+                ORDER BY u.full_name";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        $guides = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $page_title = 'Phân công Hướng dẫn viên';
         $content_file = VIEWS_PATH . '/admin/assignments/index.php';
@@ -61,7 +67,61 @@ class TourAssignmentController
     }
 
     /**
-     * Xử lý phân công
+     * AJAX: Lấy danh sách HDV có sẵn cho schedule
+     */
+    public function getAvailableGuides()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            $scheduleId = $_GET['schedule_id'] ?? 0;
+            
+            if (!$scheduleId) {
+                throw new Exception("Thiếu schedule_id");
+            }
+            
+            // Get schedule dates
+            require_once MODELS_PATH . '/TourSchedule.php';
+            $scheduleModel = new TourSchedule($this->db);
+            $schedule = $scheduleModel->getById($scheduleId);
+            
+            if (!$schedule) {
+                throw new Exception("Lịch khởi hành không tồn tại");
+            }
+            
+            // Get available guides
+            $availableGuides = $this->assignmentModel->getAvailableGuides(
+                $schedule['start_date'], 
+                $schedule['end_date']
+            );
+            
+            // Calculate suggested salary
+            $durationDays = (int) $schedule['duration_days'] ?? 1;
+            $suggestedSalary = $this->assignmentModel->calculateSalary($durationDays);
+            
+            echo json_encode([
+                'success' => true,
+                'guides' => $availableGuides,
+                'schedule' => [
+                    'start_date' => $schedule['start_date'],
+                    'end_date' => $schedule['end_date'],
+                    'duration_days' => $durationDays
+                ],
+                'suggested_salary' => $suggestedSalary
+            ]);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Xử lý phân công (với validation đầy đủ)
      */
     public function assign()
     {
@@ -72,24 +132,22 @@ class TourAssignmentController
                 throw new Exception("Vui lòng chọn lịch tour và hướng dẫn viên.");
             }
 
-            $schedule_id = (int) $_POST['schedule_id'];
-            $guide_id = (int) $_POST['guide_id'];
+            $scheduleId = (int) $_POST['schedule_id'];
+            $guideId = (int) $_POST['guide_id'];
             $notes = $_POST['notes'] ?? null;
+            $salaryAmount = !empty($_POST['salary_amount']) ? (float) $_POST['salary_amount'] : null;
 
-            // Get schedule info
-            require_once MODELS_PATH . '/TourSchedule.php';
-            $scheduleModel = new TourSchedule($this->db);
-            $schedule = $scheduleModel->getById($schedule_id);
+            // Use the new assignToSchedule method with full validation
+            $result = $this->assignmentModel->assignToSchedule($scheduleId, $guideId, [
+                'salary_amount' => $salaryAmount,
+                'notes' => $notes,
+                'created_by' => $_SESSION['user_id'] ?? 1
+            ]);
 
-            if (!$schedule) {
-                throw new Exception("Không tìm thấy lịch khởi hành.");
-            }
-
-            // Assign guide directly to schedule
-            if ($scheduleModel->assignGuide($schedule_id, $guide_id, $notes)) {
-                set_success("Phân công hướng dẫn viên thành công!");
+            if ($result['success']) {
+                set_success($result['message']);
             } else {
-                throw new Exception("Không thể phân công.");
+                throw new Exception($result['message']);
             }
 
             redirect('?act=admin&module=assignments');
@@ -106,7 +164,58 @@ class TourAssignmentController
     public function remove()
     {
         require_admin();
-        // Logic remove assignment
+
+        try {
+            $scheduleId = $_GET['schedule_id'] ?? $_POST['schedule_id'] ?? 0;
+            
+            if (!$scheduleId) {
+                throw new Exception("Thiếu schedule_id");
+            }
+            
+            if ($this->assignmentModel->removeAssignment($scheduleId)) {
+                set_success("Đã hủy phân công HDV thành công!");
+            } else {
+                throw new Exception("Không thể hủy phân công");
+            }
+            
+        } catch (Exception $e) {
+            set_error($e->getMessage());
+        }
+        
         redirect('?act=admin&module=assignments');
+    }
+
+    /**
+     * AJAX: Check guide availability
+     */
+    public function checkAvailability()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            $guideId = $_GET['guide_id'] ?? 0;
+            $startDate = $_GET['start_date'] ?? '';
+            $endDate = $_GET['end_date'] ?? '';
+            
+            if (!$guideId || !$startDate || !$endDate) {
+                throw new Exception("Thiếu thông tin");
+            }
+            
+            $result = $this->assignmentModel->checkGuideAvailability($guideId, $startDate, $endDate);
+            
+            echo json_encode([
+                'success' => true,
+                'available' => $result['available'],
+                'conflict' => $result['conflict']
+            ]);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
     }
 }

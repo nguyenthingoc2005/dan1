@@ -163,6 +163,44 @@ class Tour
     }
 
     /**
+     * Lấy danh sách tours làm template (chỉ public tours đã approved)
+     */
+    public function getTemplates()
+    {
+        $sql = "SELECT t.id, t.tour_code, t.name, t.duration_days, t.duration_nights,
+                       t.adult_price, t.category_id, c.name as category_name
+                FROM tours t
+                LEFT JOIN categories c ON t.category_id = c.id
+                WHERE t.tour_type = 'public' 
+                  AND t.status = 'active'
+                  AND t.approval_status = 'approved'
+                ORDER BY t.name ASC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Lấy thông tin đầy đủ của tour để clone (bao gồm itinerary, services, highlights)
+     */
+    public function getForClone($id)
+    {
+        $tour = $this->findById($id);
+        if (!$tour) return null;
+
+        // Lấy thêm tour_services
+        $sql = "SELECT ts.*, s.name as service_name_original, s.supplier_id
+                FROM tour_services ts
+                LEFT JOIN services s ON ts.service_id = s.id
+                WHERE ts.tour_id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        $tour['services'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return $tour;
+    }
+
+    /**
      * Tạo Tour mới (Transaction)
      */
     public function create($data)
@@ -173,12 +211,14 @@ class Tour
             // 1. Insert Tours Table
             $sql = "INSERT INTO tours (
                 tour_code, category_id, name, description, duration_days, duration_nights,
-                departure_location, adult_price, child_price, infant_price,
-                tour_type, status, created_by
+                departure_location, min_participants, max_participants, price_based_on_pax,
+                adult_price, child_price, infant_price, deposit_percentage,
+                tour_type, status, parent_tour_id, created_by
             ) VALUES (
                 :code, :category_id, :name, :description, :duration_days, :duration_nights,
-                :departure_location, :adult_price, :child_price, :infant_price,
-                :tour_type, :status, :created_by
+                :departure_location, :min_participants, :max_participants, :price_based_on_pax,
+                :adult_price, :child_price, :infant_price, :deposit_percentage,
+                :tour_type, :status, :parent_tour_id, :created_by
             )";
 
             $stmt = $this->pdo->prepare($sql);
@@ -190,11 +230,16 @@ class Tour
                 'duration_days' => $data['duration_days'],
                 'duration_nights' => $data['duration_nights'],
                 'departure_location' => $data['departure_location'],
+                'min_participants' => $data['min_participants'] ?? 10,
+                'max_participants' => $data['max_participants'] ?? 45,
+                'price_based_on_pax' => $data['price_based_on_pax'] ?? 30,
                 'adult_price' => $data['adult_price'],
                 'child_price' => $data['child_price'] ?? 0,
                 'infant_price' => $data['infant_price'] ?? 0,
+                'deposit_percentage' => $data['deposit_percentage'] ?? 30,
                 'tour_type' => $data['tour_type'] ?? 'public',
                 'status' => $data['status'] ?? 'draft',
+                'parent_tour_id' => $data['parent_tour_id'] ?? null,
                 'created_by' => get_user_id()
             ]);
 
@@ -210,6 +255,14 @@ class Tour
                 $this->saveHighlights($tour_id, $data['highlights']);
             }
 
+            // 4. Insert Included/Excluded
+            if (!empty($data['included'])) {
+                $this->saveIncludedExcluded($tour_id, 'included', $data['included']);
+            }
+            if (!empty($data['excluded'])) {
+                $this->saveIncludedExcluded($tour_id, 'excluded', $data['excluded']);
+            }
+
             $this->pdo->commit();
             return $tour_id;
 
@@ -217,6 +270,26 @@ class Tour
             $this->pdo->rollBack();
             error_log("Tour::create() Error: " . $e->getMessage());
             throw $e;
+        }
+    }
+
+    /**
+     * Lưu Included/Excluded items
+     */
+    private function saveIncludedExcluded($tour_id, $type, $items)
+    {
+        $sql = "INSERT INTO tour_included_excluded (tour_id, type, item, display_order) VALUES (:tour_id, :type, :item, :order)";
+        $stmt = $this->pdo->prepare($sql);
+
+        $order = 0;
+        foreach ($items as $item) {
+            if (empty(trim($item))) continue;
+            $stmt->execute([
+                'tour_id' => $tour_id,
+                'type' => $type,
+                'item' => trim($item),
+                'order' => $order++
+            ]);
         }
     }
 
@@ -236,9 +309,13 @@ class Tour
                 duration_days = :duration_days,
                 duration_nights = :duration_nights,
                 departure_location = :departure_location,
+                min_participants = :min_participants,
+                max_participants = :max_participants,
+                price_based_on_pax = :price_based_on_pax,
                 adult_price = :adult_price,
                 child_price = :child_price,
                 infant_price = :infant_price,
+                deposit_percentage = :deposit_percentage,
                 tour_type = :tour_type,
                 status = :status,
                 updated_at = NOW()
@@ -253,9 +330,13 @@ class Tour
                 'duration_days' => $data['duration_days'],
                 'duration_nights' => $data['duration_nights'],
                 'departure_location' => $data['departure_location'],
+                'min_participants' => $data['min_participants'] ?? 10,
+                'max_participants' => $data['max_participants'] ?? 45,
+                'price_based_on_pax' => $data['price_based_on_pax'] ?? 30,
                 'adult_price' => $data['adult_price'],
                 'child_price' => $data['child_price'] ?? 0,
                 'infant_price' => $data['infant_price'] ?? 0,
+                'deposit_percentage' => $data['deposit_percentage'] ?? 30,
                 'tour_type' => $data['tour_type'] ?? 'public',
                 'status' => $data['status']
             ]);
@@ -270,6 +351,17 @@ class Tour
             if (isset($data['highlights'])) {
                 $this->pdo->exec("DELETE FROM tour_highlights WHERE tour_id = $id");
                 $this->saveHighlights($id, $data['highlights']);
+            }
+
+            // 4. Update Included/Excluded
+            if (isset($data['included']) || isset($data['excluded'])) {
+                $this->pdo->exec("DELETE FROM tour_included_excluded WHERE tour_id = $id");
+                if (!empty($data['included'])) {
+                    $this->saveIncludedExcluded($id, 'included', $data['included']);
+                }
+                if (!empty($data['excluded'])) {
+                    $this->saveIncludedExcluded($id, 'excluded', $data['excluded']);
+                }
             }
 
             $this->pdo->commit();

@@ -247,6 +247,23 @@ switch ($module) {
             case 'delete':
                 $tourController->delete();
                 break;
+            // NEW: Custom Tour from Template
+            case 'selectTemplate':
+                $tourController->selectTemplate();
+                break;
+            case 'createFromTemplate':
+                $tourController->createFromTemplate();
+                break;
+            case 'getTemplateData':
+                $tourController->getTemplateData();
+                break;
+            // AJAX APIs
+            case 'getDestinations':
+                $tourController->getDestinations();
+                break;
+            case 'getServiceInfo':
+                $tourController->getServiceInfo();
+                break;
             default:
                 $tourController->index();
                 break;
@@ -395,6 +412,12 @@ switch ($module) {
             case 'remove':
                 $assignmentController->remove();
                 break;
+            case 'getAvailableGuides':
+                $assignmentController->getAvailableGuides();
+                break;
+            case 'checkAvailability':
+                $assignmentController->checkAvailability();
+                break;
             default:
                 $assignmentController->index();
                 break;
@@ -423,6 +446,38 @@ switch ($module) {
                 break;
             default:
                 $journalController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: BOOKING SERVICES (Dịch vụ đặt cho Booking)
+    // ==========================================================================
+    case 'booking-services':
+        require_once CONTROLLERS_PATH . '/admin/BookingServiceController.php';
+        $bookingServiceController = new BookingServiceController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $bookingServiceController->index();
+                break;
+            case 'store':
+                $bookingServiceController->store();
+                break;
+            case 'update':
+                $bookingServiceController->update();
+                break;
+            case 'delete':
+                $bookingServiceController->delete();
+                break;
+            case 'getServiceInfo':
+                $bookingServiceController->getServiceInfo();
+                break;
+            case 'copyFromTour':
+                $bookingServiceController->copyFromTour();
+                break;
+            default:
+                $bookingServiceController->index();
                 break;
         }
         break;

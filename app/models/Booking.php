@@ -402,7 +402,7 @@ class Booking
     }
 
     /**
-     * Hủy Booking (Có tính phí)
+     * Hủy Booking (Có tính phí + Trả lại quota)
      */
     public function cancel($id, $reason, $userId)
     {
@@ -413,6 +413,11 @@ class Booking
             $booking = $this->getById($id);
             if (!$booking)
                 throw new Exception("Booking not found");
+
+            // Check if already cancelled
+            if ($booking['approval_status'] === 'cancelled') {
+                throw new Exception("Booking đã được hủy trước đó");
+            }
 
             // 2. Calculate Days Before Departure
             $startDate = new DateTime($booking['start_date']);
@@ -434,7 +439,7 @@ class Booking
 
             $feePercentage = $policy ? (float) $policy['fee_percentage'] : 0;
             $feeAmount = ($booking['final_amount'] * $feePercentage) / 100;
-            $refundAmount = $booking['paid_amount'] - $feeAmount;
+            $refundAmount = max(0, $booking['paid_amount'] - $feeAmount);
 
             // 4. Update Booking
             $sql = "UPDATE bookings SET 
@@ -457,8 +462,9 @@ class Booking
             // 5. Log History
             $this->logHistory($id, $booking['approval_status'], 'cancelled', $userId, $reason, "Phí hủy: " . number_format($feeAmount) . " (" . $feePercentage . "%)");
 
-            // 6. Return Quota (Optional - if needed)
-            // Logic to increase schedule quota back goes here if using TourSchedule
+            // 6. Return Quota to Schedule
+            $totalParticipants = $booking['adult_count'] + $booking['child_count'] + $booking['infant_count'];
+            $this->returnQuotaToSchedule($booking['tour_id'], $booking['start_date'], $booking['end_date'], $totalParticipants);
 
             $this->pdo->commit();
             return [
@@ -470,6 +476,79 @@ class Booking
         } catch (Exception $e) {
             $this->pdo->rollBack();
             throw $e;
+        }
+    }
+
+    /**
+     * Từ chối Booking (Trả lại quota nếu đã được tính)
+     */
+    public function reject($id, $reason, $userId)
+    {
+        try {
+            $this->pdo->beginTransaction();
+
+            // 1. Get Booking Info
+            $booking = $this->getById($id);
+            if (!$booking)
+                throw new Exception("Booking not found");
+
+            // Check current status
+            if ($booking['approval_status'] !== 'pending') {
+                throw new Exception("Chỉ có thể từ chối booking đang chờ duyệt");
+            }
+
+            // 2. Update Booking
+            $sql = "UPDATE bookings SET 
+                    approval_status = 'rejected',
+                    rejection_reason = :reason
+                    WHERE id = :id";
+
+            $this->pdo->prepare($sql)->execute([
+                'reason' => $reason,
+                'id' => $id
+            ]);
+
+            // 3. Log History
+            $this->logHistory($id, 'pending', 'rejected', $userId, $reason);
+
+            // 4. Return Quota to Schedule (booking chưa approved nhưng quota đã bị trừ khi tạo)
+            $totalParticipants = $booking['adult_count'] + $booking['child_count'] + $booking['infant_count'];
+            $this->returnQuotaToSchedule($booking['tour_id'], $booking['start_date'], $booking['end_date'], $totalParticipants);
+
+            $this->pdo->commit();
+            return true;
+
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Helper: Trả lại quota cho schedule
+     */
+    private function returnQuotaToSchedule($tourId, $startDate, $endDate, $participants)
+    {
+        // Find the schedule
+        $sql = "SELECT id, booked FROM tour_schedules 
+                WHERE tour_id = :tour_id 
+                AND start_date = :start_date 
+                AND end_date = :end_date";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'tour_id' => $tourId,
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ]);
+        $schedule = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($schedule) {
+            $newBooked = max(0, $schedule['booked'] - $participants);
+            $updateSql = "UPDATE tour_schedules SET booked = :booked WHERE id = :id";
+            $this->pdo->prepare($updateSql)->execute([
+                'booked' => $newBooked,
+                'id' => $schedule['id']
+            ]);
         }
     }
 

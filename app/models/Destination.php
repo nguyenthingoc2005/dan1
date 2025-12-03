@@ -341,4 +341,30 @@ class Destination
             return [];
         }
     }
+
+    /**
+     * Lấy danh sách destinations theo category_id (cho AJAX)
+     */
+    public function getByCategory($category_id = null)
+    {
+        try {
+            $sql = "SELECT id, name, category_id FROM destinations WHERE status = 'active'";
+            $params = [];
+
+            if ($category_id) {
+                $sql .= " AND category_id = :category_id";
+                $params['category_id'] = $category_id;
+            }
+
+            $sql .= " ORDER BY name ASC";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        } catch (PDOException $e) {
+            error_log("Destination::getByCategory() Error: " . $e->getMessage());
+            return [];
+        }
+    }
 }
