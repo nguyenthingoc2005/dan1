@@ -12,54 +12,71 @@ class TourAssignment
     public function __construct($pdo)
     {
         $this->pdo = $pdo;
-        $this->createTableIfNotExists();
     }
 
     /**
-     * Tạo bảng nếu chưa có
+     * Phân công guide cho booking
+     * 
+     * @param int $booking_id ID của booking
+     * @param int $guide_id ID của guide
+     * @param string $assignment_date Ngày phân công (Y-m-d)
+     * @param array $data Optional additional data (salary, notes, etc.)
      */
-    private function createTableIfNotExists()
+    public function assign($booking_id, $guide_id, $assignment_date = null, $data = [])
     {
-        $sql = "CREATE TABLE IF NOT EXISTS tour_assignments (
-            id INT PRIMARY KEY AUTO_INCREMENT,
-            tour_schedule_id INT NOT NULL,
-            guide_id INT NOT NULL,
-            status ENUM('assigned', 'confirmed', 'completed', 'cancelled') DEFAULT 'assigned',
-            assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (tour_schedule_id) REFERENCES tour_schedules(id) ON DELETE CASCADE,
-            FOREIGN KEY (guide_id) REFERENCES users(id) ON DELETE CASCADE,
-            UNIQUE KEY unique_assignment (tour_schedule_id, guide_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+        // Default assignment_date to today if not provided
+        if (!$assignment_date) {
+            $assignment_date = date('Y-m-d');
+        }
 
-        $this->pdo->exec($sql);
-    }
-
-    /**
-     * Phân công guide cho schedule
-     */
-    public function assign($schedule_id, $guide_id)
-    {
-        $sql = "INSERT INTO tour_assignments (tour_schedule_id, guide_id, assignment_date) 
-                VALUES (:schedule_id, :guide_id, :assignment_date)
-                ON DUPLICATE KEY UPDATE status = 'assigned', assignment_date = VALUES(assignment_date)";
+        $sql = "INSERT INTO tour_assignments (
+            booking_id, guide_id, assignment_date, 
+            salary_amount, salary_status, notes, status, created_by
+        ) VALUES (
+            :booking_id, :guide_id, :assignment_date,
+            :salary_amount, :salary_status, :notes, :status, :created_by
+        )";
 
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
-            'schedule_id' => $schedule_id,
+            'booking_id' => $booking_id,
             'guide_id' => $guide_id,
-            'assignment_date' => date('Y-m-d')
+            'assignment_date' => $assignment_date,
+            'salary_amount' => $data['salary_amount'] ?? null,
+            'salary_status' => $data['salary_status'] ?? 'pending',
+            'notes' => $data['notes'] ?? null,
+            'status' => $data['status'] ?? 'assigned',
+            'created_by' => $data['created_by'] ?? ($_SESSION['user_id'] ?? null)
         ]);
     }
 
     /**
-     * Lấy danh sách assignments theo schedule
+     * Lấy danh sách assignments theo booking
+     */
+    public function getByBooking($booking_id)
+    {
+        $sql = "SELECT ta.*, u.full_name, u.phone, u.email 
+                FROM tour_assignments ta
+                JOIN users u ON ta.guide_id = u.id
+                WHERE ta.booking_id = :booking_id";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['booking_id' => $booking_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Lấy danh sách assignments theo schedule (backward compatibility)
+     * Tìm qua bookings có cùng tour và ngày khởi hành với schedule
      */
     public function getBySchedule($schedule_id)
     {
         $sql = "SELECT ta.*, u.full_name, u.phone, u.email 
                 FROM tour_assignments ta
+                JOIN bookings b ON ta.booking_id = b.id
+                JOIN tour_schedules ts ON (b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
                 JOIN users u ON ta.guide_id = u.id
-                WHERE ta.tour_schedule_id = :schedule_id";
+                WHERE ts.id = :schedule_id";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['schedule_id' => $schedule_id]);
@@ -71,12 +88,12 @@ class TourAssignment
      */
     public function getByGuide($guide_id)
     {
-        $sql = "SELECT ta.*, ts.start_date, ts.end_date, t.name as tour_name
+        $sql = "SELECT ta.*, b.start_date, b.end_date, t.name as tour_name, b.booking_code
                 FROM tour_assignments ta
-                JOIN tour_schedules ts ON ta.tour_schedule_id = ts.id
-                JOIN tours t ON ts.tour_id = t.id
+                JOIN bookings b ON ta.booking_id = b.id
+                JOIN tours t ON b.tour_id = t.id
                 WHERE ta.guide_id = :guide_id
-                ORDER BY ts.start_date ASC";
+                ORDER BY b.start_date ASC";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['guide_id' => $guide_id]);

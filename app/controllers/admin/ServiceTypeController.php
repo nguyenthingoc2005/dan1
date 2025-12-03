@@ -199,7 +199,7 @@ class ServiceTypeController
 
             // Delete sẽ tự động check FK constraint trong Model
             if ($this->serviceTypeModel->delete($service_type_id)) {
-                set_success("Đã vô hiệu hóa loại d dịch vụ.");
+                set_success("Đã vô hiệu hóa loại dịch vụ.");
             } else {
                 throw new Exception("Không thể xóa loại dịch vụ.");
             }

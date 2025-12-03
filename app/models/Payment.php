@@ -22,7 +22,7 @@ class Payment
         $sql = "SELECT p.*, b.booking_code, c.full_name as customer_name 
                 FROM payments p
                 JOIN bookings b ON p.booking_id = b.id
-                JOIN users c ON b.customer_id = c.id
+                JOIN customers c ON b.customer_id = c.id
                 WHERE 1=1";
 
         $params = [];
@@ -84,7 +84,7 @@ class Payment
                 FROM payments p
                 JOIN bookings b ON p.booking_id = b.id
                 JOIN tours t ON b.tour_id = t.id
-                JOIN users c ON b.customer_id = c.id
+                JOIN customers c ON b.customer_id = c.id
                 WHERE p.id = :id";
 
         $stmt = $this->pdo->prepare($sql);
@@ -93,11 +93,57 @@ class Payment
     }
 
     /**
-     * Tạo payment mới (Đã có logic trong BookingController, có thể move về đây sau)
+     * Tạo payment mới
+     * 
+     * @param array $data - Dữ liệu payment cần tạo
+     * @return int Payment ID vừa tạo
+     * @throws Exception nếu thiếu dữ liệu bắt buộc
      */
     public function create($data)
     {
-        // Logic create payment
+        // 1. Validate required fields
+        $required = ['booking_id', 'amount', 'payment_method', 'payment_type'];
+        foreach ($required as $field) {
+            if (empty($data[$field])) {
+                throw new Exception("Thiếu thông tin bắt buộc: $field");
+            }
+        }
+
+        // 2. Validate amount > 0
+        if ($data['amount'] <= 0) {
+            throw new Exception("Số tiền phải lớn hơn 0");
+        }
+
+        // 3. Prepare SQL
+        $sql = "INSERT INTO payments (
+            booking_id, payment_method, amount, payment_type,
+            transaction_id, receipt_number, payment_date,
+            notes, status, created_by, created_at
+        ) VALUES (
+            :booking_id, :payment_method, :amount, :payment_type,
+            :transaction_id, :receipt_number, :payment_date,
+            :notes, 'completed', :created_by, NOW()
+        )";
+
+        // 4. Prepare params
+        $params = [
+            'booking_id' => $data['booking_id'],
+            'payment_method' => $data['payment_method'],
+            'amount' => $data['amount'],
+            'payment_type' => $data['payment_type'],
+            'transaction_id' => $data['transaction_id'] ?? null,
+            'receipt_number' => $data['receipt_number'] ?? null,
+            'payment_date' => $data['payment_date'] ?? date('Y-m-d'),
+            'notes' => $data['notes'] ?? null,
+            'created_by' => $data['created_by'] ?? null
+        ];
+
+        // 5. Execute
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        // 6. Return payment ID
+        return $this->pdo->lastInsertId();
     }
 
     /**

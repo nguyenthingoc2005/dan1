@@ -70,7 +70,8 @@ $errs = $errors ?? [];
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Mã Tour</label>
-                        <div class="w-full px-3 py-2 border rounded bg-gray-50 text-gray-500 italic flex items-center gap-2">
+                        <div
+                            class="w-full px-3 py-2 border rounded bg-gray-50 text-gray-500 italic flex items-center gap-2">
                             <span class="text-green-600">✔</span>
                             <span>Tự động tạo khi lưu (TOUR_<?= date('Y') ?>_XXX)</span>
                         </div>
@@ -106,7 +107,8 @@ $errs = $errors ?? [];
                             </option>
                         </select>
                         <p class="text-xs text-gray-500 mt-1">
-                            <strong>Public:</strong> Tour có lịch khởi hành cố định, cần tạo schedule trước khi booking.<br>
+                            <strong>Public:</strong> Tour có lịch khởi hành cố định, cần tạo schedule trước khi
+                            booking.<br>
                             <strong>Custom:</strong> Tour theo yêu cầu, có thể tự động tạo schedule khi booking.
                         </p>
                     </div>
@@ -145,28 +147,83 @@ $errs = $errors ?? [];
                 </div>
             </div>
 
-            <!-- STEP 2: PRICING -->
+            <!-- STEP 5: PRICING & REVIEW -->
             <div id="step-5" class="step-content hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá người lớn <span
-                                class="text-red-500">*</span></label>
-                        <input type="number" name="adult_price" id="adult_price" required min="0"
-                            value="<?= $old['adult_price'] ?? '' ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent font-bold text-accent text-lg">
-                        <p class="text-xs text-gray-500 mt-1">Giá áp dụng cho khách > 12 tuổi</p>
+                <!-- Cost Summary Section -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h3 class="font-bold text-blue-900 mb-3">💰 Chi phí dự kiến (Cost)</h3>
+                    <div id="cost-summary" class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Tổng chi phí dịch vụ:</span>
+                            <span id="total-cost" class="font-bold text-blue-900">0 đ</span>
+                        </div>
+                        <div class="text-xs text-gray-500 italic" id="cost-formula">
+                            Chưa có dịch vụ nào được chọn
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá trẻ em</label>
-                        <input type="number" name="child_price" min="0" value="<?= $old['child_price'] ?? '' ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent">
-                        <p class="text-xs text-gray-500 mt-1">Thường bằng 70-80% giá người lớn</p>
+                </div>
+
+                <!-- Markup & Suggested Price Section -->
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-green-900">📊 Giá đề xuất (Suggested Price)</h3>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">Markup:</label>
+                            <input type="range" id="markup-slider" min="15" max="40" value="25" class="w-32"
+                                oninput="updateSuggestedPricing()">
+                            <span id="markup-value" class="font-bold text-green-700 w-12">25%</span>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá em bé</label>
-                        <input type="number" name="infant_price" min="0" value="<?= $old['infant_price'] ?? '0' ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent">
-                        <p class="text-xs text-gray-500 mt-1">Dưới 2 tuổi</p>
+                    <div class="grid grid-cols-3 gap-4 text-sm">
+                        <div class="text-center p-3 bg-white rounded">
+                            <div class="text-gray-600 mb-1">Người lớn</div>
+                            <div id="suggested-adult" class="font-bold text-lg text-green-700">0 đ</div>
+                        </div>
+                        <div class="text-center p-3 bg-white rounded">
+                            <div class="text-gray-600 mb-1">Trẻ em (75%)</div>
+                            <div id="suggested-child" class="font-bold text-lg text-green-700">0 đ</div>
+                        </div>
+                        <div class="text-center p-3 bg-white rounded">
+                            <div class="text-gray-600 mb-1">Em bé</div>
+                            <div id="suggested-infant" class="font-bold text-lg text-green-700">0 đ</div>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <button type="button" onclick="applySuggestedPricing()"
+                            class="text-sm text-green-700 hover:text-green-900 underline">
+                            ✓ Áp dụng giá đề xuất vào form
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Final Price Input Section -->
+                <div class="bg-white border border-gray-300 rounded-lg p-4">
+                    <h3 class="font-bold text-gray-900 mb-4">🎯 Giá bán cuối cùng</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Giá người lớn <span
+                                    class="text-red-500">*</span></label>
+                            <input type="number" name="adult_price" id="adult_price" required min="0"
+                                value="<?= $old['adult_price'] ?? '' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-accent font-bold text-accent text-lg"
+                                oninput="validatePricing()">
+                            <p class="text-xs text-gray-500 mt-1">Giá áp dụng cho khách > 12 tuổi</p>
+                            <p id="adult-warning" class="text-xs text-red-600 mt-1 hidden"></p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Giá trẻ em</label>
+                            <input type="number" name="child_price" id="child_price" min="0"
+                                value="<?= $old['child_price'] ?? '' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-accent">
+                            <p class="text-xs text-gray-500 mt-1">Thường bằng 70-80% giá người lớn</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Giá em bé</label>
+                            <input type="number" name="infant_price" id="infant_price" min="0"
+                                value="<?= $old['infant_price'] ?? '0' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-accent">
+                            <p class="text-xs text-gray-500 mt-1">Dưới 2 tuổi</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -270,10 +327,10 @@ $errs = $errors ?? [];
     const oldServices = <?= json_encode($old['services'] ?? []) ?>;
 
     // AJAX: Load destinations by category
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const categorySelect = document.querySelector('select[name="category_id"]');
         if (categorySelect) {
-            categorySelect.addEventListener('change', function() {
+            categorySelect.addEventListener('change', function () {
                 loadDestinationsByCategory(this.value);
             });
         }
@@ -288,7 +345,7 @@ $errs = $errors ?? [];
             }
             return;
         }
-        
+
         fetch(`/public/ajax-destinations.php?category_id=${categoryId}`)
             .then(res => res.json())
             .then(data => {
@@ -296,7 +353,7 @@ $errs = $errors ?? [];
                 const destMap = {};
                 data.forEach(d => destMap[d.id] = d.name);
                 destinations = destMap;
-                
+
                 // If currently on itinerary step, regenerate with new destinations
                 if (currentStep === 2) {
                     generateItinerary();
@@ -356,10 +413,13 @@ $errs = $errors ?? [];
         currentStep += direction;
 
         if (currentStep === 2) {
-            generateItinerary(); // Regenerate/Check itinerary when entering step 3
+            generateItinerary(); // Regenerate/Check itinerary when entering step 2
         }
         if (currentStep === 3 && oldServices.length === 0 && document.getElementById('services-container').children.length === 0) {
             addServiceRow(); // Add a default service row if none exist
+        }
+        if (currentStep === 5) {
+            updateSuggestedPricing(); // Calculate pricing when entering Step 5
         }
 
         showStep(currentStep);
@@ -483,6 +543,94 @@ $errs = $errors ?? [];
             row.querySelector('.service-price').value = option.dataset.price;
             row.querySelector('.service-unit').value = option.dataset.unit;
             row.querySelector('.service-name-input').value = option.dataset.name;
+        }
+    }
+
+    // ==============================================================================
+    // PRICING LOGIC (STEP 5)
+    // ==============================================================================
+    let totalServiceCost = 0;
+    let suggestedAdultPrice = 0;
+    let suggestedChildPrice = 0;
+    let suggestedInfantPrice = 0;
+
+    function calculateServiceCost() {
+        totalServiceCost = 0;
+        let formula = [];
+
+        const serviceRows = document.querySelectorAll('#services-container tr');
+        if (serviceRows.length === 0) {
+            document.getElementById('total-cost').textContent = '0 đ';
+            document.getElementById('cost-formula').textContent = 'Chưa có dịch vụ nào được chọn';
+            return 0;
+        }
+
+        serviceRows.forEach((row, index) => {
+            const qty = parseFloat(row.querySelector('input[name="service_quantities[]"]')?.value || 0);
+            const price = parseFloat(row.querySelector('input[name="service_prices[]"]')?.value || 0);
+            const serviceName = row.querySelector('select[name="service_ids[]"] option:checked')?.text?.split('(')[0]?.trim() || `Dịch vụ ${index + 1}`;
+
+            const cost = qty * price;
+            totalServiceCost += cost;
+
+            if (cost > 0) {
+                formula.push(`${serviceName}: ${new Intl.NumberFormat('vi-VN').format(qty)} x ${new Intl.NumberFormat('vi-VN').format(price)}đ`);
+            }
+        });
+
+        // Update UI
+        document.getElementById('total-cost').textContent = new Intl.NumberFormat('vi-VN').format(totalServiceCost) + ' đ';
+        document.getElementById('cost-formula').textContent = formula.length > 0 ? formula.join(' + ') : 'Chưa có dịch vụ nào được chọn';
+
+        return totalServiceCost;
+    }
+
+    function updateSuggestedPricing() {
+        const markup = parseInt(document.getElementById('markup-slider').value);
+        document.getElementById('markup-value').textContent = markup + '%';
+
+        calculateServiceCost(); // Recalculate cost first
+
+        if (totalServiceCost === 0) {
+            suggestedAdultPrice = 0;
+            suggestedChildPrice = 0;
+            suggestedInfantPrice = 0;
+        } else {
+            // Calculate suggested prices with markup
+            suggestedAdultPrice = Math.round(totalServiceCost * (1 + markup / 100));
+            suggestedChildPrice = Math.round(suggestedAdultPrice * 0.75); // 75% of adult
+            suggestedInfantPrice = 0; // Usually free or very low
+        }
+
+        // Update UI
+        document.getElementById('suggested-adult').textContent = new Intl.NumberFormat('vi-VN').format(suggestedAdultPrice) + ' đ';
+        document.getElementById('suggested-child').textContent = new Intl.NumberFormat('vi-VN').format(suggestedChildPrice) + ' đ';
+        document.getElementById('suggested-infant').textContent = new Intl.NumberFormat('vi-VN').format(suggestedInfantPrice) + ' đ';
+    }
+
+    function applySuggestedPricing() {
+        if (suggestedAdultPrice > 0) {
+            document.getElementById('adult_price').value = suggestedAdultPrice;
+            document.getElementById('child_price').value = suggestedChildPrice;
+            document.getElementById('infant_price').value = suggestedInfantPrice;
+
+            validatePricing();
+            alert('✓ Đã áp dụng giá đề xuất vào form!');
+        } else {
+            alert('⚠ Vui lòng thêm dịch vụ ở Bước 3 trước khi tính giá.');
+        }
+    }
+
+    function validatePricing() {
+        const adultPrice = parseFloat(document.getElementById('adult_price').value || 0);
+        const warningEl = document.getElementById('adult-warning');
+
+        if (totalServiceCost > 0 && adultPrice < totalServiceCost) {
+            const loss = totalServiceCost - adultPrice;
+            warningEl.textContent = `⚠ Cảnh báo: Giá bán thấp hơn giá vốn ${new Intl.NumberFormat('vi-VN').format(loss)}đ (${Math.round((loss / totalServiceCost) * 100)}%)`;
+            warningEl.classList.remove('hidden');
+        } else {
+            warningEl.classList.add('hidden');
         }
     }
 

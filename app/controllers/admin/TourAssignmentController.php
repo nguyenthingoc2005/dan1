@@ -75,26 +75,53 @@ class TourAssignmentController
             $schedule_id = (int) $_POST['schedule_id'];
             $guide_id = (int) $_POST['guide_id'];
 
-            // Check if guide is available (optional logic)
-            // ...
+            // Get schedule info
+            require_once MODELS_PATH . '/TourSchedule.php';
+            $scheduleModel = new TourSchedule($this->db);
+            $schedule = $scheduleModel->getById($schedule_id);
 
-            // Assign guide (Update tour_schedules table or create new assignment record)
-            // Assuming we update tour_schedules table with guide_id column
-            // Need to check if guide_id column exists in tour_schedules
+            if (!$schedule) {
+                throw new Exception("Không tìm thấy lịch khởi hành.");
+            }
 
-            // For now, let's assume we have a separate table `tour_assignments` or column `guide_id` in `tour_schedules`.
-            // Let's check schema.
-            // Schema doesn't have guide_id in tour_schedules.
-            // We should create a new table `tour_assignments` (schedule_id, guide_id, status).
+            // Find booking for this schedule (same tour + start_date)
+            // If no booking exists yet, we need to decide: create one or throw error?
+            // For now, let's find existing bookings
+            require_once MODELS_PATH . '/Booking.php';
+            $bookingModel = new Booking($this->db);
 
+            $sql = "SELECT id FROM bookings 
+                    WHERE tour_id = :tour_id 
+                      AND start_date = :start_date 
+                      AND approval_status IN ('pending', 'approved')
+                    LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                'tour_id' => $schedule['tour_id'],
+                'start_date' => $schedule['start_date']
+            ]);
+            $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$booking) {
+                throw new Exception("Chưa có booking nào cho lịch này. Vui lòng tạo booking trước khi phân công HDV.");
+            }
+
+            // Assign guide to booking
             if (!isset($this->assignmentModel)) {
-                // Create model if not exists
                 require_once MODELS_PATH . '/TourAssignment.php';
                 $this->assignmentModel = new TourAssignment($this->db);
             }
 
-            if ($this->assignmentModel->assign($schedule_id, $guide_id)) {
-                set_success("Phân công thành công!");
+            // Pass booking_id, guide_id, and assignment_date
+            if (
+                $this->assignmentModel->assign(
+                    $booking['id'],
+                    $guide_id,
+                    $schedule['start_date'], // assignment_date from schedule
+                    ['created_by' => $_SESSION['user_id'] ?? null]
+                )
+            ) {
+                set_success("Phân công hướng dẫn viên thành công!");
             } else {
                 throw new Exception("Không thể phân công.");
             }
