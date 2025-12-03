@@ -143,11 +143,10 @@ class CustomerController
         }
 
         // Get booking history
-        // We need a method in Booking model to get by customer
         require_once MODELS_PATH . '/Booking.php';
         $bookingModel = new Booking($this->db);
-        // Assuming getAll supports customer_id filter
-        $bookings = $bookingModel->getAll(['customer_id' => $id], 1, 100);
+        // Use getByCustomerId method for better performance
+        $bookings = $bookingModel->getByCustomerId($id);
 
         $page_title = 'Chi tiết khách hàng: ' . $customer['full_name'];
         $content_file = VIEWS_PATH . '/admin/customers/show.php';

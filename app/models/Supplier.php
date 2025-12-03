@@ -366,4 +366,58 @@ class Supplier
             return [];
         }
     }
+
+    /**
+     * Lấy danh sách suppliers có contract sắp hết hạn
+     * 
+     * @param int $days Số ngày trước khi hết hạn (mặc định 30)
+     * @return array
+     */
+    public function getExpiringContracts($days = 30)
+    {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT id, supplier_code, company_name, contract_end, 
+                       DATEDIFF(contract_end, CURDATE()) as days_remaining
+                FROM suppliers
+                WHERE status = 'active'
+                  AND contract_end IS NOT NULL
+                  AND contract_end >= CURDATE()
+                  AND DATEDIFF(contract_end, CURDATE()) <= :days
+                ORDER BY contract_end ASC
+            ");
+
+            $stmt->execute(['days' => $days]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        } catch (PDOException $e) {
+            error_log("Supplier::getExpiringContracts() Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Lấy số lượng services của supplier
+     * 
+     * @param int $supplier_id
+     * @return int
+     */
+    public function getServiceCount($supplier_id)
+    {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) as count
+                FROM services
+                WHERE supplier_id = :supplier_id AND status = 'active'
+            ");
+
+            $stmt->execute(['supplier_id' => $supplier_id]);
+            $result = $stmt->fetch();
+            return (int) ($result['count'] ?? 0);
+
+        } catch (PDOException $e) {
+            error_log("Supplier::getServiceCount() Error: " . $e->getMessage());
+            return 0;
+        }
+    }
 }

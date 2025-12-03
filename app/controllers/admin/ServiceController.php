@@ -337,4 +337,46 @@ class ServiceController
 
         redirect('?act=admin&module=services');
     }
+
+    /**
+     * AJAX: Get service info (for tour creation form)
+     */
+    public function getServiceInfo()
+    {
+        require_admin();
+
+        header('Content-Type: application/json');
+
+        try {
+            if (empty($_GET['id'])) {
+                throw new Exception("Thiếu ID dịch vụ.");
+            }
+
+            $service_id = (int) $_GET['id'];
+            $service = $this->serviceModel->findById($service_id);
+
+            if (!$service) {
+                throw new Exception("Dịch vụ không tồn tại.");
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'id' => $service['id'],
+                    'name' => $service['name'],
+                    'unit' => $service['unit'] ?? '',
+                    'estimated_price' => $service['estimated_price'] ?? 0,
+                    'service_type_id' => $service['service_type_id'],
+                    'supplier_id' => $service['supplier_id']
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
 }

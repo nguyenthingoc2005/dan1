@@ -317,6 +317,14 @@ class Booking
      */
     public function updateStatus($id, $status, $type = 'approval', $userId = null, $reason = null)
     {
+        // Get booking info before update (to get customer_id)
+        $booking = $this->getById($id);
+        if (!$booking) {
+            throw new Exception("Booking không tồn tại");
+        }
+        $customer_id = $booking['customer_id'];
+        $old_status = $booking['approval_status'];
+
         $sql = "";
         $params = ['id' => $id, 'status' => $status];
 
@@ -333,7 +341,28 @@ class Booking
         }
 
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($params);
+        $result = $stmt->execute($params);
+
+        // Update customer stats if approval status changed
+        if ($type == 'approval' && $result && ($old_status != $status)) {
+            // Only update if status changed to/from approved/completed
+            if (in_array($status, ['approved', 'completed', 'rejected', 'cancelled']) || 
+                in_array($old_status, ['approved', 'completed'])) {
+                $this->updateCustomerStats($customer_id);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Update customer statistics after booking status change
+     */
+    private function updateCustomerStats($customer_id)
+    {
+        require_once MODELS_PATH . '/Customer.php';
+        $customerModel = new Customer($this->pdo);
+        $customerModel->updateCustomerStats($customer_id);
     }
 
     /**
@@ -503,6 +532,9 @@ class Booking
             $totalParticipants = $booking['adult_count'] + $booking['child_count'] + $booking['infant_count'];
             $this->returnQuotaToSchedule($booking['tour_id'], $booking['start_date'], $booking['end_date'], $totalParticipants);
 
+            // 7. Update customer stats (booking cancelled)
+            $this->updateCustomerStats($booking['customer_id']);
+
             $this->pdo->commit();
             return [
                 'fee' => $feeAmount,
@@ -551,6 +583,9 @@ class Booking
             // 4. Return Quota to Schedule (booking chưa approved nhưng quota đã bị trừ khi tạo)
             $totalParticipants = $booking['adult_count'] + $booking['child_count'] + $booking['infant_count'];
             $this->returnQuotaToSchedule($booking['tour_id'], $booking['start_date'], $booking['end_date'], $totalParticipants);
+
+            // 5. Update customer stats (booking rejected)
+            $this->updateCustomerStats($booking['customer_id']);
 
             $this->pdo->commit();
             return true;

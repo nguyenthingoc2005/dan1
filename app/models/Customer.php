@@ -230,6 +230,11 @@ class Customer
             $params['search'] = '%' . $filters['search'] . '%';
         }
 
+        if (!empty($filters['status'])) {
+            $sql .= " AND status = :status";
+            $params['status'] = $filters['status'];
+        }
+
         if (!empty($filters['created_by'])) {
             $sql .= " AND created_by = :created_by";
             $params['created_by'] = $filters['created_by'];
@@ -239,6 +244,9 @@ class Customer
         $countSql = "SELECT COUNT(*) FROM customers WHERE 1=1";
         if (!empty($filters['search'])) {
             $countSql .= " AND (full_name LIKE :search OR phone LIKE :search OR email LIKE :search)";
+        }
+        if (!empty($filters['status'])) {
+            $countSql .= " AND status = :status";
         }
         if (!empty($filters['created_by'])) {
             $countSql .= " AND created_by = :created_by";
@@ -276,6 +284,11 @@ class Customer
         if (!empty($filters['search'])) {
             $sql .= " AND (full_name LIKE :search OR phone LIKE :search OR email LIKE :search)";
             $params['search'] = '%' . $filters['search'] . '%';
+        }
+
+        if (!empty($filters['status'])) {
+            $sql .= " AND status = :status";
+            $params['status'] = $filters['status'];
         }
 
         if (!empty($filters['created_by'])) {
@@ -383,5 +396,108 @@ class Customer
 
         $stmt = $this->pdo->prepare("DELETE FROM customers WHERE id = :id");
         return $stmt->execute(['id' => $id]);
+    }
+
+    // ========================================================================
+    // STATISTICS METHODS
+    // ========================================================================
+
+    /**
+     * Update customer statistics (total_bookings, total_spent)
+     * Should be called when booking status changes (approve, cancel, reject)
+     * 
+     * Logic:
+     * - total_bookings: Count of bookings where customer is primary (customer_id)
+     * - total_spent: Sum of final_amount of approved/completed bookings
+     * 
+     * @param int $customer_id
+     * @return bool
+     */
+    public function updateCustomerStats($customer_id)
+    {
+        // Calculate total_bookings (only approved/completed bookings)
+        $bookingsSql = "SELECT COUNT(*) 
+                        FROM bookings 
+                        WHERE customer_id = :customer_id 
+                          AND approval_status IN ('approved', 'completed')";
+        $stmt = $this->pdo->prepare($bookingsSql);
+        $stmt->execute(['customer_id' => $customer_id]);
+        $total_bookings = (int) $stmt->fetchColumn();
+
+        // Calculate total_spent (sum of final_amount of approved/completed bookings)
+        $spentSql = "SELECT COALESCE(SUM(final_amount), 0) 
+                     FROM bookings 
+                     WHERE customer_id = :customer_id 
+                       AND approval_status IN ('approved', 'completed')";
+        $stmt = $this->pdo->prepare($spentSql);
+        $stmt->execute(['customer_id' => $customer_id]);
+        $total_spent = (float) $stmt->fetchColumn();
+
+        // Update customer
+        $updateSql = "UPDATE customers 
+                      SET total_bookings = :total_bookings, 
+                          total_spent = :total_spent,
+                          updated_at = NOW()
+                      WHERE id = :customer_id";
+        $stmt = $this->pdo->prepare($updateSql);
+        return $stmt->execute([
+            'customer_id' => $customer_id,
+            'total_bookings' => $total_bookings,
+            'total_spent' => $total_spent
+        ]);
+    }
+
+    /**
+     * Get customer statistics (real-time calculation, không lưu DB)
+     * Useful for displaying accurate stats without updating DB
+     * 
+     * @param int $customer_id
+     * @return array ['total_bookings' => int, 'total_spent' => float]
+     */
+    public function getCustomerStats($customer_id)
+    {
+        // Total bookings
+        $bookingsSql = "SELECT COUNT(*) 
+                        FROM bookings 
+                        WHERE customer_id = :customer_id 
+                          AND approval_status IN ('approved', 'completed')";
+        $stmt = $this->pdo->prepare($bookingsSql);
+        $stmt->execute(['customer_id' => $customer_id]);
+        $total_bookings = (int) $stmt->fetchColumn();
+
+        // Total spent
+        $spentSql = "SELECT COALESCE(SUM(final_amount), 0) 
+                     FROM bookings 
+                     WHERE customer_id = :customer_id 
+                       AND approval_status IN ('approved', 'completed')";
+        $stmt = $this->pdo->prepare($spentSql);
+        $stmt->execute(['customer_id' => $customer_id]);
+        $total_spent = (float) $stmt->fetchColumn();
+
+        return [
+            'total_bookings' => $total_bookings,
+            'total_spent' => $total_spent
+        ];
+    }
+
+    /**
+     * Recalculate stats for all customers (for fixing existing data)
+     * 
+     * @return int Number of customers updated
+     */
+    public function recalculateAllCustomerStats()
+    {
+        $sql = "SELECT id FROM customers";
+        $stmt = $this->pdo->query($sql);
+        $customers = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        $updated = 0;
+        foreach ($customers as $customer_id) {
+            if ($this->updateCustomerStats($customer_id)) {
+                $updated++;
+            }
+        }
+        
+        return $updated;
     }
 }

@@ -188,6 +188,18 @@ class UserController
                 throw new Exception("Vui lòng điền Tên và Vai trò.");
             }
 
+            // Validate email unique (nếu có thay đổi email)
+            if (!empty($_POST['email']) && $_POST['email'] != $user['email']) {
+                $email = trim($_POST['email']);
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    throw new Exception("Email không hợp lệ.");
+                }
+
+                if ($this->userModel->isEmailExists($email, $user_id)) {
+                    throw new Exception("Email đã tồn tại.");
+                }
+            }
+
             // Password: chỉ check NẾU có nhập
             if (!empty($_POST['password']) && strlen($_POST['password']) < 6) {
                 throw new Exception("Mật khẩu tối thiểu 6 ký tự.");
@@ -209,6 +221,11 @@ class UserController
                 'address' => isset($_POST['address']) ? sanitize($_POST['address']) : null,
                 'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
             ];
+
+            // Update email nếu có thay đổi
+            if (!empty($_POST['email']) && $_POST['email'] != $user['email']) {
+                $data['email'] = trim($_POST['email']);
+            }
 
             if (!empty($_POST['password']))
                 $data['password'] = $_POST['password'];

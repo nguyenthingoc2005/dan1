@@ -66,6 +66,36 @@ class User
     }
 
     /**
+     * Kiểm tra email đã tồn tại chưa (exclude user ID nếu update)
+     * 
+     * @param string $email
+     * @param int|null $excludeId User ID để exclude (khi update)
+     * @return bool
+     */
+    public function isEmailExists($email, $excludeId = null)
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM users WHERE email = :email";
+            $params = ['email' => $email];
+
+            if ($excludeId) {
+                $sql .= " AND id != :exclude_id";
+                $params['exclude_id'] = $excludeId;
+            }
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $count = $stmt->fetchColumn();
+
+            return $count > 0;
+
+        } catch (PDOException $e) {
+            logError("User::isEmailExists() Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Tìm user theo ID
      * 
      * @param int $id

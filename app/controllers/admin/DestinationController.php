@@ -186,6 +186,17 @@ class DestinationController
                 }
             }
 
+            // Validate category_id if provided
+            if (!empty($_POST['category_id'])) {
+                $category = $this->categoryModel->findById((int) $_POST['category_id']);
+                if (!$category) {
+                    throw new Exception("Danh mục không tồn tại trong hệ thống.");
+                }
+                if ($category['status'] != 'active') {
+                    throw new Exception("Danh mục không khả dụng (đã bị vô hiệu hóa).");
+                }
+            }
+
             // 1. Update Info
             $data = [
                 'category_id' => !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null,
@@ -217,8 +228,25 @@ class DestinationController
     public function delete()
     {
         require_admin();
-        // ... (Implement soft delete logic)
-        // For now, just redirect
+
+        try {
+            if (empty($_GET['id'])) {
+                throw new Exception("Không tìm thấy địa điểm.");
+            }
+
+            $id = (int) $_GET['id'];
+
+            // Delete sẽ tự động check usage trong Model
+            if ($this->destinationModel->delete($id)) {
+                set_success("Đã vô hiệu hóa địa điểm.");
+            } else {
+                throw new Exception("Không thể xóa địa điểm.");
+            }
+
+        } catch (Exception $e) {
+            set_error($e->getMessage());
+        }
+
         redirect('?act=admin&module=destinations');
     }
 
@@ -228,7 +256,53 @@ class DestinationController
     public function setPrimaryImage()
     {
         require_admin();
-        // ... (Implement AJAX logic)
+
+        header('Content-Type: application/json');
+
+        try {
+            if (empty($_POST['image_id']) || empty($_POST['destination_id'])) {
+                throw new Exception("Thiếu thông tin ảnh hoặc địa điểm.");
+            }
+
+            $image_id = (int) $_POST['image_id'];
+            $destination_id = (int) $_POST['destination_id'];
+
+            // Validate destination exists
+            $destination = $this->destinationModel->findById($destination_id);
+            if (!$destination) {
+                throw new Exception("Địa điểm không tồn tại.");
+            }
+
+            // Validate image belongs to destination
+            $images = $this->destinationModel->getImages($destination_id);
+            $image_exists = false;
+            foreach ($images as $img) {
+                if ($img['id'] == $image_id) {
+                    $image_exists = true;
+                    break;
+                }
+            }
+
+            if (!$image_exists) {
+                throw new Exception("Ảnh không thuộc về địa điểm này.");
+            }
+
+            if ($this->destinationModel->setPrimaryImage($image_id, $destination_id)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Đã đặt làm ảnh chính.'
+                ]);
+            } else {
+                throw new Exception("Không thể đặt làm ảnh chính.");
+            }
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
     }
 
     /**
@@ -237,7 +311,48 @@ class DestinationController
     public function deleteImage()
     {
         require_admin();
-        // ... (Implement AJAX logic)
+
+        header('Content-Type: application/json');
+
+        try {
+            if (empty($_POST['image_id'])) {
+                throw new Exception("Thiếu thông tin ảnh.");
+            }
+
+            $image_id = (int) $_POST['image_id'];
+
+            // Get image info before delete (to get file path)
+            $stmt = $this->db->prepare("SELECT image_url, destination_id FROM destination_images WHERE id = :id");
+            $stmt->execute(['id' => $image_id]);
+            $image = $stmt->fetch();
+
+            if (!$image) {
+                throw new Exception("Ảnh không tồn tại.");
+            }
+
+            // Delete from database
+            if ($this->destinationModel->deleteImage($image_id)) {
+                // Delete physical file
+                $file_path = $image['image_url'];
+                if (file_exists($file_path)) {
+                    @unlink($file_path);
+                }
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Đã xóa ảnh.'
+                ]);
+            } else {
+                throw new Exception("Không thể xóa ảnh.");
+            }
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
     }
 
     // ========================================================================

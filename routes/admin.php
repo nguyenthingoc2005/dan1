@@ -178,6 +178,9 @@ switch ($module) {
             case 'delete':
                 $controller->delete();
                 break;
+            case 'getServiceInfo':
+                $controller->getServiceInfo();
+                break;
             default:
                 http_response_code(404);
                 require VIEWS_PATH . '/errors/404.php';

@@ -54,6 +54,14 @@ class SupplierController
         $total_pages = $result['pages'];
         $current_page = $result['current_page'];
 
+        // Get expiring contracts (within 30 days)
+        $expiring_contracts = $this->supplierModel->getExpiringContracts(30);
+
+        // Get service count for each supplier
+        foreach ($suppliers as &$supplier) {
+            $supplier['service_count'] = $this->supplierModel->getServiceCount($supplier['id']);
+        }
+
         $page_title = 'Quản lý nhà cung cấp';
         $content_file = VIEWS_PATH . '/admin/suppliers/index.php';
         require VIEWS_PATH . '/layouts/admin_layout.php';
