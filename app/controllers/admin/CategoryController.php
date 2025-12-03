@@ -6,8 +6,8 @@
  * 
  * Routing mới: ?act=admin&module=categories&action=index
  * 
- * @version 1.1
- * @date 2024-12-02
+ * @version 1.2
+ * @date 2024-12-03
  * ==============================================================================
  */
 
@@ -67,10 +67,20 @@ class CategoryController
                 throw new Exception("Tên danh mục đã tồn tại.");
             }
 
+            // Validate display_order uniqueness
+            $display_order = isset($_POST['display_order']) ? (int) $_POST['display_order'] : 0;
+            if ($display_order > 0) {
+                $stmt = $this->db->prepare("SELECT id FROM categories WHERE display_order = ? AND status = 'active'");
+                $stmt->execute([$display_order]);
+                if ($stmt->fetch()) {
+                    throw new Exception("Thứ tự hiển thị {$display_order} đã được sử dụng.");
+                }
+            }
+
             $data = [
                 'name' => $name,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
-                'display_order' => isset($_POST['display_order']) ? (int) $_POST['display_order'] : 0,
+                'display_order' => $display_order,
                 'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
             ];
 
@@ -141,10 +151,20 @@ class CategoryController
                 throw new Exception("Tên danh mục đã tồn tại.");
             }
 
+            // Validate display_order uniqueness (exclude current category)
+            $display_order = isset($_POST['display_order']) ? (int) $_POST['display_order'] : 0;
+            if ($display_order > 0) {
+                $stmt = $this->db->prepare("SELECT id FROM categories WHERE display_order = ? AND status = 'active' AND id != ?");
+                $stmt->execute([$display_order, $category_id]);
+                if ($stmt->fetch()) {
+                    throw new Exception("Thứ tự hiển thị {$display_order} đã được sử dụng.");
+                }
+            }
+
             $data = [
                 'name' => $name,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
-                'display_order' => isset($_POST['display_order']) ? (int) $_POST['display_order'] : 0,
+                'display_order' => $display_order,
                 'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
             ];
 

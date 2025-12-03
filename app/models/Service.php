@@ -143,27 +143,31 @@ class Service
     public function create($data)
     {
         try {
+            // Auto-generate service_code if not provided
+            if (empty($data['service_code'])) {
+                $data['service_code'] = $this->generateServiceCode();
+            }
+
             $stmt = $this->pdo->prepare("
                 INSERT INTO services (
-                    service_type_id, supplier_id, name, description,
-                    unit_price, capacity, availability, notes, status, created_by
+                    service_code, service_type_id, supplier_id, name, description,
+                    unit, estimated_price, notes, status
                 ) VALUES (
-                    :service_type_id, :supplier_id, :name, :description,
-                    :unit_price, :capacity, :availability, :notes, :status, :created_by
+                    :service_code, :service_type_id, :supplier_id, :name, :description,
+                    :unit, :estimated_price, :notes, :status
                 )
             ");
 
             $success = $stmt->execute([
+                'service_code' => $data['service_code'],
                 'service_type_id' => $data['service_type_id'],
                 'supplier_id' => $data['supplier_id'],
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
-                'unit_price' => $data['unit_price'] ?? null,
-                'capacity' => $data['capacity'] ?? null,
-                'availability' => $data['availability'] ?? 'available',
+                'unit' => $data['unit'] ?? null,
+                'estimated_price' => $data['estimated_price'] ?? null,
                 'notes' => $data['notes'] ?? null,
-                'status' => $data['status'] ?? 'active',
-                'created_by' => get_user_id()
+                'status' => $data['status'] ?? 'active'
             ]);
 
             return $success ? $this->pdo->lastInsertId() : false;
@@ -185,9 +189,8 @@ class Service
                 'supplier_id',
                 'name',
                 'description',
-                'unit_price',
-                'capacity',
-                'availability',
+                'unit',
+                'estimated_price',
                 'notes',
                 'status'
             ];
@@ -201,10 +204,6 @@ class Service
                     $params[$field] = $data[$field];
                 }
             }
-
-            // Add updated_by
-            $set_parts[] = "updated_by = :updated_by";
-            $params['updated_by'] = get_user_id();
 
             if (empty($set_parts))
                 return false;
@@ -232,14 +231,30 @@ class Service
     {
         try {
             // Check if being used in tour_services
-            $check_stmt = $this->pdo->prepare("
+            $check_tour = $this->pdo->prepare("
                 SELECT COUNT(*) as count FROM tour_services WHERE service_id = :id
             ");
-            $check_stmt->execute(['id' => $id]);
-            $count = $check_stmt->fetch()['count'];
+            $check_tour->execute(['id' => $id]);
+            $tour_count = $check_tour->fetch()['count'];
 
-            if ($count > 0) {
-                throw new Exception("Không thể xóa dịch vụ đang được sử dụng trong {$count} tour.");
+            // Check if being used in booking_services
+            $check_booking = $this->pdo->prepare("
+                SELECT COUNT(*) as count FROM booking_services WHERE service_id = :id
+            ");
+            $check_booking->execute(['id' => $id]);
+            $booking_count = $check_booking->fetch()['count'];
+
+            if ($tour_count > 0 || $booking_count > 0) {
+                $message = "Không thể xóa dịch vụ đang được sử dụng";
+                $parts = [];
+                if ($tour_count > 0) {
+                    $parts[] = "{$tour_count} tour";
+                }
+                if ($booking_count > 0) {
+                    $parts[] = "{$booking_count} booking";
+                }
+                $message .= " trong " . implode(" và ", $parts) . ".";
+                throw new Exception($message);
             }
 
             // Soft delete
@@ -318,6 +333,84 @@ class Service
         } catch (PDOException $e) {
             error_log("Service::getBySupplier() Error: " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Auto-generate service code: SRV-YYYYMMDD-XXX
+     */
+    public function generateServiceCode()
+    {
+        try {
+            $date = date('Ymd'); // 20241203
+            $prefix = "SRV-{$date}-";
+
+            // Get latest code today
+            $stmt = $this->pdo->prepare("
+                SELECT service_code 
+                FROM services 
+                WHERE service_code LIKE :pattern 
+                ORDER BY service_code DESC 
+                LIMIT 1
+            ");
+            $stmt->execute(['pattern' => $prefix . '%']);
+            $latest = $stmt->fetch();
+
+            if ($latest) {
+                // Extract number: SRV-20241203-001 -> 001
+                $num = (int) substr($latest['service_code'], -3);
+                $num++;
+            } else {
+                $num = 1;
+            }
+
+            return $prefix . str_pad($num, 3, '0', STR_PAD_LEFT);
+
+        } catch (PDOException $e) {
+            error_log("Service::generateServiceCode() Error: " . $e->getMessage());
+            return 'SRV-' . date('Ymd') . '-001';
+        }
+    }
+
+    /**
+     * Tìm service theo name + supplier + type (check duplicate)
+     * 
+     * @param string $name
+     * @param int $supplier_id
+     * @param int $service_type_id
+     * @param int|null $exclude_id (exclude this ID when checking for update)
+     * @return array|null
+     */
+    public function findByNameAndSupplier($name, $supplier_id, $service_type_id, $exclude_id = null)
+    {
+        try {
+            $sql = "
+                SELECT * FROM services
+                WHERE name = :name 
+                  AND supplier_id = :supplier_id
+                  AND service_type_id = :service_type_id
+            ";
+
+            $params = [
+                'name' => $name,
+                'supplier_id' => $supplier_id,
+                'service_type_id' => $service_type_id
+            ];
+
+            if ($exclude_id) {
+                $sql .= " AND id != :exclude_id";
+                $params['exclude_id'] = $exclude_id;
+            }
+
+            $sql .= " LIMIT 1";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetch() ?: null;
+
+        } catch (PDOException $e) {
+            error_log("Service::findByNameAndSupplier() Error: " . $e->getMessage());
+            return null;
         }
     }
 }

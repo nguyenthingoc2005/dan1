@@ -39,19 +39,19 @@ $errs = $errors ?? [];
             </div>
             <div class="step-indicator px-6 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent w-1/5 text-center"
                 data-step="2">
-                2. Lịch trình
+                2. Giá & Vận hành
             </div>
             <div class="step-indicator px-6 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent w-1/5 text-center"
                 data-step="3">
-                3. Dịch vụ (Costing)
+                3. Lịch trình
             </div>
             <div class="step-indicator px-6 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent w-1/5 text-center"
                 data-step="4">
-                4. Hình ảnh & Khác
+                4. Dịch vụ (Costing)
             </div>
             <div class="step-indicator px-6 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent w-1/5 text-center"
                 data-step="5">
-                5. Giá & Hoàn tất
+                5. Hình ảnh & Khác
             </div>
         </div>
 
@@ -69,12 +69,11 @@ $errs = $errors ?? [];
                             class="w-full px-3 py-2 border rounded focus:border-accent <?= isset($errs['name']) ? 'border-red-500' : '' ?>">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mã Tour</label>
-                        <div class="w-full px-3 py-2 border rounded bg-gray-50 text-gray-500 italic flex items-center gap-2">
-                            <span class="text-green-600">✔</span>
-                            <span>Tự động tạo khi lưu (TOUR_<?= date('Y') ?>_XXX)</span>
-                        </div>
-                        <input type="hidden" name="code" value="AUTO">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mã Tour <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" name="code" id="code" value="<?= htmlspecialchars($old['code'] ?? '') ?>"
+                            required
+                            class="w-full px-3 py-2 border rounded focus:border-accent <?= isset($errs['code']) ? 'border-red-500' : '' ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
@@ -92,23 +91,6 @@ $errs = $errors ?? [];
                         <input type="text" name="departure_location"
                             value="<?= htmlspecialchars($old['departure_location'] ?? '') ?>"
                             class="w-full px-3 py-2 border rounded focus:border-accent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Loại Tour <span
-                                class="text-red-500">*</span></label>
-                        <select name="tour_type" required
-                            class="w-full px-3 py-2 border rounded focus:border-accent <?= isset($errs['tour_type']) ? 'border-red-500' : '' ?>">
-                            <option value="public" <?= ($old['tour_type'] ?? 'public') == 'public' ? 'selected' : '' ?>>
-                                Tour Công Khai (Public) - Có lịch cố định
-                            </option>
-                            <option value="custom" <?= ($old['tour_type'] ?? '') == 'custom' ? 'selected' : '' ?>>
-                                Tour Tùy Chỉnh (Custom) - Theo yêu cầu khách
-                            </option>
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">
-                            <strong>Public:</strong> Tour có lịch khởi hành cố định, cần tạo schedule trước khi booking.<br>
-                            <strong>Custom:</strong> Tour theo yêu cầu, có thể tự động tạo schedule khi booking.
-                        </p>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -146,7 +128,7 @@ $errs = $errors ?? [];
             </div>
 
             <!-- STEP 2: PRICING -->
-            <div id="step-5" class="step-content hidden">
+            <div id="step-2" class="step-content hidden">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Giá người lớn <span
@@ -172,7 +154,7 @@ $errs = $errors ?? [];
             </div>
 
             <!-- STEP 3: ITINERARY -->
-            <div id="step-2" class="step-content hidden">
+            <div id="step-3" class="step-content hidden">
                 <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded mb-4 text-sm">
                     ℹ️ Lịch trình được tạo tự động dựa trên số ngày bạn nhập ở Bước 1.
                 </div>
@@ -182,7 +164,7 @@ $errs = $errors ?? [];
             </div>
 
             <!-- STEP 4: SERVICES -->
-            <div id="step-3" class="step-content hidden">
+            <div id="step-4" class="step-content hidden">
                 <div class="mb-4 flex justify-between items-center">
                     <h3 class="font-bold text-gray-700">Cấu hình dịch vụ (Costing)</h3>
                     <button type="button" onclick="addServiceRow()"
@@ -214,7 +196,7 @@ $errs = $errors ?? [];
             </div>
 
             <!-- STEP 5: MEDIA -->
-            <div id="step-4" class="step-content hidden">
+            <div id="step-5" class="step-content hidden">
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Hình ảnh Tour (Chọn nhiều)</label>
                     <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50"
@@ -269,43 +251,6 @@ $errs = $errors ?? [];
     const oldItinerary = <?= json_encode($old['itinerary'] ?? []) ?>;
     const oldServices = <?= json_encode($old['services'] ?? []) ?>;
 
-    // AJAX: Load destinations by category
-    document.addEventListener('DOMContentLoaded', function() {
-        const categorySelect = document.querySelector('select[name="category_id"]');
-        if (categorySelect) {
-            categorySelect.addEventListener('change', function() {
-                loadDestinationsByCategory(this.value);
-            });
-        }
-    });
-
-    function loadDestinationsByCategory(categoryId) {
-        if (!categoryId) {
-            // Reset to all destinations
-            destinations = <?= json_encode($destinations) ?>;
-            if (currentStep === 2) {
-                generateItinerary();
-            }
-            return;
-        }
-        
-        fetch(`/public/ajax-destinations.php?category_id=${categoryId}`)
-            .then(res => res.json())
-            .then(data => {
-                // Update global destinations variable
-                const destMap = {};
-                data.forEach(d => destMap[d.id] = d.name);
-                destinations = destMap;
-                
-                // If currently on itinerary step, regenerate with new destinations
-                if (currentStep === 2) {
-                    generateItinerary();
-                }
-            })
-            .catch(err => console.error('Error loading destinations:', err));
-    }
-
-
     function showStep(step) {
         // Hide all steps
         document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
@@ -355,10 +300,10 @@ $errs = $errors ?? [];
 
         currentStep += direction;
 
-        if (currentStep === 2) {
+        if (currentStep === 3) {
             generateItinerary(); // Regenerate/Check itinerary when entering step 3
         }
-        if (currentStep === 3 && oldServices.length === 0 && document.getElementById('services-container').children.length === 0) {
+        if (currentStep === 4 && oldServices.length === 0 && document.getElementById('services-container').children.length === 0) {
             addServiceRow(); // Add a default service row if none exist
         }
 

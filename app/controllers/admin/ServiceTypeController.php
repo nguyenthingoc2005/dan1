@@ -71,32 +71,12 @@ class ServiceTypeController
     {
         require_admin();
 
-        try {
-            // Validate name
-            if (empty($_POST['name'])) {
-                throw new Exception("Vui lòng nhập tên loại dịch vụ.");
-            }
-
-            // Validate code
-            if (empty($_POST['code'])) {
-                throw new Exception("Vui lòng nhập mã code.");
-            }
-
-            $code = strtoupper(sanitize($_POST['code']));
-
-            // Validate code format (chỉ chữ, số, underscore)
-            if (!preg_match('/^[A-Z0-9_]+$/', $code)) {
-                throw new Exception("Mã code chỉ được chứa chữ in hoa, số và dấu gạch dưới.");
-            }
-
-            // Check unique code
-            if ($this->serviceTypeModel->findByCode($code)) {
-                throw new Exception("Mã code đã tồn tại.");
+                $counter++;
             }
 
             // Prepare data
             $data = [
-                'name' => sanitize($_POST['name']),
+                'name' => $name,
                 'code' => $code,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
                 'status' => isset($_POST['status']) ? $_POST['status'] : 'active'

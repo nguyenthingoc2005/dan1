@@ -87,8 +87,8 @@ if (!is_admin())
                     <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Tên dịch vụ</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Loại</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Nhà cung cấp</th>
-                    <th class="px-4 py-3 text-right text-sm font-medium text-slate-700">Đơn giá</th>
-                    <th class="px-4 py-3 text-center text-sm font-medium text-slate-700">Sức chứa</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Đơn vị</th>
+                    <th class="px-4 py-3 text-right text-sm font-medium text-slate-700">Giá dự kiến</th>
                     <th class="px-4 py-3 text-center text-sm font-medium text-slate-700">Trạng thái</th>
                     <th class="px-4 py-3 text-right text-sm font-medium text-slate-700">Thao tác</th>
                 </tr>
@@ -96,7 +96,7 @@ if (!is_admin())
             <tbody class="divide-y divide-slate-200">
                 <?php if (empty($services)): ?>
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-slate-500">
+                        <td colspan="6" class="px-4 py-8 text-center text-slate-500">
                             Chưa có dịch vụ nào.
                             <a href="?act=admin&module=services&action=create" class="text-accent hover:underline">Thêm
                                 mới</a>
@@ -107,9 +107,6 @@ if (!is_admin())
                         <tr class="hover:bg-slate-50">
                             <td class="px-4 py-3 text-sm font-medium">
                                 <?= htmlspecialchars($svc['name']) ?>
-                                <?php if ($svc['availability'] == 'unavailable'): ?>
-                                    <span class="ml-2 text-xs text-red-500">(Hết chỗ)</span>
-                                <?php endif; ?>
                             </td>
                             <td class="px-4 py-3 text-sm text-slate-600">
                                 <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
@@ -119,11 +116,11 @@ if (!is_admin())
                             <td class="px-4 py-3 text-sm text-slate-600">
                                 <?= htmlspecialchars($svc['supplier_name']) ?>
                             </td>
-                            <td class="px-4 py-3 text-sm text-right font-mono">
-                                <?= number_format($svc['unit_price']) ?> ₫
+                            <td class="px-4 py-3 text-sm text-slate-600">
+                                <?= htmlspecialchars($svc['unit'] ?? '-') ?>
                             </td>
-                            <td class="px-4 py-3 text-sm text-center">
-                                <?= $svc['capacity'] ? number_format($svc['capacity']) : '-' ?>
+                            <td class="px-4 py-3 text-sm text-right font-mono">
+                                <?= $svc['estimated_price'] ? number_format($svc['estimated_price']) . ' ₫' : '-' ?>
                             </td>
                             <td class="px-4 py-3 text-sm text-center">
                                 <?php if ($svc['status'] == 'active'): ?>

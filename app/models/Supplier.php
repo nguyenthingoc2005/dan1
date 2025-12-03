@@ -284,14 +284,30 @@ class Supplier
     {
         try {
             // Check if being used by services
-            $check_stmt = $this->pdo->prepare("
+            $check_services = $this->pdo->prepare("
                 SELECT COUNT(*) as count FROM services WHERE supplier_id = :id
             ");
-            $check_stmt->execute(['id' => $id]);
-            $count = $check_stmt->fetch()['count'];
+            $check_services->execute(['id' => $id]);
+            $services_count = $check_services->fetch()['count'];
 
-            if ($count > 0) {
-                throw new Exception("Không thể xóa nhà cung cấp đang cung cấp {$count} dịch vụ.");
+            // Check if being used in booking_services
+            $check_booking = $this->pdo->prepare("
+                SELECT COUNT(*) as count FROM booking_services WHERE supplier_id = :id
+            ");
+            $check_booking->execute(['id' => $id]);
+            $booking_count = $check_booking->fetch()['count'];
+
+            if ($services_count > 0 || $booking_count > 0) {
+                $message = "Không thể xóa nhà cung cấp";
+                $parts = [];
+                if ($services_count > 0) {
+                    $parts[] = "đang cung cấp {$services_count} dịch vụ";
+                }
+                if ($booking_count > 0) {
+                    $parts[] = "đang được sử dụng trong {$booking_count} booking";
+                }
+                $message .= " " . implode(" và ", $parts) . ".";
+                throw new Exception($message);
             }
 
             // Soft delete

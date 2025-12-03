@@ -92,6 +92,17 @@ class DestinationController
                 throw new Exception("Vui lòng nhập tên địa điểm.");
             }
 
+            // Validate category_id if provided
+            if (!empty($_POST['category_id'])) {
+                $category = $this->categoryModel->findById((int) $_POST['category_id']);
+                if (!$category) {
+                    throw new Exception("Danh mục không tồn tại trong hệ thống.");
+                }
+                if ($category['status'] != 'active') {
+                    throw new Exception("Danh mục không khả dụng (đã bị vô hiệu hóa).");
+                }
+            }
+
             // 1. Create Destination
             $data = [
                 'category_id' => !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null,
@@ -164,6 +175,17 @@ class DestinationController
 
             $id = (int) $_POST['id'];
 
+            // Validate category_id if provided
+            if (!empty($_POST['category_id'])) {
+                $category = $this->categoryModel->findById((int) $_POST['category_id']);
+                if (!$category) {
+                    throw new Exception("Danh mục không tồn tại trong hệ thống.");
+                }
+                if ($category['status'] != 'active') {
+                    throw new Exception("Danh mục không khả dụng (đã bị vô hiệu hóa).");
+                }
+            }
+
             // 1. Update Info
             $data = [
                 'category_id' => !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null,
@@ -224,6 +246,8 @@ class DestinationController
 
     private function handleImageUploads($destination_id, $files)
     {
+        require_once COMMON_PATH . '/ValidationHelper.php';
+
         $upload_dir = 'public/uploads/destinations/';
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0755, true);
@@ -248,11 +272,22 @@ class DestinationController
                 $name = basename($files['name'][$i]);
                 $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
 
-                // Validate
-                if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp']))
+                // Basic extension check
+                if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
                     continue;
-                if ($files['size'][$i] > 5 * 1024 * 1024)
+                }
+
+                // Size check
+                if ($files['size'][$i] > 5 * 1024 * 1024) {
                     continue; // 5MB limit
+                }
+
+                // Validate image file (MIME type + dimensions)
+                $validation = ValidationHelper::validateImageFile($tmp_name);
+                if (!$validation['valid']) {
+                    error_log("Image upload validation failed: " . $validation['error']);
+                    continue;
+                }
 
                 // Generate unique name
                 $new_name = 'dest_' . $destination_id . '_' . uniqid() . '.' . $ext;

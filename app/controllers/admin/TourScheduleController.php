@@ -50,20 +50,50 @@ class TourScheduleController
                 if (!$tour)
                     throw new Exception("Tour không tồn tại");
 
+                // Validate tour status
+                if ($tour['status'] !== 'active') {
+                    throw new Exception("Chỉ có thể tạo lịch cho tour đang hoạt động (Active)");
+                }
+
+                // Validate tour approval (nếu cần)
+                if (isset($tour['approval_status']) && $tour['approval_status'] !== 'approved') {
+                    throw new Exception("Tour chưa được duyệt. Vui lòng duyệt tour trước khi tạo lịch");
+                }
+
+                // Validate start_date >= today
+                $today = date('Y-m-d');
+                if ($start_date < $today) {
+                    throw new Exception("Ngày khởi hành phải từ hôm nay trở đi");
+                }
+
                 $duration = $tour['duration_days'] ?? 1;
                 $end_date = date('Y-m-d', strtotime($start_date . " + $duration days"));
 
-                // 1. Kiểm tra quota không vượt max participants của tour
+                // 1. Kiểm tra tour_type
+                $tour_type = $tour['tour_type'] ?? 'public';
+                
+                if ($tour_type == 'custom') {
+                    // Custom tour: Kiểm tra xem đã có schedule chưa
+                    $existing = $this->scheduleModel->getAll(['tour_id' => $tour_id], 1, 1000);
+                    if (!empty($existing)) {
+                        throw new Exception("Tour tùy chỉnh (Custom) chỉ có thể có 1 lịch khởi hành. Vui lòng sử dụng lịch hiện có hoặc xóa lịch cũ.");
+                    }
+                }
+
+                // 2. Kiểm tra quota không vượt max participants của tour
                 $quota = $_POST['quota'] ?? 20;
                 $max_participants = $tour['max_participants'] ?? 45;
                 if ($quota > $max_participants) {
                     throw new Exception("Quota không được vượt quá số người tối đa của tour ($max_participants)");
                 }
 
-                // 2. Kiểm tra lịch trùng (cùng tour, ngày bắt đầu hoặc ngày kết thúc chồng lấn)
-                $overlap = $this->scheduleModel->checkOverlap($tour_id, $start_date, $end_date);
-                if ($overlap) {
-                    throw new Exception("Lịch này trùng với lịch đã tồn tại cho tour này");
+                // 3. Kiểm tra lịch trùng (cùng tour, ngày bắt đầu hoặc ngày kết thúc chồng lấn)
+                // Chỉ check overlap cho public tour (custom tour đã check ở trên)
+                if ($tour_type == 'public') {
+                    $overlap = $this->scheduleModel->checkOverlap($tour_id, $start_date, $end_date);
+                    if ($overlap) {
+                        throw new Exception("Lịch này trùng với lịch đã tồn tại cho tour này");
+                    }
                 }
 
                 $data = [

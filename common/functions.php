@@ -231,7 +231,38 @@ function generateBookingCode()
 }
 
 /**
- * Generate tour code
+ * Generate tour code unique theo năm: TOUR_2024_001
+ * 
+ * @param PDO $pdo Database connection
+ * @return string
+ */
+function generateTourCodeUnique($pdo)
+{
+    $prefix = "TOUR";
+    $year = date('Y');
+
+    // Tìm code cao nhất trong năm
+    $stmt = $pdo->prepare("
+        SELECT tour_code FROM tours
+        WHERE tour_code LIKE :pattern
+        ORDER BY tour_code DESC
+        LIMIT 1
+    ");
+    $stmt->execute(['pattern' => "{$prefix}_{$year}_%"]);
+    $last = $stmt->fetchColumn();
+
+    if ($last) {
+        preg_match('/_(\d+)$/', $last, $matches);
+        $next_num = isset($matches[1]) ? ((int) $matches[1] + 1) : 1;
+    } else {
+        $next_num = 1;
+    }
+
+    return sprintf("%s_%s_%03d", $prefix, $year, $next_num);
+}
+
+/**
+ * Generate tour code (legacy - for backward compatibility)
  * Format: TOUR20241201001
  * 
  * @return string
@@ -283,6 +314,42 @@ function generateServiceCode()
 function generatePaymentCode()
 {
     return 'PAY' . date('Ymd') . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
+}
+
+/**
+ * Generate service type code từ tên (VD: "Khách sạn" => "KHACH_SAN_2024_001")
+ * 
+ * @param string $name Tên loại dịch vụ
+ * @param PDO $pdo Database connection
+ * @return string Code unique theo năm
+ */
+function generateServiceTypeCode($name, $pdo)
+{
+    // Tạo slug từ tên (VD: "Khách sạn" -> "KHACH_SAN")
+    $slug = createSlug($name);
+    $code_prefix = strtoupper(str_replace('-', '_', $slug));
+    $year = date('Y');
+
+    // Tìm code gần nhất với prefix này trong năm
+    $stmt = $pdo->prepare("
+        SELECT code FROM service_types
+        WHERE code LIKE :pattern
+        ORDER BY code DESC
+        LIMIT 1
+    ");
+    $stmt->execute(['pattern' => "{$code_prefix}_{$year}_%"]);
+    $last = $stmt->fetchColumn();
+
+    if ($last) {
+        // Extract số thứ tự từ code cuối (VD: KHACH_SAN_2024_002 -> 2)
+        preg_match('/_(\d+)$/', $last, $matches);
+        $next_num = isset($matches[1]) ? ((int) $matches[1] + 1) : 1;
+    } else {
+        $next_num = 1;
+    }
+
+    // Format: KHACH_SAN_2024_001
+    return sprintf("%s_%s_%03d", $code_prefix, $year, $next_num);
 }
 
 // ============================================================================

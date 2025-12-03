@@ -71,33 +71,25 @@ if (!is_admin()) redirect('?act=access-denied');
             <div>
                 <h3 class="text-lg font-semibold text-primary mb-4">Chi tiết & Giá</h3>
                 
-                <!-- Unit Price -->
+                <!-- Unit -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Đơn giá (VNĐ)
+                        Đơn vị tính
                     </label>
-                    <input type="number" name="unit_price" value="<?= $service['unit_price'] ?>" min="0" step="1000" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                    <input type="text" name="unit" value="<?= htmlspecialchars($service['unit'] ?? '') ?>" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
+                           placeholder="VD: phòng/đêm, suất, xe/ngày, vé">
+                    <small class="text-gray-500">Đơn vị tính cho dịch vụ này</small>
                 </div>
-
-                <!-- Capacity -->
+                
+                <!-- Estimated Price -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Sức chứa (người/lượt)
+                        Giá dự kiến (VNĐ)
                     </label>
-                    <input type="number" name="capacity" value="<?= $service['capacity'] ?>" min="0" 
+                    <input type="number" name="estimated_price" value="<?= $service['estimated_price'] ?>" min="0" step="1000" 
                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-                    <small class="text-gray-500">Để trống nếu không giới hạn</small>
-                </div>
-
-                <!-- Availability -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tình trạng sẵn có</label>
-                    <select name="availability" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-                        <option value="available" <?= $service['availability'] == 'available' ? 'selected' : '' ?>>Sẵn sàng</option>
-                        <option value="unavailable" <?= $service['availability'] == 'unavailable' ? 'selected' : '' ?>>Hết chỗ / Tạm ngưng</option>
-                    </select>
+                    <small class="text-gray-500">Giá dự kiến từ nhà cung cấp</small>
                 </div>
 
                 <!-- Notes -->

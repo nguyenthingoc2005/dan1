@@ -45,6 +45,12 @@ class Tour
                 $params['category_id'] = $filters['category_id'];
             }
 
+            // Filter by Tour Type
+            if (!empty($filters['tour_type'])) {
+                $where_conditions[] = "t.tour_type = :tour_type";
+                $params['tour_type'] = $filters['tour_type'];
+            }
+
             // Search by Name or Code
             if (!empty($filters['search'])) {
                 $where_conditions[] = "(t.name LIKE :search OR t.tour_code LIKE :search)";
@@ -88,6 +94,25 @@ class Tour
         } catch (PDOException $e) {
             error_log("Tour::getAll() Error: " . $e->getMessage());
             return ['data' => [], 'total' => 0, 'pages' => 0, 'current_page' => 1];
+        }
+    }
+
+    /**
+     * Tìm tour theo code
+     */
+    public function findByCode($code)
+    {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT * FROM tours
+                WHERE tour_code = :code
+                LIMIT 1
+            ");
+            $stmt->execute(['code' => $code]);
+            return $stmt->fetch() ?: null;
+        } catch (PDOException $e) {
+            error_log("Tour::findByCode() Error: " . $e->getMessage());
+            return null;
         }
     }
 
@@ -143,11 +168,11 @@ class Tour
             $sql = "INSERT INTO tours (
                 tour_code, category_id, name, description, duration_days, duration_nights,
                 departure_location, adult_price, child_price, infant_price,
-                status, created_by
+                tour_type, status, created_by
             ) VALUES (
                 :code, :category_id, :name, :description, :duration_days, :duration_nights,
                 :departure_location, :adult_price, :child_price, :infant_price,
-                :status, :created_by
+                :tour_type, :status, :created_by
             )";
 
             $stmt = $this->pdo->prepare($sql);
@@ -162,6 +187,7 @@ class Tour
                 'adult_price' => $data['adult_price'],
                 'child_price' => $data['child_price'] ?? 0,
                 'infant_price' => $data['infant_price'] ?? 0,
+                'tour_type' => $data['tour_type'] ?? 'public',
                 'status' => $data['status'] ?? 'draft',
                 'created_by' => get_user_id()
             ]);
@@ -207,6 +233,7 @@ class Tour
                 adult_price = :adult_price,
                 child_price = :child_price,
                 infant_price = :infant_price,
+                tour_type = :tour_type,
                 status = :status,
                 updated_at = NOW()
                 WHERE id = :id";
@@ -223,6 +250,7 @@ class Tour
                 'adult_price' => $data['adult_price'],
                 'child_price' => $data['child_price'] ?? 0,
                 'infant_price' => $data['infant_price'] ?? 0,
+                'tour_type' => $data['tour_type'] ?? 'public',
                 'status' => $data['status']
             ]);
 

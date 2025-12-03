@@ -88,51 +88,170 @@ class BookingController
                     throw new Exception("Vui lòng chọn hoặc tạo khách hàng.");
                 }
 
-                // ... (Existing Schedule & Quota Logic) ...
-                // Load schedule for selected start date
-                require_once 'app/models/TourSchedule.php';
-                $scheduleModel = new TourSchedule($this->pdo);
-                $schedule = $scheduleModel->getByTourAndStartDate($_POST['tour_id'], $_POST['start_date']);
-                if (!$schedule) {
-                    throw new Exception("Lịch khởi hành không tồn tại.");
-                }
-                if ($schedule['status'] !== 'open') {
-                    throw new Exception("Lịch không khả dụng để đặt.");
+                // 1. Validate start_date >= today
+                $today = date('Y-m-d');
+                if ($_POST['start_date'] < $today) {
+                    throw new Exception("Ngày khởi hành phải từ hôm nay trở đi");
                 }
 
-                // Participant counts
+                // 2. Validate adult_count >= 1
                 $adult = (int) ($_POST['adult_count'] ?? 1);
                 $child = (int) ($_POST['child_count'] ?? 0);
                 $infant = (int) ($_POST['infant_count'] ?? 0);
-                $totalParticipants = $adult + $child + $infant;
 
-                // Quota check
-                $available = $schedule['quota'] - $schedule['booked'];
-                if ($totalParticipants > $available) {
-                    throw new Exception("Số lượng người tham gia vượt quá khả dụng (Còn $available chỗ).");
+                if ($adult < 1) {
+                    throw new Exception("Phải có ít nhất 1 người lớn");
                 }
 
-                // Pricing (fallback to tour prices)
+                // 3. Validate passenger info
+                // Logic: Tổng người = Khách hàng đại diện (1) + Số người nhập thêm
+                $total_count = $adult + $child + $infant;
+                $passenger_count = !empty($_POST['passenger_names']) ? count($_POST['passenger_names']) : 0;
+                $expected_passenger_count = $total_count - 1; // Trừ 1 vì đã có khách hàng đại diện
+
+                // Nếu chỉ có 1 người (chính là đại diện), không cần nhập thêm
+                if ($total_count > 1 && $passenger_count != $expected_passenger_count) {
+                    throw new Exception("Số hành khách cần nhập thêm: $expected_passenger_count người (Tổng $total_count - 1 đại diện). Bạn đã nhập: $passenger_count người");
+                }
+
+                // 4. Get Tour Info & Validate
                 $tour = $this->tourModel->findById($_POST['tour_id']);
-                $priceAdult = $schedule['adult_price'] ?? $tour['adult_price'];
-                $priceChild = $schedule['child_price'] ?? $tour['child_price'];
-                $priceInfant = $schedule['infant_price'] ?? $tour['infant_price'];
+                if (!$tour) {
+                    throw new Exception("Tour không tồn tại.");
+                }
+
+                // Validate tour status
+                if ($tour['status'] !== 'active') {
+                    throw new Exception("Tour không đang hoạt động. Không thể tạo booking.");
+                }
+
+                // Validate tour approval (nếu cần)
+                if (isset($tour['approval_status']) && $tour['approval_status'] !== 'approved') {
+                    throw new Exception("Tour chưa được duyệt. Không thể tạo booking.");
+                }
+
+                // Participant counts
+                $totalParticipants = $adult + $child + $infant;
+
+                // 4. Handle Schedule & Pricing based on Tour Type
+                require_once 'app/models/TourSchedule.php';
+                $scheduleModel = new TourSchedule($this->pdo);
+                $tour_type = $tour['tour_type'] ?? 'public';
+                $schedule = null;
+                $schedule_id = null;
+
+                if ($tour_type == 'public') {
+                    // PUBLIC TOUR: Bắt buộc phải có schedule
+                    $schedule = $scheduleModel->getByTourAndStartDate($_POST['tour_id'], $_POST['start_date']);
+                    if (!$schedule) {
+                        throw new Exception("Tour công khai cần có lịch khởi hành. Vui lòng tạo schedule trước khi đặt tour.");
+                    }
+                    if ($schedule['status'] !== 'open') {
+                        throw new Exception("Lịch không khả dụng để đặt (Status: {$schedule['status']}).");
+                    }
+
+                    // Quota check (chặt chẽ cho public tour)
+                    $available = $schedule['quota'] - $schedule['booked'];
+                    if ($totalParticipants > $available) {
+                        throw new Exception("Số lượng người tham gia vượt quá khả dụng (Còn $available chỗ).");
+                    }
+
+                    $schedule_id = $schedule['id'];
+                    // Pricing: ưu tiên schedule, fallback tour
+                    $priceAdult = $schedule['adult_price'] ?? $tour['adult_price'];
+                    $priceChild = $schedule['child_price'] ?? $tour['child_price'];
+                    $priceInfant = $schedule['infant_price'] ?? $tour['infant_price'];
+
+                } else if ($tour_type == 'custom') {
+                    // CUSTOM TOUR: Có thể tự động tạo schedule hoặc dùng schedule có sẵn
+                    $schedule = $scheduleModel->getByTourAndStartDate($_POST['tour_id'], $_POST['start_date']);
+
+                    if (!$schedule) {
+                        // Tự động tạo schedule cho custom tour
+                        $end_date = date('Y-m-d', strtotime($_POST['start_date'] . " + {$tour['duration_days']} days"));
+
+                        $scheduleData = [
+                            'tour_id' => $_POST['tour_id'],
+                            'start_date' => $_POST['start_date'],
+                            'end_date' => $end_date,
+                            'quota' => $totalParticipants, // Quota = số người booking (linh hoạt)
+                            'adult_price' => $tour['adult_price'],
+                            'child_price' => $tour['child_price'],
+                            'infant_price' => $tour['infant_price']
+                        ];
+
+                        if ($scheduleModel->create($scheduleData)) {
+                            // Get the created schedule
+                            $schedule = $scheduleModel->getByTourAndStartDate($_POST['tour_id'], $_POST['start_date']);
+                            $schedule_id = $schedule['id'];
+                        } else {
+                            throw new Exception("Không thể tạo lịch khởi hành cho tour tùy chỉnh.");
+                        }
+                    } else {
+                        $schedule_id = $schedule['id'];
+                        // Quota linh hoạt hơn cho custom tour (có thể tăng)
+                        // Nếu cần, có thể tự động tăng quota
+                        if ($totalParticipants > ($schedule['quota'] - $schedule['booked'])) {
+                            // Tự động tăng quota cho custom tour
+                            $new_quota = $schedule['booked'] + $totalParticipants;
+                            $stmt = $this->pdo->prepare("UPDATE tour_schedules SET quota = :quota WHERE id = :id");
+                            $stmt->execute(['quota' => $new_quota, 'id' => $schedule_id]);
+                            $schedule['quota'] = $new_quota;
+                        }
+                    }
+
+                    // Pricing: có thể thay đổi theo booking (hiện tại dùng giá tour hoặc schedule)
+                    $priceAdult = $schedule['adult_price'] ?? $tour['adult_price'];
+                    $priceChild = $schedule['child_price'] ?? $tour['child_price'];
+                    $priceInfant = $schedule['infant_price'] ?? $tour['infant_price'];
+                } else {
+                    throw new Exception("Loại tour không hợp lệ.");
+                }
 
                 $total_amount = $priceAdult * $adult + $priceChild * $child + $priceInfant * $infant;
                 $discount = (int) ($_POST['discount_amount'] ?? 0);
+
+                $total_amount = $priceAdult * $adult + $priceChild * $child + $priceInfant * $infant;
+                $discount = (int) ($_POST['discount_amount'] ?? 0);
+
+                // 5. Validate discount <= total_amount
+                if ($discount > $total_amount) {
+                    throw new Exception("Số tiền giảm giá ($discount) không được lớn hơn tổng tiền ($total_amount)");
+                }
+
                 $final_amount = max(0, $total_amount - $discount);
                 $deposit = (int) ($_POST['deposit_amount'] ?? 0);
+
+                // 6. Validate deposit <= final_amount
+                if ($deposit > $final_amount) {
+                    throw new Exception("Tiền cọc ($deposit) không được lớn hơn số tiền sau giảm ($final_amount)");
+                }
+
                 $remaining = max(0, $final_amount - $deposit);
+
+                // 7. Check duplicate booking (same customer, tour, date)
+                $duplicate = $this->bookingModel->checkDuplicate(
+                    $customer_id,
+                    $_POST['tour_id'],
+                    $_POST['start_date']
+                );
+                if ($duplicate) {
+                    throw new Exception("Khách hàng đã có booking cho tour này vào ngày này (Booking #{$duplicate['booking_code']})");
+                }
+
+                // Get end_date from schedule
+                $end_date = $schedule['end_date'] ?? date('Y-m-d', strtotime($_POST['start_date'] . " + {$tour['duration_days']} days"));
 
                 $data = [
                     'tour_id' => $_POST['tour_id'],
                     'customer_id' => $customer_id,
-                    'tour_schedule_id' => $schedule['id'],
+                    // Note: tour_schedule_id removed - database doesn't have this column
+                    // Using tour_id + start_date to track which schedule this booking belongs to
                     'adult_count' => $adult,
                     'child_count' => $child,
                     'infant_count' => $infant,
-                    'start_date' => $schedule['start_date'],
-                    'end_date' => $schedule['end_date'],
+                    'start_date' => $_POST['start_date'],
+                    'end_date' => $end_date,
                     'total_amount' => $total_amount,
                     'discount_amount' => $discount,
                     'final_amount' => $final_amount,
@@ -145,33 +264,26 @@ class BookingController
 
                 // Passengers handling
                 $passengers = [];
+
+                // 1. Add Main Customer as Primary Representative (Khách hàng đại diện)
+                $passengers[] = [
+                    'customer_id' => $customer_id,
+                    'age_type' => 'adult', // Default
+                    'is_primary' => 1
+                ];
+
+                // 2. Add other passengers from form (if any)
                 if (!empty($_POST['passenger_names'])) {
                     foreach ($_POST['passenger_names'] as $index => $name) {
                         if (empty($name))
                             continue;
 
-                        // For now, we need a customer_id for each passenger.
-                        // Strategy: Create a "Guest" customer record or reuse main customer?
-                        // Reusing main customer for all passengers is bad for data.
-                        // Creating new customers for each passenger is correct but requires phone.
-                        // Workaround: Create customer with MainPhone + Suffix?
-                        // OR: Just store them as passengers linked to the Main Customer ID?
-                        // Wait, booking_customers table has customer_id.
-                        // Let's create a new customer record for each passenger.
-                        // If phone is missing, use MainPhone.
-
-                        $p_phone = $_POST['new_customer_phone'] ?? '0000000000'; // Fallback
-                        // Actually, if we are in existing mode, we need to fetch main customer phone.
-                        // This is getting complicated.
-                        // SIMPLIFICATION: For V1, we will create a customer record for each passenger.
-                        // Use a dummy phone if not provided? Or just use the main customer's phone.
-
-                        // Let's try to find if this passenger already exists by name + phone? No.
-                        // Just create a new customer record.
+                        // Other passengers cannot be primary (already have one)
+                        $p_phone = $_POST['passenger_phones'][$index] ?? ($_POST['new_customer_phone'] ?? '0000000000');
 
                         $passengerData = [
                             'full_name' => $name,
-                            'phone' => $p_phone, // Reuse phone for now
+                            'phone' => $p_phone,
                             'date_of_birth' => $_POST['passenger_dobs'][$index] ?? null,
                             'gender' => $_POST['passenger_genders'][$index] ?? 'other',
                             'created_by' => $_SESSION['user_id'] ?? 1
@@ -182,24 +294,15 @@ class BookingController
                         $passengers[] = [
                             'customer_id' => $p_id,
                             'age_type' => $_POST['passenger_types'][$index] ?? 'adult',
-                            'is_primary' => 0
+                            'is_primary' => 0 // Không phải đại diện
                         ];
                     }
                 }
 
-                // Add Main Customer as Primary Passenger if not in list
-                // (Usually main customer is one of the passengers, but if they didn't add themselves to the list...)
-                // Let's just add the main customer as primary passenger.
-                $passengers[] = [
-                    'customer_id' => $customer_id,
-                    'age_type' => 'adult', // Default
-                    'is_primary' => 1
-                ];
-
                 $this->bookingModel->create($data, $passengers);
 
                 // Increment booked count on schedule
-                $scheduleModel->incrementBooked($schedule['id'], $totalParticipants);
+                $scheduleModel->incrementBooked($schedule_id, $totalParticipants);
 
                 set_success("Tạo Booking thành công!");
                 redirect('?act=admin&module=bookings');
@@ -247,8 +350,26 @@ class BookingController
                 $bookingId = $_POST['booking_id'];
                 $amount = (float) str_replace(',', '', $_POST['amount']); // Remove commas if any
 
-                if ($amount <= 0)
+                // Validate booking exists
+                $booking = $this->bookingModel->getById($bookingId);
+                if (!$booking) {
+                    throw new Exception("Booking không tồn tại");
+                }
+
+                // Validate booking status
+                if ($booking['approval_status'] == 'cancelled') {
+                    throw new Exception("Không thể thanh toán cho booking đã hủy");
+                }
+
+                if ($amount <= 0) {
                     throw new Exception("Số tiền phải lớn hơn 0");
+                }
+
+                // Validate amount <= remaining_amount
+                $remaining = (float) $booking['remaining_amount'];
+                if ($amount > $remaining) {
+                    throw new Exception("Số tiền thanh toán (" . number_format($amount) . ") vượt quá số tiền còn lại (" . number_format($remaining) . ")");
+                }
 
                 $data = [
                     'booking_id' => $bookingId,

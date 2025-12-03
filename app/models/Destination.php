@@ -296,8 +296,16 @@ class Destination
     public function delete($id)
     {
         try {
-            // Check usage in tours (nếu có bảng tours)
-            // TODO: Add check when Tours module is ready
+            // Check usage in itineraries
+            $check_stmt = $this->pdo->prepare("
+                SELECT COUNT(*) as count FROM itineraries WHERE destination_id = :id
+            ");
+            $check_stmt->execute(['id' => $id]);
+            $count = $check_stmt->fetch()['count'];
+
+            if ($count > 0) {
+                throw new Exception("Không thể xóa địa điểm đang được sử dụng trong {$count} lịch trình tour.");
+            }
 
             $stmt = $this->pdo->prepare("
                 UPDATE destinations

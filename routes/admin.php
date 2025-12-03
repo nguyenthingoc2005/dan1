@@ -276,29 +276,11 @@ switch ($module) {
             case 'changeStatus':
                 $bookingController->changeStatus();
                 break;
+            case 'storePayment':
+                $bookingController->storePayment();
+                break;
             default:
                 $bookingController->index();
-                break;
-        }
-        break;
-
-    // ==========================================================================
-    // MODULE: SCHEDULES
-    // ==========================================================================
-    case 'schedules':
-        require_once CONTROLLERS_PATH . '/admin/TourScheduleController.php';
-        $scheduleController = new TourScheduleController($pdo);
-
-        $action = $_GET['action'] ?? 'index';
-        switch ($action) {
-            case 'create':
-                $scheduleController->create();
-                break;
-            case 'store':
-                $scheduleController->store();
-                break;
-            default:
-                $scheduleController->index();
                 break;
         }
         break;

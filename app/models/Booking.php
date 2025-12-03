@@ -124,6 +124,26 @@ class Booking
     }
 
     /**
+     * Kiểm tra duplicate booking (cùng customer, tour, ngày)
+     */
+    public function checkDuplicate($customer_id, $tour_id, $start_date)
+    {
+        $sql = "SELECT id, booking_code FROM bookings
+                WHERE customer_id = :customer_id
+                  AND tour_id = :tour_id
+                  AND start_date = :start_date
+                  AND approval_status NOT IN ('cancelled', 'rejected')
+                LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'customer_id' => $customer_id,
+            'tour_id' => $tour_id,
+            'start_date' => $start_date
+        ]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
      * Tạo Booking mới (Transaction)
      */
     public function create($data, $passengers = [])
@@ -142,7 +162,8 @@ class Booking
                 total_amount, discount_amount, final_amount, 
                 deposit_amount, remaining_amount,
                 payment_status, approval_status,
-                notes, created_by
+                notes, created_by" . 
+                (!empty($data['tour_schedule_id']) ? ", tour_schedule_id" : "") . "
             ) VALUES (
                 :booking_code, :tour_id, :customer_id,
                 :adult_count, :child_count, :infant_count,
@@ -150,11 +171,11 @@ class Booking
                 :total_amount, :discount_amount, :final_amount,
                 :deposit_amount, :remaining_amount,
                 :payment_status, :approval_status,
-                :notes, :created_by
+                :notes, :created_by" .
+                (!empty($data['tour_schedule_id']) ? ", :tour_schedule_id" : "") . "
             )";
 
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([
+            $params = [
                 'booking_code' => $booking_code,
                 'tour_id' => $data['tour_id'],
                 'customer_id' => $data['customer_id'],
@@ -172,7 +193,14 @@ class Booking
                 'approval_status' => 'pending',
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $data['created_by']
-            ]);
+            ];
+
+            if (!empty($data['tour_schedule_id'])) {
+                $params['tour_schedule_id'] = $data['tour_schedule_id'];
+            }
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
 
             $booking_id = $this->pdo->lastInsertId();
 

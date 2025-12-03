@@ -107,20 +107,78 @@ class TourController
             $errors = [];
             if (empty($_POST['name']))
                 $errors['name'] = 'Tên tour không được để trống';
-            if (empty($_POST['code']))
-                $errors['code'] = 'Mã tour không được để trống';
+            // Mã tour sẽ tự động generate, không cần validate
             if (empty($_POST['adult_price']))
                 $errors['adult_price'] = 'Giá người lớn không được để trống';
             if (empty($_POST['duration_days']) || $_POST['duration_days'] < 1)
                 $errors['duration_days'] = 'Số ngày phải lớn hơn 0';
 
-            // Validate Itinerary Count
+            // 2. Validate Status (chỉ cho phép draft hoặc pending khi tạo mới)
+            $status = $_POST['status'] ?? 'draft';
+            if (!in_array($status, ['draft', 'pending'])) {
+                $errors['status'] = 'Tour mới chỉ có thể là trạng thái Nháp hoặc Chờ duyệt';
+            }
+
+            // 3. Auto-generate Tour Code
+            $tour_code = generateTourCodeUnique($this->db);
+
+            // 4. Validate Duration: nights <= days
+            $duration_nights = (int) ($_POST['duration_nights'] ?? 0);
             $duration_days = (int) $_POST['duration_days'];
+            if ($duration_nights > $duration_days) {
+                $errors['duration_nights'] = 'Số đêm không thể lớn hơn số ngày';
+            }
+
+            // 5. Validate Price Logic: adult >= child >= infant
+            $adult_price = (float) $_POST['adult_price'];
+            $child_price = !empty($_POST['child_price']) ? (float) $_POST['child_price'] : 0;
+            $infant_price = !empty($_POST['infant_price']) ? (float) $_POST['infant_price'] : 0;
+
+            if ($child_price > $adult_price) {
+                $errors['child_price'] = 'Giá trẻ em không được lớn hơn giá người lớn';
+            }
+            if ($infant_price > $child_price) {
+                $errors['infant_price'] = 'Giá em bé không được lớn hơn giá trẻ em';
+            }
+
+            // 6. Validate Itinerary Count
             $itinerary_count = isset($_POST['itinerary_day']) ? count($_POST['itinerary_day']) : 0;
             if ($itinerary_count != $duration_days) {
                 $errors['itinerary'] = "Lịch trình phải nhập đủ cho $duration_days ngày (Hiện tại: $itinerary_count ngày)";
             }
 
+            // 7. Validate File Uploads (images)
+            if (!empty($_FILES['images']['name'][0])) {
+                $total_size = 0;
+                $count = count($_FILES['images']['name']);
+
+                if ($count > 10) {
+                    $errors['images'] = 'Tối đa 10 hình ảnh';
+                }
+
+                foreach ($_FILES['images']['size'] as $size) {
+                    $total_size += $size;
+                }
+
+                if ($total_size > 10 * 1024 * 1024) { // 10MB
+                    $errors['images'] = 'Tổng dung lượng hình ảnh không quá 10MB';
+                }
+            }
+
+            // 8. Validate Service IDs (nếu có chọn services)
+            if (!empty($_POST['service_ids'])) {
+                foreach ($_POST['service_ids'] as $key => $service_id) {
+                    if (!empty($service_id)) {
+                        $service = $this->serviceModel->findById($service_id);
+                        if (!$service) {
+                            $errors['services'] = "Dịch vụ ID $service_id không tồn tại";
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 9. If errors, return to form with old input
             if (!empty($errors)) {
                 // Pass old input and errors back to view
                 $old_input = $_POST;
@@ -133,9 +191,15 @@ class TourController
                 return;
             }
 
+            // 2. Validate Tour Type
+            $tour_type = $_POST['tour_type'] ?? 'public';
+            if (!in_array($tour_type, ['public', 'custom'])) {
+                $errors['tour_type'] = 'Loại tour không hợp lệ';
+            }
+
             // 2. Prepare Data
             $data = [
-                'code' => sanitize($_POST['code']),
+                'code' => $tour_code,
                 'category_id' => !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null,
                 'name' => sanitize($_POST['name']),
                 'description' => $_POST['description'] ?? '',
@@ -145,6 +209,7 @@ class TourController
                 'adult_price' => (float) $_POST['adult_price'],
                 'child_price' => !empty($_POST['child_price']) ? (float) $_POST['child_price'] : 0,
                 'infant_price' => !empty($_POST['infant_price']) ? (float) $_POST['infant_price'] : 0,
+                'tour_type' => $tour_type,
                 'status' => $_POST['status'] ?? 'draft'
             ];
 
@@ -184,10 +249,10 @@ class TourController
                     $serviceData = [
                         'tour_id' => $tour_id,
                         'service_id' => $service_id,
-                        'service_name' => $_POST['service_names'][$key] ?? '', // Fallback or fetch from DB if needed
+                        'service_name' => $_POST['service_names'][$key] ?? '',
                         'calculation_type' => $_POST['service_calc_types'][$key] ?? 'per_person',
-                        'fixed_quantity' => $_POST['service_quantities'][$key] ?? 1,
-                        'unit_price' => $_POST['service_prices'][$key] ?? 0,
+                        'fixed_quantity' => !empty($_POST['service_quantities'][$key]) ? (int) $_POST['service_quantities'][$key] : 1,
+                        'unit_price' => !empty($_POST['service_prices'][$key]) ? (float) $_POST['service_prices'][$key] : 0,
                         'unit' => $_POST['service_units'][$key] ?? '',
                         'notes' => $_POST['service_notes'][$key] ?? '',
                         'is_included_in_price' => 1
@@ -246,6 +311,12 @@ class TourController
         try {
             $id = (int) $_POST['id'];
 
+            // 1. Validate Tour Type
+            $tour_type = $_POST['tour_type'] ?? 'public';
+            if (!in_array($tour_type, ['public', 'custom'])) {
+                throw new Exception('Loại tour không hợp lệ');
+            }
+
             // 1. Prepare Data (Similar to store)
             $data = [
                 'category_id' => !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null,
@@ -257,6 +328,7 @@ class TourController
                 'adult_price' => (float) $_POST['adult_price'],
                 'child_price' => (float) ($_POST['child_price'] ?? 0),
                 'infant_price' => (float) ($_POST['infant_price'] ?? 0),
+                'tour_type' => $tour_type,
                 'status' => $_POST['status']
             ];
 
@@ -299,8 +371,8 @@ class TourController
                         'service_id' => $service_id,
                         'service_name' => $_POST['service_names'][$key] ?? '',
                         'calculation_type' => $_POST['service_calc_types'][$key] ?? 'per_person',
-                        'fixed_quantity' => $_POST['service_quantities'][$key] ?? 1,
-                        'unit_price' => $_POST['service_prices'][$key] ?? 0,
+                        'fixed_quantity' => !empty($_POST['service_quantities'][$key]) ? (int) $_POST['service_quantities'][$key] : 1,
+                        'unit_price' => !empty($_POST['service_prices'][$key]) ? (float) $_POST['service_prices'][$key] : 0,
                         'unit' => $_POST['service_units'][$key] ?? '',
                         'notes' => $_POST['service_notes'][$key] ?? '',
                         'is_included_in_price' => 1
