@@ -1086,5 +1086,65 @@ function jsonResponse($success, $message, $data = null)
 }
 
 // ============================================================================
+// CSRF PROTECTION
+// ============================================================================
+
+/**
+ * Generate CSRF token and store in session
+ * @return string CSRF token
+ */
+function generate_csrf_token()
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Get current CSRF token
+ * @return string|null CSRF token or null if not set
+ */
+function get_csrf_token()
+{
+    return $_SESSION['csrf_token'] ?? null;
+}
+
+/**
+ * Verify CSRF token
+ * @param string $token Token to verify
+ * @return bool True if valid, false otherwise
+ */
+function verify_csrf_token($token)
+{
+    if (empty($_SESSION['csrf_token'])) {
+        return false;
+    }
+    return hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/**
+ * Generate CSRF token input field for forms
+ * @return string HTML input field
+ */
+function csrf_field()
+{
+    $token = generate_csrf_token();
+    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
+}
+
+/**
+ * Verify CSRF token from POST request
+ * @throws Exception If token is invalid
+ */
+function require_csrf_token()
+{
+    $token = $_POST['csrf_token'] ?? '';
+    if (!verify_csrf_token($token)) {
+        throw new Exception("CSRF token không hợp lệ. Vui lòng thử lại.");
+    }
+}
+
+// ============================================================================
 // END OF COMMON FUNCTIONS
 // ============================================================================

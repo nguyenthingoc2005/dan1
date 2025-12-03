@@ -296,6 +296,15 @@ switch ($module) {
             case 'storePayment':
                 $bookingController->storePayment();
                 break;
+            case 'importPassengers':
+                $bookingController->importPassengers();
+                break;
+            case 'previewPassengers':
+                $bookingController->previewPassengers();
+                break;
+            case 'downloadTemplate':
+                $bookingController->downloadTemplate();
+                break;
             default:
                 $bookingController->index();
                 break;
@@ -394,35 +403,6 @@ switch ($module) {
                 break;
             default:
                 $paymentController->index();
-                break;
-        }
-        break;
-
-    // ==========================================================================
-    // MODULE: ASSIGNMENTS (Phân công HDV)
-    // ==========================================================================
-    case 'assignments':
-        require_once CONTROLLERS_PATH . '/admin/TourAssignmentController.php';
-        $assignmentController = new TourAssignmentController($pdo);
-
-        switch ($action) {
-            case 'index':
-                $assignmentController->index();
-                break;
-            case 'assign':
-                $assignmentController->assign();
-                break;
-            case 'remove':
-                $assignmentController->remove();
-                break;
-            case 'getAvailableGuides':
-                $assignmentController->getAvailableGuides();
-                break;
-            case 'checkAvailability':
-                $assignmentController->checkAvailability();
-                break;
-            default:
-                $assignmentController->index();
                 break;
         }
         break;

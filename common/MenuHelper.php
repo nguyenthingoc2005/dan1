@@ -47,12 +47,6 @@ function get_menu_items($role)
                 'active_pattern' => 'admin:schedules'
             ],
             [
-                'icon' => '👷',
-                'label' => 'Phân công HDV',
-                'url' => $base_url . '/?act=admin&module=assignments',
-                'active_pattern' => 'admin:assignments'
-            ],
-            [
                 'icon' => '📝',
                 'label' => 'Quản lý Đặt Tour',
                 'url' => $base_url . '/?act=admin&module=bookings',

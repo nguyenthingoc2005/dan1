@@ -44,14 +44,28 @@ class BookingController
     public function create()
     {
         // Get active tours for selection
-        $tours = $this->tourModel->getAll(['status' => 'active'])['data'];
+        $toursResult = $this->tourModel->getAll(['status' => 'active']);
+        $tours = $toursResult['data'] ?? [];
+
         // Get customers
-        $customers = $this->customerModel->getAll();
+        $customersResult = $this->customerModel->getAll([], 1, 1000); // Get all customers
+        $customers = $customersResult['data'] ?? [];
 
         // Get open schedules
         require_once 'app/models/TourSchedule.php';
         $scheduleModel = new TourSchedule($this->pdo);
-        $schedules = $scheduleModel->getAll(['status' => 'open'], 1, 1000); // Get all open schedules
+        $schedulesResult = $scheduleModel->getAll(['status' => 'open'], 1, 1000); // Get all open schedules
+        $schedules = $schedulesResult['data'] ?? [];
+
+        // DEBUG: Log data
+        error_log("=== BOOKING CREATE DEBUG ===");
+        error_log("Tours count: " . count($tours));
+        error_log("Customers count: " . count($customers));
+        error_log("Schedules count: " . count($schedules));
+
+        if (!empty($schedules)) {
+            error_log("First schedule: " . print_r($schedules[0] ?? null, true));
+        }
 
         $page_title = 'Tạo Booking Mới';
         $content_file = 'app/views/admin/bookings/create.php';
@@ -63,6 +77,9 @@ class BookingController
         // Only admin can create booking
         require_admin();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Verify CSRF token
+            require_csrf_token();
+            
             try {
                 // Basic Validation
                 // 0. Handle Customer (New vs Existing)
@@ -112,6 +129,34 @@ class BookingController
                 // Nếu chỉ có 1 người (chính là đại diện), không cần nhập thêm
                 if ($total_count > 1 && $passenger_count != $expected_passenger_count) {
                     throw new Exception("Số hành khách cần nhập thêm: $expected_passenger_count người (Tổng $total_count - 1 đại diện). Bạn đã nhập: $passenger_count người");
+                }
+
+                // Validate age_type của passengers khớp với adult/child/infant count
+                if (!empty($_POST['passenger_types'])) {
+                    $passenger_adult_count = 0;
+                    $passenger_child_count = 0;
+                    $passenger_infant_count = 0;
+                    
+                    foreach ($_POST['passenger_types'] as $age_type) {
+                        if ($age_type === 'adult') $passenger_adult_count++;
+                        elseif ($age_type === 'child') $passenger_child_count++;
+                        elseif ($age_type === 'infant') $passenger_infant_count++;
+                    }
+                    
+                    // Primary customer được tính là adult (mặc định)
+                    // Nên tổng adult = primary (1) + passenger adults
+                    $total_adult_expected = 1 + $passenger_adult_count;
+                    $total_child_expected = $passenger_child_count;
+                    $total_infant_expected = $passenger_infant_count;
+                    
+                    if ($total_adult_expected != $adult || $total_child_expected != $child || $total_infant_expected != $infant) {
+                        throw new Exception("Số lượng loại hành khách không khớp. Đã nhập: $adult người lớn, $child trẻ em, $infant em bé. Nhưng trong danh sách có: $total_adult_expected người lớn, $total_child_expected trẻ em, $total_infant_expected em bé.");
+                    }
+                } else {
+                    // Nếu không có passengers, chỉ có primary customer (mặc định là adult)
+                    if ($adult != 1 || $child != 0 || $infant != 0) {
+                        throw new Exception("Khi chỉ có 1 người (khách hàng đại diện), số lượng phải là: 1 người lớn, 0 trẻ em, 0 em bé.");
+                    }
                 }
 
                 // 4. Get Tour Info & Validate
@@ -170,6 +215,12 @@ class BookingController
                         // Tự động tạo schedule cho custom tour
                         $end_date = date('Y-m-d', strtotime($_POST['start_date'] . " + {$tour['duration_days']} days"));
 
+                        // Check max_participants before creating schedule
+                        $maxParticipants = (int) ($tour['max_participants'] ?? 999);
+                        if ($totalParticipants > $maxParticipants) {
+                            throw new Exception("Số lượng người tham gia ($totalParticipants) vượt quá giới hạn tối đa của tour ($maxParticipants người).");
+                        }
+
                         $scheduleData = [
                             'tour_id' => $_POST['tour_id'],
                             'start_date' => $_POST['start_date'],
@@ -190,10 +241,17 @@ class BookingController
                     } else {
                         $schedule_id = $schedule['id'];
                         // Quota linh hoạt hơn cho custom tour (có thể tăng)
-                        // Nếu cần, có thể tự động tăng quota
+                        // Nhưng phải check max_participants của tour
                         if ($totalParticipants > ($schedule['quota'] - $schedule['booked'])) {
-                            // Tự động tăng quota cho custom tour
+                            // Check max_participants before increasing quota
+                            $maxParticipants = (int) ($tour['max_participants'] ?? 999);
                             $new_quota = $schedule['booked'] + $totalParticipants;
+                            
+                            if ($new_quota > $maxParticipants) {
+                                throw new Exception("Số lượng người tham gia ($totalParticipants) vượt quá giới hạn tối đa của tour ($maxParticipants người).");
+                            }
+                            
+                            // Tự động tăng quota cho custom tour (nhưng không vượt max_participants)
                             $stmt = $this->pdo->prepare("UPDATE tour_schedules SET quota = :quota WHERE id = :id");
                             $stmt->execute(['quota' => $new_quota, 'id' => $schedule_id]);
                             $schedule['quota'] = $new_quota;
@@ -207,9 +265,6 @@ class BookingController
                 } else {
                     throw new Exception("Loại tour không hợp lệ.");
                 }
-
-                $total_amount = $priceAdult * $adult + $priceChild * $child + $priceInfant * $infant;
-                $discount = (int) ($_POST['discount_amount'] ?? 0);
 
                 $total_amount = $priceAdult * $adult + $priceChild * $child + $priceInfant * $infant;
                 $discount = (int) ($_POST['discount_amount'] ?? 0);
@@ -242,6 +297,25 @@ class BookingController
                 // Get end_date from schedule
                 $end_date = $schedule['end_date'] ?? date('Y-m-d', strtotime($_POST['start_date'] . " + {$tour['duration_days']} days"));
 
+                // Validate end_date >= start_date
+                if ($end_date < $_POST['start_date']) {
+                    throw new Exception("Ngày kết thúc phải sau hoặc bằng ngày khởi hành");
+                }
+
+                // Validate total_amount > 0
+                if ($total_amount <= 0) {
+                    throw new Exception("Tổng tiền tour phải lớn hơn 0");
+                }
+
+                // Validate child_count and infant_count >= 0
+                if ($child < 0 || $infant < 0) {
+                    throw new Exception("Số lượng trẻ em và em bé không được âm");
+                }
+
+                // Start transaction to ensure atomicity
+                $this->pdo->beginTransaction();
+                
+                try {
                 $data = [
                     'tour_id' => $_POST['tour_id'],
                     'customer_id' => $customer_id,
@@ -258,7 +332,7 @@ class BookingController
                     'deposit_amount' => $deposit,
                     'remaining_amount' => $remaining,
                     'payment_status' => $_POST['payment_status'] ?? 'unpaid',
-                    'notes' => $_POST['notes'] ?? '',
+                        'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
                     'created_by' => $_SESSION['user_id'] ?? 1
                 ];
 
@@ -266,9 +340,17 @@ class BookingController
                 $passengers = [];
 
                 // 1. Add Main Customer as Primary Representative (Khách hàng đại diện)
+                    // Note: Primary customer luôn là adult vì người đặt tour thường là người lớn (phụ huynh)
+                    // Nếu booking chỉ có trẻ em, primary vẫn là adult (người đại diện pháp lý)
+                    $primary_age_type = 'adult'; // Mặc định là adult
+                    
+                    // Nếu chỉ có 1 người và là trẻ em/em bé, có thể primary là trẻ em
+                    // Nhưng trong thực tế, người đặt tour luôn là người lớn
+                    // Nên giữ nguyên logic: primary = adult
+                    
                 $passengers[] = [
                     'customer_id' => $customer_id,
-                    'age_type' => 'adult', // Default
+                        'age_type' => $primary_age_type,
                     'is_primary' => 1
                 ];
 
@@ -281,15 +363,49 @@ class BookingController
                         // Other passengers cannot be primary (already have one)
                         $p_phone = $_POST['passenger_phones'][$index] ?? ($_POST['new_customer_phone'] ?? '0000000000');
 
+                            // Check duplicate customer by phone before creating
+                            if (!empty($p_phone) && $p_phone !== '0000000000') {
+                                $existingCustomer = $this->customerModel->isPhoneExists($p_phone);
+                                if ($existingCustomer) {
+                                    // Get existing customer ID
+                                    $stmt = $this->pdo->prepare("SELECT id FROM customers WHERE phone = :phone LIMIT 1");
+                                    $stmt->execute(['phone' => $p_phone]);
+                                    $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+                                    if ($existing) {
+                                        $p_id = $existing['id'];
+                                    } else {
+                                        // Create new customer if not found (should not happen, but safety check)
+                                        $passengerData = [
+                                            'full_name' => $name,
+                                            'phone' => $p_phone,
+                                            'email' => $_POST['passenger_emails'][$index] ?? null,
+                                            'gender' => $_POST['passenger_genders'][$index] ?? 'other',
+                                            'created_by' => $_SESSION['user_id'] ?? 1
+                                        ];
+                                        $p_id = $this->customerModel->create($passengerData);
+                                    }
+                                } else {
+                                    // Create new customer
+                                    $passengerData = [
+                                        'full_name' => $name,
+                                        'phone' => $p_phone,
+                                        'email' => $_POST['passenger_emails'][$index] ?? null,
+                                        'gender' => $_POST['passenger_genders'][$index] ?? 'other',
+                                        'created_by' => $_SESSION['user_id'] ?? 1
+                                    ];
+                                    $p_id = $this->customerModel->create($passengerData);
+                                }
+                            } else {
+                                // Create customer without phone check if phone is empty/invalid
                         $passengerData = [
                             'full_name' => $name,
                             'phone' => $p_phone,
-                            'date_of_birth' => $_POST['passenger_dobs'][$index] ?? null,
+                                    'email' => $_POST['passenger_emails'][$index] ?? null,
                             'gender' => $_POST['passenger_genders'][$index] ?? 'other',
                             'created_by' => $_SESSION['user_id'] ?? 1
                         ];
-
                         $p_id = $this->customerModel->create($passengerData);
+                            }
 
                         $passengers[] = [
                             'customer_id' => $p_id,
@@ -299,14 +415,31 @@ class BookingController
                     }
                 }
 
-                $this->bookingModel->create($data, $passengers);
+                    // Create booking (skip its own transaction since we're in a transaction already)
+                    $booking_id = $this->bookingModel->create($data, $passengers, false);
 
-                // Increment booked count on schedule
-                $scheduleModel->incrementBooked($schedule_id, $totalParticipants);
+                    // Increment booked count on schedule (must be in same transaction)
+                    if (!$scheduleModel->incrementBooked($schedule_id, $totalParticipants)) {
+                        throw new Exception("Không thể cập nhật số lượng đã đặt cho lịch khởi hành");
+                    }
+
+                    // Commit transaction
+                    $this->pdo->commit();
 
                 set_success("Tạo Booking thành công!");
                 redirect('?act=admin&module=bookings');
+                    
+                } catch (Exception $e) {
+                    // Rollback transaction on any error
+                    $this->pdo->rollBack();
+                    throw $e; // Re-throw to be caught by outer catch
+                }
             } catch (Exception $e) {
+                // Log error for debugging
+                error_log("BookingController::store() ERROR: " . $e->getMessage());
+                error_log("Stack trace: " . $e->getTraceAsString());
+                error_log("POST data: " . print_r($_POST, true));
+                
                 set_error($e->getMessage());
                 $_SESSION['old'] = $_POST;
                 redirect('?act=admin&module=bookings&action=create');
@@ -343,6 +476,9 @@ class BookingController
     {
         require_admin();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Verify CSRF token
+            require_csrf_token();
+            
             try {
                 require_once 'app/models/Payment.php';
                 $paymentModel = new Payment($this->pdo);
@@ -371,6 +507,13 @@ class BookingController
                     throw new Exception("Số tiền thanh toán (" . number_format($amount) . ") vượt quá số tiền còn lại (" . number_format($remaining) . ")");
                 }
 
+                // Validate payment_date (không được trong tương lai)
+                $payment_date = $_POST['payment_date'] ?? date('Y-m-d');
+                $today = date('Y-m-d');
+                if ($payment_date > $today) {
+                    throw new Exception("Ngày thanh toán không được trong tương lai");
+                }
+
                 $data = [
                     'booking_id' => $bookingId,
                     'payment_method' => $_POST['payment_method'],
@@ -378,7 +521,7 @@ class BookingController
                     'payment_type' => $_POST['payment_type'],
                     'transaction_id' => $_POST['transaction_id'] ?? null,
                     'receipt_number' => $_POST['receipt_number'] ?? null,
-                    'payment_date' => $_POST['payment_date'] ?? date('Y-m-d'),
+                    'payment_date' => $payment_date,
                     'notes' => $_POST['notes'] ?? '',
                     'created_by' => $_SESSION['user_id'] ?? 1
                 ];
@@ -395,8 +538,12 @@ class BookingController
                 redirect("?act=admin&module=bookings&action=show&id=$bookingId");
 
             } catch (Exception $e) {
+                // Log error for debugging
+                error_log("BookingController::storePayment() ERROR: " . $e->getMessage());
+                error_log("Stack trace: " . $e->getTraceAsString());
+                
                 set_error($e->getMessage());
-                redirect("?act=admin&module=bookings&action=show&id=" . $_POST['booking_id']);
+                redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
             }
         }
     }
@@ -404,6 +551,9 @@ class BookingController
     public function changeStatus()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Verify CSRF token
+            require_csrf_token();
+            
             $id = $_POST['id'];
             $action = $_POST['action'];
             $userId = $_SESSION['user_id'] ?? 1;
@@ -420,48 +570,50 @@ class BookingController
                     if ($booking['approval_status'] !== 'pending') {
                         throw new Exception("Chỉ có thể duyệt booking đang chờ duyệt");
                     }
-                    
-                    // Check quota availability before approving
+
+                    // Note: Quota đã được check và trừ khi tạo booking (pending)
+                    // Khi approve, cần check lại schedule status để đảm bảo vẫn còn open
                     require_once 'app/models/TourSchedule.php';
                     $scheduleModel = new TourSchedule($this->pdo);
                     $schedule = $scheduleModel->getByTourAndDateRange(
-                        $booking['tour_id'], 
-                        $booking['start_date'], 
+                        $booking['tour_id'],
+                        $booking['start_date'],
                         $booking['end_date']
                     );
-                    
+
                     if ($schedule) {
-                        $totalParticipants = $booking['adult_count'] + $booking['child_count'] + $booking['infant_count'];
-                        $available = $schedule['quota'] - $schedule['booked'] + $totalParticipants; // +participants vì đã bị trừ khi tạo
-                        
-                        if ($totalParticipants > $available) {
-                            throw new Exception("Không đủ chỗ trống để duyệt booking này (Còn $available chỗ)");
+                        // Check schedule status must be 'open'
+                        if ($schedule['status'] !== 'open') {
+                            throw new Exception("Không thể duyệt booking. Lịch khởi hành không còn khả dụng (Status: {$schedule['status']}). Vui lòng kiểm tra lại lịch khởi hành.");
                         }
+                    } else {
+                        // Schedule không tồn tại - có thể đã bị xóa
+                        throw new Exception("Không thể duyệt booking. Lịch khởi hành không tồn tại. Vui lòng kiểm tra lại.");
                     }
-                    
+
                     $this->bookingModel->updateStatus($id, 'approved', 'approval', $userId);
                     $this->bookingModel->logHistory($id, 'pending', 'approved', $userId, "Duyệt thủ công");
                     set_success("Đã duyệt Booking!");
-                    
+
                 } elseif ($action == 'reject') {
                     $reason = $_POST['reason'] ?? '';
                     if (empty($reason)) {
                         throw new Exception("Vui lòng nhập lý do từ chối");
                     }
-                    
+
                     // Use new reject method that returns quota
                     $this->bookingModel->reject($id, $reason, $userId);
                     set_success("Đã từ chối Booking và trả lại chỗ trống!");
-                    
+
                 } elseif ($action == 'cancel') {
                     $reason = $_POST['reason'] ?? '';
                     if (empty($reason)) {
                         throw new Exception("Vui lòng nhập lý do hủy");
                     }
-                    
+
                     // Use cancel method that calculates fee and returns quota
                     $result = $this->bookingModel->cancel($id, $reason, $userId);
-                    
+
                     $message = "Đã hủy Booking!";
                     if ($result['fee'] > 0) {
                         $message .= " Phí hủy: " . number_format($result['fee']) . " VNĐ (" . $result['policy'] . ")";
@@ -475,9 +627,307 @@ class BookingController
                 redirect("?act=admin&module=bookings&action=show&id=$id");
 
             } catch (Exception $e) {
+                // Log error for debugging
+                error_log("BookingController::changeStatus() ERROR: " . $e->getMessage());
+                error_log("Stack trace: " . $e->getTraceAsString());
+                error_log("Action: " . ($_POST['action'] ?? 'unknown') . ", Booking ID: " . ($id ?? 'unknown'));
+                
                 set_error("Lỗi: " . $e->getMessage());
-                redirect("?act=admin&module=bookings&action=show&id=$id");
+                redirect("?act=admin&module=bookings&action=show&id=" . ($id ?? ''));
             }
         }
+    }
+
+    /**
+     * Import danh sách khách hàng từ Excel/CSV
+     * Trả về JSON để fill vào passenger list
+     */
+    public function importPassengers()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['file'])) {
+                throw new Exception("Thiếu file upload");
+            }
+
+            $file = $_FILES['file'];
+
+            // Validate file
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("Lỗi upload file: " . $file['error']);
+            }
+
+            $allowedExtensions = ['csv', 'xlsx', 'xls'];
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+            if (!in_array($extension, $allowedExtensions)) {
+                throw new Exception("File không hợp lệ. Chỉ chấp nhận CSV, XLS, XLSX");
+            }
+
+            // Validate file size (max 5MB)
+            if ($file['size'] > 5 * 1024 * 1024) {
+                throw new Exception("File quá lớn. Tối đa 5MB");
+            }
+
+            // Move uploaded file
+            $uploadDir = 'public/uploads/imports/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $fileName = 'import_' . time() . '_' . basename($file['name']);
+            $filePath = $uploadDir . $fileName;
+
+            if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+                throw new Exception("Không thể lưu file");
+            }
+
+            // Import file
+            require_once MODELS_PATH . '/CustomerImport.php';
+            $importModel = new CustomerImport($this->pdo);
+
+            $result = $importModel->importFromFile($filePath, $file['name'], get_user_id());
+
+            // Format data để trả về cho passenger list
+            $passengers = [];
+            if ($result['success'] > 0) {
+                // Lấy danh sách khách hàng vừa import (theo phone hoặc name)
+                // Hoặc trả về data từ file để fill vào form
+                // Tạm thời trả về thông báo thành công
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => "Import thành công: {$result['success']} khách hàng",
+                'data' => [
+                    'imported' => $result['success'],
+                    'errors' => $result['errors'],
+                    'total' => $result['total']
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Import và trả về danh sách passengers để fill vào form
+     * (Không tạo customer, chỉ đọc file để fill form)
+     */
+    public function previewPassengers()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        // DEBUG
+        error_log("=== PREVIEW PASSENGERS DEBUG ===");
+        error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
+        error_log("Files: " . print_r($_FILES, true));
+
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['file'])) {
+                error_log("❌ Missing file upload");
+                throw new Exception("Thiếu file upload");
+            }
+
+            $file = $_FILES['file'];
+            error_log("File details: " . print_r($file, true));
+
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                error_log("❌ Upload error: " . $file['error']);
+                throw new Exception("Lỗi upload file: " . $file['error']);
+            }
+
+            $allowedExtensions = ['csv', 'xlsx', 'xls'];
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            error_log("File extension: " . $extension);
+
+            if (!in_array($extension, $allowedExtensions)) {
+                error_log("❌ Invalid extension: " . $extension);
+                throw new Exception("File không hợp lệ. Chỉ chấp nhận CSV, XLS, XLSX");
+            }
+
+            // Read file directly from tmp
+            require_once __DIR__ . '/../../models/CustomerImport.php';
+            $importModel = new CustomerImport($this->pdo);
+
+            error_log("Reading file: " . $file['tmp_name']);
+            // For Excel files, we'll try to read as CSV (user should save as CSV)
+            // Or we can add PhpSpreadsheet library later
+            $rows = $importModel->readFile($file['tmp_name'], $extension);
+            error_log("Rows read: " . count($rows));
+            error_log("First row: " . print_r($rows[0] ?? null, true));
+
+            // Format để trả về cho JavaScript
+            $passengers = [];
+            foreach ($rows as $index => $row) {
+                // Skip nếu không có tên
+                if (empty($row['full_name'])) {
+                    error_log("Skipping row $index: no full_name");
+                    continue;
+                }
+
+                // Format phone: loại bỏ khoảng trắng, dấu gạch ngang
+                $phone = $row['phone'] ?? '';
+                if (!empty($phone)) {
+                    // Loại bỏ khoảng trắng, dấu gạch ngang, dấu ngoặc
+                    $phone = preg_replace('/[\s\-\(\)]/', '', $phone);
+                    
+                    // Nếu là số (Excel format), chuyển về string
+                    if (is_numeric($phone)) {
+                        $phone = (string)$phone;
+                        // Nếu bắt đầu bằng 84, chuyển thành 0
+                        if (strpos($phone, '84') === 0 && strlen($phone) == 11) {
+                            $phone = '0' . substr($phone, 2);
+                        }
+                        // Nếu thiếu số 0 đầu và có 9 chữ số, thêm 0
+                        elseif (strlen($phone) == 9 && substr($phone, 0, 1) != '0') {
+                            $phone = '0' . $phone;
+                        }
+                    }
+                }
+                
+                $passenger = [
+                    'name' => $row['full_name'] ?? '',
+                    'phone' => $phone,
+                    'email' => $row['email'] ?? '',
+                    'gender' => $this->normalizeGender($row['gender'] ?? ''),
+                    'age_type' => $this->determineAgeType($row)
+                ];
+
+                error_log("Passenger $index: " . print_r($passenger, true));
+                $passengers[] = $passenger;
+            }
+
+            error_log("Total passengers: " . count($passengers));
+
+            $response = [
+                'success' => true,
+                'passengers' => $passengers,
+                'count' => count($passengers)
+            ];
+
+            error_log("Response: " . json_encode($response, JSON_UNESCAPED_UNICODE));
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+
+        } catch (Exception $e) {
+            error_log("❌ Exception: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], JSON_UNESCAPED_UNICODE);
+        }
+        exit;
+    }
+
+    /**
+     * Xác định age_type từ dữ liệu
+     * Chỉ dựa vào cột "Loại" trong file CSV
+     */
+    private function determineAgeType($row)
+    {
+        // Nếu có field age_type trong file
+        if (!empty($row['age_type'])) {
+            $ageType = strtolower(trim($row['age_type']));
+            if (stripos($ageType, 'trẻ') !== false || stripos($ageType, 'child') !== false || stripos($ageType, 'trẻ em') !== false) {
+                return 'child';
+            } elseif (stripos($ageType, 'bé') !== false || stripos($ageType, 'infant') !== false || stripos($ageType, 'em bé') !== false) {
+                return 'infant';
+            } elseif (stripos($ageType, 'lớn') !== false || stripos($ageType, 'adult') !== false || stripos($ageType, 'người lớn') !== false) {
+                return 'adult';
+            }
+        }
+
+        // Mặc định là người lớn
+        return 'adult';
+    }
+
+    private function parseDate($dateStr)
+    {
+        if (empty($dateStr)) {
+            return null;
+        }
+
+        $formats = ['Y-m-d', 'd/m/Y', 'd-m-Y', 'Y/m/d', 'd.m.Y'];
+
+        foreach ($formats as $format) {
+            $date = DateTime::createFromFormat($format, $dateStr);
+            if ($date !== false) {
+                return $date->format('Y-m-d');
+            }
+        }
+
+        $timestamp = strtotime($dateStr);
+        if ($timestamp !== false) {
+            return date('Y-m-d', $timestamp);
+        }
+
+        return null;
+    }
+
+    private function normalizeGender($genderStr)
+    {
+        if (empty($genderStr)) {
+            return 'other';
+        }
+
+        $genderStr = strtolower(trim($genderStr));
+
+        if (in_array($genderStr, ['nam', 'male', 'm', '1'])) {
+            return 'male';
+        } elseif (in_array($genderStr, ['nữ', 'nu', 'female', 'f', '2'])) {
+            return 'female';
+        }
+
+        return 'other';
+    }
+
+    /**
+     * Download template CSV file
+     */
+    public function downloadTemplate()
+    {
+        require_admin();
+
+        // Use PUBLIC_PATH constant from bootstrap
+        $templatePath = PUBLIC_PATH . '/templates/customer_import_template.csv';
+
+        // Fallback to relative path if constant not defined
+        if (!defined('PUBLIC_PATH')) {
+            $templatePath = __DIR__ . '/../../public/templates/customer_import_template.csv';
+        }
+
+        // Normalize path
+        $templatePath = realpath($templatePath);
+
+        error_log("Template path: " . $templatePath);
+        error_log("File exists: " . (file_exists($templatePath) ? 'YES' : 'NO'));
+
+        if (!$templatePath || !file_exists($templatePath)) {
+            error_log("❌ Template file not found at: " . $templatePath);
+            set_error("File template không tồn tại tại: " . $templatePath);
+            redirect('?act=admin&module=bookings&action=create');
+            return;
+        }
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="customer_import_template.csv"');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Pragma: public');
+
+        // Add BOM for UTF-8 Excel compatibility
+        echo "\xEF\xBB\xBF";
+
+        readfile($templatePath);
+        exit;
     }
 }

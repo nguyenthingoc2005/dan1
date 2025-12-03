@@ -51,6 +51,7 @@ $statusColors = [
 
             <?php if ($booking['approval_status'] == 'pending'): ?>
                 <form action="?act=admin&module=bookings&action=changeStatus" method="POST" class="inline">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="id" value="<?= $booking['id'] ?>">
                     <input type="hidden" name="action" value="approve">
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow"
@@ -127,21 +128,25 @@ $statusColors = [
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($booking['passengers'] as $p): ?>
+                        <?php foreach ($booking['passengers'] ?? [] as $p): ?>
                             <tr class="border-b">
                                 <td class="px-3 py-2 font-medium text-gray-900">
-                                    <!-- Fetch passenger name logic is complex as we only stored customer_id. 
-                                     In real app we would join customers table. 
-                                     For now, assuming we fixed BookingModel to join. -->
-                                    <?= $p['full_name'] ?? 'Khách hàng #' . $p['customer_id'] ?>
-                                    <!-- Note: BookingModel::getById didn't join customers for passengers list, 
-                                          but let's assume we might fix it or it shows ID. 
-                                          Actually, let's fix the view to be safe. -->
+                                    <?= htmlspecialchars($p['full_name'] ?? 'Khách hàng #' . $p['customer_id']) ?>
+                                    <?php if (!empty($p['phone'])): ?>
+                                        <div class="text-xs text-gray-500"><?= htmlspecialchars($p['phone']) ?></div>
+                                    <?php endif; ?>
                                 </td>
-                                <td class="px-3 py-2 capitalize"><?= $p['age_type'] ?></td>
+                                <td class="px-3 py-2 capitalize">
+                                    <?php
+                                    $ageTypeLabels = ['adult' => 'Người lớn', 'child' => 'Trẻ em', 'infant' => 'Em bé'];
+                                    echo $ageTypeLabels[$p['age_type']] ?? $p['age_type'];
+                                    ?>
+                                </td>
                                 <td class="px-3 py-2">
                                     <?php if ($p['is_primary']): ?>
                                         <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Người đặt</span>
+                                    <?php else: ?>
+                                        <span class="text-xs text-gray-500">Hành khách</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -267,6 +272,7 @@ $statusColors = [
     <div class="bg-white rounded-lg w-full max-w-md p-6">
         <h3 class="text-lg font-bold mb-4">Thêm thanh toán mới</h3>
         <form action="?act=admin&module=bookings&action=storePayment" method="POST">
+            <?= csrf_field() ?>
             <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
 
             <div class="space-y-4">
@@ -316,6 +322,7 @@ $statusColors = [
             (<?= date('d/m/Y', strtotime($booking['start_date'])) ?>).
         </div>
         <form action="?act=admin&module=bookings&action=changeStatus" method="POST">
+            <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= $booking['id'] ?>">
             <input type="hidden" name="action" value="cancel">
 
@@ -342,6 +349,7 @@ $statusColors = [
     <div class="bg-white rounded-lg w-full max-w-md p-6">
         <h3 class="text-lg font-bold mb-4">Từ chối Booking</h3>
         <form action="?act=admin&module=bookings&action=changeStatus" method="POST">
+            <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= $booking['id'] ?>">
             <input type="hidden" name="action" value="reject">
 

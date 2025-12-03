@@ -18,6 +18,7 @@ unset($_SESSION['old']);
 
     <form action="?act=admin&module=bookings&action=store" method="POST" class="grid grid-cols-1 lg:grid-cols-4 gap-6"
         id="bookingForm">
+        <?= csrf_field() ?>
 
         <!-- LEFT COLUMN: TOUR & CUSTOMER -->
         <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 h-fit">
@@ -34,15 +35,41 @@ unset($_SESSION['old']);
                             class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
                             required>
                             <option value="">-- Chọn Tour --</option>
-                            <?php foreach ($tours as $t): ?>
-                                    <option value="<?= $t['id'] ?>" data-price-adult="<?= $t['adult_price'] ?>"
-                                        data-price-child="<?= $t['child_price'] ?>"
-                                        data-price-infant="<?= $t['infant_price'] ?>" data-duration="<?= $t['duration_days'] ?>"
-                                        <?= ($old['tour_id'] ?? '') == $t['id'] ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($t['tour_code'] . ' - ' . $t['name']) ?>
+                            <?php if (!empty($tours)): ?>
+                                <?php foreach ($tours as $t): ?>
+                                    <?php
+                                    $tourId = $t['id'] ?? '';
+                                    $adultPrice = $t['adult_price'] ?? 0;
+                                    $childPrice = $t['child_price'] ?? 0;
+                                    $infantPrice = $t['infant_price'] ?? 0;
+                                    $duration = $t['duration_days'] ?? 0;
+                                    $tourCode = $t['tour_code'] ?? '';
+                                    $tourName = $t['name'] ?? '';
+                                    ?>
+                                    <option value="<?= htmlspecialchars($tourId) ?>"
+                                        data-price-adult="<?= (float) $adultPrice ?>"
+                                        data-price-child="<?= (float) $childPrice ?>"
+                                        data-price-infant="<?= (float) $infantPrice ?>" data-duration="<?= (int) $duration ?>"
+                                        <?= ($old['tour_id'] ?? '') == $tourId ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($tourCode . ' - ' . $tourName) ?>
                                     </option>
-                            <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </select>
+                    </div>
+
+                    <!-- Giá tour hiển thị -->
+                    <div id="tour_price_display" class="hidden bg-blue-50 p-3 rounded border border-blue-200">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">Giá người lớn:</span>
+                                <span id="display_adult_price" class="font-bold text-blue-600 ml-2">0 đ</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Giá trẻ em:</span>
+                                <span id="display_child_price" class="font-bold text-blue-600 ml-2">0 đ</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -53,16 +80,32 @@ unset($_SESSION['old']);
                                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
                                 required>
                                 <option value="">-- Chọn ngày đi --</option>
-                                <?php foreach ($schedules as $s): ?>
-                                        <option value="<?= $s['start_date'] ?>" data-tour-id="<?= $s['tour_id'] ?>"
-                                            data-end-date="<?= $s['end_date'] ?>" data-quota="<?= $s['quota'] ?>"
-                                            data-booked="<?= $s['booked'] ?>" data-price-adult="<?= $s['adult_price'] ?>"
-                                            data-price-child="<?= $s['child_price'] ?>"
-                                            data-price-infant="<?= $s['infant_price'] ?>" class="schedule-option hidden">
-                                            <?= date('d/m/Y', strtotime($s['start_date'])) ?> (Còn <?= $s['quota'] - $s['booked'] ?>
-                                            chỗ)
+                                <?php if (!empty($schedules)): ?>
+                                    <?php foreach ($schedules as $s): ?>
+                                        <?php
+                                        $startDate = $s['start_date'] ?? '';
+                                        $endDate = $s['end_date'] ?? '';
+                                        $tourId = $s['tour_id'] ?? '';
+                                        $quota = $s['quota'] ?? 0;
+                                        $booked = $s['booked'] ?? 0;
+                                        $adultPrice = $s['adult_price'] ?? 0;
+                                        $childPrice = $s['child_price'] ?? 0;
+                                        $infantPrice = $s['infant_price'] ?? 0;
+                                        $available = max(0, $quota - $booked);
+                                        ?>
+                                        <option value="<?= htmlspecialchars($startDate) ?>" data-tour-id="<?= (int) $tourId ?>"
+                                            data-end-date="<?= htmlspecialchars($endDate) ?>" data-quota="<?= (int) $quota ?>"
+                                            data-booked="<?= (int) $booked ?>" data-price-adult="<?= (float) $adultPrice ?>"
+                                            data-price-child="<?= (float) $childPrice ?>"
+                                            data-price-infant="<?= (float) $infantPrice ?>" class="schedule-option hidden">
+                                            <?php if (!empty($startDate)): ?>
+                                                <?= date('d/m/Y', strtotime($startDate)) ?> (Còn <?= $available ?> chỗ)
+                                            <?php else: ?>
+                                                -- Chọn ngày --
+                                            <?php endif; ?>
                                         </option>
-                                <?php endforeach; ?>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </select>
                             <input type="hidden" name="end_date" id="end_date">
                         </div>
@@ -81,53 +124,66 @@ unset($_SESSION['old']);
             <div class="bg-white p-6 rounded shadow-sm h-full">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">2. Khách hàng</h2>
 
-                    <div class="flex gap-4 mb-4">
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="radio" name="customer_mode" value="existing" class="form-radio text-accent" checked onchange="toggleCustomerMode()">
-                            <span class="ml-2">Khách hàng cũ</span>
-                        </label>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="radio" name="customer_mode" value="new" class="form-radio text-accent" onchange="toggleCustomerMode()">
-                            <span class="ml-2">Tạo khách mới</span>
-                        </label>
-                    </div>
+                <div class="flex gap-4 mb-4">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="customer_mode" value="existing" class="form-radio text-accent" checked
+                            onchange="toggleCustomerMode()">
+                        <span class="ml-2">Khách hàng cũ</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="customer_mode" value="new" class="form-radio text-accent"
+                            onchange="toggleCustomerMode()">
+                        <span class="ml-2">Tạo khách mới</span>
+                    </label>
+                </div>
 
-                    <!-- EXISTING CUSTOMER SELECT -->
-                    <div id="existing_customer_section">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tìm khách hàng <span class="text-red-500">*</span></label>
-                        <select name="customer_id" id="customer_id" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-                            <option value="">-- Chọn Khách hàng --</option>
+                <!-- EXISTING CUSTOMER SELECT -->
+                <div id="existing_customer_section">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tìm khách hàng <span
+                            class="text-red-500">*</span></label>
+                    <select name="customer_id" id="customer_id"
+                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                        <option value="">-- Chọn Khách hàng --</option>
+                        <?php if (!empty($customers)): ?>
                             <?php foreach ($customers as $c): ?>
-                                    <option value="<?= $c['id'] ?>" <?= ($old['customer_id'] ?? '') == $c['id'] ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($c['full_name'] . ' - ' . $c['phone']) ?>
-                                    </option>
+                                <?php
+                                $customerId = $c['id'] ?? '';
+                                $customerName = $c['full_name'] ?? '';
+                                $customerPhone = $c['phone'] ?? '';
+                                ?>
+                                <option value="<?= htmlspecialchars($customerId) ?>" <?= ($old['customer_id'] ?? '') == $customerId ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($customerName . ' - ' . $customerPhone) ?>
+                                </option>
                             <?php endforeach; ?>
-                        </select>
-                    </div>
+                        <?php endif; ?>
+                    </select>
+                </div>
 
-                    <!-- NEW CUSTOMER FORM -->
-                    <div id="new_customer_section" class="hidden space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên <span class="text-red-500">*</span></label>
-                                <input type="text" name="new_customer_name" class="w-full px-3 py-2 border rounded">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại <span class="text-red-500">*</span></label>
-                                <input type="text" name="new_customer_phone" class="w-full px-3 py-2 border rounded">
-                            </div>
+                <!-- NEW CUSTOMER FORM -->
+                <div id="new_customer_section" class="hidden space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên <span
+                                    class="text-red-500">*</span></label>
+                            <input type="text" name="new_customer_name" class="w-full px-3 py-2 border rounded">
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input type="email" name="new_customer_email" class="w-full px-3 py-2 border rounded">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
-                                <input type="text" name="new_customer_address" class="w-full px-3 py-2 border rounded">
-                            </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại <span
+                                    class="text-red-500">*</span></label>
+                            <input type="text" name="new_customer_phone" class="w-full px-3 py-2 border rounded">
                         </div>
                     </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" name="new_customer_email" class="w-full px-3 py-2 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                            <input type="text" name="new_customer_address" class="w-full px-3 py-2 border rounded">
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- 3. Passengers & Notes -->
@@ -148,7 +204,7 @@ unset($_SESSION['old']);
                             class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent text-center">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Em bé (<5t)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Em bé (<5t)< /label>
                                 <input type="number" name="infant_count" id="infant_count"
                                     value="<?= $old['infant_count'] ?? 0 ?>" min="0"
                                     class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent text-center">
@@ -159,14 +215,34 @@ unset($_SESSION['old']);
                 <div class="mt-6 border-t pt-4">
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="font-bold text-gray-700">Danh sách đoàn (Tùy chọn)</h3>
-                        <button type="button" onclick="addPassengerRow()" class="text-sm text-blue-600 hover:underline">+ Thêm người</button>
+                        <div class="flex gap-2 items-center">
+                            <label
+                                class="text-sm text-green-600 hover:underline cursor-pointer border border-green-600 px-3 py-1 rounded hover:bg-green-50">
+                                📥 Import Excel/CSV
+                                <input type="file" id="importFile" accept=".csv,.xlsx,.xls" class="hidden"
+                                    onchange="handleImportFile(event)">
+                            </label>
+                            <a href="?act=admin&module=bookings&action=downloadTemplate"
+                                class="text-xs text-gray-500 hover:text-gray-700 border border-gray-300 px-2 py-1 rounded hover:bg-gray-50"
+                                title="Tải file mẫu">
+                                📄 Template
+                            </a>
+                            <button type="button" onclick="addPassengerRow()"
+                                class="text-sm text-blue-600 hover:underline">+ Thêm người</button>
+                        </div>
                     </div>
+                    <div id="importStatus" class="mb-2 hidden"></div>
+                    <p class="text-xs text-gray-500 mb-2">
+                        💡 Hướng dẫn: Tải file mẫu, điền thông tin khách hàng, sau đó import.
+                        File Excel (.xlsx) cần lưu dưới dạng CSV trước khi import.
+                    </p>
                     <table class="w-full text-sm text-left text-gray-500 border rounded">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-2 py-2">Họ tên</th>
+                                <th class="px-2 py-2 w-32">SĐT</th>
+                                <th class="px-2 py-2 w-40">Email</th>
                                 <th class="px-2 py-2 w-24">Loại</th>
-                                <th class="px-2 py-2 w-32">Ngày sinh</th>
                                 <th class="px-2 py-2 w-24">Giới tính</th>
                                 <th class="px-2 py-2 w-10"></th>
                             </tr>
@@ -274,73 +350,143 @@ unset($_SESSION['old']);
         const remainingAmountDisplay = document.getElementById('remaining_amount_display');
 
         function formatCurrency(amount) {
-            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+            // Fallback nếu Intl không được hỗ trợ
+            if (typeof Intl === 'undefined' || !Intl.NumberFormat) {
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount) ||
+                    new Number(amount).toLocaleString('vi-VN') + ' đ';
+            }
+            try {
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+            } catch (e) {
+                // Fallback: format thủ công
+                return new Number(amount).toLocaleString('vi-VN') + ' đ';
+            }
         }
 
         function filterSchedules() {
             const tourId = tourSelect.value;
+            console.log('🔍 filterSchedules() - Tour ID selected:', tourId);
+
+            if (!tourId) {
+                // Nếu chưa chọn tour, ẩn tất cả schedules
+                const options = startDateSelect.querySelectorAll('.schedule-option');
+                console.log('❌ No tour selected, hiding all schedules. Total options:', options.length);
+                options.forEach(opt => {
+                    opt.classList.add('hidden');
+                });
+                startDateSelect.value = "";
+                endDateDisplay.value = "";
+                return;
+            }
+
             const options = startDateSelect.querySelectorAll('.schedule-option');
+            console.log('📋 Total schedule options found:', options.length);
             let hasOption = false;
 
             startDateSelect.value = ""; // Reset selection
             endDateDisplay.value = "";
+            endDateInput.value = "";
 
-            options.forEach(opt => {
-                if (opt.dataset.tourId == tourId) {
+            options.forEach((opt, index) => {
+                // So sánh tour_id (convert cả 2 về string để đảm bảo khớp)
+                const optTourId = String(opt.dataset.tourId || '');
+                const selectedTourId = String(tourId || '');
+
+                console.log(`  Option ${index + 1}: tourId=${optTourId}, selectedTourId=${selectedTourId}, match=${optTourId === selectedTourId}`);
+
+                if (optTourId === selectedTourId && optTourId !== '') {
                     opt.classList.remove('hidden');
                     hasOption = true;
+                    console.log(`  ✅ Showing option ${index + 1}: ${opt.textContent}`);
                 } else {
                     opt.classList.add('hidden');
                 }
             });
+
+            // Nếu không có schedule nào, hiển thị thông báo
+            if (!hasOption) {
+                console.warn('⚠️ Không có lịch khởi hành cho tour này (ID:', tourId, ')');
+            } else {
+                console.log('✅ Found', hasOption ? 'schedules' : 'schedule', 'for tour', tourId);
+            }
         }
 
         function updateScheduleInfo() {
             const selectedOption = startDateSelect.options[startDateSelect.selectedIndex];
-            if (!selectedOption.value) return;
+            if (!selectedOption || !selectedOption.value) {
+                endDateInput.value = "";
+                endDateDisplay.value = "";
+                return;
+            }
 
             // Update End Date
-            const endDate = selectedOption.dataset.endDate;
-            endDateInput.value = endDate;
-            endDateDisplay.value = endDate.split('-').reverse().join('/');
+            const endDate = selectedOption.dataset.endDate || '';
+            if (endDate) {
+                endDateInput.value = endDate;
+                // Format: YYYY-MM-DD -> DD/MM/YYYY
+                const dateParts = endDate.split('-');
+                if (dateParts.length === 3) {
+                    endDateDisplay.value = dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
+                } else {
+                    endDateDisplay.value = endDate;
+                }
+            } else {
+                endDateInput.value = "";
+                endDateDisplay.value = "";
+            }
 
             calculateTotal();
         }
 
         function calculateTotal() {
+            console.log('💰 calculateTotal() called');
             const selectedTour = tourSelect.options[tourSelect.selectedIndex];
             const selectedSchedule = startDateSelect.options[startDateSelect.selectedIndex];
 
-            if (!selectedTour.value) return;
+            if (!selectedTour || !selectedTour.value) {
+                console.log('❌ No tour selected');
+                return;
+            }
+
+            console.log('📊 Tour:', selectedTour.textContent);
+            console.log('📅 Schedule:', selectedSchedule ? selectedSchedule.textContent : 'None');
 
             // Priority: Schedule Price > Tour Price
             let priceAdult = parseInt(selectedTour.dataset.priceAdult) || 0;
             let priceChild = parseInt(selectedTour.dataset.priceChild) || 0;
             let priceInfant = parseInt(selectedTour.dataset.priceInfant) || 0;
 
+            console.log('💵 Tour prices - Adult:', priceAdult, 'Child:', priceChild, 'Infant:', priceInfant);
+
             if (selectedSchedule && selectedSchedule.value) {
                 if (selectedSchedule.dataset.priceAdult) priceAdult = parseInt(selectedSchedule.dataset.priceAdult);
                 if (selectedSchedule.dataset.priceChild) priceChild = parseInt(selectedSchedule.dataset.priceChild);
                 if (selectedSchedule.dataset.priceInfant) priceInfant = parseInt(selectedSchedule.dataset.priceInfant);
+                console.log('💵 Schedule prices - Adult:', priceAdult, 'Child:', priceChild, 'Infant:', priceInfant);
             }
 
             const countAdult = parseInt(adultCountInput.value) || 0;
             const countChild = parseInt(childCountInput.value) || 0;
             const countInfant = parseInt(infantCountInput.value) || 0;
 
+            console.log('👥 Counts - Adult:', countAdult, 'Child:', countChild, 'Infant:', countInfant);
+
             const total = (priceAdult * countAdult) + (priceChild * countChild) + (priceInfant * countInfant);
+            console.log('💵 Total:', total);
 
             totalAmountInput.value = total;
             totalAmountDisplay.value = formatCurrency(total);
 
             const discount = parseInt(discountInput.value) || 0;
             const final = Math.max(0, total - discount);
+            console.log('💵 Final (after discount):', final);
 
             finalAmountInput.value = final;
             finalAmountDisplay.value = formatCurrency(final);
 
             const deposit = parseInt(depositInput.value) || 0;
             const remaining = Math.max(0, final - deposit);
+            console.log('💵 Remaining:', remaining);
 
             remainingAmountInput.value = remaining;
             remainingAmountDisplay.value = formatCurrency(remaining);
@@ -354,11 +500,32 @@ unset($_SESSION['old']);
             } else {
                 paymentStatusSelect.value = 'unpaid';
             }
+            console.log('💳 Payment status:', paymentStatusSelect.value);
+        }
+
+        // Update tour price display
+        function updateTourPriceDisplay() {
+            const selectedTour = tourSelect.options[tourSelect.selectedIndex];
+            const priceDisplay = document.getElementById('tour_price_display');
+            const adultPriceDisplay = document.getElementById('display_adult_price');
+            const childPriceDisplay = document.getElementById('display_child_price');
+
+            if (selectedTour && selectedTour.value) {
+                const adultPrice = parseInt(selectedTour.dataset.priceAdult) || 0;
+                const childPrice = parseInt(selectedTour.dataset.priceChild) || 0;
+                
+                adultPriceDisplay.textContent = formatCurrency(adultPrice);
+                childPriceDisplay.textContent = formatCurrency(childPrice);
+                priceDisplay.classList.remove('hidden');
+            } else {
+                priceDisplay.classList.add('hidden');
+            }
         }
 
         // Event Listeners
         tourSelect.addEventListener('change', function () {
             filterSchedules();
+            updateTourPriceDisplay();
             calculateTotal();
         });
 
@@ -373,6 +540,7 @@ unset($_SESSION['old']);
         // Initial calculation if data exists
         if (tourSelect.value) {
             filterSchedules();
+            updateTourPriceDisplay();
             calculateTotal();
         }
         toggleCustomerMode(); // Initialize customer mode
@@ -406,31 +574,35 @@ unset($_SESSION['old']);
         const html = `
             <tr class="border-b passenger-row">
                 <td class="px-2 py-2">
-                    <input type="text" name="passenger_names[]" class="w-full px-2 py-1 border rounded" placeholder="Họ tên" required>
+                    <input type="text" name="passenger_names[]" class="w-full px-2 py-1 border rounded text-sm" placeholder="Họ tên" required>
                 </td>
                 <td class="px-2 py-2">
-                    <select name="passenger_types[]" class="w-full px-2 py-1 border rounded passenger-type" onchange="handleTypeChange(this)">
+                    <input type="text" name="passenger_phones[]" class="w-full px-2 py-1 border rounded text-sm" placeholder="SĐT">
+                </td>
+                <td class="px-2 py-2">
+                    <input type="email" name="passenger_emails[]" class="w-full px-2 py-1 border rounded text-sm" placeholder="Email">
+                </td>
+                <td class="px-2 py-2">
+                    <select name="passenger_types[]" class="w-full px-2 py-1 border rounded text-sm passenger-type" onchange="handleTypeChange(this)">
                         <option value="adult">Người lớn</option>
                         <option value="child">Trẻ em</option>
                         <option value="infant">Em bé</option>
                     </select>
                 </td>
                 <td class="px-2 py-2">
-                    <input type="date" name="passenger_dobs[]" class="w-full px-2 py-1 border rounded">
-                </td>
-                <td class="px-2 py-2">
-                    <select name="passenger_genders[]" class="w-full px-2 py-1 border rounded">
+                    <select name="passenger_genders[]" class="w-full px-2 py-1 border rounded text-sm">
                         <option value="male">Nam</option>
                         <option value="female">Nữ</option>
+                        <option value="other">Khác</option>
                     </select>
                 </td>
                 <td class="px-2 py-2 text-center">
-                    <button type="button" onclick="removePassengerRow(this)" class="text-red-500">×</button>
+                    <button type="button" onclick="removePassengerRow(this)" class="text-red-500 hover:text-red-700">×</button>
                 </td>
             </tr>
         `;
         container.insertAdjacentHTML('beforeend', html);
-        
+
         // Default is Adult, so increment Adult count
         updateCount('adult', 1);
     }
@@ -443,7 +615,7 @@ unset($_SESSION['old']);
     }
 
     // Store previous value to handle change
-    document.addEventListener('focusin', function(e) {
+    document.addEventListener('focusin', function (e) {
         if (e.target.classList.contains('passenger-type')) {
             e.target.dataset.oldValue = e.target.value;
         }
@@ -452,7 +624,7 @@ unset($_SESSION['old']);
     function handleTypeChange(select) {
         const oldValue = select.dataset.oldValue || 'adult';
         const newValue = select.value;
-        
+
         if (oldValue !== newValue) {
             updateCount(oldValue, -1);
             updateCount(newValue, 1);
@@ -470,10 +642,169 @@ unset($_SESSION['old']);
         let currentVal = parseInt(input.value) || 0;
         let newVal = currentVal + change;
         if (newVal < 0) newVal = 0;
-        
         input.value = newVal;
-        
+
         // Trigger calculation
         input.dispatchEvent(new Event('input'));
+    }
+
+    // Import Excel/CSV
+    function handleImportFile(event) {
+        const file = event.target.files[0];
+        console.log('📥 handleImportFile() - File:', file);
+
+        if (!file) {
+            console.log('❌ No file selected');
+            return;
+        }
+
+        console.log('📄 File details:', {
+            name: file.name,
+            size: file.size,
+            type: file.type
+        });
+
+        const importStatus = document.getElementById('importStatus');
+        importStatus.classList.remove('hidden');
+        importStatus.innerHTML = '<div class="text-blue-600">⏳ Đang xử lý file...</div>';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const url = '?act=admin&module=bookings&action=previewPassengers';
+        console.log('🌐 Sending request to:', url);
+
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                console.log('📡 Response status:', response.status, response.statusText);
+                console.log('📡 Response headers:', response.headers);
+                return response.json();
+            })
+            .then(data => {
+                console.log('📦 Response data:', data);
+
+                if (data.success) {
+                    // Fill passengers vào form
+                    const passengers = data.passengers || [];
+                    console.log('✅ Import successful, passengers count:', passengers.length);
+                    console.log('👥 Passengers data:', passengers);
+
+                    if (passengers.length === 0) {
+                        console.warn('⚠️ No valid passengers in file');
+                        importStatus.innerHTML = '<div class="text-yellow-600">⚠️ File không có dữ liệu hợp lệ</div>';
+                        return;
+                    }
+
+                    // Clear existing passengers (optional - có thể comment nếu muốn giữ lại)
+                    // document.getElementById('passenger-container').innerHTML = '';
+
+                    // Add each passenger
+                    passengers.forEach((passenger, index) => {
+                        console.log(`  Adding passenger ${index + 1}:`, passenger);
+                        addPassengerRowWithData(passenger);
+                    });
+
+                    // Update counts (bao gồm cả primary customer)
+                    updateCountsFromPassengers();
+
+                    importStatus.innerHTML = `<div class="text-green-600">✅ Đã import ${passengers.length} khách hàng</div>`;
+
+                    // Auto-hide after 3 seconds
+                    setTimeout(() => {
+                        importStatus.classList.add('hidden');
+                    }, 3000);
+                } else {
+                    console.error('❌ Import failed:', data.message);
+                    importStatus.innerHTML = `<div class="text-red-600">❌ Lỗi: ${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('❌ Fetch error:', error);
+                importStatus.innerHTML = `<div class="text-red-600">❌ Lỗi: ${error.message}</div>`;
+            });
+
+        // Reset file input
+        event.target.value = '';
+    }
+
+    function addPassengerRowWithData(data) {
+        const container = document.getElementById('passenger-container');
+        const row = document.createElement('tr');
+        row.className = 'passenger-row';
+
+        // Escape HTML để tránh XSS và đảm bảo hiển thị đúng
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+        
+        const name = escapeHtml(data.name || '');
+        const phone = escapeHtml(String(data.phone || '')); // Đảm bảo phone là string
+        const email = escapeHtml(data.email || '');
+        const gender = data.gender || 'other';
+        const ageType = data.age_type || 'adult';
+
+        row.innerHTML = `
+            <td class="px-2 py-2">
+                <input type="text" name="passenger_names[]" value="${name}" 
+                    class="w-full px-2 py-1 border rounded text-sm" placeholder="Họ tên">
+            </td>
+            <td class="px-2 py-2">
+                <input type="text" name="passenger_phones[]" value="${phone}" 
+                    class="w-full px-2 py-1 border rounded text-sm" placeholder="SĐT">
+            </td>
+            <td class="px-2 py-2">
+                <input type="email" name="passenger_emails[]" value="${email}" 
+                    class="w-full px-2 py-1 border rounded text-sm" placeholder="Email">
+            </td>
+            <td class="px-2 py-2">
+                <select name="passenger_types[]" class="passenger-type w-full px-2 py-1 border rounded text-sm" 
+                    onchange="handleTypeChange(this)">
+                    <option value="adult" ${ageType === 'adult' ? 'selected' : ''}>Người lớn</option>
+                    <option value="child" ${ageType === 'child' ? 'selected' : ''}>Trẻ em</option>
+                    <option value="infant" ${ageType === 'infant' ? 'selected' : ''}>Em bé</option>
+                </select>
+            </td>
+            <td class="px-2 py-2">
+                <select name="passenger_genders[]" class="w-full px-2 py-1 border rounded text-sm">
+                    <option value="male" ${gender === 'male' ? 'selected' : ''}>Nam</option>
+                    <option value="female" ${gender === 'female' ? 'selected' : ''}>Nữ</option>
+                    <option value="other" ${gender === 'other' ? 'selected' : ''}>Khác</option>
+                </select>
+            </td>
+            <td class="px-2 py-2 text-center">
+                <button type="button" onclick="removePassengerRow(this)" 
+                    class="text-red-600 hover:text-red-800">✕</button>
+            </td>
+        `;
+
+        container.appendChild(row);
+
+        // Update count
+        updateCount(ageType, 1);
+    }
+
+    function updateCountsFromPassengers() {
+        // Reset counts
+        document.getElementById('adult_count').value = 0;
+        document.getElementById('child_count').value = 0;
+        document.getElementById('infant_count').value = 0;
+
+        // Count from passenger rows
+        const rows = document.querySelectorAll('.passenger-row');
+        rows.forEach(row => {
+            const typeSelect = row.querySelector('select[name="passenger_types[]"]');
+            if (typeSelect) {
+                const type = typeSelect.value;
+                updateCount(type, 1);
+            }
+        });
+
+        // Add 1 for primary customer (adult by default)
+        updateCount('adult', 1);
     }
 </script>

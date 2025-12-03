@@ -51,7 +51,7 @@ class Booking
             if (!empty($filters['exact_date'])) {
                 $sql .= " AND b.start_date = :start_date";
             } else {
-                $sql .= " AND b.start_date >= :start_date";
+            $sql .= " AND b.start_date >= :start_date";
             }
             $params['start_date'] = $filters['start_date'];
         }
@@ -144,8 +144,12 @@ class Booking
         $booking = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($booking) {
-            // Get passengers
-            $sql_passengers = "SELECT * FROM booking_customers WHERE booking_id = :id";
+            // Get passengers with customer details
+            $sql_passengers = "SELECT bc.*, c.full_name, c.phone, c.email, c.gender, c.date_of_birth
+                               FROM booking_customers bc
+                               LEFT JOIN customers c ON bc.customer_id = c.id
+                               WHERE bc.booking_id = :id
+                               ORDER BY bc.is_primary DESC, bc.id ASC";
             $stmt_p = $this->pdo->prepare($sql_passengers);
             $stmt_p->execute(['id' => $id]);
             $booking['passengers'] = $stmt_p->fetchAll(PDO::FETCH_ASSOC);
@@ -202,11 +206,20 @@ class Booking
 
     /**
      * Tạo Booking mới (Transaction)
+     * @param array $data Booking data
+     * @param array $passengers Passengers array
+     * @param bool $useTransaction Whether to start a new transaction (default: true)
+     * @return int Booking ID
      */
-    public function create($data, $passengers = [])
+    public function create($data, $passengers = [], $useTransaction = true)
     {
+        $transactionStarted = false;
         try {
-            $this->pdo->beginTransaction();
+            // Only start transaction if not already in one and useTransaction is true
+            if ($useTransaction && !$this->pdo->inTransaction()) {
+                $this->pdo->beginTransaction();
+                $transactionStarted = true;
+            }
 
             // 1. Generate Code
             $booking_code = $this->generateBookingCode();
@@ -266,25 +279,10 @@ class Booking
                 $sql_p = "INSERT INTO booking_customers (booking_id, customer_id, age_type, is_primary) VALUES (:booking_id, :customer_id, :age_type, :is_primary)";
                 $stmt_p = $this->pdo->prepare($sql_p);
 
-                // Add primary customer as passenger if not in list (logic handled in controller usually, but here we assume passengers list is complete or we add primary)
-                // For now, assume passengers array contains all info
                 foreach ($passengers as $p) {
-                    // If passenger is a new customer, we might need to create them first? 
-                    // For simplicity, let's assume passengers are just names linked to the main customer or we just store them as simple records if the DB allowed.
-                    // Checking schema: booking_customers links to customers(id). 
-                    // So every passenger must be a customer in DB. 
-                    // This might be too complex for "Simple Vibe". 
-                    // Let's revisit: usually simple booking just needs names. 
-                    // Schema says: customer_id INT NOT NULL. 
-                    // So we must create customer records for everyone? That's heavy.
-                    // Let's check schema again. Yes, customer_id is FK.
-                    // OK, for V1, maybe we only link the MAIN customer in booking_customers as is_primary=1.
-                    // And other passengers we might skip or auto-create?
-                    // Let's stick to: Insert the MAIN customer into booking_customers first.
-
                     $stmt_p->execute([
                         'booking_id' => $booking_id,
-                        'customer_id' => $p['customer_id'], // Must exist
+                        'customer_id' => $p['customer_id'],
                         'age_type' => $p['age_type'],
                         'is_primary' => $p['is_primary'] ?? 0
                     ]);
@@ -299,11 +297,17 @@ class Booking
                 ]);
             }
 
-            $this->pdo->commit();
+            // Only commit if we started the transaction
+            if ($transactionStarted) {
+                $this->pdo->commit();
+            }
             return $booking_id;
 
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            // Only rollback if we started the transaction
+            if ($transactionStarted) {
+                $this->pdo->rollBack();
+            }
             throw $e;
         }
     }
@@ -449,9 +453,10 @@ class Booking
             if ($daysBefore < 0)
                 $daysBefore = 0;
 
-            // 3. Find Policy
+            // 3. Find Policy (chỉ lấy policy active)
             $sql = "SELECT * FROM cancellation_policies 
                     WHERE days_before <= :days 
+                    AND status = 'active'
                     ORDER BY days_before DESC 
                     LIMIT 1";
             $stmt = $this->pdo->prepare($sql);
@@ -462,14 +467,24 @@ class Booking
             $feeAmount = ($booking['final_amount'] * $feePercentage) / 100;
             $refundAmount = max(0, $booking['paid_amount'] - $feeAmount);
 
-            // 4. Update Booking
+            // 4. Update Booking (bao gồm payment_status nếu có refund)
+            $paymentStatus = $booking['payment_status'];
+            if ($refundAmount > 0 && $booking['paid_amount'] > 0) {
+                // Nếu có refund, update payment_status thành refunded
+                $paymentStatus = 'refunded';
+            } elseif ($booking['paid_amount'] > 0 && $feeAmount >= $booking['paid_amount']) {
+                // Nếu phí hủy >= số tiền đã trả, không có refund
+                $paymentStatus = $booking['payment_status']; // Giữ nguyên
+            }
+            
             $sql = "UPDATE bookings SET 
                     approval_status = 'cancelled',
                     cancellation_date = NOW(),
                     cancellation_reason = :reason,
                     cancellation_policy_id = :policy_id,
                     cancellation_fee = :fee,
-                    refund_amount = :refund
+                    refund_amount = :refund,
+                    payment_status = :payment_status
                     WHERE id = :id";
 
             $this->pdo->prepare($sql)->execute([
@@ -477,6 +492,7 @@ class Booking
                 'policy_id' => $policy['id'] ?? null,
                 'fee' => $feeAmount,
                 'refund' => $refundAmount,
+                'payment_status' => $paymentStatus,
                 'id' => $id
             ]);
 
