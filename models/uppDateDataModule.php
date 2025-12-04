@@ -18,7 +18,7 @@ class uppDateDataModuleDataModule
                 thoi_luong_mac_dinh = :thoi_luong_mac_dinh,
                 diem_khoi_hanh = :diem_khoi_hanh,
                 hoat_dong = :hoat_dong
-            WHERE tour_id = :tour_id AND trang_thai_xoa = 1";
+            WHERE tour_id = :tour_id AND trang_thai_xoa = 0";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':ten', $data['ten']);
