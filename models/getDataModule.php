@@ -7,6 +7,19 @@ class getDataModule
     {
         $this->conn = connectDB();
     }
+    public function getAllTours2()
+    {
+
+        $sql = "SELECT 
+                tour.*, 
+                danhmuctour.ten AS ten_danh_muc 
+            FROM tour 
+            JOIN danhmuctour ON tour.danh_muc_id = danhmuctour.danh_muc_id 
+            WHERE tour.trang_thai_xoa = 0";
+
+        $stmt = $this->conn->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     public function getAllTours()
     {
         // 1. Lấy NGUOI_DUNG_ID từ session
@@ -570,20 +583,34 @@ class getDataModule
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    public function getAllHDV()
+    {
+        // JOIN bảng huongdanvien với nguoidung để lấy thông tin mới nhất từ tài khoản
+        $sql = "SELECT hdv.*, nd.email, nd.so_dien_thoai, nd.ho_ten, nd.trang_thai 
+                FROM huongdanvien hdv
+                JOIN nguoidung nd ON hdv.nguoi_dung_id = nd.nguoi_dung_id
+                WHERE nd.isdelete = 0
+                ORDER BY hdv.hdv_id DESC";
+        $stmt = $this->conn->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Tìm hàm getHDVById và thay thế bằng code này
     public function getHDVById($id)
     {
-        $sql = "SELECT * FROM `huongdanvien` WHERE `hdv_id` = :id";
+        // Cũng JOIN để khi edit sẽ hiện data từ bảng User
+        $sql = "SELECT hdv.*, nd.email, nd.so_dien_thoai, nd.ho_ten 
+                FROM huongdanvien hdv
+                JOIN nguoidung nd ON hdv.nguoi_dung_id = nd.nguoi_dung_id
+                WHERE hdv.hdv_id = :id";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    public function getAllHDV()
-    {
-        $sql = "SELECT * FROM `huongdanvien`";
-        $stmt = $this->conn->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+
+    // Thêm hàm này vào class uppDateDataModuleDataModule
+
     public function getChinhSachByTourId($tour_id)
     {
         $sql = "SELECT 
