@@ -172,7 +172,7 @@
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                     
-                                                    <a href="<?= BASEURL ?>?act=xoa_dich_vu&id=<?= $dv['dich_vu_id'] ?>" 
+                                                    <a href="<?= BASEURL ?>?act=xoa_dich_vu&id=<?= $dv['dich_vu_id'] ?>&ncc_id=<?= $_GET['ncc_id'] ?>" 
                                                        class="btn-icon delete" 
                                                        onclick="return confirm('Bạn có chắc chắn muốn xóa dịch vụ này không?')" 
                                                        title="Xóa">

@@ -361,7 +361,7 @@ if (!defined('BASEURL')) define('BASEURL', '');
                 // Lấy dữ liệu từ data attribute của nút
                 var dateTitle = button.getAttribute('data-title');
                 var scheduleId = button.getAttribute('data-id');
-
+   
                 // Cập nhật tiêu đề và input ẩn trong modal
                 modalDiemDanh.querySelector('#modalDateTitle').textContent = dateTitle;
                 modalDiemDanh.querySelector('#inputLichTrinhId').value = scheduleId;
