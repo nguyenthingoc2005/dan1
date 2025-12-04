@@ -117,5 +117,12 @@ WHERE dich_vu_id = :id";
             return false;
         }
     }
+    public function deletePhanconghdv($hdv_id)
+    {
+        $sql = "DELETE FROM phanconghdv WHERE hdv_id = :hdv_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':hdv_id', $hdv_id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 
 }

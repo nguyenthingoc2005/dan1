@@ -52,7 +52,10 @@ match ($act) {
     'deletehdv' => (new AdminController())->deleteHDV($_GET['id'] ?? null),
     'edithdv' => (new AdminController())->editHDV($_GET['id'] ?? null),
     'updatehdv' => (new AdminController())->updateHDV($_GET['id'] ?? null),
-
+    // ================== PHÂN CÔNG HƯỚNG DẪN VIÊN ==================
+    'assign_guide' => (new AdminController())->formAssignGuide($_GET['lich_id'] ?? null),
+    'storephancong' => (new AdminController())->storePhanCong($_GET['lich_id'] ?? null ),
+    'remove_guide' => (new AdminController())->deletePhanconghdv($_GET['hdv_id'] ?? null),
     // ================== LỊCH KHỞI HÀNH ==================
     'add_schedule' => (new AdminController())->formAddSchedule($_GET['tour_id'] ?? null),
     'createschedule' => (new AdminController())->createSchedule($_GET['tour_id'] ?? null),

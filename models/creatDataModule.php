@@ -388,4 +388,22 @@ class creatDataModule
 
         return $this->conn->lastInsertId();
     }
+    public function storePhanCong($data)
+    {
+        $sql = "INSERT INTO PhanCongHDV 
+            (hdv_id, lich_id, ngay_phan_cong, trang_thai) 
+            VALUES 
+            (:hdv_id, :lich_id, :ngay_phan_cong, :trang_thai)";
+
+        $stmt = $this->conn->prepare($sql);
+
+        $stmt->execute([
+            ':hdv_id' => $data['hdv_id'],
+            ':lich_id' => $data['lich_id'],
+            ':ngay_phan_cong' => $data['ngay_phan_cong'],
+            ':trang_thai' => $data['trang_thai']
+        ]);
+
+        return $this->conn->lastInsertId();
+    }
 }

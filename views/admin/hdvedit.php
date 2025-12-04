@@ -25,6 +25,7 @@
         .section-title { font-size: 1.1rem; font-weight: 700; color: #d63384; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 20px; margin-top: 10px; }
 
         /* Image Preview */
+
         .img-preview-container { width: 150px; height: 150px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); overflow: hidden; margin: 0 auto 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; position: relative; }
         .img-preview-container img { width: 100%; height: 100%; object-fit: cover; }
         .current-status { position: absolute; top: 10px; right: 10px; }

@@ -244,6 +244,7 @@ foreach ($dichVuTour as $dv) {
                                             <th>Họ Tên & Giới tính</th>
                                             <th>Liên hệ / Giấy tờ</th>
                                             <th>Yêu cầu đặc biệt</th>
+                                            <th>Hành động</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -269,6 +270,20 @@ foreach ($dichVuTour as $dv) {
                                                         </div>
                                                     <?php else: ?>
                                                         <span class="text-muted small fst-italic">Không có yêu cầu</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <?php if(!empty($data['dat_tour_id'])): ?>
+                                                       
+                                                        <a href="<?= BASEURL ?>?act=hanh_khach_remove&hk_id=<?= $hk['hk_id'] ?? 0 ?>&dat_tour_id=<?= $data['dat_tour_id'] ?>" 
+                                                           class="text-danger" 
+                                                           onclick="return confirm('Xóa hành khách này khỏi đơn đặt tour?')" 
+                                                           title="Xóa hành khách">
+                                                            <i class="bi bi-trash-fill"></i>
+                                                        </a>
+                                                        
+                                                    <?php else: ?>
+                                                        <span class="text-muted small fst-italic">N/A</span>
                                                     <?php endif; ?>
                                                 </td>
                                             </tr>
@@ -346,9 +361,12 @@ foreach ($dichVuTour as $dv) {
                                     <p class="mt-2 mb-0">Chưa có hướng dẫn viên nào được phân công.</p>
                                 </div>
                             <?php else: ?>
+                                
                                 <div class="row g-3">
+                                    
                                     <?php foreach ($huongDanVien as $hdv): ?>
                                         <div class="col-md-6 col-lg-4">
+                                            
                                             <div class="border rounded p-3 d-flex align-items-center shadow-sm h-100 bg-white position-relative">
                                                 
                                                 <a href="<?= BASEURL ?>?act=remove_guide&hdv_id=<?= $hdv['id'] ?? 0 ?>&lich_id=<?= $lich_id ?>" 
@@ -363,7 +381,7 @@ foreach ($dichVuTour as $dv) {
                                                 <div>
                                                     <h6 class="fw-bold text-success mb-1"><?= htmlspecialchars($hdv['ho_ten'] ?? 'Chưa cập nhật') ?></h6>
                                                     <div class="small text-muted mb-1"><i class="bi bi-phone me-1"></i> <?= htmlspecialchars($hdv['sdt'] ?? '---') ?></div>
-                                                    <div class="small text-muted"><i class="bi bi-envelope me-1"></i> <?= htmlspecialchars($hdv['email'] ?? '---') ?></div>
+                                                    <div class="small text- muted"><i class="bi bi-envelope me-1"></i> <?= htmlspecialchars($hdv['email'] ?? '---') ?></div>
                                                 </div>
                                             </div>
                                         </div>

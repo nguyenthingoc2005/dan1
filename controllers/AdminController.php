@@ -1140,6 +1140,56 @@ public function listKhachHang() {
         }
         header("Location: " . BASEURL . "?act=dattourlist");
     }
+    // public function scheduleList()
+    // {
+    //     $data = $this->modelGet->getAllSchedules();
+    //     require_once './views/admin/schedule_list.php'; 
 
+    // }
+    public function formAssignGuide($lich_id){
+        $hdvList = $this->modelGet->getAllhdvNguoidung();
+        $lich = $this->modelGet->getLichKhoiHanhById($lich_id);
+        require_once './views/admin/phanconghdv.php';
+    }
+public function storePhanCong(){
+    // Lấy dữ liệu từ Form (POST)
+    $lich_id = $_POST['lich_id'] ?? null; // Cần phải được truyền từ Form (input hidden)
+    $hdv_id = $_POST['hdv_id'] ?? null;
+    $ngay_phan_cong = $_POST['ngay_phan_cong'] ?? date('Y-m-d'); // Lấy từ Form, nếu không có thì dùng ngày hiện tại
+    $trang_thai = $_POST['trang_thai'] ?? 'Sẵn sàng'; // Lấy từ Form, nếu không có thì dùng mặc định
 
+    // Chuyển 'trang_thai' từ chuỗi sang số nguyên (nếu DB là kiểu INT)
+    // Ví dụ: 'Sẵn sàng' -> 1, 'Bận' -> 0, 'Nghỉ phép' -> 2
+    $trang_thai_db = 1; // Mặc định là Sẵn sàng
+    if ($trang_thai === 'Bận') {
+        $trang_thai_db = 0;
+    } elseif ($trang_thai === 'Nghỉ phép') {
+        $trang_thai_db = 2;
+    }
+
+    if (!$lich_id || !$hdv_id) {
+        // Xử lý lỗi nếu thiếu dữ liệu quan trọng
+        header("Location: " . BASEURL . "?act=error&msg=Thiếu_dữ_liệu");
+        return;
+    }
+
+    $data = [
+        'lich_id' => $lich_id,
+        'hdv_id' => $hdv_id,
+        'trang_thai' => $trang_thai_db, // Dùng giá trị số cho DB
+        'ngay_phan_cong' => $ngay_phan_cong, 
+    ];
+
+    $this->modelCreate->storePhanCong($data);
+
+    // Chuyển hướng về trang danh sách
+    header("Location: " . BASEURL . "?act=dattourlist");
+}
+public function deletePhanconghdv($hdv_id)
+    {
+        if ($hdv_id !== null ) {
+            $this->modelDelete->deletePhanconghdv($hdv_id);
+        }
+        header('Location: ' . BASEURL . '?act=dattourlist');
+}
 }

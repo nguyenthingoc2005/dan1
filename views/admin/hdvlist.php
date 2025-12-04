@@ -18,6 +18,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
         .main-content { padding: 30px; margin-top: 70px; margin-left: 0; min-height: 100vh; }
         
         /* SEARCH BOX */
+
         .search-box .form-control { border-radius: 20px; padding-left: 40px; border: 1px solid #e9ecef; background-color: #f8f9fa; }
         .search-box .bi-search { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #adb5bd; }
 
@@ -25,6 +26,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
         .table-custom thead th { background-color: #f8f9fa; color: #6c757d; font-weight: 600; font-size: 0.75rem; border-bottom: 2px solid #e9ecef; padding: 15px; text-transform: uppercase; white-space: nowrap; }
         .table-custom tbody td { vertical-align: middle; padding: 15px; border-bottom: 1px solid #f1f1f1; font-size: 0.9rem; }
         
+
         /* Avatar Styles */
         .avatar-wrapper { width: 45px; height: 45px; margin-right: 15px; flex-shrink: 0; }
         .avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -82,6 +84,7 @@ if(session_status() === PHP_SESSION_NONE) session_start();
                                        value="<?= htmlspecialchars($_GET['keyword'] ?? '') ?>">
                             </div>
                         </div>
+                        
                         <div class="col-md-2">
                             <button type="submit" class="btn btn-light w-100 border text-secondary fw-medium">
                                 <i class="bi bi-funnel"></i> Lọc

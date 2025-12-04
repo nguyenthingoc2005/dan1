@@ -59,7 +59,7 @@
                     <h3 class="fw-bold text-dark mb-1">Cập Nhật Booking</h3>
                     <p class="text-muted mb-0">Chỉnh sửa thông tin đơn đặt tour #<?= htmlspecialchars($data['dat_tour_id'] ?? '') ?></p>
                 </div>
-                <a href="<?= BASEURL ?>?act=dat_tour_list" class="btn btn-outline-secondary px-4">
+                <a href="<?= BASEURL ?>?act=dattourlist" class="btn btn-outline-secondary px-4">
                     <i class="bi bi-arrow-left me-2"></i> Quay lại
                 </a>
             </div>

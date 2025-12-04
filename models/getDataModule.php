@@ -918,4 +918,19 @@ WHERE gdv.tour_id = :tour_id
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    public function gethdvByNguoiDungId($hdv_id)
+    {
+        $sql = "SELECT * FROM huongdanvien h JOIN nguoidung n ON h.nguoi_dung_id = n.nguoi_dung_id WHERE h.hdv_id = :hdv_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':hdv_id', $hdv_id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    public function getAllhdvNguoidung()
+    {
+        $sql = "SELECT * FROM huongdanvien h JOIN nguoidung n ON h.nguoi_dung_id = n.nguoi_dung_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 }
