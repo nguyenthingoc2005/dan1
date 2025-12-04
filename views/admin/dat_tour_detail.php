@@ -232,8 +232,10 @@ foreach ($dichVuTour as $dv) {
                                         <?php else: ?>
                                             <?= renderStatusBadge($trang_thai_lich) ?>
                                             <div class="ms-2">
-                                                <a href="<?= BASEURL ?>?act=edit_schedule&id=<?= $lich_id ?>" class="text-warning me-1" title="Sửa"><i class="bi bi-pencil-square"></i></a>
-                                                <a href="<?= BASEURL ?>?act=delete_schedule&id=<?= $lich_id ?>" class="text-danger" onclick="return confirm('Xóa lịch?')" title="Xóa"><i class="bi bi-trash"></i></a>
+
+                                                <a href="<?= BASEURL ?>?act=edit_schedule&lich_id=<?= $lich_id ?>" class="text-warning me-1" title="Sửa"><i class="bi bi-pencil-square"></i></a>
+                                                <a href="<?= BASEURL ?>?act=delete_schedule&lich_id=<?= $lich_id ?>" class="text-danger" onclick="return confirm('Xóa lịch?')" title="Xóa"><i class="bi bi-trash"></i></a>
+
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -414,9 +416,12 @@ foreach ($dichVuTour as $dv) {
                                     <p class="mt-2 mb-0">Chưa có hướng dẫn viên nào được phân công.</p>
                                 </div>
                             <?php else: ?>
+                                
                                 <div class="row g-3">
+                                    
                                     <?php foreach ($huongDanVien as $hdv): ?>
                                         <div class="col-md-6 col-lg-4">
+                                            
                                             <div class="border rounded p-3 d-flex align-items-center shadow-sm h-100 bg-white position-relative">
 
                                                 <a href="<?= BASEURL ?>?act=remove_guide&hdv_id=<?= $hdv['id'] ?? 0 ?>&lich_id=<?= $lich_id ?>"
@@ -431,7 +436,7 @@ foreach ($dichVuTour as $dv) {
                                                 <div>
                                                     <h6 class="fw-bold text-success mb-1"><?= htmlspecialchars($hdv['ho_ten'] ?? 'Chưa cập nhật') ?></h6>
                                                     <div class="small text-muted mb-1"><i class="bi bi-phone me-1"></i> <?= htmlspecialchars($hdv['sdt'] ?? '---') ?></div>
-                                                    <div class="small text-muted"><i class="bi bi-envelope me-1"></i> <?= htmlspecialchars($hdv['email'] ?? '---') ?></div>
+                                                    <div class="small text- muted"><i class="bi bi-envelope me-1"></i> <?= htmlspecialchars($hdv['email'] ?? '---') ?></div>
                                                 </div>
                                             </div>
                                         </div>

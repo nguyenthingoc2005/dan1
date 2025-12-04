@@ -676,6 +676,68 @@ class AdminController
         $hanhKhachList = $this->modelGet->getHanhKhachByDatTourId($dat_tour_id);
         require_once './views/admin/hanh_khach_edit.php';
     }
+    public function hanh_khach_update($dat_tour_id)
+    {
+        $hanh_khach_data = $_POST['hanh_khach'] ?? [];
+        $dat_tour_id = $_POST['dat_tour_id'] ?? $dat_tour_id;
+        
+        // Nhận biết bước tiếp theo (nếu có)
+        $next_step = $_POST['next_step'] ?? '';
+
+        $success_count = 0;
+
+        foreach ($hanh_khach_data as $hanh_khach_input) {
+            // Chuẩn bị dữ liệu map với bảng `hanhkhachlist` trong DB
+            $data = [
+                'dat_tour_id'      => $dat_tour_id,
+                'ho_ten'           => $hanh_khach_input['ho_ten'] ?? '',
+                'gioi_tinh'        => $hanh_khach_input['gioi_tinh'] ?? null, // Mới thêm
+                'ngay_sinh'        => $hanh_khach_input['ngay_sinh'] ?? null,
+                
+                // Map các trường input sang tên cột trong DB
+                // Form gửi 'so_giay_to' hoặc 'cccd' -> Lưu vào 'so_giay_to'
+                'so_giay_to'       => $hanh_khach_input['so_giay_to'] ?? ($hanh_khach_input['cccd'] ?? null),
+                
+                // Form gửi 'lien_he' hoặc 'sdt' -> Lưu vào 'lien_he'
+                'lien_he'          => $hanh_khach_input['lien_he'] ?? ($hanh_khach_input['sdt'] ?? null),
+                
+                // Form gửi 'yeu_cau_ca_nhan' hoặc 'ghi_chu' -> Lưu vào 'yeu_cau_ca_nhan'
+                'yeu_cau_ca_nhan'  => $hanh_khach_input['yeu_cau_ca_nhan'] ?? ($hanh_khach_input['ghi_chu'] ?? null),
+            ];
+
+            $hanh_khach_id = (int)($hanh_khach_input['hanh_khach_id'] ?? 0);
+
+            if ($hanh_khach_id > 0) {
+                // CẬP NHẬT bản ghi đã tồn tại
+                $result = $this->modelUpdate->updateHanhKhach($hanh_khach_id, $data);
+                if ($result !== false) {
+                    $success_count++;
+                }
+            } else {
+                // TẠO MỚI bản ghi
+                $result = $this->modelCreate->createHanhKhach($data);
+                if ($result !== false) {
+                    $success_count++;
+                }
+            }
+        }
+
+        if ($success_count > 0) {
+            $_SESSION['success'] = "Đã cập nhật $success_count hành khách thành công!";
+        } else {
+            $_SESSION['error'] = "Không có hành khách nào được cập nhật.";
+        }
+
+        // Xử lý chuyển hướng dựa trên nút bấm
+        if ($next_step === 'deposit') {
+            // Chuyển sang trang tạo đặt cọc
+            header('Location: ' . BASEURL . '?act=dat_tour_detail&dat_tour_id=' . $dat_tour_id);
+        } else {
+            // Quay về trang chi tiết hoặc danh sách
+            header('Location: ' . BASEURL . '?act=dat_tour_detail&dat_tour_id=' . $dat_tour_id);
+        }
+        exit();
+    }
     public function dat_tour_detail($dat_tour_id)
     {
         $data = $this->modelGet->getDatTourDetail($dat_tour_id);
@@ -739,7 +801,7 @@ class AdminController
         }
     }
 
-    public function xoaDichVu($id)
+    public function xoaDichVu($id,$ncc_id)
     {
         if ($id !== null) {
             $this->modelDelete->xoaDichVu($id);
@@ -780,6 +842,14 @@ class AdminController
 
         require_once 'views/admin/editdichvu.php';
     }
+
+    // public function showHK() {
+    //     $keyword = $_GET['keyword'] ?? "";
+    //     $list = $this->modelGet->search($keyword);
+
+    //     require_once "views/admin/hanhkhach_list.php";
+    // }
+
     public function logout()
     {
         unset($_SESSION['user']);
@@ -884,8 +954,8 @@ class AdminController
         }
     }
 
+public function editUser()
 
-    public function editUser()
     {
         $id = $_GET['id'];
         $user = $this->modelGet->find($id);
@@ -1094,4 +1164,129 @@ class AdminController
             exit;
         }
     }
+    
+    
+    
+
+      public function formAddSchedule($tour_id)
+    {
+        $tour = $this->modelGet->getTourById($tour_id);
+        require_once './views/admin/schedule_add.php';
+    }
+    public function createSchedule()
+    {
+        $tour_id = $_POST['tour_id'];
+
+        $data = [
+            'tour_id'       => $tour_id,
+            'trang_thai'    => $_POST['trang_thai'],
+            'ngay_bat_dau'  => $_POST['ngay_bat_dau'],
+            'ngay_ket_thuc' => $_POST['ngay_ket_thuc'],
+            'hieu_luc_tu'   => $_POST['hieu_luc_tu'],
+            'hieu_luc_den'  => $_POST['hieu_luc_den'],
+            'ngay_tao'     => date('Y-m-d H:i:s'),
+            'ghi_chu'       => $_POST['ghi_chu'],
+        ];
+
+        // 🔥 1. Tạo lịch mới và lấy ID lịch vừa tạo
+        $lich_id = $this->modelCreate->createSchedule($data);
+
+        // 🔥 2. Cập nhật sang dattour
+        $sql = "UPDATE dattour SET lich_id = :lich_id WHERE tour_id = :tour_id";
+        $stmt = $this->modelCreate->conn->prepare($sql);
+        $stmt->execute([
+            ':lich_id' => $lich_id,
+            ':tour_id' => $tour_id
+        ]);
+
+        // Chuyển trang
+        header("Location: " . BASE_URL . "?act=dattourlist");
+    }
+    
+    
+    public function editSchedule($lich_id)
+    {
+        
+        $lich= $this->modelGet->getLichKhoiHanhById($lich_id);
+        require_once './views/admin/schedule_edit.php';
+        var_dump($lich);
+        var_dump($lich_id);
+    }
+    public function updateSchedule($lich_id)
+    {
+        $tour_id = $_POST['tour_id'];
+
+        $data = [
+            'trang_thai'    => $_POST['trang_thai'],
+            'ngay_bat_dau'  => $_POST['ngay_bat_dau'],
+            'ngay_ket_thuc' => $_POST['ngay_ket_thuc'],
+            'hieu_luc_tu'   => $_POST['hieu_luc_tu'],
+            'hieu_luc_den'  => $_POST['hieu_luc_den'],
+            'ghi_chu'       => $_POST['ghi_chu'],
+        ];
+
+        $this->modelUpdate->updateSchedule($lich_id, $data);
+
+        // Chuyển trang
+        header("Location: " . BASE_URL . "?act=dattourlist");
+    }
+    public function deleteSchedule($lich_id)
+    {
+        if ($lich_id !== null) {
+            $this->modelDelete->Scheduledelete($lich_id);
+        }
+        header("Location: " . BASEURL . "?act=dattourlist");
+    }
+    // public function scheduleList()
+    // {
+    //     $data = $this->modelGet->getAllSchedules();
+    //     require_once './views/admin/schedule_list.php'; 
+
+    // }
+    public function formAssignGuide($lich_id){
+        $hdvList = $this->modelGet->getAllhdvNguoidung();
+        $lich = $this->modelGet->getLichKhoiHanhById($lich_id);
+        require_once './views/admin/phanconghdv.php';
+    }
+public function storePhanCong(){
+    // Lấy dữ liệu từ Form (POST)
+    $lich_id = $_POST['lich_id'] ?? null; // Cần phải được truyền từ Form (input hidden)
+    $hdv_id = $_POST['hdv_id'] ?? null;
+    $ngay_phan_cong = $_POST['ngay_phan_cong'] ?? date('Y-m-d'); // Lấy từ Form, nếu không có thì dùng ngày hiện tại
+    $trang_thai = $_POST['trang_thai'] ?? 'Sẵn sàng'; // Lấy từ Form, nếu không có thì dùng mặc định
+
+    // Chuyển 'trang_thai' từ chuỗi sang số nguyên (nếu DB là kiểu INT)
+    // Ví dụ: 'Sẵn sàng' -> 1, 'Bận' -> 0, 'Nghỉ phép' -> 2
+    $trang_thai_db = 1; // Mặc định là Sẵn sàng
+    if ($trang_thai === 'Bận') {
+        $trang_thai_db = 0;
+    } elseif ($trang_thai === 'Nghỉ phép') {
+        $trang_thai_db = 2;
+    }
+
+    if (!$lich_id || !$hdv_id) {
+        // Xử lý lỗi nếu thiếu dữ liệu quan trọng
+        header("Location: " . BASEURL . "?act=error&msg=Thiếu_dữ_liệu");
+        return;
+    }
+
+    $data = [
+        'lich_id' => $lich_id,
+        'hdv_id' => $hdv_id,
+        'trang_thai' => $trang_thai_db, // Dùng giá trị số cho DB
+        'ngay_phan_cong' => $ngay_phan_cong, 
+    ];
+
+    $this->modelCreate->storePhanCong($data);
+
+    // Chuyển hướng về trang danh sách
+    header("Location: " . BASEURL . "?act=dattourlist");
+}
+public function deletePhanconghdv($hdv_id)
+    {
+        if ($hdv_id !== null ) {
+            $this->modelDelete->deletePhanconghdv($hdv_id);
+        }
+        header('Location: ' . BASEURL . '?act=dattourlist');
+}
 }

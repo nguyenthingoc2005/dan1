@@ -221,6 +221,30 @@ class uppDateDataModuleDataModule
     }
     // File: models/uppDateDataModule.php
 
+
+    public function updateSchedule($lich_id, $data)
+    {
+        $sql = "UPDATE `lichkhoihanh` SET
+                    `trang_thai` = :trang_thai,
+                    `ngay_bat_dau` = :ngay_bat_dau,
+                    `ngay_ket_thuc` = :ngay_ket_thuc,
+                    `hieu_luc_tu` = :hieu_luc_tu,
+                    `hieu_luc_den` = :hieu_luc_den,
+                    `ghi_chu` = :ghi_chu
+                WHERE `lich_id` = :lich_id";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':trang_thai', $data['trang_thai']);
+        $stmt->bindParam(':ngay_bat_dau', $data['ngay_bat_dau']);
+        $stmt->bindParam(':ngay_ket_thuc', $data['ngay_ket_thuc']);
+        $stmt->bindParam(':hieu_luc_tu', $data['hieu_luc_tu']);
+        $stmt->bindParam(':hieu_luc_den', $data['hieu_luc_den']);
+        $stmt->bindParam(':ghi_chu', $data['ghi_chu']);
+        $stmt->bindParam(':lich_id', $lich_id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
     public function updateThongTinCoBanUser($nguoi_dung_id, $ho_ten, $email, $so_dien_thoai)
     {
         $sql = "UPDATE nguoidung 

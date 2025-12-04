@@ -52,6 +52,16 @@ match ($act) {
     'deletehdv' => (new AdminController())->deleteHDV($_GET['id'] ?? null),
     'edithdv' => (new AdminController())->editHDV($_GET['id'] ?? null),
     'updatehdv' => (new AdminController())->updateHDV($_GET['id'] ?? null),
+    // ================== PHÂN CÔNG HƯỚNG DẪN VIÊN ==================
+    'assign_guide' => (new AdminController())->formAssignGuide($_GET['lich_id'] ?? null),
+    'storephancong' => (new AdminController())->storePhanCong($_GET['lich_id'] ?? null ),
+    'remove_guide' => (new AdminController())->deletePhanconghdv($_GET['hdv_id'] ?? null),
+    // ================== LỊCH KHỞI HÀNH ==================
+    'add_schedule' => (new AdminController())->formAddSchedule($_GET['tour_id'] ?? null),
+    'createschedule' => (new AdminController())->createSchedule($_GET['tour_id'] ?? null),
+    'edit_schedule' => (new AdminController())->editSchedule($_GET['lich_id'] ?? null),
+    'update_schedule' => (new AdminController())->updateSchedule($_GET['lich_id'] ?? null),
+    'delete_schedule' => (new AdminController())->deleteSchedule($_GET['lich_id'] ?? null),
 
     // ================== CHÍNH SÁCH TOUR ==================
     'chinhsach' => (new AdminController())->chinhsach($_GET['tour_id'] ?? null),
@@ -79,7 +89,7 @@ match ($act) {
     'lay_dich_vu' => (new AdminController())->layDichVu(),
     'lay_dich_vu_ncc' => (new AdminController())->layDichVuNCC($_GET['ncc_id'] ?? null),
     'them_dich_vu' => (new AdminController())->themDichVu(),
-    'xoa_dich_vu' => (new AdminController())->xoaDichVu($_GET['id'] ?? null),
+    'xoa_dich_vu' => (new AdminController())->xoaDichVu($_GET['id'] ?? null,$_GET['ncc_id']??null),
     'capnhat_dich_vu' => (new AdminController())->capNhatDichVu($_GET['id'] ?? null),
     'gandichvu' => (new AdminController())->ganDichVuTour($_GET['tour_id'] ?? null),
     'luuGanDichVuTour' => (new AdminController())->luuGanDichVuTour($_GET['tour_id'] ?? null),
@@ -93,6 +103,7 @@ match ($act) {
     'user_update'   => (new AdminController())->updateUser(),
     'user_delete'   => (new AdminController())->deleteUser(),
 
+
     // --- Route cho HDV (Bổ sung) ---
     'hdv_detail_add'   => (new AdminController())->formAddHDVDetail(),
     'store_hdv_detail' => (new AdminController())->storeHDVDetail(),
@@ -105,6 +116,7 @@ match ($act) {
     'khachhang_list' => (new AdminController())->khachhang_list(),
     'edit_khach_hang' => (new AdminController())->editKhachHang(),
     'update_khach_hang_submit' => (new AdminController())->updateKhachHangSubmit(),
+
 
     default => (new AdminController())->index(),
 };

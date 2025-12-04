@@ -1,3 +1,4 @@
+
 <?php
 if (session_status() === PHP_SESSION_NONE)
     session_start();
@@ -194,6 +195,7 @@ if (session_status() === PHP_SESSION_NONE)
                                     value="<?= htmlspecialchars($_GET['keyword'] ?? '') ?>">
                             </div>
                         </div>
+                        
                         <div class="col-md-2">
                             <button type="submit" class="btn btn-light w-100 border text-secondary fw-medium">
                                 <i class="bi bi-funnel"></i> Lọc
@@ -345,6 +347,7 @@ if (session_status() === PHP_SESSION_NONE)
             return true;
         }
     </script>
+
 </body>
 
 </html>
