@@ -42,7 +42,8 @@ $statusColors = [
                 </span>
             </div>
             <p class="text-gray-500 text-sm">Tạo ngày <?= date('d/m/Y H:i', strtotime($booking['created_at'])) ?> bởi
-                <?= $booking['creator_name'] ?? 'N/A' ?></p>
+                <?= $booking['creator_name'] ?? 'N/A' ?>
+            </p>
         </div>
         <div class="flex gap-2">
             <a href="?act=admin&module=bookings" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
@@ -113,12 +114,21 @@ $statusColors = [
                 <div class="mb-4 bg-blue-50 p-4 rounded">
                     <p class="font-bold text-blue-800"><?= $booking['customer_name'] ?></p>
                     <p class="text-sm text-blue-600"><?= $booking['customer_phone'] ?> |
-                        <?= $booking['customer_email'] ?></p>
+                        <?= $booking['customer_email'] ?>
+                    </p>
                     <p class="text-sm text-gray-600"><?= $booking['customer_address'] ?></p>
                 </div>
 
-                <h3 class="font-bold text-sm text-gray-700 mb-2">Danh sách đoàn
-                    (<?= count($booking['passengers'] ?? []) ?> người)</h3>
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-sm text-gray-700">Danh sách đoàn
+                        (<?= count($booking['passengers'] ?? []) ?> người)</h3>
+                    <?php if ($booking['approval_status'] != 'cancelled'): ?>
+                        <button onclick="openModal('addPassengerModal')"
+                            class="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            + Thêm khách
+                        </button>
+                    <?php endif; ?>
+                </div>
                 <table class="w-full text-sm text-left text-gray-500 border rounded">
                     <thead class="bg-gray-50">
                         <tr>
@@ -155,7 +165,81 @@ $statusColors = [
                 </table>
             </div>
 
-            <!-- 3. HISTORY LOG -->
+            <!-- 3. BOOKING SERVICES -->
+            <div class="bg-white p-6 rounded shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-800">Dịch vụ bổ sung</h2>
+                    <?php if ($booking['approval_status'] != 'cancelled'): ?>
+                        <button onclick="openModal('addServiceModal')"
+                            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                            + Thêm dịch vụ
+                        </button>
+                    <?php endif; ?>
+                </div>
+
+                <?php if (empty($bookingServices)): ?>
+                    <p class="text-sm text-gray-500 italic">Chưa có dịch vụ nào được thêm vào booking này.</p>
+                <?php else: ?>
+                    <table class="w-full text-sm text-left text-gray-500 border rounded">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2">Tên dịch vụ</th>
+                                <th class="px-3 py-2">Nhà cung cấp</th>
+                                <th class="px-3 py-2 text-right">Số lượng</th>
+                                <th class="px-3 py-2 text-right">Đơn giá</th>
+                                <th class="px-3 py-2 text-right">Thành tiền</th>
+                                <th class="px-3 py-2 text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($bookingServices as $service): ?>
+                                <tr class="border-b">
+                                    <td class="px-3 py-2">
+                                        <span
+                                            class="font-medium"><?= htmlspecialchars($service['service_name'] ?? $service['service_name_original'] ?? 'N/A') ?></span>
+                                        <?php if (!empty($service['notes'])): ?>
+                                            <div class="text-xs text-gray-400 italic"><?= htmlspecialchars($service['notes']) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-3 py-2">
+                                        <?= htmlspecialchars($service['supplier_name'] ?? $service['service_provider_name'] ?? 'N/A') ?>
+                                    </td>
+                                    <td class="px-3 py-2 text-right"><?= $service['quantity'] ?>
+                                        <?= htmlspecialchars($service['unit'] ?? '') ?></td>
+                                    <td class="px-3 py-2 text-right"><?= format_currency($service['unit_price']) ?></td>
+                                    <td class="px-3 py-2 text-right font-medium"><?= format_currency($service['total_price']) ?>
+                                    </td>
+                                    <td class="px-3 py-2 text-center">
+                                        <?php if ($service['paid_amount'] == 0 && $booking['approval_status'] != 'cancelled'): ?>
+                                            <form action="?act=admin&module=bookings&action=deleteBookingService" method="POST"
+                                                class="inline" onsubmit="return confirm('Xóa dịch vụ này?')">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="id" value="<?= $service['id'] ?>">
+                                                <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+                                                <button type="submit" class="text-red-600 hover:text-red-800 text-xs">✕ Xóa</button>
+                                            </form>
+                                        <?php else: ?>
+                                            <span class="text-xs text-gray-400">Đã thanh toán</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot class="bg-gray-50">
+                            <tr>
+                                <td colspan="4" class="px-3 py-2 text-right font-bold">Tổng tiền dịch vụ:</td>
+                                <td class="px-3 py-2 text-right font-bold text-blue-600">
+                                    <?= format_currency($serviceTotals['total_cost'] ?? 0) ?>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                <?php endif; ?>
+            </div>
+
+            <!-- 4. HISTORY LOG -->
             <div class="bg-white p-6 rounded shadow-sm">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Lịch sử hoạt động</h2>
                 <div class="relative border-l-2 border-gray-200 ml-3 space-y-6">
@@ -368,11 +452,185 @@ $statusColors = [
     </div>
 </div>
 
+<!-- 4. Add Passenger Modal -->
+<div id="addPassengerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg w-full max-w-md p-6">
+        <h3 class="text-lg font-bold mb-4">Thêm khách hàng vào Booking</h3>
+        <form action="?act=admin&module=bookings&action=addPassengerToBooking" method="POST">
+            <?= csrf_field() ?>
+            <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Chọn khách hàng <span
+                            class="text-red-500">*</span></label>
+                    <select name="customer_id" required class="w-full border rounded px-3 py-2">
+                        <option value="">-- Chọn khách hàng --</option>
+                        <?php foreach ($availableCustomers as $customer): ?>
+                            <?php
+                            // Skip if customer already in booking
+                            $alreadyInBooking = false;
+                            foreach ($booking['passengers'] ?? [] as $p) {
+                                if ($p['customer_id'] == $customer['id']) {
+                                    $alreadyInBooking = true;
+                                    break;
+                                }
+                            }
+                            if ($alreadyInBooking)
+                                continue;
+                            ?>
+                            <option value="<?= $customer['id'] ?>">
+                                <?= htmlspecialchars($customer['full_name']) ?> -
+                                <?= htmlspecialchars($customer['phone'] ?? '') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Loại <span class="text-red-500">*</span></label>
+                    <select name="age_type" required class="w-full border rounded px-3 py-2">
+                        <option value="adult">Người lớn</option>
+                        <option value="child">Trẻ em</option>
+                        <option value="infant">Em bé</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="is_primary" value="1" class="mr-2">
+                        <span class="text-sm">Đánh dấu là khách chính (người đặt tour)</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-1">Lưu ý: Booking chỉ có thể có 1 khách chính</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-6">
+                <button type="button" onclick="closeModal('addPassengerModal')"
+                    class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Hủy</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Thêm
+                    khách</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 5. Add Service Modal -->
+<div id="addServiceModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-bold mb-4">Thêm dịch vụ vào Booking</h3>
+        <form action="?act=admin&module=bookings&action=storeBookingService" method="POST">
+            <?= csrf_field() ?>
+            <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Dịch vụ <span
+                                class="text-red-500">*</span></label>
+                        <select name="service_id" id="add_service_id" required
+                            onchange="updateServiceProvider(this.value)" class="w-full border rounded px-3 py-2">
+                            <option value="">-- Chọn dịch vụ --</option>
+                            <?php foreach ($availableServicesList as $svc): ?>
+                                <option value="<?= $svc['id'] ?>" data-provider="<?= $svc['service_provider_id'] ?? '' ?>"
+                                    data-unit="<?= htmlspecialchars($svc['unit'] ?? '') ?>" data-price="0">
+                                    <?= htmlspecialchars($svc['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nhà cung cấp</label>
+                        <select name="service_provider_id" id="add_service_provider_id"
+                            class="w-full border rounded px-3 py-2">
+                            <option value="">-- Tự động (từ dịch vụ) --</option>
+                            <?php foreach ($serviceProviders as $provider): ?>
+                                <option value="<?= $provider['id'] ?>">
+                                    <?= htmlspecialchars($provider['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Số lượng <span
+                                class="text-red-500">*</span></label>
+                        <input type="number" name="quantity" id="add_service_quantity" value="1" min="1" required
+                            onchange="calculateServiceTotal()" class="w-full border rounded px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Đơn giá (VNĐ) <span
+                                class="text-red-500">*</span></label>
+                        <input type="number" name="unit_price" id="add_service_unit_price" value="0" min="0" step="1000"
+                            required onchange="calculateServiceTotal()"
+                            class="w-full border rounded px-3 py-2 text-right">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Thành tiền</label>
+                        <input type="text" id="add_service_total_display" value="0 đ" readonly
+                            class="w-full border rounded px-3 py-2 text-right font-bold bg-gray-50">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Ghi chú</label>
+                    <textarea name="notes" rows="2" class="w-full border rounded px-3 py-2"
+                        placeholder="Ghi chú về dịch vụ..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-6">
+                <button type="button" onclick="closeModal('addServiceModal')"
+                    class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Hủy</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Thêm dịch
+                    vụ</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     function openModal(id) {
         document.getElementById(id).classList.remove('hidden');
     }
     function closeModal(id) {
         document.getElementById(id).classList.add('hidden');
+    }
+
+    function updateServiceProvider(serviceId) {
+        const serviceSelect = document.getElementById('add_service_id');
+        const providerSelect = document.getElementById('add_service_provider_id');
+        const unitPriceInput = document.getElementById('add_service_unit_price');
+
+        const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            // Auto-fill service provider
+            const providerId = selectedOption.dataset.provider || '';
+            if (providerId) {
+                providerSelect.value = providerId;
+            }
+
+            // Auto-fill unit price if available
+            const price = selectedOption.dataset.price || 0;
+            if (price > 0) {
+                unitPriceInput.value = price;
+                calculateServiceTotal();
+            }
+        } else {
+            providerSelect.value = '';
+            unitPriceInput.value = 0;
+            calculateServiceTotal();
+        }
+    }
+
+    function calculateServiceTotal() {
+        const quantity = parseFloat(document.getElementById('add_service_quantity').value) || 0;
+        const unitPrice = parseFloat(document.getElementById('add_service_unit_price').value) || 0;
+        const total = quantity * unitPrice;
+
+        document.getElementById('add_service_total_display').value =
+            new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total);
     }
 </script>

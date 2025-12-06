@@ -51,7 +51,7 @@ class Booking
             if (!empty($filters['exact_date'])) {
                 $sql .= " AND b.start_date = :start_date";
             } else {
-            $sql .= " AND b.start_date >= :start_date";
+                $sql .= " AND b.start_date >= :start_date";
             }
             $params['start_date'] = $filters['start_date'];
         }
@@ -225,25 +225,56 @@ class Booking
             $booking_code = $this->generateBookingCode();
 
             // 2. Insert Booking
-            $sql = "INSERT INTO bookings (
-                booking_code, tour_id, customer_id, 
-                adult_count, child_count, infant_count,
-                start_date, end_date,
-                total_amount, discount_amount, final_amount, 
-                deposit_amount, remaining_amount,
-                payment_status, approval_status,
-                notes, created_by" .
-                (!empty($data['tour_schedule_id']) ? ", tour_schedule_id" : "") . "
-            ) VALUES (
-                :booking_code, :tour_id, :customer_id,
-                :adult_count, :child_count, :infant_count,
-                :start_date, :end_date,
-                :total_amount, :discount_amount, :final_amount,
-                :deposit_amount, :remaining_amount,
-                :payment_status, :approval_status,
-                :notes, :created_by" .
-                (!empty($data['tour_schedule_id']) ? ", :tour_schedule_id" : "") . "
-            )";
+            $fields = [
+                'booking_code',
+                'tour_id',
+                'customer_id',
+                'adult_count',
+                'child_count',
+                'infant_count',
+                'start_date',
+                'end_date',
+                'total_amount',
+                'discount_amount',
+                'final_amount',
+                'deposit_amount',
+                'remaining_amount',
+                'payment_status',
+                'approval_status',
+                'notes',
+                'created_by'
+            ];
+
+            $values = [
+                ':booking_code',
+                ':tour_id',
+                ':customer_id',
+                ':adult_count',
+                ':child_count',
+                ':infant_count',
+                ':start_date',
+                ':end_date',
+                ':total_amount',
+                ':discount_amount',
+                ':final_amount',
+                ':deposit_amount',
+                ':remaining_amount',
+                ':payment_status',
+                ':approval_status',
+                ':notes',
+                ':created_by'
+            ];
+
+            // Add optional fields
+            $optionalFields = ['tour_schedule_id', 'discount_code', 'source', 'special_requests', 'internal_notes'];
+            foreach ($optionalFields as $field) {
+                if (isset($data[$field])) {
+                    $fields[] = $field;
+                    $values[] = ':' . $field;
+                }
+            }
+
+            $sql = "INSERT INTO bookings (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $values) . ")";
 
             $params = [
                 'booking_code' => $booking_code,
@@ -265,8 +296,11 @@ class Booking
                 'created_by' => $data['created_by']
             ];
 
-            if (!empty($data['tour_schedule_id'])) {
-                $params['tour_schedule_id'] = $data['tour_schedule_id'];
+            // Add optional fields to params
+            foreach ($optionalFields as $field) {
+                if (isset($data[$field])) {
+                    $params[$field] = $data[$field];
+                }
             }
 
             $stmt = $this->pdo->prepare($sql);
@@ -346,8 +380,10 @@ class Booking
         // Update customer stats if approval status changed
         if ($type == 'approval' && $result && ($old_status != $status)) {
             // Only update if status changed to/from approved/completed
-            if (in_array($status, ['approved', 'completed', 'rejected', 'cancelled']) || 
-                in_array($old_status, ['approved', 'completed'])) {
+            if (
+                in_array($status, ['approved', 'completed', 'rejected', 'cancelled']) ||
+                in_array($old_status, ['approved', 'completed'])
+            ) {
                 $this->updateCustomerStats($customer_id);
             }
         }
@@ -505,7 +541,7 @@ class Booking
                 // Nếu phí hủy >= số tiền đã trả, không có refund
                 $paymentStatus = $booking['payment_status']; // Giữ nguyên
             }
-            
+
             $sql = "UPDATE bookings SET 
                     approval_status = 'cancelled',
                     cancellation_date = NOW(),

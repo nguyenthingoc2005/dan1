@@ -308,6 +308,15 @@ switch ($module) {
             case 'downloadTemplate':
                 $bookingController->downloadTemplate();
                 break;
+            case 'storeBookingService':
+                $bookingController->storeBookingService();
+                break;
+            case 'deleteBookingService':
+                $bookingController->deleteBookingService();
+                break;
+            case 'addPassengerToBooking':
+                $bookingController->addPassengerToBooking();
+                break;
             default:
                 $bookingController->index();
                 break;
@@ -342,6 +351,21 @@ switch ($module) {
                 break;
             case 'delete':
                 $customerController->delete();
+                break;
+            case 'import':
+                $customerController->import();
+                break;
+            case 'importStore':
+                $customerController->importStore();
+                break;
+            case 'importResult':
+                $customerController->importResult();
+                break;
+            case 'importLogs':
+                $customerController->importLogs();
+                break;
+            case 'downloadTemplate':
+                $customerController->downloadTemplate();
                 break;
             default:
                 $customerController->index();
@@ -380,6 +404,18 @@ switch ($module) {
                 break;
             case 'changeStatus':
                 $scheduleController->changeStatus();
+                break;
+            case 'assignGuideForm':
+                $scheduleController->assignGuideForm();
+                break;
+            case 'assignGuide':
+                $scheduleController->assignGuide();
+                break;
+            case 'cancelForm':
+                $scheduleController->cancelForm();
+                break;
+            case 'cancel':
+                $scheduleController->cancel();
                 break;
             default:
                 $scheduleController->index();
@@ -625,7 +661,7 @@ switch ($module) {
                 $locationServiceController->updateService();
                 break;
             case 'getPrice':
-                $locationServiceController->getPrices();
+                $locationServiceController->getPrice();
                 break;
             case 'store-price':
                 $locationServiceController->createPrice();

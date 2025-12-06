@@ -138,10 +138,11 @@ class BookingController
                     throw new \Exception("Vui lòng chọn hoặc tạo khách hàng.");
                 }
 
-                // Validate start_date >= today
+                // Validate start_date >= today + 1 day (DEADLINE: Phải đặt trước 1 ngày)
                 $today = date('Y-m-d');
-                if ($_POST['start_date'] < $today) {
-                    throw new \Exception("Ngày khởi hành phải từ hôm nay trở đi");
+                $minStartDate = date('Y-m-d', strtotime($today . ' +1 day'));
+                if ($_POST['start_date'] < $minStartDate) {
+                    throw new \Exception("Không thể đặt booking. Phải đặt trước 1 ngày so với ngày khởi hành. (Hôm nay: {$today}, Ngày khởi hành tối thiểu: {$minStartDate})");
                 }
 
                 // Validate counts
@@ -335,18 +336,23 @@ class BookingController
                     $data = [
                         'tour_id' => $_POST['tour_id'],
                         'customer_id' => $customer_id,
+                        'tour_schedule_id' => $schedule_id, // Set schedule_id
                         'adult_count' => $adult,
                         'child_count' => $child,
                         'infant_count' => $infant,
                         'start_date' => $_POST['start_date'],
                         'end_date' => $end_date,
                         'total_amount' => $total_amount,
+                        'discount_code' => !empty($_POST['discount_code']) ? sanitize($_POST['discount_code']) : null,
                         'discount_amount' => $discount,
                         'final_amount' => $final_amount,
                         'deposit_amount' => $deposit,
                         'remaining_amount' => $remaining,
                         'payment_status' => $_POST['payment_status'] ?? 'unpaid',
+                        'source' => !empty($_POST['source']) ? sanitize($_POST['source']) : null,
+                        'special_requests' => !empty($_POST['special_requests']) ? sanitize($_POST['special_requests']) : null,
                         'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
+                        'internal_notes' => !empty($_POST['internal_notes']) ? sanitize($_POST['internal_notes']) : null,
                         'created_by' => get_user_id()
                     ];
 

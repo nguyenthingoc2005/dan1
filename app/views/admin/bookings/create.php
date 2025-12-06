@@ -76,6 +76,9 @@ unset($_SESSION['old']);
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Lịch khởi hành <span
                                     class="text-red-500">*</span></label>
+                            <div class="bg-yellow-50 border border-yellow-200 rounded p-2 mb-2 text-sm">
+                                ⚠️ <strong>Lưu ý:</strong> Phải đặt trước 1 ngày so với ngày khởi hành
+                            </div>
                             <select name="start_date" id="start_date"
                                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
                                 required>
@@ -253,10 +256,38 @@ unset($_SESSION['old']);
                     </table>
                 </div>
 
-                <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú đơn hàng</label>
-                    <textarea name="notes" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"><?= $old['notes'] ?? '' ?></textarea>
+                <div class="mt-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nguồn booking</label>
+                        <select name="source" id="source"
+                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                            <option value="">-- Chọn nguồn --</option>
+                            <option value="phone" <?= ($old['source'] ?? '') == 'phone' ? 'selected' : '' ?>>Điện thoại</option>
+                            <option value="email" <?= ($old['source'] ?? '') == 'email' ? 'selected' : '' ?>>Email</option>
+                            <option value="facebook" <?= ($old['source'] ?? '') == 'facebook' ? 'selected' : '' ?>>Facebook</option>
+                            <option value="zalo" <?= ($old['source'] ?? '') == 'zalo' ? 'selected' : '' ?>>Zalo</option>
+                            <option value="walk_in" <?= ($old['source'] ?? '') == 'walk_in' ? 'selected' : '' ?>>Đến trực tiếp</option>
+                            <option value="other" <?= ($old['source'] ?? '') == 'other' ? 'selected' : '' ?>>Khác</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Yêu cầu đặc biệt</label>
+                        <textarea name="special_requests" rows="3" placeholder="VD: Khách ăn chay, Cần phòng riêng, Khách có trẻ em nhỏ..."
+                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"><?= $old['special_requests'] ?? '' ?></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú cho khách</label>
+                        <textarea name="notes" rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"><?= $old['notes'] ?? '' ?></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú nội bộ</label>
+                        <textarea name="internal_notes" rows="3" placeholder="Chỉ staff/admin mới thấy"
+                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent bg-gray-50"><?= $old['internal_notes'] ?? '' ?></textarea>
+                    </div>
                 </div>
             </div>
 
@@ -274,6 +305,13 @@ unset($_SESSION['old']);
                             class="w-full text-right font-bold text-gray-800 bg-gray-50 border-0 text-lg" value="0 đ"
                             readonly>
                         <input type="hidden" name="total_amount" id="total_amount" value="0">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mã giảm giá</label>
+                        <input type="text" name="discount_code" id="discount_code"
+                            value="<?= $old['discount_code'] ?? '' ?>" placeholder="Nhập mã giảm giá (nếu có)"
+                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
                     </div>
 
                     <div>
@@ -419,6 +457,24 @@ unset($_SESSION['old']);
                 return;
             }
 
+            // Validate deadline: Phải đặt trước 1 ngày
+            const selectedDate = selectedOption.value;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const minDate = new Date(today);
+            minDate.setDate(minDate.getDate() + 1); // Hôm nay + 1 ngày
+            const selectedDateObj = new Date(selectedDate);
+            selectedDateObj.setHours(0, 0, 0, 0);
+
+            // Check if selected date is valid
+            if (selectedDateObj < minDate) {
+                alert('Không thể đặt booking. Phải đặt trước 1 ngày so với ngày khởi hành.');
+                startDateSelect.value = "";
+                endDateInput.value = "";
+                endDateDisplay.value = "";
+                return;
+            }
+
             // Update End Date
             const endDate = selectedOption.dataset.endDate || '';
             if (endDate) {
@@ -531,6 +587,37 @@ unset($_SESSION['old']);
 
         startDateSelect.addEventListener('change', function () {
             updateScheduleInfo();
+            validateDeadline();
+        });
+
+        // Validate deadline on form submit
+        function validateDeadline() {
+            const selectedDate = startDateSelect.value;
+            if (!selectedDate) return true;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const minDate = new Date(today);
+            minDate.setDate(minDate.getDate() + 1); // Hôm nay + 1 ngày
+            const selectedDateObj = new Date(selectedDate);
+            selectedDateObj.setHours(0, 0, 0, 0);
+
+            if (selectedDateObj < minDate) {
+                const todayStr = today.toISOString().split('T')[0];
+                const minDateStr = minDate.toISOString().split('T')[0];
+                alert(`Không thể đặt booking. Phải đặt trước 1 ngày so với ngày khởi hành.\n(Hôm nay: ${todayStr}, Ngày khởi hành tối thiểu: ${minDateStr})`);
+                startDateSelect.focus();
+                return false;
+            }
+            return true;
+        }
+
+        // Add validation before form submit
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            if (!validateDeadline()) {
+                e.preventDefault();
+                return false;
+            }
         });
 
         [adultCountInput, childCountInput, infantCountInput, discountInput, depositInput].forEach(input => {

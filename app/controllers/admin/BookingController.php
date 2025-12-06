@@ -105,10 +105,11 @@ class BookingController
                     throw new Exception("Vui lòng chọn hoặc tạo khách hàng.");
                 }
 
-                // 1. Validate start_date >= today
+                // 1. Validate start_date >= today + 1 day (DEADLINE: Phải đặt trước 1 ngày)
                 $today = date('Y-m-d');
-                if ($_POST['start_date'] < $today) {
-                    throw new Exception("Ngày khởi hành phải từ hôm nay trở đi");
+                $minStartDate = date('Y-m-d', strtotime($today . ' +1 day'));
+                if ($_POST['start_date'] < $minStartDate) {
+                    throw new Exception("Không thể đặt booking. Phải đặt trước 1 ngày so với ngày khởi hành. (Hôm nay: {$today}, Ngày khởi hành tối thiểu: {$minStartDate})");
                 }
 
                 // 2. Validate adult_count >= 1
@@ -319,20 +320,23 @@ class BookingController
                 $data = [
                     'tour_id' => $_POST['tour_id'],
                     'customer_id' => $customer_id,
-                    // Note: tour_schedule_id removed - database doesn't have this column
-                    // Using tour_id + start_date to track which schedule this booking belongs to
+                    'tour_schedule_id' => $schedule_id, // Set schedule_id
                     'adult_count' => $adult,
                     'child_count' => $child,
                     'infant_count' => $infant,
                     'start_date' => $_POST['start_date'],
                     'end_date' => $end_date,
                     'total_amount' => $total_amount,
+                    'discount_code' => !empty($_POST['discount_code']) ? sanitize($_POST['discount_code']) : null,
                     'discount_amount' => $discount,
                     'final_amount' => $final_amount,
                     'deposit_amount' => $deposit,
                     'remaining_amount' => $remaining,
                     'payment_status' => $_POST['payment_status'] ?? 'unpaid',
-                        'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
+                    'source' => !empty($_POST['source']) ? sanitize($_POST['source']) : null,
+                    'special_requests' => !empty($_POST['special_requests']) ? sanitize($_POST['special_requests']) : null,
+                    'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
+                    'internal_notes' => !empty($_POST['internal_notes']) ? sanitize($_POST['internal_notes']) : null,
                     'created_by' => $_SESSION['user_id'] ?? 1
                 ];
 
@@ -466,6 +470,28 @@ class BookingController
         require_once 'app/models/Payment.php';
         $paymentModel = new Payment($this->pdo);
         $payments = $paymentModel->getByBookingId($id);
+
+        // Get Booking Services
+        require_once 'app/models/BookingService.php';
+        $bookingServiceModel = new BookingService($this->pdo);
+        $bookingServices = $bookingServiceModel->getByBookingId($id);
+        $serviceTotals = $bookingServiceModel->getTotalCostByBooking($id);
+
+        // Get available services for adding
+        require_once 'app/models/Service.php';
+        $serviceModel = new Service($this->pdo);
+        $availableServices = $serviceModel->getAll(['status' => 'active'], 1, 1000);
+        $availableServicesList = $availableServices['data'] ?? [];
+
+        // Get service providers for dropdown
+        require_once 'app/models/ServiceProvider.php';
+        $serviceProviderModel = new ServiceProvider($this->pdo);
+        $allProviders = $serviceProviderModel->getAll(['status' => 'active'], 1, 1000);
+        $serviceProviders = $allProviders['data'] ?? [];
+
+        // Get available customers for adding passengers
+        $customersResult = $this->customerModel->getAll([], 1, 1000);
+        $availableCustomers = $customersResult['data'] ?? [];
 
         $page_title = 'Chi tiết Booking: ' . $booking['booking_code'];
         $content_file = 'app/views/admin/bookings/show.php';
@@ -889,6 +915,237 @@ class BookingController
         }
 
         return 'other';
+    }
+
+    /**
+     * Thêm dịch vụ vào booking
+     */
+    public function storeBookingService()
+    {
+        require_admin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            require_csrf_token();
+            
+            try {
+                require_once 'app/models/BookingService.php';
+                require_once 'app/models/Service.php';
+                $bookingServiceModel = new BookingService($this->pdo);
+                $serviceModel = new Service($this->pdo);
+
+                $booking_id = (int)($_POST['booking_id'] ?? 0);
+                $service_id = (int)($_POST['service_id'] ?? 0);
+                $service_provider_id = !empty($_POST['service_provider_id']) ? (int)$_POST['service_provider_id'] : null;
+
+                if (!$booking_id || !$service_id) {
+                    throw new Exception("Thiếu thông tin bắt buộc.");
+                }
+
+                // Validate booking exists
+                $booking = $this->bookingModel->getById($booking_id);
+                if (!$booking) {
+                    throw new Exception("Booking không tồn tại.");
+                }
+
+                // Get service info
+                $service = $serviceModel->findById($service_id);
+                if (!$service || $service['status'] !== 'active') {
+                    throw new Exception("Dịch vụ không tồn tại hoặc không khả dụng.");
+                }
+
+                // Get service provider if not provided (use from service)
+                if (!$service_provider_id && !empty($service['service_provider_id'])) {
+                    $service_provider_id = $service['service_provider_id'];
+                }
+
+                $quantity = (int)($_POST['quantity'] ?? 1);
+                $unit_price = (float)($_POST['unit_price'] ?? 0);
+                $total_price = $quantity * $unit_price;
+
+                if ($quantity <= 0) {
+                    throw new Exception("Số lượng phải lớn hơn 0.");
+                }
+                if ($unit_price < 0) {
+                    throw new Exception("Đơn giá không được âm.");
+                }
+
+                $data = [
+                    'booking_id' => $booking_id,
+                    'service_id' => $service_id,
+                    'service_provider_id' => $service_provider_id,
+                    'service_name' => $service['name'], // Snapshot
+                    'quantity' => $quantity,
+                    'unit' => $service['unit'] ?? null,
+                    'unit_price' => $unit_price,
+                    'total_price' => $total_price,
+                    'service_date' => $booking['start_date'], // Default to booking start date
+                    'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
+                    'created_by' => $_SESSION['user_id'] ?? 1
+                ];
+
+                $bookingServiceModel->create($data);
+
+                set_success("Đã thêm dịch vụ vào booking!");
+                redirect("?act=admin&module=bookings&action=show&id=$booking_id");
+
+            } catch (Exception $e) {
+                error_log("BookingController::storeBookingService() ERROR: " . $e->getMessage());
+                set_error($e->getMessage());
+                redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
+            }
+        }
+    }
+
+    /**
+     * Xóa dịch vụ khỏi booking
+     */
+    public function deleteBookingService()
+    {
+        require_admin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            require_csrf_token();
+            
+            try {
+                require_once 'app/models/BookingService.php';
+                $bookingServiceModel = new BookingService($this->pdo);
+
+                $id = (int)($_POST['id'] ?? 0);
+                $booking_id = (int)($_POST['booking_id'] ?? 0);
+
+                if (!$id || !$booking_id) {
+                    throw new Exception("Thiếu thông tin.");
+                }
+
+                // Check if service exists and not paid
+                $service = $bookingServiceModel->getById($id);
+                if (!$service) {
+                    throw new Exception("Dịch vụ không tồn tại.");
+                }
+
+                if ($service['booking_id'] != $booking_id) {
+                    throw new Exception("Dịch vụ không thuộc booking này.");
+                }
+
+                if ($service['paid_amount'] > 0) {
+                    throw new Exception("Không thể xóa dịch vụ đã thanh toán.");
+                }
+
+                if ($bookingServiceModel->delete($id)) {
+                    set_success("Đã xóa dịch vụ khỏi booking!");
+                } else {
+                    throw new Exception("Không thể xóa dịch vụ.");
+                }
+
+                redirect("?act=admin&module=bookings&action=show&id=$booking_id");
+
+            } catch (Exception $e) {
+                error_log("BookingController::deleteBookingService() ERROR: " . $e->getMessage());
+                set_error($e->getMessage());
+                redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
+            }
+        }
+    }
+
+    /**
+     * Thêm khách hàng vào booking (sau khi đã tạo)
+     */
+    public function addPassengerToBooking()
+    {
+        require_admin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            require_csrf_token();
+            
+            try {
+                $booking_id = (int)($_POST['booking_id'] ?? 0);
+                $customer_id = (int)($_POST['customer_id'] ?? 0);
+                $age_type = $_POST['age_type'] ?? 'adult';
+                $is_primary = isset($_POST['is_primary']) ? 1 : 0;
+
+                if (!$booking_id || !$customer_id) {
+                    throw new Exception("Thiếu thông tin bắt buộc.");
+                }
+
+                // Validate booking
+                $booking = $this->bookingModel->getById($booking_id);
+                if (!$booking) {
+                    throw new Exception("Booking không tồn tại.");
+                }
+
+                if ($booking['approval_status'] === 'cancelled') {
+                    throw new Exception("Không thể thêm khách vào booking đã hủy.");
+                }
+
+                // Validate age_type
+                if (!in_array($age_type, ['adult', 'child', 'infant'])) {
+                    throw new Exception("Loại khách hàng không hợp lệ.");
+                }
+
+                // Check if customer already in booking
+                $existingPassengers = $booking['passengers'] ?? [];
+                foreach ($existingPassengers as $p) {
+                    if ($p['customer_id'] == $customer_id) {
+                        throw new Exception("Khách hàng này đã có trong booking.");
+                    }
+                }
+
+                // Check if primary already exists
+                if ($is_primary) {
+                    foreach ($existingPassengers as $p) {
+                        if ($p['is_primary']) {
+                            throw new Exception("Booking đã có khách chính. Không thể thêm khách chính khác.");
+                        }
+                    }
+                }
+
+                // Add passenger
+                $sql = "INSERT INTO booking_customers (booking_id, customer_id, age_type, is_primary) 
+                        VALUES (:booking_id, :customer_id, :age_type, :is_primary)";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([
+                    'booking_id' => $booking_id,
+                    'customer_id' => $customer_id,
+                    'age_type' => $age_type,
+                    'is_primary' => $is_primary
+                ]);
+
+                // Update booking counts
+                $currentAdult = $booking['adult_count'];
+                $currentChild = $booking['child_count'];
+                $currentInfant = $booking['infant_count'];
+
+                if ($age_type === 'adult') {
+                    $currentAdult++;
+                } elseif ($age_type === 'child') {
+                    $currentChild++;
+                } else {
+                    $currentInfant++;
+                }
+
+                $updateSql = "UPDATE bookings SET 
+                              adult_count = :adult,
+                              child_count = :child,
+                              infant_count = :infant
+                              WHERE id = :id";
+                $updateStmt = $this->pdo->prepare($updateSql);
+                $updateStmt->execute([
+                    'adult' => $currentAdult,
+                    'child' => $currentChild,
+                    'infant' => $currentInfant,
+                    'id' => $booking_id
+                ]);
+
+                // Log history
+                $this->bookingModel->logHistory($booking_id, $booking['approval_status'], $booking['approval_status'], 
+                    $_SESSION['user_id'] ?? null, "Thêm khách hàng vào booking");
+
+                set_success("Đã thêm khách hàng vào booking!");
+                redirect("?act=admin&module=bookings&action=show&id=$booking_id");
+
+            } catch (Exception $e) {
+                error_log("BookingController::addPassengerToBooking() ERROR: " . $e->getMessage());
+                set_error($e->getMessage());
+                redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
+            }
+        }
     }
 
     /**
