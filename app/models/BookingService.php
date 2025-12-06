@@ -186,18 +186,18 @@ class BookingService
     /**
      * Lấy dịch vụ chưa thanh toán cho supplier
      */
-    public function getUnpaidBySupplier($supplierId)
+    public function getUnpaidBySupplier($serviceProviderId)
     {
         $sql = "SELECT bs.*, b.booking_code, t.name as tour_name
                 FROM booking_services bs
                 JOIN bookings b ON bs.booking_id = b.id
                 JOIN tours t ON b.tour_id = t.id
-                WHERE bs.service_provider_id = :supplier_id
+                WHERE bs.service_provider_id = :service_provider_id
                   AND bs.payment_status != 'paid'
                 ORDER BY bs.service_date ASC";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['supplier_id' => $supplierId]);
+        $stmt->execute(['service_provider_id' => $serviceProviderId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -289,7 +289,7 @@ class BookingService
     {
         try {
             // Get tour services
-            $sql = "SELECT ts.*, s.supplier_id
+            $sql = "SELECT ts.*, s.service_provider_id
                     FROM tour_services ts
                     JOIN services s ON ts.service_id = s.id
                     WHERE ts.tour_id = :tour_id AND ts.is_included_in_price = 1";
@@ -316,7 +316,7 @@ class BookingService
                 $this->create([
                     'booking_id' => $bookingId,
                     'service_id' => $ts['service_id'],
-                    'service_provider_id' => $ts['supplier_id'] ?? $ts['service_provider_id'] ?? null,
+                    'service_provider_id' => $ts['service_provider_id'] ?? null,
                     'service_name' => $ts['service_name'],
                     'quantity' => $qty,
                     'unit' => $ts['unit'],
