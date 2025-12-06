@@ -150,7 +150,50 @@ if (!is_admin())
 
         <!-- Main Content Area -->
         <div class="flex-1 bg-white rounded shadow-sm p-6" id="mainContent">
-            <?php if (!empty($current_province_id)): ?>
+            <?php if (!empty($current_service_provider_id) && !empty($current_provider)): ?>
+                <!-- Services List for Provider - Kiểm tra service_provider_id TRƯỚC province_id -->
+                <div class="mb-4">
+                    <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>" 
+                       class="text-blue-600 hover:underline mb-2 inline-block">← Quay lại danh sách nhà cung cấp</a>
+                    <h2 class="text-xl font-bold mb-2">Dịch vụ của: <?= htmlspecialchars($current_provider['name'] ?? '') ?></h2>
+                    <a href="?act=admin&module=location-services&action=create-service&service_provider_id=<?= $current_service_provider_id ?>"
+                       class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 inline-block">
+                        + Thêm dịch vụ
+                    </a>
+                </div>
+
+                <?php if (empty($services['data'])): ?>
+                    <div class="text-center py-10 text-gray-500">Chưa có dịch vụ nào. Hãy thêm mới!</div>
+                <?php else: ?>
+                    <?php foreach ($services['data'] as $service): ?>
+                        <div class="border-l-4 border-blue-500 pl-3 mb-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h5 class="font-semibold"><?= htmlspecialchars($service['service_type_name'] ?? '') ?> - <?= htmlspecialchars($service['name']) ?></h5>
+                                    <?php if (!empty($service['description'])): ?>
+                                        <p class="text-sm text-gray-600"><?= htmlspecialchars($service['description']) ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <div>
+                                    <button class="px-2 py-1 bg-blue-500 text-white rounded text-xs mr-1" 
+                                            onclick="openCreatePriceModal(<?= $service['id'] ?>)">
+                                        + Giá
+                                    </button>
+                                    <a href="?act=admin&module=location-services&action=edit-service&id=<?= $service['id'] ?>"
+                                       class="px-2 py-1 bg-yellow-500 text-white rounded text-xs mr-1 inline-block">
+                                        Sửa
+                                    </a>
+                                    <button class="px-2 py-1 bg-red-500 text-white rounded text-xs" 
+                                            onclick="deleteService(<?= $service['id'] ?>)">
+                                        Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+
+            <?php elseif (!empty($current_province_id)): ?>
                 <!-- Có province_id - Hiển thị tabs và nội dung -->
                 <!-- Tab Navigation -->
                 <div class="mb-4 border-b">
@@ -258,49 +301,6 @@ if (!is_admin())
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
-                <?php endif; ?>
-
-            <?php elseif (!empty($current_service_provider_id) && !empty($current_provider)): ?>
-                <!-- Services List for Provider -->
-                <div class="mb-4">
-                    <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>" 
-                       class="text-blue-600 hover:underline mb-2 inline-block">← Quay lại danh sách nhà cung cấp</a>
-                    <h2 class="text-xl font-bold mb-2">Dịch vụ của: <?= htmlspecialchars($current_provider['name'] ?? '') ?></h2>
-                    <a href="?act=admin&module=location-services&action=create-service&service_provider_id=<?= $current_service_provider_id ?>"
-                       class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 inline-block">
-                        + Thêm dịch vụ
-                    </a>
-                </div>
-
-                <?php if (empty($services['data'])): ?>
-                    <div class="text-center py-10 text-gray-500">Chưa có dịch vụ nào. Hãy thêm mới!</div>
-                <?php else: ?>
-                    <?php foreach ($services['data'] as $service): ?>
-                        <div class="border-l-4 border-blue-500 pl-3 mb-3">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h5 class="font-semibold"><?= htmlspecialchars($service['service_type_name'] ?? '') ?> - <?= htmlspecialchars($service['name']) ?></h5>
-                                    <?php if (!empty($service['description'])): ?>
-                                        <p class="text-sm text-gray-600"><?= htmlspecialchars($service['description']) ?></p>
-                                    <?php endif; ?>
-                                </div>
-                                <div>
-                                    <button class="px-2 py-1 bg-blue-500 text-white rounded text-xs mr-1" 
-                                            onclick="openCreatePriceModal(<?= $service['id'] ?>)">
-                                        + Giá
-                                    </button>
-                                    <a href="?act=admin&module=location-services&action=edit-service&id=<?= $service['id'] ?>"
-                                       class="px-2 py-1 bg-yellow-500 text-white rounded text-xs mr-1 inline-block">
-                                        Sửa
-                                    </a>
-                                    <button class="px-2 py-1 bg-red-500 text-white rounded text-xs" 
-                                            onclick="deleteService(<?= $service['id'] ?>)">
-                                        Xóa
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
                 <?php endif; ?>
 
             <?php elseif (!empty($current_country_id) && !empty($current_country)): ?>

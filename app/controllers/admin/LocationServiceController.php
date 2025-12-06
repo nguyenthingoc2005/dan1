@@ -162,13 +162,21 @@ class LocationServiceController
                     $services = ['data' => [], 'total' => 0, 'pages' => 0, 'current_page' => 1];
                 }
 
-                // Nếu chưa có provider info (khi chỉ có service_provider_id mà không có province_id)
-                // Load provider để hiển thị breadcrumb và lấy province/country info
-                if (
-                    empty($service_providers['data']) || empty(array_filter($service_providers['data'], function ($sp) use ($service_provider_id) {
-                        return $sp['id'] == $service_provider_id;
-                    }))
-                ) {
+                // Load provider info để hiển thị breadcrumb
+                // Ưu tiên tìm trong danh sách đã load (nếu có)
+                $found_in_list = false;
+                if (!empty($service_providers['data'])) {
+                    foreach ($service_providers['data'] as $provider) {
+                        if ((int) $provider['id'] == (int) $service_provider_id) {
+                            $current_provider = $provider;
+                            $found_in_list = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Nếu không tìm thấy trong danh sách, load trực tiếp từ database
+                if (!$found_in_list || empty($current_provider)) {
                     try {
                         $current_provider_obj = $this->serviceProviderModel->findById($service_provider_id);
                         if ($current_provider_obj) {
@@ -183,21 +191,25 @@ class LocationServiceController
                                 $current_country_id = $country_id;
                             }
 
-                            // Reload provinces và providers nếu có province_id
-                            if ($province_id) {
+                            // Reload provinces và providers nếu có province_id và chưa load
+                            if ($province_id && empty($service_providers['data'])) {
                                 if (!$country_id && !empty($current_provider_obj['country_id'])) {
                                     $country_id = $current_provider_obj['country_id'];
                                     $current_country_id = $country_id;
                                 }
                                 if ($country_id) {
                                     try {
-                                        $current_country = $this->countryModel->findById($country_id);
-                                        $provinces = $this->provinceModel->getForDropdown($country_id);
-                                        foreach ($provinces as &$province) {
-                                            try {
-                                                $province['providers_count'] = $this->getServiceProviderCountByProvince($province['id']);
-                                            } catch (Exception $e) {
-                                                $province['providers_count'] = 0;
+                                        if (empty($current_country)) {
+                                            $current_country = $this->countryModel->findById($country_id);
+                                        }
+                                        if (empty($provinces)) {
+                                            $provinces = $this->provinceModel->getForDropdown($country_id);
+                                            foreach ($provinces as &$province) {
+                                                try {
+                                                    $province['providers_count'] = $this->getServiceProviderCountByProvince($province['id']);
+                                                } catch (Exception $e) {
+                                                    $province['providers_count'] = 0;
+                                                }
                                             }
                                         }
                                     } catch (Exception $e) {
@@ -205,16 +217,20 @@ class LocationServiceController
                                     }
                                 }
                                 try {
-                                    $current_province = $this->provinceModel->findById($province_id);
-                                    $service_providers = $this->serviceProviderModel->getAll(['province_id' => $province_id], 1, 100);
-                                    if (!isset($service_providers['data'])) {
-                                        $service_providers['data'] = [];
+                                    if (empty($current_province)) {
+                                        $current_province = $this->provinceModel->findById($province_id);
                                     }
-                                    foreach ($service_providers['data'] as &$provider) {
-                                        try {
-                                            $provider['services_count'] = $this->serviceProviderModel->getServiceCount($provider['id']);
-                                        } catch (Exception $e) {
-                                            $provider['services_count'] = 0;
+                                    if (empty($service_providers['data'])) {
+                                        $service_providers = $this->serviceProviderModel->getAll(['province_id' => $province_id], 1, 100);
+                                        if (!isset($service_providers['data'])) {
+                                            $service_providers['data'] = [];
+                                        }
+                                        foreach ($service_providers['data'] as &$provider) {
+                                            try {
+                                                $provider['services_count'] = $this->serviceProviderModel->getServiceCount($provider['id']);
+                                            } catch (Exception $e) {
+                                                $provider['services_count'] = 0;
+                                            }
                                         }
                                     }
                                 } catch (Exception $e) {
@@ -224,14 +240,6 @@ class LocationServiceController
                         }
                     } catch (Exception $e) {
                         error_log("Error loading provider info: " . $e->getMessage());
-                    }
-                } else {
-                    // Tìm current_provider từ danh sách
-                    foreach ($service_providers['data'] as $provider) {
-                        if ($provider['id'] == $service_provider_id) {
-                            $current_provider = $provider;
-                            break;
-                        }
                     }
                 }
             }
