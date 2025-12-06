@@ -14,7 +14,8 @@
     </div>
 
     <form method="POST" action="?act=guide-journals&action=store" enctype="multipart/form-data"
-        class="bg-white rounded-lg shadow-sm overflow-hidden">
+        class="bg-panel rounded overflow-hidden border border-slate-200">
+        <?= csrf_field() ?>
         <div class="p-6 space-y-6">
             <!-- Tour Selection -->
             <div>
@@ -27,11 +28,32 @@
                     <?php foreach ($schedules as $schedule): ?>
                         <option value="<?= $schedule['id'] ?>" <?= ($selected_schedule && $selected_schedule['id'] == $schedule['id']) ? 'selected' : '' ?>>
                             <?= htmlspecialchars($schedule['tour_name']) ?> 
-                            (<?= date('d/m/Y', strtotime($schedule['start_date'])) ?> - <?= date('d/m/Y', strtotime($schedule['end_date'])) ?>)
+                            (<?= htmlspecialchars($schedule['tour_code']) ?>) - 
+                            <?= date('d/m/Y', strtotime($schedule['start_date'])) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
                 <p class="text-xs text-gray-500 mt-1">Chỉ hiển thị tour bạn được phân công và đã bắt đầu</p>
+            </div>
+
+            <!-- Journal Date -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Ngày viết nhật ký <span class="text-red-500">*</span>
+                </label>
+                <input type="date" name="journal_date" id="journal_date" required
+                    value="<?= date('Y-m-d') ?>"
+                    class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Day Number -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Số ngày trong tour (Tùy chọn)
+                </label>
+                <input type="number" name="day_number" id="day_number" min="1"
+                    placeholder="VD: 1, 2, 3..."
+                    class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none">
             </div>
 
             <!-- Title -->
@@ -55,12 +77,42 @@
                 <p class="text-xs text-gray-500 mt-1">Bạn có thể sử dụng HTML để format text</p>
             </div>
 
+            <!-- Weather -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Thời tiết (Tùy chọn)
+                </label>
+                <input type="text" name="weather" id="weather"
+                    placeholder="VD: Nắng đẹp, 25°C"
+                    class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Highlights -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Điểm nổi bật (Tùy chọn)
+                </label>
+                <textarea name="highlights" id="highlights" rows="4"
+                    placeholder="Những điểm nổi bật, hoạt động thú vị trong ngày..."
+                    class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none"></textarea>
+            </div>
+
+            <!-- Issues -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Vấn đề phát sinh (Tùy chọn)
+                </label>
+                <textarea name="issues" id="issues" rows="4"
+                    placeholder="Các vấn đề, sự cố phát sinh (nếu có)..."
+                    class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none"></textarea>
+            </div>
+
             <!-- Images -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Hình ảnh (Tùy chọn)
                 </label>
-                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors"
+                <div class="border border-dashed border-gray-300 rounded p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors"
                     onclick="document.getElementById('images').click()">
                     <input type="file" name="images[]" id="images" multiple accept="image/*" class="hidden"
                         onchange="previewImages(this)">
@@ -69,17 +121,6 @@
                     <p class="text-gray-400 text-xs">JPG, PNG, GIF, WebP</p>
                 </div>
                 <div id="image-preview" class="grid grid-cols-4 gap-3 mt-4"></div>
-            </div>
-
-            <!-- Status -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Trạng thái
-                </label>
-                <select name="status" class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none">
-                    <option value="draft">Nháp (Lưu để chỉnh sửa sau)</option>
-                    <option value="published">Đăng ngay</option>
-                </select>
             </div>
 
             <!-- Submit -->
@@ -127,4 +168,3 @@
         // For full removal, we'd need to use FileList manipulation (complex)
     }
 </script>
-

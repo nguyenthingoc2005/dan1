@@ -80,116 +80,12 @@ usort($timeline_items, function($a, $b) {
                 <?php endif; ?>
             </div>
         </div>
-
-        <!-- DAY SERVICES SECTION -->
-        <div class="border-t pt-4">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="font-semibold text-gray-700">
-                    <i class="fas fa-concierge-bell mr-2 text-green-500"></i>Dịch vụ theo ngày
-                </h4>
-                <button type="button" data-action="open-service-modal" data-day="<?= $day_number ?>"
-                    class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">
-                    <i class="fas fa-plus mr-2"></i>Thêm dịch vụ
-                </button>
-            </div>
-
-            <!-- Services List -->
-            <div id="day-services-list-day-<?= $day_number ?>" class="space-y-3">
-                <?php if (empty($day_services)): ?>
-                    <div class="text-gray-500 text-center py-4 bg-gray-50 rounded border-2 border-dashed">
-                        <i class="fas fa-concierge-bell text-2xl mb-2"></i>
-                        <p class="text-sm">Chưa có dịch vụ nào</p>
-                    </div>
-                <?php else: ?>
-                    <?php foreach ($day_services as $idx => $service): ?>
-                        <div class="day-service-item bg-white border border-gray-200 rounded-lg p-4">
-                            <div class="flex items-start gap-4">
-                                <div class="flex-shrink-0 mt-1">
-                                    <input type="checkbox" name="day_service_included[<?= $day_number ?>][<?= $idx ?>]" value="1"
-                                        <?= ($service['is_included_in_price'] ?? 1) ? 'checked' : '' ?>
-                                        onchange="updateDayServiceTotal(<?= $day_number ?>)" 
-                                        class="w-5 h-5 text-blue-600 rounded">
-                                </div>
-                                <div class="flex-1">
-                                    <div class="font-medium text-gray-800">
-                                        <?= htmlspecialchars($service['service_name'] ?? 'N/A') ?>
-                                        <?php if (!empty($service['service_provider_name'])): ?>
-                                            <span class="text-sm text-gray-500">- <?= htmlspecialchars($service['service_provider_name']) ?></span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                                        <div>
-                                            <span class="text-gray-600">Đơn giá:</span>
-                                            <span class="font-medium ml-2"><?= number_format($service['unit_price'] ?? 0, 0, ',', '.') ?>đ</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-600">Số lượng:</span>
-                                            <span class="font-medium ml-2"><?= number_format($service['quantity'] ?? 1, 2, ',', '.') ?> <?= htmlspecialchars($service['unit'] ?? '') ?></span>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-600">Tổng:</span>
-                                            <span class="font-medium text-blue-600 ml-2"><?= number_format(($service['unit_price'] ?? 0) * ($service['quantity'] ?? 1), 0, ',', '.') ?>đ</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-600">Bao gồm:</span>
-                                            <span class="font-medium ml-2 <?= ($service['is_included_in_price'] ?? 1) ? 'text-green-600' : 'text-gray-400' ?>">
-                                                <?= ($service['is_included_in_price'] ?? 1) ? 'Có' : 'Không' ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <?php if (!empty($service['notes'])): ?>
-                                        <div class="mt-2 text-sm text-gray-500">
-                                            <i class="fas fa-sticky-note mr-1"></i><?= htmlspecialchars($service['notes']) ?>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <!-- Hidden fields -->
-                                    <input type="hidden" name="day_service_day_number[]" value="<?= $day_number ?>">
-                                    <input type="hidden" name="day_service_service_id[]" value="<?= $service['service_id'] ?? '' ?>">
-                                    <input type="hidden" name="day_service_provider_id[]" value="<?= $service['service_provider_id'] ?? '' ?>">
-                                    <input type="hidden" name="day_service_name[]" value="<?= htmlspecialchars($service['service_name'] ?? '') ?>">
-                                    <input type="hidden" name="day_service_unit_price[]" value="<?= $service['unit_price'] ?? 0 ?>">
-                                    <input type="hidden" name="day_service_quantity[]" value="<?= $service['quantity'] ?? 1 ?>">
-                                    <input type="hidden" name="day_service_unit[]" value="<?= htmlspecialchars($service['unit'] ?? '') ?>">
-                                    <input type="hidden" name="day_service_notes[]" value="<?= htmlspecialchars($service['notes'] ?? '') ?>">
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <button type="button" onclick="removeDayService(this)" class="text-red-500 hover:text-red-700">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-
-            <!-- Day Services Total -->
-            <?php
-            $day_total = 0;
-            foreach ($day_services as $service) {
-                if ($service['is_included_in_price'] ?? 1) {
-                    $day_total += ($service['unit_price'] ?? 0) * ($service['quantity'] ?? 1);
-                }
-            }
-            ?>
-            <div class="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
-                <div class="flex justify-between items-center">
-                    <span class="font-semibold text-green-900">Tổng Day <?= $day_number ?>:</span>
-                    <span id="day-total-<?= $day_number ?>" class="text-xl font-bold text-green-700">
-                        <?= number_format($day_total, 0, ',', '.') ?>đ/người
-                    </span>
-                </div>
-                <p class="text-xs text-green-600 mt-1">(Chỉ tính các dịch vụ được đánh dấu "Bao gồm trong giá")</p>
-            </div>
-        </div>
     </div>
 </div>
 
 <!-- Add Timeline Modal -->
-<div id="add-timeline-modal-day-<?= $day_number ?>" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999]">
-    <div class="flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+<div id="add-timeline-modal-day-<?= $day_number ?>" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b">
             <h3 class="text-lg font-bold text-gray-800">Thêm timeline - Day <?= $day_number ?></h3>
         </div>
@@ -264,7 +160,7 @@ usort($timeline_items, function($a, $b) {
                         <label class="block text-sm font-medium text-gray-700 mb-1">Dịch vụ</label>
                         <select id="modal-timeline-service-day-<?= $day_number ?>"
                             class="w-full px-3 py-2 border rounded focus:border-blue-500"
-                            onchange="promptAddToDayServices(this, <?= $day_number ?>)">
+                            onchange="loadServiceInfoForTimeline(this, <?= $day_number ?>)">
                             <option value="">-- Chọn dịch vụ --</option>
                             <?php foreach ($services as $service): ?>
                                 <?php 
@@ -276,6 +172,46 @@ usort($timeline_items, function($a, $b) {
                         </select>
                     </div>
                 </div>
+                
+                <!-- Service Price Info (hiển thị khi chọn dịch vụ) -->
+                <div id="service-price-info-day-<?= $day_number ?>" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-800 mb-3">Thông tin giá dịch vụ</h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Đơn giá/người</label>
+                            <input type="number" id="modal-timeline-service-price-day-<?= $day_number ?>" step="1000" min="0"
+                                class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                                placeholder="0"
+                                onchange="calculateTimelineServiceTotal(<?= $day_number ?>)">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
+                            <input type="number" id="modal-timeline-service-quantity-day-<?= $day_number ?>" step="0.01" min="0.01" value="1"
+                                class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                                onchange="calculateTimelineServiceTotal(<?= $day_number ?>)">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Đơn vị</label>
+                            <input type="text" id="modal-timeline-service-unit-day-<?= $day_number ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                                placeholder="VD: bữa, đêm, vé">
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between">
+                        <div>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" id="modal-timeline-service-included-day-<?= $day_number ?>" checked
+                                    class="w-5 h-5 text-blue-600 rounded">
+                                <span class="text-sm font-medium text-gray-700">Bao gồm trong giá tour</span>
+                            </label>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm text-gray-600">Tổng:</span>
+                            <span id="modal-timeline-service-total-day-<?= $day_number ?>" class="text-lg font-bold text-blue-600 ml-2">0đ</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
                     <textarea id="modal-timeline-notes-day-<?= $day_number ?>" rows="2"
@@ -293,88 +229,6 @@ usort($timeline_items, function($a, $b) {
                 </button>
             </div>
         </form>
-    </div>
-    </div>
-</div>
-
-<!-- Add Service Modal -->
-<div id="add-service-modal-day-<?= $day_number ?>" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999]">
-    <div class="flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="p-6 border-b">
-            <h3 class="text-lg font-bold text-gray-800">Thêm dịch vụ - Day <?= $day_number ?></h3>
-        </div>
-        <form id="add-service-form-day-<?= $day_number ?>" class="p-6" data-action="save-service" data-day="<?= $day_number ?>">
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Chọn dịch vụ <span class="text-red-500">*</span></label>
-                    <select id="modal-service-id-day-<?= $day_number ?>" required
-                        class="w-full px-3 py-2 border rounded focus:border-green-500"
-                        onchange="loadServiceInfo(this, <?= $day_number ?>)">
-                        <option value="">-- Chọn dịch vụ --</option>
-                        <?php foreach ($services as $service): ?>
-                            <?php 
-                            $service_id = is_array($service) ? $service['id'] : null;
-                            $service_name = is_array($service) ? $service['name'] : $service;
-                            ?>
-                            <option value="<?= $service_id ?>" data-name="<?= htmlspecialchars($service_name) ?>">
-                                <?= htmlspecialchars($service_name) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Chọn nhà dịch vụ</label>
-                    <select id="modal-service-provider-id-day-<?= $day_number ?>"
-                        class="w-full px-3 py-2 border rounded focus:border-green-500">
-                        <option value="">-- Chọn nhà dịch vụ --</option>
-                        <?php foreach ($service_providers as $provider): ?>
-                            <option value="<?= $provider['id'] ?>"><?= htmlspecialchars($provider['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Đơn giá/người <span class="text-red-500">*</span></label>
-                        <input type="number" id="modal-unit-price-day-<?= $day_number ?>" step="1000" min="0" required
-                            class="w-full px-3 py-2 border rounded focus:border-green-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
-                        <input type="number" id="modal-quantity-day-<?= $day_number ?>" step="0.01" min="0.01" value="1"
-                            class="w-full px-3 py-2 border rounded focus:border-green-500">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Đơn vị</label>
-                    <input type="text" id="modal-unit-day-<?= $day_number ?>" placeholder="VD: bữa, đêm, vé"
-                        class="w-full px-3 py-2 border rounded focus:border-green-500">
-                </div>
-                <div>
-                    <label class="flex items-center gap-2">
-                        <input type="checkbox" id="modal-included-day-<?= $day_number ?>" checked
-                            class="w-5 h-5 text-green-600 rounded">
-                        <span class="text-sm font-medium text-gray-700">Bao gồm trong giá tour</span>
-                    </label>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
-                    <textarea id="modal-notes-day-<?= $day_number ?>" rows="3"
-                        class="w-full px-3 py-2 border rounded focus:border-green-500"
-                        placeholder="Ghi chú thêm..."></textarea>
-                </div>
-            </div>
-            <div class="mt-6 flex justify-end gap-3">
-                <button type="button" data-action="close-service-modal" data-day="<?= $day_number ?>"
-                    class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                    Hủy
-                </button>
-                <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
-                    Thêm dịch vụ
-                </button>
-            </div>
-        </form>
-    </div>
     </div>
 </div>
 

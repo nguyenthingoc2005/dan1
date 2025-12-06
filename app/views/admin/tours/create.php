@@ -251,7 +251,7 @@ if (is_array($old_day_services)) {
                 <h2 class="text-xl font-bold text-gray-800 mb-6">Lịch trình</h2>
 
                 <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded mb-4 text-sm">
-                    ℹ️ Lịch trình được tạo tự động dựa trên số ngày bạn nhập ở Bước 1. 
+                    ℹ️ Lịch trình được tạo tự động dựa trên số ngày bạn nhập ở Bước 1.
                     Mỗi ngày có thể quản lý Timeline chi tiết và Dịch vụ ngay bên dưới.
                 </div>
 
@@ -385,16 +385,6 @@ if (is_array($old_day_services)) {
                             <!-- Day breakdown sẽ được hiển thị ở đây -->
                         </div>
 
-                        <div class="border-t border-blue-300 pt-3 mt-3">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-gray-600">Chi phí cố định/người:</span>
-                                <span id="fixed-cost-per-person" class="font-medium">0đ</span>
-                            </div>
-                            <div id="fixed-cost-detail" class="ml-4 text-xs text-gray-500">
-                                <!-- Fixed cost detail -->
-                            </div>
-                        </div>
-
                         <div class="border-t-2 border-blue-400 pt-3 mt-3">
                             <div class="flex justify-between items-center">
                                 <span class="font-semibold text-blue-900">Tổng chi phí/người:</span>
@@ -408,47 +398,8 @@ if (is_array($old_day_services)) {
                                 <span id="suggested-price-per-person" class="text-xl font-bold text-blue-700">0đ</span>
                             </div>
                             <p class="text-xs text-blue-600 mt-1">
-                                (Đã tính đủ: dịch vụ + nhân sự + marketing + quản lý)
+                                (Dựa trên chi phí dịch vụ)
                             </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Fixed Costs Input -->
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
-                    <h3 class="font-bold text-gray-900 mb-4">Chi phí cố định của công ty</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Lương HDV <span class="text-red-500">*</span>
-                            </label>
-                            <input type="number" name="fixed_cost_guide" id="fixed_cost_guide" step="1000" min="0"
-                                value="<?= $old['fixed_cost_guide'] ?? 0 ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent" onchange="updatePricing()">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Chi phí quản lý tour</label>
-                            <input type="number" name="fixed_cost_management" id="fixed_cost_management" step="1000"
-                                min="0" value="<?= $old['fixed_cost_management'] ?? 0 ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent" onchange="updatePricing()">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Chi phí marketing</label>
-                            <input type="number" name="fixed_cost_marketing" id="fixed_cost_marketing" step="1000"
-                                min="0" value="<?= $old['fixed_cost_marketing'] ?? 0 ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent" onchange="updatePricing()">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Chi phí khác</label>
-                            <input type="number" name="fixed_cost_other" id="fixed_cost_other" step="1000" min="0"
-                                value="<?= $old['fixed_cost_other'] ?? 0 ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent" onchange="updatePricing()">
-                        </div>
-                    </div>
-                    <div class="mt-4 pt-4 border-t">
-                        <div class="flex justify-between items-center">
-                            <span class="font-medium text-gray-700">Tổng chi phí cố định:</span>
-                            <span id="total-fixed-cost" class="text-lg font-bold text-gray-900">0đ</span>
                         </div>
                     </div>
                 </div>
@@ -598,7 +549,10 @@ if (is_array($old_day_services)) {
 
         // Special handling for each step
         if (step === 2) {
-            generateItineraryDays();
+            // Wait a bit for DOM to be ready before generating itinerary
+            setTimeout(() => {
+                generateItineraryDays();
+            }, 200);
         }
         if (step === 3) {
             initIncludedExcluded();
@@ -606,7 +560,7 @@ if (is_array($old_day_services)) {
         if (step === 6) {
             updatePricing();
         }
-        
+
         // Update URL with step parameter để lưu trạng thái
         const url = new URL(window.location);
         url.searchParams.set('step', step);
@@ -630,43 +584,34 @@ if (is_array($old_day_services)) {
         let isValid = true;
         let errorMessage = '';
 
-        // Special validation for step 2 (Itinerary) - Bắt buộc phải có timeline cho mỗi ngày
+        // Special validation for step 2 (Itinerary) - Bắt buộc phải có mô tả cho mỗi ngày
         if (step === 2) {
             const durationDays = parseInt(document.getElementById('duration_days')?.value || 0);
             if (durationDays > 0) {
-                const missingTimelineDays = [];
+                const missingDescriptionDays = [];
                 for (let day = 1; day <= durationDays; day++) {
-                    // Check timeline items trong component itinerary-manager
-                    const manager = stepEl.querySelector(`.itinerary-manager[data-day="${day}"]`);
-                    if (manager) {
-                        const timelineItems = manager.querySelectorAll('.timeline-item input[name="timeline_time[]"]');
-                        let hasValidTimeline = false;
-                        
-                        timelineItems.forEach(input => {
-                            const item = input.closest('.timeline-item');
-                            if (item) {
-                                const time = input.value;
-                                const activity = item.querySelector('[name="timeline_activity_title[]"]')?.value;
-                                if (time && activity && time.trim() && activity.trim()) {
-                                    hasValidTimeline = true;
-                                }
-                            }
-                        });
-                        
-                        if (!hasValidTimeline) {
-                            missingTimelineDays.push(day);
-                        }
-                    } else {
-                        // Component chưa được load, coi như chưa có timeline
-                        missingTimelineDays.push(day);
+                    const textarea = document.getElementById(`itinerary-description-day-${day}`);
+                    let description = '';
+
+                    // Get content from TinyMCE if initialized
+                    if (typeof tinymce !== 'undefined' && tinymce.get(`itinerary-description-day-${day}`)) {
+                        description = tinymce.get(`itinerary-description-day-${day}`).getContent();
+                    } else if (textarea) {
+                        description = textarea.value;
+                    }
+
+                    // Check if description is empty (remove HTML tags for validation)
+                    const textContent = description.replace(/<[^>]*>/g, '').trim();
+                    if (!textContent) {
+                        missingDescriptionDays.push(day);
                     }
                 }
-                
-                if (missingTimelineDays.length > 0) {
+
+                if (missingDescriptionDays.length > 0) {
                     isValid = false;
-                    errorMessage = `Vui lòng nhập timeline chi tiết cho các ngày: ${missingTimelineDays.join(', ')}. Mỗi ngày phải có ít nhất một timeline item với giờ và hoạt động.`;
-                    // Highlight các ngày thiếu timeline
-                    missingTimelineDays.forEach(day => {
+                    errorMessage = `Vui lòng nhập mô tả lịch trình cho các ngày: ${missingDescriptionDays.join(', ')}.`;
+                    // Highlight các ngày thiếu mô tả
+                    missingDescriptionDays.forEach(day => {
                         const dayItem = stepEl.querySelector(`.itinerary-day-item[data-day="${day}"]`);
                         if (dayItem) {
                             dayItem.style.border = '2px solid red';
@@ -776,6 +721,18 @@ if (is_array($old_day_services)) {
             return;
         }
 
+        // Save TinyMCE content before replacing HTML
+        const savedContents = {};
+        for (let i = 1; i <= days; i++) {
+            const textareaId = `itinerary-description-day-${i}`;
+            const editor = tinymce.get(textareaId);
+            if (editor) {
+                savedContents[i] = editor.getContent();
+                // Remove TinyMCE instance before replacing HTML
+                editor.remove();
+            }
+        }
+
         // Generate overview HTML
         let html = '';
         let timelineOptions = '<option value="">-- Chọn ngày --</option>';
@@ -828,14 +785,38 @@ if (is_array($old_day_services)) {
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả lịch trình</label>
                     <textarea name="itinerary_description[]" 
-                              rows="3"
-                              class="w-full px-3 py-2 border rounded"
+                              id="itinerary-description-day-${i}"
+                              rows="6"
+                              class="w-full px-3 py-2 border rounded tinymce-editor"
                               placeholder="Mô tả chi tiết lịch trình ngày ${i}...">${escapeHtml(oldDay.description || '')}</textarea>
                 </div>
                 
-                <!-- Itinerary Manager Component (Timeline + Services) -->
-                <div id="itinerary-manager-day-${i}" class="mt-4">
-                    <!-- Component sẽ được load ở đây -->
+                <!-- Day Services Section -->
+                <div class="mt-4 border-t pt-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-semibold text-gray-700">
+                            <i class="fas fa-concierge-bell mr-2 text-green-500"></i>Dịch vụ theo ngày
+                        </h4>
+                        <button type="button" onclick="openAddServiceModal(${i})"
+                            class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">
+                            <i class="fas fa-plus mr-2"></i>Thêm dịch vụ
+                        </button>
+                    </div>
+                    
+                    <div id="day-services-list-day-${i}" class="space-y-3">
+                        <div class="text-gray-500 text-center py-4 bg-gray-50 rounded border-2 border-dashed">
+                            <i class="fas fa-concierge-bell text-2xl mb-2"></i>
+                            <p class="text-sm">Chưa có dịch vụ nào</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold text-green-900">Tổng Day ${i}:</span>
+                            <span id="day-total-${i}" class="text-xl font-bold text-green-700">0đ/người</span>
+                        </div>
+                        <p class="text-xs text-green-600 mt-1">(Chỉ tính các dịch vụ được đánh dấu "Bao gồm trong giá")</p>
+                    </div>
                 </div>
             </div>
         `;
@@ -846,30 +827,134 @@ if (is_array($old_day_services)) {
 
         container.innerHTML = html;
 
-        // Load itinerary manager component for each day
-        for (let i = 1; i <= days; i++) {
-            loadItineraryManagerForDay(i);
+        // Initialize TinyMCE for each itinerary description textarea
+        // Wait for DOM to be ready and TinyMCE to be loaded
+        const initAllTinyMCE = () => {
+            if (typeof tinymce === 'undefined') {
+                console.log('Waiting for TinyMCE to load...');
+                setTimeout(initAllTinyMCE, 200);
+                return;
+            }
+
+            console.log('✅ TinyMCE is ready, initializing editors for', days, 'days...');
+            for (let i = 1; i <= days; i++) {
+                // Add delay between each initialization to avoid conflicts
+                setTimeout(() => {
+                    initTinyMCEForItinerary(i, savedContents[i]);
+                }, i * 100);
+            }
+        };
+
+        // Start initialization after a short delay
+        setTimeout(initAllTinyMCE, 500);
+    }
+
+    // Initialize TinyMCE for itinerary description
+    function initTinyMCEForItinerary(dayNumber, savedContent = null) {
+        const textareaId = `itinerary-description-day-${dayNumber}`;
+        const textarea = document.getElementById(textareaId);
+
+        if (!textarea) {
+            console.warn(`⏳ Textarea not found: ${textareaId}, retrying...`);
+            setTimeout(() => initTinyMCEForItinerary(dayNumber, savedContent), 200);
+            return;
+        }
+
+        // Wait for TinyMCE to be available
+        if (typeof tinymce === 'undefined') {
+            console.warn('⏳ TinyMCE not loaded yet, retrying...');
+            setTimeout(() => initTinyMCEForItinerary(dayNumber, savedContent), 300);
+            return;
+        }
+
+        // Check if TinyMCE is already initialized for this textarea
+        const existingEditor = tinymce.get(textareaId);
+        if (existingEditor) {
+            console.log(`✅ TinyMCE already initialized for ${textareaId}`);
+            // Restore saved content if available
+            if (savedContent) {
+                existingEditor.setContent(savedContent);
+            }
+            return;
+        }
+
+        // Make sure textarea is a real DOM element
+        if (!(textarea instanceof HTMLElement)) {
+            console.error(`❌ Textarea is not a valid DOM element: ${textareaId}`);
+            setTimeout(() => initTinyMCEForItinerary(dayNumber, savedContent), 200);
+            return;
+        }
+
+        console.log(`🚀 Initializing TinyMCE for ${textareaId}`);
+
+        // Initialize TinyMCE - Use selector with # prefix (CSS selector)
+        try {
+            tinymce.init({
+                selector: '#' + textareaId,
+                license_key: 'gpl', // GPL license for open source projects
+                height: 400,
+                menubar: false,
+                plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                ],
+                toolbar: 'undo redo | formatselect | ' +
+                    'bold italic underline strikethrough | forecolor backcolor | ' +
+                    'alignleft aligncenter alignright alignjustify | ' +
+                    'bullist numlist | outdent indent | ' +
+                    'removeformat | image link | code | fullscreen | help',
+                content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
+                // language: 'vi', // Comment out if vi.js not found, will use English
+                images_upload_url: '?act=admin&module=tours&action=uploadImage',
+                automatic_uploads: true,
+                file_picker_types: 'image',
+                relative_urls: false,
+                remove_script_host: false,
+                convert_urls: true,
+                branding: false,
+                promotion: false,
+                setup: function (editor) {
+                    editor.on('change', function () {
+                        editor.save();
+                    });
+                    editor.on('init', function () {
+                        console.log(`✅ TinyMCE initialized successfully for ${textareaId}`);
+                        // Restore saved content if available
+                        if (savedContent) {
+                            editor.setContent(savedContent);
+                            console.log(`📝 Restored content for ${textareaId}`);
+                        }
+                    });
+                    editor.on('error', function (e) {
+                        console.error(`❌ TinyMCE error for ${textareaId}:`, e);
+                    });
+                }
+            });
+        } catch (error) {
+            console.error(`❌ Failed to initialize TinyMCE for ${textareaId}:`, error);
         }
     }
-    
+
+    // Deprecated: loadItineraryManagerForDay - không dùng nữa
     function loadItineraryManagerForDay(dayNumber) {
         const container = document.getElementById(`itinerary-manager-day-${dayNumber}`);
         if (!container) return;
-        
+
         // Get current step from URL or default to 2
         const urlParams = new URLSearchParams(window.location.search);
         const step = urlParams.get('step') || '2';
-        
+
         // Build URL
         let url = `?act=admin&module=tours&action=loadItineraryManager&day=${dayNumber}&step=${step}`;
         const tourId = document.querySelector('input[name="tour_id"]')?.value || '';
         if (tourId) {
             url += `&tour_id=${tourId}`;
         }
-        
+
         // Show loading
         container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-xl text-blue-500"></i></div>';
-        
+
         // Load via fetch
         fetch(url, {
             method: 'GET',
@@ -877,34 +962,34 @@ if (is_array($old_day_services)) {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(res => {
-            if (!res.ok) throw new Error('Network response was not ok');
-            return res.text();
-        })
-        .then(html => {
-            container.innerHTML = html;
-            // Execute any scripts in the loaded HTML immediately
-            const scripts = container.querySelectorAll('script');
-            scripts.forEach(oldScript => {
-                if (oldScript.src) {
-                    // External script - load normally
-                    const newScript = document.createElement('script');
-                    newScript.src = oldScript.src;
-                    document.head.appendChild(newScript);
-                } else {
-                    // Inline script - execute immediately using eval
-                    try {
-                        eval(oldScript.textContent);
-                    } catch (e) {
-                        console.error('Error executing script:', e);
+            .then(res => {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.text();
+            })
+            .then(html => {
+                container.innerHTML = html;
+                // Execute any scripts in the loaded HTML immediately
+                const scripts = container.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    if (oldScript.src) {
+                        // External script - load normally
+                        const newScript = document.createElement('script');
+                        newScript.src = oldScript.src;
+                        document.head.appendChild(newScript);
+                    } else {
+                        // Inline script - execute immediately using eval
+                        try {
+                            eval(oldScript.textContent);
+                        } catch (e) {
+                            console.error('Error executing script:', e);
+                        }
                     }
-                }
-                oldScript.remove();
-            });
-        })
-        .catch(err => {
-            console.error('Error loading itinerary manager:', err);
-            container.innerHTML = `
+                    oldScript.remove();
+                });
+            })
+            .catch(err => {
+                console.error('Error loading itinerary manager:', err);
+                container.innerHTML = `
                 <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                     <p class="text-red-700 text-sm">Lỗi khi tải component. Vui lòng thử lại.</p>
                     <button onclick="loadItineraryManagerForDay(${dayNumber})" class="mt-2 px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
@@ -912,7 +997,7 @@ if (is_array($old_day_services)) {
                     </button>
                 </div>
             `;
-        });
+            });
     }
 
     function loadTimelineForDay(dayNumber) {
@@ -957,8 +1042,8 @@ if (is_array($old_day_services)) {
                     <button onclick="loadTimelineForDay(${dayNumber})" class="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
                         Thử lại
                     </button>
-                </div>
-            `;
+        </div>
+    `;
             });
     }
 
@@ -1004,8 +1089,8 @@ if (is_array($old_day_services)) {
                     <button onclick="loadDayServicesForDay(${dayNumber})" class="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
                         Thử lại
                     </button>
-                </div>
-            `;
+        </div>
+    `;
             });
     }
 
@@ -1121,37 +1206,14 @@ if (is_array($old_day_services)) {
     // ============================================================================
 
     function updatePricing() {
-        // This will calculate pricing based on day services and fixed costs
-        // For now, just update fixed cost display
-        const guide = parseFloat(document.getElementById('fixed_cost_guide')?.value || 0);
-        const management = parseFloat(document.getElementById('fixed_cost_management')?.value || 0);
-        const marketing = parseFloat(document.getElementById('fixed_cost_marketing')?.value || 0);
-        const other = parseFloat(document.getElementById('fixed_cost_other')?.value || 0);
-        const minParticipants = parseFloat(document.getElementById('min_participants')?.value || 15);
-
-        const totalFixed = guide + management + marketing + other;
-        const fixedPerPerson = minParticipants > 0 ? totalFixed / minParticipants : 0;
-
-        // Update UI
-        const totalFixedEl = document.getElementById('total-fixed-cost');
-        const fixedPerPersonEl = document.getElementById('fixed-cost-per-person');
-
-        if (totalFixedEl) {
-            totalFixedEl.textContent = formatCurrency(totalFixed);
-        }
-        if (fixedPerPersonEl) {
-            fixedPerPersonEl.textContent = formatCurrency(fixedPerPerson);
-        }
-
-        // TODO: Calculate service cost from day services
-        // For now, just update total
+        // Calculate pricing based on day services only
+        // Fixed costs removed
         updateTotalCost();
     }
 
     function updateTotalCost() {
         const serviceCost = 0; // TODO: Calculate from day services
-        const fixedCost = parseFloat(document.getElementById('fixed-cost-per-person')?.textContent?.replace(/[^0-9]/g, '') || 0);
-        const total = serviceCost + fixedCost;
+        const total = serviceCost;
 
         const totalEl = document.getElementById('total-cost-per-person');
         const suggestedEl = document.getElementById('suggested-price-per-person');
@@ -1236,31 +1298,34 @@ if (is_array($old_day_services)) {
         const urlParams = new URLSearchParams(window.location.search);
         const stepFromUrl = urlParams.get('step');
         const initialStep = stepFromUrl ? parseInt(stepFromUrl) : 1;
-        
+
         showStep(initialStep);
-        
+
         // If step 2, generate itinerary days
         if (initialStep === 2 || (oldItinerary && oldItinerary.length > 0)) {
-            setTimeout(() => generateItineraryDays(), 100);
+            // Wait a bit for page to be fully loaded
+            setTimeout(() => {
+                generateItineraryDays();
+            }, 500);
         }
-        
+
         // Event delegation for itinerary manager
         initItineraryManagerEvents();
     });
-    
+
     // ============================================================================
     // ITINERARY MANAGER EVENT DELEGATION
     // ============================================================================
-    
+
     function initItineraryManagerEvents() {
         // Use event delegation for all itinerary manager actions
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             const action = e.target.closest('[data-action]')?.getAttribute('data-action');
             const dayNumber = e.target.closest('[data-action]')?.getAttribute('data-day');
-            
+
             if (!action || !dayNumber) return;
-            
-            switch(action) {
+
+            switch (action) {
                 case 'toggle-day-manager':
                     toggleDayManager(parseInt(dayNumber));
                     break;
@@ -1278,18 +1343,18 @@ if (is_array($old_day_services)) {
                     break;
             }
         });
-        
+
         // Form submissions
-        document.addEventListener('submit', function(e) {
+        document.addEventListener('submit', function (e) {
             const form = e.target;
             const action = form.getAttribute('data-action');
             const dayNumber = form.getAttribute('data-day');
-            
+
             if (!action || !dayNumber) return;
-            
+
             e.preventDefault();
-            
-            switch(action) {
+
+            switch (action) {
                 case 'save-timeline':
                     saveTimelineItem(e, parseInt(dayNumber));
                     break;
@@ -1299,11 +1364,11 @@ if (is_array($old_day_services)) {
             }
         });
     }
-    
+
     // Initialize counters
     window.timelineCounter = window.timelineCounter || {};
     window.dayServiceCounter = window.dayServiceCounter || {};
-    
+
     // Itinerary Manager Functions
     function toggleDayManager(dayNumber) {
         const content = document.getElementById(`day-manager-content-${dayNumber}`);
@@ -1320,7 +1385,7 @@ if (is_array($old_day_services)) {
             }
         }
     }
-    
+
     function openAddTimelineModal(dayNumber) {
         const modal = document.getElementById(`add-timeline-modal-day-${dayNumber}`);
         if (modal) {
@@ -1328,25 +1393,186 @@ if (is_array($old_day_services)) {
             modal.style.display = 'flex';
         }
     }
-    
+
     function closeAddTimelineModal(dayNumber) {
         const modal = document.getElementById(`add-timeline-modal-day-${dayNumber}`);
         if (modal) {
             modal.classList.add('hidden');
             modal.style.display = 'none';
             const form = document.getElementById(`add-timeline-form-day-${dayNumber}`);
-            if (form) form.reset();
+            if (form) {
+                form.reset();
+                // Hide service price info
+                const priceInfoDiv = document.getElementById(`service-price-info-day-${dayNumber}`);
+                if (priceInfoDiv) {
+                    priceInfoDiv.classList.add('hidden');
+                }
+            }
         }
     }
-    
+
     function openAddServiceModal(dayNumber) {
-        const modal = document.getElementById(`add-service-modal-day-${dayNumber}`);
+        // Create modal if not exists
+        let modal = document.getElementById(`add-service-modal-day-${dayNumber}`);
+        if (!modal) {
+            createServiceModal(dayNumber);
+            modal = document.getElementById(`add-service-modal-day-${dayNumber}`);
+        }
+
         if (modal) {
             modal.classList.remove('hidden');
             modal.style.display = 'flex';
         }
     }
-    
+
+    function buildServiceOptions(dayNumber) {
+        // Get services from global services list
+        let options = '';
+        if (typeof services !== 'undefined' && services) {
+            Object.entries(services).forEach(([id, service]) => {
+                const name = typeof service === 'object' ? service.name : service;
+                options += `<option value="${id}" data-name="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+            });
+        }
+        return options;
+    }
+
+    function buildServiceProviderOptions(dayNumber) {
+        // Get service providers from global list
+        let options = '';
+        if (typeof serviceProviders !== 'undefined' && serviceProviders) {
+            Object.entries(serviceProviders).forEach(([id, provider]) => {
+                const name = typeof provider === 'object' ? provider.name : provider;
+                options += `<option value="${id}">${escapeHtml(name)}</option>`;
+            });
+        }
+        return options;
+    }
+
+    function createServiceModal(dayNumber) {
+        const modalHtml = `
+            <div id="add-service-modal-day-${dayNumber}" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-bold text-gray-800">Thêm dịch vụ - Day ${dayNumber}</h3>
+                    </div>
+                    <form id="add-service-form-day-${dayNumber}" class="p-6" data-action="save-service" data-day="${dayNumber}">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Chọn dịch vụ <span class="text-red-500">*</span></label>
+                                <select id="modal-service-id-day-${dayNumber}" required
+                                    class="w-full px-3 py-2 border rounded focus:border-green-500"
+                                    onchange="loadServiceInfoForDay(${dayNumber})">
+                                    <option value="">-- Chọn dịch vụ --</option>
+                                    ${buildServiceOptions(dayNumber)}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Chọn nhà dịch vụ</label>
+                                <select id="modal-service-provider-id-day-${dayNumber}"
+                                    class="w-full px-3 py-2 border rounded focus:border-green-500">
+                                    <option value="">-- Chọn nhà dịch vụ --</option>
+                                    ${buildServiceProviderOptions(dayNumber)}
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Đơn giá/người <span class="text-red-500">*</span></label>
+                                    <input type="number" id="modal-unit-price-day-${dayNumber}" step="1000" min="0" required
+                                        class="w-full px-3 py-2 border rounded focus:border-green-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
+                                    <input type="number" id="modal-quantity-day-${dayNumber}" step="0.01" min="0.01" value="1"
+                                        class="w-full px-3 py-2 border rounded focus:border-green-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Đơn vị</label>
+                                <input type="text" id="modal-unit-day-${dayNumber}" placeholder="VD: bữa, đêm, vé"
+                                    class="w-full px-3 py-2 border rounded focus:border-green-500">
+                            </div>
+                            <div>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" id="modal-included-day-${dayNumber}" checked
+                                        class="w-5 h-5 text-green-600 rounded">
+                                    <span class="text-sm font-medium text-gray-700">Bao gồm trong giá tour</span>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                                <textarea id="modal-notes-day-${dayNumber}" rows="3"
+                                    class="w-full px-3 py-2 border rounded focus:border-green-500"
+                                    placeholder="Ghi chú thêm..."></textarea>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end gap-3">
+                            <button type="button" onclick="closeAddServiceModal(${dayNumber})"
+                                class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                Hủy
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                                Thêm dịch vụ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function buildServiceOptions(dayNumber) {
+        const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
+        const data = dataEl ? JSON.parse(dataEl.textContent) : {};
+        let options = '';
+        if (data.services) {
+            data.services.forEach(service => {
+                const id = service.id || service;
+                const name = service.name || service;
+                options += `<option value="${id}" data-name="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+            });
+        }
+        return options;
+    }
+
+    function buildServiceProviderOptions(dayNumber) {
+        const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
+        const data = dataEl ? JSON.parse(dataEl.textContent) : {};
+        let options = '';
+        if (data.service_providers) {
+            data.service_providers.forEach(provider => {
+                const id = provider.id || provider;
+                const name = provider.name || provider;
+                options += `<option value="${id}">${escapeHtml(name)}</option>`;
+            });
+        }
+        return options;
+    }
+
+    function loadServiceInfoForDay(dayNumber) {
+        const select = document.getElementById(`modal-service-id-day-${dayNumber}`);
+        const serviceId = select?.value;
+        if (!serviceId) return;
+
+        fetch(`?act=admin&module=tours&action=getServiceInfo&id=${serviceId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    const priceInput = document.getElementById(`modal-unit-price-day-${dayNumber}`);
+                    const unitInput = document.getElementById(`modal-unit-day-${dayNumber}`);
+
+                    if (priceInput && data.data.unit_price > 0) {
+                        priceInput.value = data.data.unit_price;
+                    }
+                    if (unitInput && data.data.unit) {
+                        unitInput.value = data.data.unit;
+                    }
+                }
+            })
+            .catch(err => console.error('Error loading service info:', err));
+    }
+
     function closeAddServiceModal(dayNumber) {
         const modal = document.getElementById(`add-service-modal-day-${dayNumber}`);
         if (modal) {
@@ -1356,7 +1582,7 @@ if (is_array($old_day_services)) {
             if (form) form.reset();
         }
     }
-    
+
     function saveTimelineItem(event, dayNumber) {
         // Initialize counter if needed
         if (!window.timelineCounter[dayNumber]) {
@@ -1368,11 +1594,11 @@ if (is_array($old_day_services)) {
                 window.timelineCounter[dayNumber] = 0;
             }
         }
-        
+
         const counter = window.timelineCounter[dayNumber] = window.timelineCounter[dayNumber] + 1;
         const container = document.getElementById(`timeline-items-day-${dayNumber}`);
         if (!container) return;
-        
+
         const time = document.getElementById(`modal-timeline-time-day-${dayNumber}`)?.value || '';
         const type = document.getElementById(`modal-timeline-type-day-${dayNumber}`)?.value || 'activity';
         const activity = document.getElementById(`modal-timeline-activity-day-${dayNumber}`)?.value || '';
@@ -1382,37 +1608,43 @@ if (is_array($old_day_services)) {
         const destinationId = document.getElementById(`modal-timeline-destination-day-${dayNumber}`)?.value || '';
         const serviceId = document.getElementById(`modal-timeline-service-day-${dayNumber}`)?.value || '';
         const notes = document.getElementById(`modal-timeline-notes-day-${dayNumber}`)?.value || '';
-        
+
+        // Service price info
+        const servicePrice = document.getElementById(`modal-timeline-service-price-day-${dayNumber}`)?.value || 0;
+        const serviceQuantity = document.getElementById(`modal-timeline-service-quantity-day-${dayNumber}`)?.value || 1;
+        const serviceUnit = document.getElementById(`modal-timeline-service-unit-day-${dayNumber}`)?.value || '';
+        const serviceIncluded = document.getElementById(`modal-timeline-service-included-day-${dayNumber}`)?.checked || false;
+
         if (!time || !activity) {
             alert('Vui lòng nhập giờ và hoạt động');
             return;
         }
-        
+
         // Get data for dropdowns
         const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
         const data = dataEl ? JSON.parse(dataEl.textContent) : {};
-        
+
         const typeIcons = {
             'meal': '🍽️',
             'accommodation': '🏨',
             'activity': '🎯',
             'transport': '🚌'
         };
-        
+
         const typeLabels = {
             'meal': 'Bữa ăn',
             'accommodation': 'Nơi nghỉ',
             'activity': 'Hoạt động',
             'transport': 'Di chuyển'
         };
-        
+
         const typeColors = {
             'meal': 'bg-orange-50 border-orange-200',
             'accommodation': 'bg-blue-50 border-blue-200',
             'activity': 'bg-green-50 border-green-200',
             'transport': 'bg-purple-50 border-purple-200'
         };
-        
+
         // Build options HTML
         let providerOptions = '<option value="">-- Chọn nhà dịch vụ --</option>';
         if (data.service_providers) {
@@ -1424,7 +1656,7 @@ if (is_array($old_day_services)) {
                 providerOptions += `<option value="${id}" data-address="${escapeHtml(address)}" ${selected}>${escapeHtml(name)}</option>`;
             });
         }
-        
+
         let destOptions = '<option value="">-- Chọn địa điểm --</option>';
         if (data.destinations) {
             if (Array.isArray(data.destinations)) {
@@ -1436,7 +1668,7 @@ if (is_array($old_day_services)) {
                 });
             }
         }
-        
+
         let serviceOptions = '<option value="">-- Chọn dịch vụ --</option>';
         if (data.services) {
             data.services.forEach(service => {
@@ -1446,7 +1678,7 @@ if (is_array($old_day_services)) {
                 serviceOptions += `<option value="${id}" ${selected}>${escapeHtml(name)}</option>`;
             });
         }
-        
+
         const itemHtml = `
             <div class="timeline-item bg-white border-2 ${typeColors[type]} rounded-lg p-4 mb-4 relative" 
                  data-day="${dayNumber}" data-index="${counter}" data-time="${time}">
@@ -1504,25 +1736,55 @@ if (is_array($old_day_services)) {
                             ${serviceOptions}
                         </select>
                     </div>
+                    ${serviceId ? `
+                        <div class="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="grid grid-cols-3 gap-3 text-sm">
+                                <div>
+                                    <span class="text-gray-600">Đơn giá:</span>
+                                    <span class="font-medium ml-2">${formatCurrency(parseFloat(servicePrice))}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Số lượng:</span>
+                                    <span class="font-medium ml-2">${formatNumber(parseFloat(serviceQuantity))} ${escapeHtml(serviceUnit)}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Tổng:</span>
+                                    <span class="font-medium text-blue-600 ml-2">${formatCurrency(parseFloat(servicePrice) * parseFloat(serviceQuantity))}</span>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-gray-600">Bao gồm trong giá:</span>
+                                <span class="font-medium ml-2 ${serviceIncluded ? 'text-green-600' : 'text-gray-400'}">
+                                    ${serviceIncluded ? 'Có' : 'Không'}
+                                </span>
+                            </div>
+                        </div>
+                    ` : ''}
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
                         <textarea name="timeline_notes[]" rows="2"
                             class="w-full px-3 py-2 border rounded focus:border-blue-500">${escapeHtml(notes)}</textarea>
                     </div>
                     <input type="hidden" name="timeline_display_order[]" value="${counter}">
+                    ${serviceId ? `
+                        <input type="hidden" name="timeline_service_price[]" value="${servicePrice}">
+                        <input type="hidden" name="timeline_service_quantity[]" value="${serviceQuantity}">
+                        <input type="hidden" name="timeline_service_unit[]" value="${escapeHtml(serviceUnit)}">
+                        <input type="hidden" name="timeline_service_included[]" value="${serviceIncluded ? 1 : 0}">
+                    ` : ''}
                 </div>
             </div>
         `;
-        
+
         if (container.innerHTML.includes('Chưa có timeline')) {
             container.innerHTML = itemHtml;
         } else {
             container.insertAdjacentHTML('beforeend', itemHtml);
         }
-        
+
         closeAddTimelineModal(dayNumber);
     }
-    
+
     function saveDayService(event, dayNumber) {
         // Initialize counter if needed
         if (!window.dayServiceCounter[dayNumber]) {
@@ -1534,31 +1796,31 @@ if (is_array($old_day_services)) {
                 window.dayServiceCounter[dayNumber] = 0;
             }
         }
-        
+
         const counter = window.dayServiceCounter[dayNumber] = window.dayServiceCounter[dayNumber] + 1;
         const container = document.getElementById(`day-services-list-day-${dayNumber}`);
         if (!container) return;
-        
+
         const serviceSelect = document.getElementById(`modal-service-id-day-${dayNumber}`);
         const serviceId = serviceSelect?.value || '';
-        const serviceName = serviceSelect?.options[serviceSelect.selectedIndex]?.getAttribute('data-name') || 
-                           serviceSelect?.options[serviceSelect.selectedIndex]?.text || '';
+        const serviceName = serviceSelect?.options[serviceSelect.selectedIndex]?.getAttribute('data-name') ||
+            serviceSelect?.options[serviceSelect.selectedIndex]?.text || '';
         const providerId = document.getElementById(`modal-service-provider-id-day-${dayNumber}`)?.value || '';
-        const providerName = providerId ? 
+        const providerName = providerId ?
             document.getElementById(`modal-service-provider-id-day-${dayNumber}`)?.options[document.getElementById(`modal-service-provider-id-day-${dayNumber}`).selectedIndex]?.text : '';
         const unitPrice = parseFloat(document.getElementById(`modal-unit-price-day-${dayNumber}`)?.value || 0);
         const quantity = parseFloat(document.getElementById(`modal-quantity-day-${dayNumber}`)?.value || 1);
         const unit = document.getElementById(`modal-unit-day-${dayNumber}`)?.value || '';
         const included = document.getElementById(`modal-included-day-${dayNumber}`)?.checked || false;
         const notes = document.getElementById(`modal-notes-day-${dayNumber}`)?.value || '';
-        
+
         if (!serviceId || !serviceName) {
             alert('Vui lòng chọn dịch vụ');
             return;
         }
-        
+
         const total = unitPrice * quantity;
-        
+
         const serviceHtml = `
             <div class="day-service-item bg-white border border-gray-200 rounded-lg p-4">
                 <div class="flex items-start gap-4">
@@ -1616,24 +1878,24 @@ if (is_array($old_day_services)) {
                 </div>
             </div>
         `;
-        
+
         if (container.innerHTML.includes('Chưa có dịch vụ')) {
             container.innerHTML = serviceHtml;
         } else {
             container.insertAdjacentHTML('beforeend', serviceHtml);
         }
-        
+
         updateDayServiceTotal(dayNumber);
         closeAddServiceModal(dayNumber);
     }
-    
+
     function updateDayServiceTotal(dayNumber) {
         const container = document.getElementById(`day-services-list-day-${dayNumber}`);
         if (!container) return;
-        
+
         const items = container.querySelectorAll('.day-service-item');
         let total = 0;
-        
+
         items.forEach(item => {
             const checkbox = item.querySelector('[name^="day_service_included"]');
             if (checkbox && checkbox.checked) {
@@ -1642,24 +1904,80 @@ if (is_array($old_day_services)) {
                 total += (unitPrice * quantity);
             }
         });
-        
+
         const totalEl = document.getElementById(`day-total-${dayNumber}`);
         if (totalEl) {
             totalEl.textContent = formatCurrency(total) + '/người';
         }
     }
-    
+
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
-    
+
     function formatCurrency(amount) {
         return new Intl.NumberFormat('vi-VN').format(Math.round(amount || 0)) + 'đ';
     }
-    
+
     function formatNumber(num) {
         return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num);
+    }
+
+    // Load service info for timeline modal
+    function loadServiceInfoForTimeline(select, dayNumber) {
+        const serviceId = select.value;
+        const priceInfoDiv = document.getElementById(`service-price-info-day-${dayNumber}`);
+
+        if (!serviceId) {
+            if (priceInfoDiv) {
+                priceInfoDiv.classList.add('hidden');
+            }
+            return;
+        }
+
+        // Show price info section
+        if (priceInfoDiv) {
+            priceInfoDiv.classList.remove('hidden');
+        }
+
+        // Load service info from API
+        fetch(`?act=admin&module=tours&action=getServiceInfo&id=${serviceId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    const priceInput = document.getElementById(`modal-timeline-service-price-day-${dayNumber}`);
+                    const unitInput = document.getElementById(`modal-timeline-service-unit-day-${dayNumber}`);
+
+                    if (priceInput && data.data.unit_price > 0) {
+                        priceInput.value = data.data.unit_price;
+                    }
+                    if (unitInput && data.data.unit) {
+                        unitInput.value = data.data.unit;
+                    }
+
+                    // Calculate total
+                    calculateTimelineServiceTotal(dayNumber);
+                }
+            })
+            .catch(err => {
+                console.error('Error loading service info:', err);
+            });
+    }
+
+    // Calculate timeline service total
+    function calculateTimelineServiceTotal(dayNumber) {
+        const priceInput = document.getElementById(`modal-timeline-service-price-day-${dayNumber}`);
+        const quantityInput = document.getElementById(`modal-timeline-service-quantity-day-${dayNumber}`);
+        const totalSpan = document.getElementById(`modal-timeline-service-total-day-${dayNumber}`);
+
+        if (!priceInput || !quantityInput || !totalSpan) return;
+
+        const price = parseFloat(priceInput.value) || 0;
+        const quantity = parseFloat(quantityInput.value) || 1;
+        const total = price * quantity;
+
+        totalSpan.textContent = formatCurrency(total);
     }
 </script>

@@ -42,7 +42,7 @@
     </div>
 
     <!-- Tours List -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div class="bg-panel rounded overflow-hidden border border-slate-200">
         <?php if (empty($schedules)): ?>
             <div class="p-12 text-center">
                 <div class="text-gray-300 mb-4">

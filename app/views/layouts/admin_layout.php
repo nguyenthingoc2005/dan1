@@ -50,6 +50,30 @@ $user = get_auth_user();
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- TinyMCE Editor -->
+    <?php 
+    $base_url = defined('BASE_URL') ? BASE_URL : '';
+    $tinymce_path = $base_url . '/tinymce/js/tinymce/tinymce.min.js';
+    ?>
+    <script src="<?= htmlspecialchars($tinymce_path) ?>"></script>
+    <script>
+        // Debug: Check if TinyMCE loads
+        window.addEventListener('load', function() {
+            if (typeof tinymce !== 'undefined') {
+                console.log('✅ TinyMCE loaded successfully');
+            } else {
+                console.error('❌ TinyMCE failed to load from: <?= htmlspecialchars($tinymce_path) ?>');
+                console.log('Trying to load from CDN as fallback...');
+                // Fallback to CDN if local file fails
+                const script = document.createElement('script');
+                script.src = 'https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js';
+                script.onerror = function() {
+                    console.error('❌ TinyMCE CDN also failed to load');
+                };
+                document.head.appendChild(script);
+            }
+        });
+    </script>
 </head>
 
 <body class="bg-main font-sans text-slate-800">
@@ -84,7 +108,7 @@ $user = get_auth_user();
                         <div class="text-xs text-slate-400 truncate"><?php echo $user['role_display']; ?></div>
                     </div>
                 </div>
-                <a href="<?php echo BASE_URL; ?>/?act=logout"
+                <a href="<?php echo (defined('BASE_URL') ? BASE_URL : '') . '/?act=logout'; ?>"
                     class="block w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm text-center transition-all shadow-md hover:shadow-lg font-medium">
                     Đăng xuất
                 </a>

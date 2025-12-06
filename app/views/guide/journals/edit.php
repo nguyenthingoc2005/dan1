@@ -14,7 +14,8 @@
     </div>
 
     <form method="POST" action="?act=guide-journals&action=update" enctype="multipart/form-data"
-        class="bg-white rounded-lg shadow-sm overflow-hidden">
+        class="bg-panel rounded overflow-hidden border border-slate-200">
+        <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= $journal['id'] ?>">
         
         <div class="p-6 space-y-6">
@@ -23,8 +24,32 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Tour</label>
                 <p class="text-gray-900 font-medium">
                     <?= htmlspecialchars($journal['tour_name']) ?> 
-                    (<?= date('d/m/Y', strtotime($schedule['start_date'])) ?>)
+                    (<?= htmlspecialchars($journal['tour_code']) ?>)
+                    <?php if ($schedule): ?>
+                        - <?= date('d/m/Y', strtotime($schedule['start_date'])) ?>
+                    <?php endif; ?>
                 </p>
+            </div>
+
+            <!-- Journal Date -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Ngày viết nhật ký <span class="text-red-500">*</span>
+                </label>
+                <input type="date" name="journal_date" id="journal_date" required
+                    value="<?= htmlspecialchars($journal['journal_date']) ?>"
+                    class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Day Number -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Số ngày trong tour (Tùy chọn)
+                </label>
+                <input type="number" name="day_number" id="day_number" min="1"
+                    value="<?= htmlspecialchars($journal['day_number'] ?? '') ?>"
+                    placeholder="VD: 1, 2, 3..."
+                    class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none">
             </div>
 
             <!-- Title -->
@@ -46,6 +71,37 @@
                     class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none"><?= htmlspecialchars($journal['content']) ?></textarea>
             </div>
 
+            <!-- Weather -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Thời tiết (Tùy chọn)
+                </label>
+                <input type="text" name="weather" id="weather"
+                    value="<?= htmlspecialchars($journal['weather'] ?? '') ?>"
+                    placeholder="VD: Nắng đẹp, 25°C"
+                    class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Highlights -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Điểm nổi bật (Tùy chọn)
+                </label>
+                <textarea name="highlights" id="highlights" rows="4"
+                    placeholder="Những điểm nổi bật, hoạt động thú vị trong ngày..."
+                    class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none"><?= htmlspecialchars($journal['highlights'] ?? '') ?></textarea>
+            </div>
+
+            <!-- Issues -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Vấn đề phát sinh (Tùy chọn)
+                </label>
+                <textarea name="issues" id="issues" rows="4"
+                    placeholder="Các vấn đề, sự cố phát sinh (nếu có)..."
+                    class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none"><?= htmlspecialchars($journal['issues'] ?? '') ?></textarea>
+            </div>
+
             <!-- Existing Images -->
             <?php if (!empty($images)): ?>
                 <div>
@@ -55,16 +111,18 @@
                     <div class="grid grid-cols-4 gap-3">
                         <?php foreach ($images as $img): ?>
                             <div class="relative group">
-                                <img src="<?= BASE_URL . '/' . htmlspecialchars($img) ?>" 
+                                <img src="<?= BASE_URL . '/' . htmlspecialchars($img['image_url']) ?>" 
                                     alt="Journal image" class="w-full h-32 object-cover rounded border">
-                                <input type="hidden" name="existing_images[]" value="<?= htmlspecialchars($img) ?>">
-                                <button type="button" onclick="removeExistingImage(this)" 
+                                <input type="checkbox" name="keep_images[]" value="<?= $img['id'] ?>" checked
+                                    class="absolute top-2 left-2 w-5 h-5">
+                                <button type="button" onclick="toggleImageCheckbox(this)" 
                                     class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">
                                     ×
                                 </button>
                             </div>
                         <?php endforeach; ?>
                     </div>
+                    <p class="text-xs text-gray-500 mt-2">Bỏ chọn để xóa ảnh</p>
                 </div>
             <?php endif; ?>
 
@@ -73,7 +131,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Thêm hình ảnh mới (Tùy chọn)
                 </label>
-                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors"
+                <div class="border border-dashed border-gray-300 rounded p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors"
                     onclick="document.getElementById('images').click()">
                     <input type="file" name="images[]" id="images" multiple accept="image/*" class="hidden"
                         onchange="previewImages(this)">
@@ -81,17 +139,6 @@
                     <p class="text-gray-500 text-sm">Click để chọn ảnh (tối đa 10 ảnh, mỗi ảnh tối đa 5MB)</p>
                 </div>
                 <div id="image-preview" class="grid grid-cols-4 gap-3 mt-4"></div>
-            </div>
-
-            <!-- Status -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Trạng thái
-                </label>
-                <select name="status" class="w-full px-3 py-2 border rounded focus:border-blue-500 focus:outline-none">
-                    <option value="draft" <?= $journal['status'] == 'draft' ? 'selected' : '' ?>>Nháp</option>
-                    <option value="published" <?= $journal['status'] == 'published' ? 'selected' : '' ?>>Đăng</option>
-                </select>
             </div>
 
             <!-- Submit -->
@@ -142,9 +189,8 @@
         btn.closest('div').remove();
     }
 
-    function removeExistingImage(btn) {
-        const container = btn.closest('div');
-        container.remove();
+    function toggleImageCheckbox(btn) {
+        const checkbox = btn.parentElement.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
     }
 </script>
-

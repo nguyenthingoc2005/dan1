@@ -980,23 +980,23 @@ class TourController
     public function loadItineraryManager()
     {
         require_admin();
-        
+
         // Set header to prevent redirect
         header('Content-Type: text/html; charset=utf-8');
-        
+
         $day_number = (int) ($_GET['day'] ?? 1);
         $step = (int) ($_GET['step'] ?? 2);
         $tour_id = (int) ($_GET['tour_id'] ?? 0);
-        
+
         $timeline_items = [];
         $day_services = [];
-        
+
         // Load from session if creating new tour
         if ($tour_id == 0 && !empty($_SESSION['tour_form_data'])) {
             $timeline_items = $_SESSION['tour_form_data']['timeline_items'][$day_number] ?? [];
             $day_services = $_SESSION['tour_form_data']['day_services'][$day_number] ?? [];
         }
-        
+
         // If editing existing tour, load from database
         if ($tour_id > 0) {
             $tour = $this->tourModel->findById($tour_id);
@@ -1025,7 +1025,7 @@ class TourController
                         }
                     }
                 }
-                
+
                 // Load day services
                 if (!empty($tour['itinerary_day_services'])) {
                     foreach ($tour['itinerary_day_services'] as $service) {
@@ -1055,26 +1055,114 @@ class TourController
     {
         require_admin();
         header('Content-Type: application/json');
-        
+
         $data = json_decode(file_get_contents('php://input'), true);
-        
+
         if (!isset($_SESSION['tour_form_data'])) {
             $_SESSION['tour_form_data'] = [];
         }
-        
+
         if (!empty($data['timeline_items'])) {
             $_SESSION['tour_form_data']['timeline_items'] = $data['timeline_items'];
         }
-        
+
         if (!empty($data['day_services'])) {
             $_SESSION['tour_form_data']['day_services'] = $data['day_services'];
         }
-        
+
         if (!empty($data['form_data'])) {
             $_SESSION['tour_form_data']['form_data'] = $data['form_data'];
         }
-        
+
         echo json_encode(['success' => true]);
+        exit;
+    }
+
+    /**
+     * Upload image for TinyMCE editor
+     * URL: ?act=admin&module=tours&action=uploadImage
+     */
+    public function uploadImage()
+    {
+        require_admin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Check if file was uploaded
+        if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Không có file được upload hoặc có lỗi xảy ra.'
+            ]);
+            exit;
+        }
+
+        $file = $_FILES['file'];
+
+        // Validate file type
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime_type = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($mime_type, $allowed_types)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Định dạng file không hợp lệ. Chỉ chấp nhận: JPG, PNG, GIF, WEBP'
+            ]);
+            exit;
+        }
+
+        // Validate file size (max 5MB)
+        $max_size = 5 * 1024 * 1024; // 5MB
+        if ($file['size'] > $max_size) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'File quá lớn. Tối đa 5MB'
+            ]);
+            exit;
+        }
+
+        // Validate image file using ValidationHelper
+        require_once COMMON_PATH . '/ValidationHelper.php';
+        $validation = ValidationHelper::validateImageFile($file['tmp_name'], $max_size, $allowed_types);
+        if (!$validation['valid']) {
+            echo json_encode([
+                'success' => false,
+                'message' => $validation['error']
+            ]);
+            exit;
+        }
+
+        // Create upload directory
+        $upload_dir = 'public/uploads/itinerary/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+
+        // Generate unique filename
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $filename = 'itinerary_' . uniqid() . '_' . time() . '.' . $extension;
+        $file_path = $upload_dir . $filename;
+
+        // Move uploaded file
+        if (!move_uploaded_file($file['tmp_name'], $file_path)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Không thể lưu file. Vui lòng thử lại.'
+            ]);
+            exit;
+        }
+
+        // Get BASE_URL for image URL
+        $base_url = defined('BASE_URL') ? BASE_URL : '';
+        $image_url = $base_url . '/' . $file_path;
+
+        // Return success with image URL (TinyMCE expects 'location' field)
+        echo json_encode([
+            'success' => true,
+            'location' => $image_url,
+            'message' => 'Upload ảnh thành công!'
+        ]);
         exit;
     }
 }

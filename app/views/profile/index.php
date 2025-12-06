@@ -39,7 +39,7 @@ require_login();
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-500 mb-1">Ngày sinh</label>
-                <p class="text-gray-900"><?= $user['date_of_birth'] ? format_date($user['date_of_birth']) : '-' ?></p>
+                <p class="text-gray-900"><?= !empty($user['date_of_birth']) ? format_date($user['date_of_birth']) : '-' ?></p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-500 mb-1">Giới tính</label>

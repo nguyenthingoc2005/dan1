@@ -289,6 +289,9 @@ switch ($module) {
             case 'saveFormSession':
                 $tourController->saveFormSession();
                 break;
+            case 'uploadImage':
+                $tourController->uploadImage();
+                break;
             default:
                 $tourController->index();
                 break;

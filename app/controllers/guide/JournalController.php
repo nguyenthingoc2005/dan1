@@ -7,9 +7,9 @@ namespace Guide;
  * ==============================================================================
  * 
  * Quản lý nhật ký tour cho Guide
- * Routing: ?act=guide-journals&action=index
+ * Sử dụng bảng: journals, journal_images
  * 
- * @version 1.0
+ * @version 2.0
  * @date 2024-12-XX
  * ==============================================================================
  */
@@ -19,14 +19,17 @@ class JournalController
     private $db;
     private $journalModel;
     private $scheduleModel;
+    private $bookingModel;
 
     public function __construct($pdo)
     {
         $this->db = $pdo;
         require_once MODELS_PATH . '/Journal.php';
         require_once MODELS_PATH . '/TourSchedule.php';
+        require_once MODELS_PATH . '/Booking.php';
         $this->journalModel = new \Journal($pdo);
         $this->scheduleModel = new \TourSchedule($pdo);
+        $this->bookingModel = new \Booking($pdo);
     }
 
     /**
@@ -38,15 +41,15 @@ class JournalController
         $user_id = get_user_id();
 
         // Filters
-        $filters = ['author_id' => $user_id];
-        if (!empty($_GET['status'])) {
-            $filters['status'] = sanitize($_GET['status']);
-        }
+        $filters = ['guide_id' => $user_id];
         if (!empty($_GET['schedule_id'])) {
             $filters['tour_schedule_id'] = (int) $_GET['schedule_id'];
         }
-        if (!empty($_GET['tour_schedule_id'])) {
-            $filters['tour_schedule_id'] = (int) $_GET['tour_schedule_id'];
+        if (!empty($_GET['booking_id'])) {
+            $filters['booking_id'] = (int) $_GET['booking_id'];
+        }
+        if (!empty($_GET['journal_date'])) {
+            $filters['journal_date'] = sanitize($_GET['journal_date']);
         }
 
         // Pagination
@@ -55,11 +58,15 @@ class JournalController
         $journals = $this->journalModel->getAll($filters, $page, $limit);
 
         // Get total count for pagination
-        $count_filters = $filters;
-        $all_journals = $this->journalModel->getAll($count_filters, 1, 0); // limit = 0 means no limit
+        $all_journals = $this->journalModel->getAll($filters, 1, 0); // limit = 0 means no limit
         $total = count($all_journals);
         $total_pages = ceil($total / $limit);
         $current_page = $page;
+
+        // Get images for each journal
+        foreach ($journals as &$journal) {
+            $journal['images'] = $this->journalModel->getImages($journal['id']);
+        }
 
         $page_title = 'Nhật ký Tour của tôi';
         $content_file = VIEWS_PATH . '/guide/journals/index.php';
@@ -116,12 +123,16 @@ class JournalController
     public function store()
     {
         require_guide();
+        require_csrf_token();
         $user_id = get_user_id();
 
         try {
             // Validation
             if (empty($_POST['tour_schedule_id'])) {
                 throw new \Exception("Vui lòng chọn tour.");
+            }
+            if (empty($_POST['journal_date'])) {
+                throw new \Exception("Vui lòng chọn ngày viết nhật ký.");
             }
             if (empty($_POST['title'])) {
                 throw new \Exception("Vui lòng nhập tiêu đề.");
@@ -138,31 +149,54 @@ class JournalController
                 throw new \Exception("Bạn không được phân công tour này.");
             }
 
+            // Get first approved booking from this schedule (for database constraint)
+            // Journal is for the tour, but we need a booking_id for the database
+            $bookings = $this->bookingModel->getAll([
+                'tour_id' => $schedule['tour_id'],
+                'start_date' => $schedule['start_date'],
+                'exact_date' => true,
+                'status' => 'approved'
+            ], 1, 1);
+
+            if (empty($bookings)) {
+                throw new \Exception("Tour này chưa có booking nào được duyệt.");
+            }
+
+            $booking_id = $bookings[0]['id'];
+
             // Handle image uploads
-            $images = [];
+            $uploaded_images = [];
             if (!empty($_FILES['images']['name'][0])) {
-                $images = $this->handleImageUploads($_FILES['images']);
+                $uploaded_images = $this->handleImageUploads($_FILES['images']);
             }
 
             // Prepare data
             $data = [
-                'tour_schedule_id' => $schedule_id,
-                'author_id' => $user_id,
+                'booking_id' => $booking_id,
+                'guide_id' => $user_id,
+                'journal_date' => sanitize($_POST['journal_date']),
+                'day_number' => !empty($_POST['day_number']) ? (int) $_POST['day_number'] : null,
                 'title' => sanitize($_POST['title']),
                 'content' => $_POST['content'], // Allow HTML
-                'images' => $images,
-                'status' => $_POST['status'] ?? 'draft'
+                'weather' => !empty($_POST['weather']) ? sanitize($_POST['weather']) : null,
+                'highlights' => !empty($_POST['highlights']) ? $_POST['highlights'] : null,
+                'issues' => !empty($_POST['issues']) ? $_POST['issues'] : null
             ];
 
             // Create journal
             $journal_id = $this->journalModel->create($data);
 
-            if ($journal_id) {
-                set_success("Đã lưu nhật ký tour!");
-                redirect('?act=guide-journals&action=show&id=' . $journal_id);
-            } else {
+            if (!$journal_id) {
                 throw new \Exception("Không thể lưu nhật ký.");
             }
+
+            // Add images
+            foreach ($uploaded_images as $index => $image_path) {
+                $this->journalModel->addImage($journal_id, $image_path, null, $index);
+            }
+
+            set_success("Đã lưu nhật ký tour!");
+            redirect('?act=guide-journals&action=show&id=' . $journal_id);
 
         } catch (\Exception $e) {
             set_error($e->getMessage());
@@ -193,18 +227,14 @@ class JournalController
         }
 
         // Verify ownership
-        if ($journal['author_id'] != $user_id) {
+        if ($journal['guide_id'] != $user_id) {
             set_error("Bạn không có quyền xem nhật ký này.");
             redirect('?act=guide-journals');
             return;
         }
 
-        // Parse images
-        $images = [];
-        if (!empty($journal['images'])) {
-            $decoded = json_decode($journal['images'], true);
-            $images = $decoded ?: [];
-        }
+        // Get images
+        $images = $this->journalModel->getImages($id);
 
         $page_title = 'Chi tiết Nhật ký: ' . htmlspecialchars($journal['title']);
         $content_file = VIEWS_PATH . '/guide/journals/show.php';
@@ -234,28 +264,21 @@ class JournalController
         }
 
         // Verify ownership
-        if ($journal['author_id'] != $user_id) {
+        if ($journal['guide_id'] != $user_id) {
             set_error("Bạn không có quyền sửa nhật ký này.");
             redirect('?act=guide-journals');
             return;
         }
 
-        // Only allow editing draft journals
-        if ($journal['status'] != 'draft') {
-            set_error("Chỉ có thể sửa nhật ký ở trạng thái Nháp.");
-            redirect('?act=guide-journals&action=show&id=' . $id);
-            return;
-        }
+        // Get images
+        $images = $this->journalModel->getImages($id);
 
-        // Parse images
-        $images = [];
-        if (!empty($journal['images'])) {
-            $decoded = json_decode($journal['images'], true);
-            $images = $decoded ?: [];
+        // Get schedule info (from booking)
+        $booking = $this->bookingModel->getById($journal['booking_id']);
+        $schedule = null;
+        if ($booking) {
+            $schedule = $this->scheduleModel->getByTourAndStartDate($booking['tour_id'], $booking['start_date']);
         }
-
-        // Get schedule info
-        $schedule = $this->scheduleModel->getById($journal['tour_schedule_id']);
 
         $page_title = 'Sửa Nhật ký: ' . htmlspecialchars($journal['title']);
         $content_file = VIEWS_PATH . '/guide/journals/edit.php';
@@ -268,6 +291,7 @@ class JournalController
     public function update()
     {
         require_guide();
+        require_csrf_token();
         $user_id = get_user_id();
 
         try {
@@ -283,16 +307,14 @@ class JournalController
             }
 
             // Verify ownership
-            if ($journal['author_id'] != $user_id) {
+            if ($journal['guide_id'] != $user_id) {
                 throw new \Exception("Bạn không có quyền sửa nhật ký này.");
             }
 
-            // Only allow editing draft journals
-            if ($journal['status'] != 'draft') {
-                throw new \Exception("Chỉ có thể sửa nhật ký ở trạng thái Nháp.");
-            }
-
             // Validation
+            if (empty($_POST['journal_date'])) {
+                throw new \Exception("Vui lòng chọn ngày viết nhật ký.");
+            }
             if (empty($_POST['title'])) {
                 throw new \Exception("Vui lòng nhập tiêu đề.");
             }
@@ -300,46 +322,45 @@ class JournalController
                 throw new \Exception("Vui lòng nhập nội dung nhật ký.");
             }
 
-            // Handle image uploads
-            $existing_images = [];
-            if (!empty($journal['images'])) {
-                $decoded = json_decode($journal['images'], true);
-                $existing_images = $decoded ?: [];
-            }
-
-            // Keep existing images if not deleted
-            if (!empty($_POST['existing_images'])) {
-                $keep_images = is_array($_POST['existing_images']) 
-                    ? $_POST['existing_images'] 
-                    : [$_POST['existing_images']];
-                $existing_images = array_intersect($existing_images, $keep_images);
+            // Handle existing images (keep or delete)
+            if (!empty($_POST['keep_images']) && is_array($_POST['keep_images'])) {
+                // Get all current images
+                $current_images = $this->journalModel->getImages($id);
+                $keep_image_ids = array_map('intval', $_POST['keep_images']);
+                
+                // Delete images not in keep list
+                foreach ($current_images as $img) {
+                    if (!in_array($img['id'], $keep_image_ids)) {
+                        $this->journalModel->deleteImage($img['id']);
+                    }
+                }
             } else {
-                $existing_images = [];
+                // Delete all existing images if none selected
+                $this->journalModel->deleteAllImages($id);
             }
 
             // Add new images
-            $new_images = [];
             if (!empty($_FILES['images']['name'][0])) {
-                $new_images = $this->handleImageUploads($_FILES['images']);
+                $uploaded_images = $this->handleImageUploads($_FILES['images']);
+                $current_count = count($this->journalModel->getImages($id));
+                foreach ($uploaded_images as $index => $image_path) {
+                    $this->journalModel->addImage($id, $image_path, null, $current_count + $index);
+                }
             }
 
-            $all_images = array_merge($existing_images, $new_images);
-
             // Update journal
-            $sql = "UPDATE tour_journals 
-                    SET title = :title, content = :content, images = :images, 
-                        status = :status, updated_at = NOW()
-                    WHERE id = :id AND author_id = :author_id AND status = 'draft'";
-
-            $stmt = $this->db->prepare($sql);
-            $success = $stmt->execute([
-                'id' => $id,
-                'author_id' => $user_id,
+            $data = [
+                'guide_id' => $user_id,
+                'journal_date' => sanitize($_POST['journal_date']),
+                'day_number' => !empty($_POST['day_number']) ? (int) $_POST['day_number'] : null,
                 'title' => sanitize($_POST['title']),
                 'content' => $_POST['content'],
-                'images' => !empty($all_images) ? json_encode($all_images) : null,
-                'status' => $_POST['status'] ?? 'draft'
-            ]);
+                'weather' => !empty($_POST['weather']) ? sanitize($_POST['weather']) : null,
+                'highlights' => !empty($_POST['highlights']) ? $_POST['highlights'] : null,
+                'issues' => !empty($_POST['issues']) ? $_POST['issues'] : null
+            ];
+
+            $success = $this->journalModel->update($id, $data);
 
             if ($success) {
                 set_success("Đã cập nhật nhật ký!");
@@ -355,7 +376,7 @@ class JournalController
     }
 
     /**
-     * Xóa nhật ký (chỉ draft)
+     * Xóa nhật ký
      */
     public function delete()
     {
@@ -376,32 +397,12 @@ class JournalController
             }
 
             // Verify ownership
-            if ($journal['author_id'] != $user_id) {
+            if ($journal['guide_id'] != $user_id) {
                 throw new \Exception("Bạn không có quyền xóa nhật ký này.");
             }
 
-            // Only allow deleting draft journals
-            if ($journal['status'] != 'draft') {
-                throw new \Exception("Chỉ có thể xóa nhật ký ở trạng thái Nháp.");
-            }
-
-            // Delete images
-            if (!empty($journal['images'])) {
-                $images = json_decode($journal['images'], true);
-                if ($images) {
-                    foreach ($images as $image) {
-                        $file_path = PUBLIC_PATH . '/' . $image;
-                        if (file_exists($file_path)) {
-                            unlink($file_path);
-                        }
-                    }
-                }
-            }
-
-            // Delete journal
-            $sql = "DELETE FROM tour_journals WHERE id = :id AND author_id = :author_id AND status = 'draft'";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['id' => $id, 'author_id' => $user_id]);
+            // Delete journal (images will be auto-deleted by CASCADE)
+            $this->journalModel->delete($id, $user_id);
 
             set_success("Đã xóa nhật ký!");
             redirect('?act=guide-journals');
@@ -461,4 +462,3 @@ class JournalController
         return $uploaded_images;
     }
 }
-

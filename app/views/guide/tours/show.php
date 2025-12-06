@@ -24,7 +24,7 @@
 
         <!-- LEFT: INFO -->
         <div class="space-y-6">
-            <div class="bg-white rounded shadow-sm p-6">
+            <div class="bg-panel rounded p-6 border border-slate-200">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Thông tin chuyến đi</h2>
                 <div class="space-y-3">
                     <div>
@@ -51,7 +51,7 @@
             </div>
 
             <?php if (!empty($schedule['guide_notes'])): ?>
-                <div class="bg-yellow-50 rounded shadow-sm p-6 border border-yellow-200">
+                <div class="bg-yellow-50 rounded p-6 border border-yellow-200">
                     <h2 class="text-lg font-bold text-yellow-800 border-b border-yellow-200 pb-2 mb-4">Ghi chú từ Điều hành
                     </h2>
                     <p class="text-yellow-900"><?= nl2br(htmlspecialchars($schedule['guide_notes'])) ?></p>
@@ -61,7 +61,7 @@
 
         <!-- RIGHT: PASSENGER LIST -->
         <div class="lg:col-span-2">
-            <div class="bg-white rounded shadow-sm overflow-hidden">
+            <div class="bg-panel rounded overflow-hidden border border-slate-200">
                 <div class="p-6 border-b border-gray-100 flex justify-between items-center">
                     <h2 class="text-lg font-bold text-gray-800">Danh sách hành khách</h2>
                     <button onclick="window.print()" class="text-blue-600 hover:underline text-sm">

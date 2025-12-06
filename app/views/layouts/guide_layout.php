@@ -1,6 +1,7 @@
 <?php
 /**
  * GUIDE LAYOUT - Layout cho Guide
+ * Flat Design - Không shadow, không gradient, không border dày
  * Sử dụng: require VIEWS_PATH . '/layouts/guide_layout.php';
  */
 
@@ -30,51 +31,50 @@ $user = get_auth_user();
         }
     </script>
     <style>
-        /* Custom Scrollbar */
+        /* Custom Scrollbar - Flat Design */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+            background: transparent;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
+            background: #cbd5e1;
+            border-radius: 3px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: #94a3b8;
         }
     </style>
 </head>
 
 <body class="bg-main font-sans text-slate-800">
     <div class="flex h-screen bg-main overflow-hidden">
-        <!-- SIDEBAR -->
-        <div class="w-72 bg-primary text-white flex flex-col transition-all duration-300 shadow-xl z-20 relative">
+        <!-- SIDEBAR - Flat Design -->
+        <div class="w-64 bg-primary text-white flex flex-col z-20 relative">
             <!-- Logo -->
-            <div class="p-6 border-b border-slate-700 flex items-center justify-between bg-slate-900/50">
+            <div class="p-6 border-b border-slate-600">
                 <div class="flex items-center gap-3">
-                    <span class="text-3xl filter drop-shadow-md">✈️</span>
+                    <span class="text-2xl">✈️</span>
                     <div>
-                        <h1 class="font-bold text-xl tracking-wide text-white">Tour Manager</h1>
-                        <p class="text-slate-400 text-xs uppercase tracking-wider font-medium">Guide Panel</p>
+                        <h1 class="font-bold text-lg text-white">Tour Manager</h1>
+                        <p class="text-slate-400 text-xs uppercase tracking-wider">Guide Panel</p>
                     </div>
                 </div>
             </div>
 
             <!-- Menu -->
-            <nav class="flex-1 py-6 overflow-y-auto custom-scrollbar px-3">
+            <nav class="flex-1 py-4 overflow-y-auto custom-scrollbar px-3">
                 <?php render_menu(); ?>
             </nav>
 
             <!-- User Info -->
-            <div class="p-4 border-t border-slate-700 bg-slate-800/50">
+            <div class="p-4 border-t border-slate-600">
                 <div class="flex items-center gap-3 mb-4">
-                    <div
-                        class="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold shadow-lg ring-2 ring-white/20">
+                    <div class="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold">
                         <?php echo strtoupper(substr($user['full_name'], 0, 1)); ?>
                     </div>
                     <div class="flex-1 overflow-hidden">
@@ -83,19 +83,18 @@ $user = get_auth_user();
                     </div>
                 </div>
                 <a href="<?php echo BASE_URL; ?>/?act=logout"
-                    class="block w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm text-center transition-all shadow-md hover:shadow-lg font-medium">
+                    class="block w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm text-center transition-colors font-medium">
                     Đăng xuất
                 </a>
             </div>
         </div>
 
         <!-- MAIN CONTENT -->
-        <div class="flex-1 flex flex-col overflow-hidden bg-slate-50 relative">
+        <div class="flex-1 flex flex-col overflow-hidden bg-main relative">
             <!-- Header -->
-            <header
-                class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm z-10">
+            <header class="bg-panel border-b border-slate-200 px-8 py-4 flex justify-between items-center z-10">
                 <div class="flex items-center gap-4">
-                    <button class="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
+                    <button class="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 6h16M4 12h16M4 18h16"></path>
@@ -105,9 +104,8 @@ $user = get_auth_user();
                 </div>
 
                 <div class="flex items-center gap-4">
-                    <button
-                        class="p-2 text-slate-400 hover:text-slate-600 transition-colors relative rounded-full hover:bg-slate-100">
-                        <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+                    <button class="p-2 text-slate-400 hover:text-slate-600 transition-colors relative rounded hover:bg-slate-100">
+                        <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
@@ -122,16 +120,14 @@ $user = get_auth_user();
             <main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
                 <div class="max-w-7xl mx-auto">
                     <?php if ($error = get_error()): ?>
-                        <div
-                            class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg flex items-center gap-3 shadow-sm animate-fade-in">
+                        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r flex items-center gap-3">
                             <span class="text-2xl">⚠️</span>
                             <p class="text-red-700 font-medium"><?php echo sanitize($error); ?></p>
                         </div>
                     <?php endif; ?>
 
                     <?php if ($success = get_success()): ?>
-                        <div
-                            class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg flex items-center gap-3 shadow-sm animate-fade-in">
+                        <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r flex items-center gap-3">
                             <span class="text-2xl">✅</span>
                             <p class="text-green-700 font-medium"><?php echo sanitize($success); ?></p>
                         </div>

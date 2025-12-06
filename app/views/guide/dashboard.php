@@ -6,7 +6,7 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <!-- Stats Card -->
-    <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+    <div class="bg-panel rounded p-6 border-l-4 border-accent">
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-sm text-gray-500 mb-1">Tour Sắp Tới</p>
@@ -20,7 +20,7 @@
 </div>
 
 <!-- Upcoming Tours List -->
-<div class="bg-white rounded-lg shadow-sm overflow-hidden">
+<div class="bg-panel rounded overflow-hidden border border-slate-200">
     <div class="p-6 border-b border-gray-100 flex justify-between items-center">
         <h2 class="text-lg font-bold text-gray-800">Lịch Tour Được Phân Công</h2>
         <a href="?act=guide-tours" class="text-sm text-blue-600 hover:underline">Xem tất cả</a>

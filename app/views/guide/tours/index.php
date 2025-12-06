@@ -9,7 +9,7 @@
         <h1 class="text-2xl font-bold text-gray-800">Lịch Tour Của Tôi</h1>
     </div>
 
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div class="bg-panel rounded overflow-hidden border border-slate-200">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
@@ -57,7 +57,7 @@
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <a href="?act=guide-tours&action=show&id=<?= $s['id'] ?>"
-                                        class="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium shadow transition-colors">
+                                        class="inline-block px-4 py-2 bg-accent text-white rounded hover:bg-blue-700 font-medium transition-colors">
                                         Xem chi tiết
                                     </a>
                                 </td>

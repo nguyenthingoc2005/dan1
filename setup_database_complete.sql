@@ -24,8 +24,8 @@
 -- - ✅ Thêm bookings.tour_schedule_id
 -- - ✅ Thêm tours.fixed_cost_guide, fixed_cost_management, fixed_cost_marketing, fixed_cost_other
 -- - ✅ Thêm tours.booking_deadline_days (default: 1 ngày)
--- - ✅ Thêm itinerary_timelines (timeline chi tiết từng ngày)
 -- - ✅ Thêm itinerary_day_services (dịch vụ theo từng ngày)
+-- - ❌ Bỏ itinerary_timelines (không dùng timeline chi tiết nữa)
 -- - ✅ tour_schedules.status: thêm 'pending', 'in_progress'
 -- 
 -- DEPRECATED (giữ lại để backward compatible):
@@ -357,35 +357,6 @@ CREATE TABLE IF NOT EXISTS `itineraries` (
   CONSTRAINT `itineraries_ibfk_2` FOREIGN KEY (`destination_id`) REFERENCES `destinations` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Itinerary Timelines (Timeline chi tiết cho từng ngày)
-CREATE TABLE IF NOT EXISTS `itinerary_timelines` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `itinerary_id` INT NOT NULL COMMENT 'Foreign key → itineraries',
-  `timeline_time` TIME NOT NULL COMMENT 'Giờ (VD: 07:00, 08:30)',
-  `activity_title` VARCHAR(200) NOT NULL COMMENT 'Tên hoạt động (VD: "Ăn sáng")',
-  `activity_description` TEXT NULL COMMENT 'Mô tả chi tiết hoạt động',
-  `location` VARCHAR(200) NULL COMMENT 'Địa điểm (VD: "Nhà hàng ABC")',
-  `destination_id` INT NULL COMMENT 'Foreign key → destinations',
-  `service_provider_id` INT NULL COMMENT 'Foreign key → service_providers (khách sạn, nhà hàng)',
-  `service_id` INT NULL COMMENT 'Foreign key → services (optional)',
-  `timeline_type` ENUM('meal', 'accommodation', 'activity', 'transport') NOT NULL DEFAULT 'activity' COMMENT 'Loại timeline',
-  `display_order` INT NOT NULL DEFAULT 0 COMMENT 'Thứ tự hiển thị (sắp xếp theo giờ)',
-  `notes` TEXT NULL COMMENT 'Ghi chú',
-  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_itinerary_id` (`itinerary_id`),
-  KEY `idx_destination_id` (`destination_id`),
-  KEY `idx_service_provider_id` (`service_provider_id`),
-  KEY `idx_service_id` (`service_id`),
-  KEY `idx_timeline_time` (`timeline_time`),
-  KEY `idx_timeline_type` (`timeline_type`),
-  CONSTRAINT `fk_itinerary_timelines_itinerary` FOREIGN KEY (`itinerary_id`) REFERENCES `itineraries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_itinerary_timelines_destination` FOREIGN KEY (`destination_id`) REFERENCES `destinations` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_itinerary_timelines_service_provider` FOREIGN KEY (`service_provider_id`) REFERENCES `service_providers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `fk_itinerary_timelines_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Timeline chi tiết cho từng ngày của tour';
-
 -- Itinerary Day Services (Dịch vụ theo từng ngày để tính chi phí)
 CREATE TABLE IF NOT EXISTS `itinerary_day_services` (
   `id` INT NOT NULL AUTO_INCREMENT,
@@ -410,8 +381,7 @@ CREATE TABLE IF NOT EXISTS `itinerary_day_services` (
   CONSTRAINT `fk_itinerary_day_services_service_provider` FOREIGN KEY (`service_provider_id`) REFERENCES `service_providers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Dịch vụ theo từng ngày của tour (để tính chi phí)';
 
--- Indexes bổ sung cho itinerary_timelines và itinerary_day_services
-CREATE INDEX `idx_itinerary_time_order` ON `itinerary_timelines` (`itinerary_id`, `timeline_time`, `display_order`);
+-- Indexes bổ sung cho itinerary_day_services
 CREATE INDEX `idx_itinerary_service_included` ON `itinerary_day_services` (`itinerary_id`, `is_included_in_price`, `unit_price`);
 
 -- Tour Services (Backward compatible - giữ lại)
