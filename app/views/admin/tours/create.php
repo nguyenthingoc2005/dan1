@@ -883,6 +883,24 @@ if (is_array($old_day_services)) {
         })
         .then(html => {
             container.innerHTML = html;
+            // Execute any scripts in the loaded HTML immediately
+            const scripts = container.querySelectorAll('script');
+            scripts.forEach(oldScript => {
+                if (oldScript.src) {
+                    // External script - load normally
+                    const newScript = document.createElement('script');
+                    newScript.src = oldScript.src;
+                    document.head.appendChild(newScript);
+                } else {
+                    // Inline script - execute immediately using eval
+                    try {
+                        eval(oldScript.textContent);
+                    } catch (e) {
+                        console.error('Error executing script:', e);
+                    }
+                }
+                oldScript.remove();
+            });
         })
         .catch(err => {
             console.error('Error loading itinerary manager:', err);
@@ -1225,5 +1243,423 @@ if (is_array($old_day_services)) {
         if (initialStep === 2 || (oldItinerary && oldItinerary.length > 0)) {
             setTimeout(() => generateItineraryDays(), 100);
         }
+        
+        // Event delegation for itinerary manager
+        initItineraryManagerEvents();
     });
+    
+    // ============================================================================
+    // ITINERARY MANAGER EVENT DELEGATION
+    // ============================================================================
+    
+    function initItineraryManagerEvents() {
+        // Use event delegation for all itinerary manager actions
+        document.addEventListener('click', function(e) {
+            const action = e.target.closest('[data-action]')?.getAttribute('data-action');
+            const dayNumber = e.target.closest('[data-action]')?.getAttribute('data-day');
+            
+            if (!action || !dayNumber) return;
+            
+            switch(action) {
+                case 'toggle-day-manager':
+                    toggleDayManager(parseInt(dayNumber));
+                    break;
+                case 'open-timeline-modal':
+                    openAddTimelineModal(parseInt(dayNumber));
+                    break;
+                case 'close-timeline-modal':
+                    closeAddTimelineModal(parseInt(dayNumber));
+                    break;
+                case 'open-service-modal':
+                    openAddServiceModal(parseInt(dayNumber));
+                    break;
+                case 'close-service-modal':
+                    closeAddServiceModal(parseInt(dayNumber));
+                    break;
+            }
+        });
+        
+        // Form submissions
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            const action = form.getAttribute('data-action');
+            const dayNumber = form.getAttribute('data-day');
+            
+            if (!action || !dayNumber) return;
+            
+            e.preventDefault();
+            
+            switch(action) {
+                case 'save-timeline':
+                    saveTimelineItem(e, parseInt(dayNumber));
+                    break;
+                case 'save-service':
+                    saveDayService(e, parseInt(dayNumber));
+                    break;
+            }
+        });
+    }
+    
+    // Initialize counters
+    window.timelineCounter = window.timelineCounter || {};
+    window.dayServiceCounter = window.dayServiceCounter || {};
+    
+    // Itinerary Manager Functions
+    function toggleDayManager(dayNumber) {
+        const content = document.getElementById(`day-manager-content-${dayNumber}`);
+        const icon = document.getElementById(`toggle-icon-${dayNumber}`);
+        if (content && icon) {
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+    }
+    
+    function openAddTimelineModal(dayNumber) {
+        const modal = document.getElementById(`add-timeline-modal-day-${dayNumber}`);
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+        }
+    }
+    
+    function closeAddTimelineModal(dayNumber) {
+        const modal = document.getElementById(`add-timeline-modal-day-${dayNumber}`);
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+            const form = document.getElementById(`add-timeline-form-day-${dayNumber}`);
+            if (form) form.reset();
+        }
+    }
+    
+    function openAddServiceModal(dayNumber) {
+        const modal = document.getElementById(`add-service-modal-day-${dayNumber}`);
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+        }
+    }
+    
+    function closeAddServiceModal(dayNumber) {
+        const modal = document.getElementById(`add-service-modal-day-${dayNumber}`);
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+            const form = document.getElementById(`add-service-form-day-${dayNumber}`);
+            if (form) form.reset();
+        }
+    }
+    
+    function saveTimelineItem(event, dayNumber) {
+        // Initialize counter if needed
+        if (!window.timelineCounter[dayNumber]) {
+            const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
+            if (dataEl) {
+                const data = JSON.parse(dataEl.textContent);
+                window.timelineCounter[dayNumber] = data.timeline_count || 0;
+            } else {
+                window.timelineCounter[dayNumber] = 0;
+            }
+        }
+        
+        const counter = window.timelineCounter[dayNumber] = window.timelineCounter[dayNumber] + 1;
+        const container = document.getElementById(`timeline-items-day-${dayNumber}`);
+        if (!container) return;
+        
+        const time = document.getElementById(`modal-timeline-time-day-${dayNumber}`)?.value || '';
+        const type = document.getElementById(`modal-timeline-type-day-${dayNumber}`)?.value || 'activity';
+        const activity = document.getElementById(`modal-timeline-activity-day-${dayNumber}`)?.value || '';
+        const description = document.getElementById(`modal-timeline-description-day-${dayNumber}`)?.value || '';
+        const location = document.getElementById(`modal-timeline-location-day-${dayNumber}`)?.value || '';
+        const providerId = document.getElementById(`modal-timeline-provider-day-${dayNumber}`)?.value || '';
+        const destinationId = document.getElementById(`modal-timeline-destination-day-${dayNumber}`)?.value || '';
+        const serviceId = document.getElementById(`modal-timeline-service-day-${dayNumber}`)?.value || '';
+        const notes = document.getElementById(`modal-timeline-notes-day-${dayNumber}`)?.value || '';
+        
+        if (!time || !activity) {
+            alert('Vui lòng nhập giờ và hoạt động');
+            return;
+        }
+        
+        // Get data for dropdowns
+        const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
+        const data = dataEl ? JSON.parse(dataEl.textContent) : {};
+        
+        const typeIcons = {
+            'meal': '🍽️',
+            'accommodation': '🏨',
+            'activity': '🎯',
+            'transport': '🚌'
+        };
+        
+        const typeLabels = {
+            'meal': 'Bữa ăn',
+            'accommodation': 'Nơi nghỉ',
+            'activity': 'Hoạt động',
+            'transport': 'Di chuyển'
+        };
+        
+        const typeColors = {
+            'meal': 'bg-orange-50 border-orange-200',
+            'accommodation': 'bg-blue-50 border-blue-200',
+            'activity': 'bg-green-50 border-green-200',
+            'transport': 'bg-purple-50 border-purple-200'
+        };
+        
+        // Build options HTML
+        let providerOptions = '<option value="">-- Chọn nhà dịch vụ --</option>';
+        if (data.service_providers) {
+            data.service_providers.forEach(provider => {
+                const id = provider.id || provider;
+                const name = provider.name || provider;
+                const address = provider.address || '';
+                const selected = providerId && String(id) === String(providerId) ? 'selected' : '';
+                providerOptions += `<option value="${id}" data-address="${escapeHtml(address)}" ${selected}>${escapeHtml(name)}</option>`;
+            });
+        }
+        
+        let destOptions = '<option value="">-- Chọn địa điểm --</option>';
+        if (data.destinations) {
+            if (Array.isArray(data.destinations)) {
+                data.destinations.forEach(dest => {
+                    const id = dest.id || dest;
+                    const name = dest.name || dest;
+                    const selected = destinationId && String(id) === String(destinationId) ? 'selected' : '';
+                    destOptions += `<option value="${id}" ${selected}>${escapeHtml(name)}</option>`;
+                });
+            }
+        }
+        
+        let serviceOptions = '<option value="">-- Chọn dịch vụ --</option>';
+        if (data.services) {
+            data.services.forEach(service => {
+                const id = service.id || service;
+                const name = service.name || service;
+                const selected = serviceId && String(id) === String(serviceId) ? 'selected' : '';
+                serviceOptions += `<option value="${id}" ${selected}>${escapeHtml(name)}</option>`;
+            });
+        }
+        
+        const itemHtml = `
+            <div class="timeline-item bg-white border-2 ${typeColors[type]} rounded-lg p-4 mb-4 relative" 
+                 data-day="${dayNumber}" data-index="${counter}" data-time="${time}">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center gap-2">
+                        <input type="time" name="timeline_time[]" value="${time}" required
+                            class="px-2 py-1 border rounded focus:border-blue-500 font-semibold text-blue-600 text-lg">
+                        <span class="text-sm font-medium text-gray-600 px-2 py-1 bg-white rounded">${typeLabels[type]}</span>
+                    </div>
+                    <button type="button" onclick="this.closest('.timeline-item').remove()" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Hoạt động <span class="text-red-500">*</span></label>
+                        <input type="text" name="timeline_activity_title[]" value="${escapeHtml(activity)}" required
+                            class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                        <input type="hidden" name="timeline_day_number[]" value="${dayNumber}">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                        <textarea name="timeline_activity_description[]" rows="2"
+                            class="w-full px-3 py-2 border rounded focus:border-blue-500">${escapeHtml(description)}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Loại timeline</label>
+                        <select name="timeline_type[]" class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                            <option value="activity" ${type === 'activity' ? 'selected' : ''}>Hoạt động</option>
+                            <option value="meal" ${type === 'meal' ? 'selected' : ''}>Bữa ăn</option>
+                            <option value="accommodation" ${type === 'accommodation' ? 'selected' : ''}>Nơi nghỉ</option>
+                            <option value="transport" ${type === 'transport' ? 'selected' : ''}>Di chuyển</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Địa điểm</label>
+                        <input type="text" name="timeline_location[]" value="${escapeHtml(location)}"
+                            class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nhà dịch vụ</label>
+                        <select name="timeline_service_provider[]" class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                            ${providerOptions}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Địa điểm du lịch</label>
+                        <select name="timeline_destination[]" class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                            ${destOptions}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Dịch vụ</label>
+                        <select name="timeline_service[]" class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                            ${serviceOptions}
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                        <textarea name="timeline_notes[]" rows="2"
+                            class="w-full px-3 py-2 border rounded focus:border-blue-500">${escapeHtml(notes)}</textarea>
+                    </div>
+                    <input type="hidden" name="timeline_display_order[]" value="${counter}">
+                </div>
+            </div>
+        `;
+        
+        if (container.innerHTML.includes('Chưa có timeline')) {
+            container.innerHTML = itemHtml;
+        } else {
+            container.insertAdjacentHTML('beforeend', itemHtml);
+        }
+        
+        closeAddTimelineModal(dayNumber);
+    }
+    
+    function saveDayService(event, dayNumber) {
+        // Initialize counter if needed
+        if (!window.dayServiceCounter[dayNumber]) {
+            const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
+            if (dataEl) {
+                const data = JSON.parse(dataEl.textContent);
+                window.dayServiceCounter[dayNumber] = data.services_count || 0;
+            } else {
+                window.dayServiceCounter[dayNumber] = 0;
+            }
+        }
+        
+        const counter = window.dayServiceCounter[dayNumber] = window.dayServiceCounter[dayNumber] + 1;
+        const container = document.getElementById(`day-services-list-day-${dayNumber}`);
+        if (!container) return;
+        
+        const serviceSelect = document.getElementById(`modal-service-id-day-${dayNumber}`);
+        const serviceId = serviceSelect?.value || '';
+        const serviceName = serviceSelect?.options[serviceSelect.selectedIndex]?.getAttribute('data-name') || 
+                           serviceSelect?.options[serviceSelect.selectedIndex]?.text || '';
+        const providerId = document.getElementById(`modal-service-provider-id-day-${dayNumber}`)?.value || '';
+        const providerName = providerId ? 
+            document.getElementById(`modal-service-provider-id-day-${dayNumber}`)?.options[document.getElementById(`modal-service-provider-id-day-${dayNumber}`).selectedIndex]?.text : '';
+        const unitPrice = parseFloat(document.getElementById(`modal-unit-price-day-${dayNumber}`)?.value || 0);
+        const quantity = parseFloat(document.getElementById(`modal-quantity-day-${dayNumber}`)?.value || 1);
+        const unit = document.getElementById(`modal-unit-day-${dayNumber}`)?.value || '';
+        const included = document.getElementById(`modal-included-day-${dayNumber}`)?.checked || false;
+        const notes = document.getElementById(`modal-notes-day-${dayNumber}`)?.value || '';
+        
+        if (!serviceId || !serviceName) {
+            alert('Vui lòng chọn dịch vụ');
+            return;
+        }
+        
+        const total = unitPrice * quantity;
+        
+        const serviceHtml = `
+            <div class="day-service-item bg-white border border-gray-200 rounded-lg p-4">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 mt-1">
+                        <input type="checkbox" name="day_service_included[${dayNumber}][${counter}]" value="1"
+                            ${included ? 'checked' : ''}
+                            onchange="updateDayServiceTotal(${dayNumber})"
+                            class="w-5 h-5 text-blue-600 rounded">
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-medium text-gray-800">
+                            ${escapeHtml(serviceName)}
+                            ${providerName ? `<span class="text-sm text-gray-500">- ${escapeHtml(providerName)}</span>` : ''}
+                        </div>
+                        <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div>
+                                <span class="text-gray-600">Đơn giá/người:</span>
+                                <span class="font-medium ml-2">${formatCurrency(unitPrice)}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Số lượng:</span>
+                                <span class="font-medium ml-2">${formatNumber(quantity)} ${unit || ''}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Tổng:</span>
+                                <span class="font-medium text-blue-600 ml-2">${formatCurrency(total)}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Bao gồm:</span>
+                                <span class="font-medium ml-2 ${included ? 'text-green-600' : 'text-gray-400'}">
+                                    ${included ? 'Có' : 'Không'}
+                                </span>
+                            </div>
+                        </div>
+                        ${notes ? `
+                            <div class="mt-2 text-sm text-gray-500">
+                                <i class="fas fa-sticky-note mr-1"></i>
+                                ${escapeHtml(notes)}
+                            </div>
+                        ` : ''}
+                        <input type="hidden" name="day_service_day_number[]" value="${dayNumber}">
+                        <input type="hidden" name="day_service_service_id[]" value="${serviceId}">
+                        <input type="hidden" name="day_service_provider_id[]" value="${providerId || ''}">
+                        <input type="hidden" name="day_service_name[]" value="${escapeHtml(serviceName)}">
+                        <input type="hidden" name="day_service_unit_price[]" value="${unitPrice}">
+                        <input type="hidden" name="day_service_quantity[]" value="${quantity}">
+                        <input type="hidden" name="day_service_unit[]" value="${escapeHtml(unit)}">
+                        <input type="hidden" name="day_service_notes[]" value="${escapeHtml(notes)}">
+                    </div>
+                    <div class="flex-shrink-0">
+                        <button type="button" onclick="this.closest('.day-service-item').remove()" class="text-red-500 hover:text-red-700">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (container.innerHTML.includes('Chưa có dịch vụ')) {
+            container.innerHTML = serviceHtml;
+        } else {
+            container.insertAdjacentHTML('beforeend', serviceHtml);
+        }
+        
+        updateDayServiceTotal(dayNumber);
+        closeAddServiceModal(dayNumber);
+    }
+    
+    function updateDayServiceTotal(dayNumber) {
+        const container = document.getElementById(`day-services-list-day-${dayNumber}`);
+        if (!container) return;
+        
+        const items = container.querySelectorAll('.day-service-item');
+        let total = 0;
+        
+        items.forEach(item => {
+            const checkbox = item.querySelector('[name^="day_service_included"]');
+            if (checkbox && checkbox.checked) {
+                const unitPrice = parseFloat(item.querySelector('[name="day_service_unit_price[]"]')?.value || 0);
+                const quantity = parseFloat(item.querySelector('[name="day_service_quantity[]"]')?.value || 1);
+                total += (unitPrice * quantity);
+            }
+        });
+        
+        const totalEl = document.getElementById(`day-total-${dayNumber}`);
+        if (totalEl) {
+            totalEl.textContent = formatCurrency(total) + '/người';
+        }
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN').format(Math.round(amount || 0)) + 'đ';
+    }
+    
+    function formatNumber(num) {
+        return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num);
+    }
 </script>

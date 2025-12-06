@@ -322,7 +322,7 @@ class BookingService
                     'unit' => $ts['unit'],
                     'unit_price' => $ts['unit_price'],
                     'total_price' => $qty * $ts['unit_price'],
-                    'notes' => 'Auto-copied from tour template'
+                    'notes' => '[TOUR_ORIGINAL] Auto-copied from tour template' // Prefix để phân biệt dịch vụ gốc
                 ]);
             }
 

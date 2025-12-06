@@ -229,13 +229,28 @@ $statusColors = [
                         </thead>
                         <tbody>
                             <?php foreach ($bookingServices as $service): ?>
+                                <?php
+                                // Phân biệt dịch vụ gốc (từ tour) vs dịch vụ thêm vào sau
+                                $isFromTour = !empty($service['notes']) && strpos($service['notes'], '[TOUR_ORIGINAL]') !== false;
+                                $serviceNotes = $service['notes'] ?? '';
+                                // Remove prefix nếu là dịch vụ gốc
+                                if ($isFromTour) {
+                                    $serviceNotes = str_replace('[TOUR_ORIGINAL] Auto-copied from tour template', '', $serviceNotes);
+                                    $serviceNotes = trim($serviceNotes);
+                                }
+                                ?>
                                 <tr class="border-b">
                                     <td class="px-3 py-2">
-                                        <span
-                                            class="font-medium"><?= htmlspecialchars($service['service_name'] ?? $service['service_name_original'] ?? 'N/A') ?></span>
-                                        <?php if (!empty($service['notes'])): ?>
-                                            <div class="text-xs text-gray-400 italic"><?= htmlspecialchars($service['notes']) ?>
-                                            </div>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="font-medium"><?= htmlspecialchars($service['service_name'] ?? $service['service_name_original'] ?? 'N/A') ?></span>
+                                            <?php if ($isFromTour): ?>
+                                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded whitespace-nowrap">Dịch vụ gốc</span>
+                                            <?php else: ?>
+                                                <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded whitespace-nowrap">Dịch vụ thêm</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if (!empty($serviceNotes)): ?>
+                                            <div class="text-xs text-gray-400 italic mt-1"><?= htmlspecialchars($serviceNotes) ?></div>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-3 py-2">
@@ -248,13 +263,17 @@ $statusColors = [
                                     </td>
                                     <td class="px-3 py-2 text-center">
                                         <?php if ($service['paid_amount'] == 0 && $booking['approval_status'] != 'cancelled'): ?>
-                                            <form action="?act=admin&module=bookings&action=deleteBookingService" method="POST"
-                                                class="inline" onsubmit="return confirm('Xóa dịch vụ này?')">
-                                                <?= csrf_field() ?>
-                                                <input type="hidden" name="id" value="<?= $service['id'] ?>">
-                                                <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
-                                                <button type="submit" class="text-red-600 hover:text-red-800 text-xs">✕ Xóa</button>
-                                            </form>
+                                            <?php if ($isFromTour): ?>
+                                                <span class="text-xs text-gray-400 italic">Không thể xóa</span>
+                                            <?php else: ?>
+                                                <form action="?act=admin&module=bookings&action=deleteBookingService" method="POST"
+                                                    class="inline" onsubmit="return confirm('Xóa dịch vụ này?')">
+                                                    <?= csrf_field() ?>
+                                                    <input type="hidden" name="id" value="<?= $service['id'] ?>">
+                                                    <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+                                                    <button type="submit" class="text-red-600 hover:text-red-800 text-xs">✕ Xóa</button>
+                                                </form>
+                                            <?php endif; ?>
                                         <?php else: ?>
                                             <span class="text-xs text-gray-400">Đã thanh toán</span>
                                         <?php endif; ?>

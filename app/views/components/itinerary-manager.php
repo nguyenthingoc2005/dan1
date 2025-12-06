@@ -34,11 +34,14 @@ usort($timeline_items, function($a, $b) {
 });
 ?>
 
-<div class="itinerary-manager bg-white border-2 border-gray-200 rounded-lg p-6 mb-6" data-day="<?= $day_number ?>">
+<div class="itinerary-manager bg-white border-2 border-gray-200 rounded-lg p-6 mb-6" 
+     data-day="<?= $day_number ?>"
+     data-timeline-count="<?= count($timeline_items) ?>"
+     data-services-count="<?= count($day_services) ?>">
     <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-gray-800">Ngày <?= $day_number ?></h3>
         <div class="flex gap-2">
-            <button type="button" onclick="toggleDayManager(<?= $day_number ?>)" 
+            <button type="button" data-action="toggle-day-manager" data-day="<?= $day_number ?>"
                     class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
                 <i class="fas fa-chevron-down" id="toggle-icon-<?= $day_number ?>"></i>
             </button>
@@ -54,7 +57,7 @@ usort($timeline_items, function($a, $b) {
                 <h4 class="font-semibold text-gray-700">
                     <i class="fas fa-clock mr-2 text-blue-500"></i>Timeline chi tiết
                 </h4>
-                <button type="button" onclick="openAddTimelineModal(<?= $day_number ?>)"
+                <button type="button" data-action="open-timeline-modal" data-day="<?= $day_number ?>"
                     class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm">
                     <i class="fas fa-plus mr-2"></i>Thêm timeline
                 </button>
@@ -84,7 +87,7 @@ usort($timeline_items, function($a, $b) {
                 <h4 class="font-semibold text-gray-700">
                     <i class="fas fa-concierge-bell mr-2 text-green-500"></i>Dịch vụ theo ngày
                 </h4>
-                <button type="button" onclick="openAddServiceModal(<?= $day_number ?>)"
+                <button type="button" data-action="open-service-modal" data-day="<?= $day_number ?>"
                     class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">
                     <i class="fas fa-plus mr-2"></i>Thêm dịch vụ
                 </button>
@@ -184,12 +187,13 @@ usort($timeline_items, function($a, $b) {
 </div>
 
 <!-- Add Timeline Modal -->
-<div id="add-timeline-modal-day-<?= $day_number ?>" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+<div id="add-timeline-modal-day-<?= $day_number ?>" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999]">
+    <div class="flex items-center justify-center min-h-screen p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b">
             <h3 class="text-lg font-bold text-gray-800">Thêm timeline - Day <?= $day_number ?></h3>
         </div>
-        <form id="add-timeline-form-day-<?= $day_number ?>" class="p-6" onsubmit="saveTimelineItem(event, <?= $day_number ?>); return false;">
+        <form id="add-timeline-form-day-<?= $day_number ?>" class="p-6" data-action="save-timeline" data-day="<?= $day_number ?>">
             <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -280,7 +284,7 @@ usort($timeline_items, function($a, $b) {
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-3">
-                <button type="button" onclick="closeAddTimelineModal(<?= $day_number ?>)"
+                <button type="button" data-action="close-timeline-modal" data-day="<?= $day_number ?>"
                     class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                     Hủy
                 </button>
@@ -290,15 +294,17 @@ usort($timeline_items, function($a, $b) {
             </div>
         </form>
     </div>
+    </div>
 </div>
 
 <!-- Add Service Modal -->
-<div id="add-service-modal-day-<?= $day_number ?>" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+<div id="add-service-modal-day-<?= $day_number ?>" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999]">
+    <div class="flex items-center justify-center min-h-screen p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b">
             <h3 class="text-lg font-bold text-gray-800">Thêm dịch vụ - Day <?= $day_number ?></h3>
         </div>
-        <form id="add-service-form-day-<?= $day_number ?>" class="p-6" onsubmit="saveDayService(event, <?= $day_number ?>); return false;">
+        <form id="add-service-form-day-<?= $day_number ?>" class="p-6" data-action="save-service" data-day="<?= $day_number ?>">
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Chọn dịch vụ <span class="text-red-500">*</span></label>
@@ -359,7 +365,7 @@ usort($timeline_items, function($a, $b) {
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-3">
-                <button type="button" onclick="closeAddServiceModal(<?= $day_number ?>)"
+                <button type="button" data-action="close-service-modal" data-day="<?= $day_number ?>"
                     class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                     Hủy
                 </button>
@@ -369,530 +375,17 @@ usort($timeline_items, function($a, $b) {
             </div>
         </form>
     </div>
+    </div>
 </div>
 
-<script>
-// Initialize counters
-window.timelineCounter = window.timelineCounter || {};
-window.timelineCounter[<?= $day_number ?>] = <?= count($timeline_items) ?>;
-window.dayServiceCounter = window.dayServiceCounter || {};
-window.dayServiceCounter[<?= $day_number ?>] = <?= count($day_services) ?>;
-
-// Toggle day manager
-function toggleDayManager(dayNumber) {
-    const content = document.getElementById(`day-manager-content-${dayNumber}`);
-    const icon = document.getElementById(`toggle-icon-${dayNumber}`);
-    if (content.classList.contains('hidden')) {
-        content.classList.remove('hidden');
-        icon.classList.remove('fa-chevron-down');
-        icon.classList.add('fa-chevron-up');
-    } else {
-        content.classList.add('hidden');
-        icon.classList.remove('fa-chevron-up');
-        icon.classList.add('fa-chevron-down');
-    }
-}
-
-// Timeline Modal Functions
-function openAddTimelineModal(dayNumber) {
-    document.getElementById(`add-timeline-modal-day-${dayNumber}`).classList.remove('hidden');
-}
-
-function closeAddTimelineModal(dayNumber) {
-    document.getElementById(`add-timeline-modal-day-${dayNumber}`).classList.add('hidden');
-    document.getElementById(`add-timeline-form-day-${dayNumber}`).reset();
-}
-
-function saveTimelineItem(event, dayNumber) {
-    event.preventDefault();
-    
-    const counter = window.timelineCounter[dayNumber] = (window.timelineCounter[dayNumber] || 0) + 1;
-    const container = document.getElementById(`timeline-items-day-${dayNumber}`);
-    
-    const time = document.getElementById(`modal-timeline-time-day-${dayNumber}`).value;
-    const type = document.getElementById(`modal-timeline-type-day-${dayNumber}`).value;
-    const activity = document.getElementById(`modal-timeline-activity-day-${dayNumber}`).value;
-    const description = document.getElementById(`modal-timeline-description-day-${dayNumber}`).value;
-    const location = document.getElementById(`modal-timeline-location-day-${dayNumber}`).value;
-    const providerId = document.getElementById(`modal-timeline-provider-day-${dayNumber}`).value;
-    const destinationId = document.getElementById(`modal-timeline-destination-day-${dayNumber}`).value;
-    const serviceId = document.getElementById(`modal-timeline-service-day-${dayNumber}`).value;
-    const notes = document.getElementById(`modal-timeline-notes-day-${dayNumber}`).value;
-    
-    const typeIcons = {
-        'meal': '🍽️',
-        'accommodation': '🏨',
-        'activity': '🎯',
-        'transport': '🚌'
-    };
-    
-    const typeLabels = {
-        'meal': 'Bữa ăn',
-        'accommodation': 'Nơi nghỉ',
-        'activity': 'Hoạt động',
-        'transport': 'Di chuyển'
-    };
-    
-    const typeColors = {
-        'meal': 'bg-orange-50 border-orange-200',
-        'accommodation': 'bg-blue-50 border-blue-200',
-        'activity': 'bg-green-50 border-green-200',
-        'transport': 'bg-purple-50 border-purple-200'
-    };
-    
-    const itemHtml = `
-        <div class="timeline-item bg-white border-2 ${typeColors[type]} rounded-lg p-4 mb-4 relative" 
-             data-day="${dayNumber}" data-index="${counter}" data-time="${time}">
-            <div class="absolute -left-6 top-6 w-6 h-6 bg-white border-4 border-blue-500 rounded-full flex items-center justify-center z-10">
-                <span class="text-sm">${typeIcons[type] || '🎯'}</span>
-            </div>
-            <div class="flex justify-between items-start mb-3">
-                <div class="flex items-center gap-2">
-                    <input type="time" name="timeline_time[]" value="${time}" required
-                        class="px-2 py-1 border rounded focus:border-blue-500 font-semibold text-blue-600 text-lg"
-                        onchange="sortTimelineByTime(${dayNumber})">
-                    <span class="text-sm font-medium text-gray-600 px-2 py-1 bg-white rounded">${typeLabels[type]}</span>
-                </div>
-                <button type="button" onclick="removeTimelineItem(this)" class="text-red-500 hover:text-red-700">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Hoạt động <span class="text-red-500">*</span></label>
-                    <input type="text" name="timeline_activity_title[]" value="${escapeHtml(activity)}" required
-                        class="w-full px-3 py-2 border rounded focus:border-blue-500">
-                    <input type="hidden" name="timeline_day_number[]" value="${dayNumber}">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-                    <textarea name="timeline_activity_description[]" rows="2"
-                        class="w-full px-3 py-2 border rounded focus:border-blue-500">${escapeHtml(description)}</textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Loại timeline</label>
-                    <select name="timeline_type[]" class="w-full px-3 py-2 border rounded focus:border-blue-500"
-                        onchange="updateTimelineType(this)">
-                        <option value="activity" ${type === 'activity' ? 'selected' : ''}>Hoạt động</option>
-                        <option value="meal" ${type === 'meal' ? 'selected' : ''}>Bữa ăn</option>
-                        <option value="accommodation" ${type === 'accommodation' ? 'selected' : ''}>Nơi nghỉ</option>
-                        <option value="transport" ${type === 'transport' ? 'selected' : ''}>Di chuyển</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Địa điểm</label>
-                    <input type="text" name="timeline_location[]" value="${escapeHtml(location)}"
-                        class="w-full px-3 py-2 border rounded focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nhà dịch vụ</label>
-                    <select name="timeline_service_provider[]" class="w-full px-3 py-2 border rounded focus:border-blue-500"
-                        onchange="updateLocationFromProvider(this)">
-                        <option value="">-- Chọn nhà dịch vụ --</option>
-                        ${getServiceProviderOptions(${dayNumber}, providerId)}
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Địa điểm du lịch</label>
-                    <select name="timeline_destination[]" class="w-full px-3 py-2 border rounded focus:border-blue-500">
-                        <option value="">-- Chọn địa điểm --</option>
-                        ${getDestinationOptions(${dayNumber}, destinationId)}
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Dịch vụ</label>
-                    <select name="timeline_service[]" class="w-full px-3 py-2 border rounded focus:border-blue-500"
-                        onchange="promptAddToDayServices(this, ${dayNumber})">
-                        <option value="">-- Chọn dịch vụ --</option>
-                        ${getServiceOptions(${dayNumber}, serviceId)}
-                    </select>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
-                    <textarea name="timeline_notes[]" rows="2"
-                        class="w-full px-3 py-2 border rounded focus:border-blue-500">${escapeHtml(notes)}</textarea>
-                </div>
-                <input type="hidden" name="timeline_display_order[]" value="${counter}">
-            </div>
-            <div class="mt-3 flex justify-end gap-2">
-                <button type="button" onclick="moveTimelineUp(this)" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
-                    <i class="fas fa-arrow-up"></i> Lên
-                </button>
-                <button type="button" onclick="moveTimelineDown(this)" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
-                    <i class="fas fa-arrow-down"></i> Xuống
-                </button>
-            </div>
-        </div>
-    `;
-    
-    if (container.innerHTML.includes('Chưa có timeline')) {
-        container.innerHTML = itemHtml;
-    } else {
-        container.insertAdjacentHTML('beforeend', itemHtml);
-    }
-    
-    sortTimelineByTime(dayNumber);
-    closeAddTimelineModal(dayNumber);
-}
-
-// Service Modal Functions
-function openAddServiceModal(dayNumber) {
-    document.getElementById(`add-service-modal-day-${dayNumber}`).classList.remove('hidden');
-}
-
-function closeAddServiceModal(dayNumber) {
-    document.getElementById(`add-service-modal-day-${dayNumber}`).classList.add('hidden');
-    document.getElementById(`add-service-form-day-${dayNumber}`).reset();
-}
-
-function saveDayService(event, dayNumber) {
-    event.preventDefault();
-    
-    const counter = window.dayServiceCounter[dayNumber] = (window.dayServiceCounter[dayNumber] || 0) + 1;
-    const container = document.getElementById(`day-services-list-day-${dayNumber}`);
-    
-    const serviceId = document.getElementById(`modal-service-id-day-${dayNumber}`).value;
-    const serviceName = document.getElementById(`modal-service-id-day-${dayNumber}`).options[document.getElementById(`modal-service-id-day-${dayNumber}`).selectedIndex].getAttribute('data-name');
-    const providerId = document.getElementById(`modal-service-provider-id-day-${dayNumber}`).value;
-    const providerName = providerId ? document.getElementById(`modal-service-provider-id-day-${dayNumber}`).options[document.getElementById(`modal-service-provider-id-day-${dayNumber}`).selectedIndex].text : '';
-    const unitPrice = parseFloat(document.getElementById(`modal-unit-price-day-${dayNumber}`).value);
-    const quantity = parseFloat(document.getElementById(`modal-quantity-day-${dayNumber}`).value || 1);
-    const unit = document.getElementById(`modal-unit-day-${dayNumber}`).value;
-    const included = document.getElementById(`modal-included-day-${dayNumber}`).checked;
-    const notes = document.getElementById(`modal-notes-day-${dayNumber}`).value;
-    
-    const total = unitPrice * quantity;
-    
-    const serviceHtml = `
-        <div class="day-service-item bg-white border border-gray-200 rounded-lg p-4">
-            <div class="flex items-start gap-4">
-                <div class="flex-shrink-0 mt-1">
-                    <input type="checkbox" name="day_service_included[${dayNumber}][${counter}]" value="1"
-                        ${included ? 'checked' : ''}
-                        onchange="updateDayServiceTotal(${dayNumber})"
-                        class="w-5 h-5 text-blue-600 rounded">
-                </div>
-                <div class="flex-1">
-                    <div class="font-medium text-gray-800">
-                        ${escapeHtml(serviceName)}
-                        ${providerName ? `<span class="text-sm text-gray-500">- ${escapeHtml(providerName)}</span>` : ''}
-                    </div>
-                    <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                        <div>
-                            <span class="text-gray-600">Đơn giá/người:</span>
-                            <span class="font-medium ml-2">${formatCurrency(unitPrice)}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Số lượng:</span>
-                            <span class="font-medium ml-2">${formatNumber(quantity)} ${unit || ''}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Tổng:</span>
-                            <span class="font-medium text-blue-600 ml-2">${formatCurrency(total)}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Bao gồm:</span>
-                            <span class="font-medium ml-2 ${included ? 'text-green-600' : 'text-gray-400'}">
-                                ${included ? 'Có' : 'Không'}
-                            </span>
-                        </div>
-                    </div>
-                    ${notes ? `
-                        <div class="mt-2 text-sm text-gray-500">
-                            <i class="fas fa-sticky-note mr-1"></i>
-                            ${escapeHtml(notes)}
-                        </div>
-                    ` : ''}
-                    <input type="hidden" name="day_service_day_number[]" value="${dayNumber}">
-                    <input type="hidden" name="day_service_service_id[]" value="${serviceId}">
-                    <input type="hidden" name="day_service_provider_id[]" value="${providerId || ''}">
-                    <input type="hidden" name="day_service_name[]" value="${escapeHtml(serviceName)}">
-                    <input type="hidden" name="day_service_unit_price[]" value="${unitPrice}">
-                    <input type="hidden" name="day_service_quantity[]" value="${quantity}">
-                    <input type="hidden" name="day_service_unit[]" value="${escapeHtml(unit)}">
-                    <input type="hidden" name="day_service_notes[]" value="${escapeHtml(notes)}">
-                </div>
-                <div class="flex-shrink-0">
-                    <button type="button" onclick="removeDayService(this)" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    if (container.innerHTML.includes('Chưa có dịch vụ')) {
-        container.innerHTML = serviceHtml;
-    } else {
-        container.insertAdjacentHTML('beforeend', serviceHtml);
-    }
-    
-    updateDayServiceTotal(dayNumber);
-    closeAddServiceModal(dayNumber);
-}
-
-// Helper functions
-function removeTimelineItem(btn) {
-    if (confirm('Bạn có chắc muốn xóa timeline item này?')) {
-        const item = btn.closest('.timeline-item');
-        const dayNumber = item.getAttribute('data-day');
-        item.remove();
-        sortTimelineByTime(dayNumber);
-    }
-}
-
-function removeDayService(btn) {
-    if (confirm('Bạn có chắc muốn xóa dịch vụ này?')) {
-        const item = btn.closest('.day-service-item');
-        const container = item.closest('.itinerary-manager');
-        const dayNumber = container.getAttribute('data-day');
-        item.remove();
-        updateDayServiceTotal(dayNumber);
-    }
-}
-
-function updateDayServiceTotal(dayNumber) {
-    const container = document.getElementById(`day-services-list-day-${dayNumber}`);
-    const items = container.querySelectorAll('.day-service-item');
-    let total = 0;
-    
-    items.forEach(item => {
-        const checkbox = item.querySelector('[name^="day_service_included"]');
-        if (checkbox && checkbox.checked) {
-            const unitPrice = parseFloat(item.querySelector('[name="day_service_unit_price[]"]').value || 0);
-            const quantity = parseFloat(item.querySelector('[name="day_service_quantity[]"]').value || 1);
-            total += (unitPrice * quantity);
-        }
-    });
-    
-    const totalEl = document.getElementById(`day-total-${dayNumber}`);
-    if (totalEl) {
-        totalEl.textContent = formatCurrency(total) + '/người';
-    }
-}
-
-function sortTimelineByTime(dayNumber) {
-    const container = document.getElementById(`timeline-items-day-${dayNumber}`);
-    const items = Array.from(container.querySelectorAll('.timeline-item'));
-    
-    items.sort((a, b) => {
-        const timeA = a.querySelector('[name="timeline_time[]"]').value || '00:00:00';
-        const timeB = b.querySelector('[name="timeline_time[]"]').value || '00:00:00';
-        return timeA.localeCompare(timeB);
-    });
-    
-    items.forEach(item => container.appendChild(item));
-    updateDisplayOrder(dayNumber);
-}
-
-function updateDisplayOrder(dayNumber) {
-    const container = document.getElementById(`timeline-items-day-${dayNumber}`);
-    const items = container.querySelectorAll('.timeline-item');
-    items.forEach((item, index) => {
-        const orderInput = item.querySelector('[name="timeline_display_order[]"]');
-        if (orderInput) {
-            orderInput.value = index;
-        }
-    });
-}
-
-function moveTimelineUp(btn) {
-    const item = btn.closest('.timeline-item');
-    const prev = item.previousElementSibling;
-    if (prev) {
-        item.parentNode.insertBefore(item, prev);
-    }
-    const dayNumber = item.getAttribute('data-day');
-    updateDisplayOrder(dayNumber);
-}
-
-function moveTimelineDown(btn) {
-    const item = btn.closest('.timeline-item');
-    const next = item.nextElementSibling;
-    if (next) {
-        item.parentNode.insertBefore(next, item);
-    }
-    const dayNumber = item.getAttribute('data-day');
-    updateDisplayOrder(dayNumber);
-}
-
-function updateTimelineType(select) {
-    const item = select.closest('.timeline-item');
-    const type = select.value;
-    const dot = item.querySelector('.absolute.-left-6');
-    const typeLabel = item.querySelector('.text-sm.font-medium.text-gray-600');
-    
-    const typeIcons = {
-        'meal': '🍽️',
-        'accommodation': '🏨',
-        'activity': '🎯',
-        'transport': '🚌'
-    };
-    
-    const typeLabels = {
-        'meal': 'Bữa ăn',
-        'accommodation': 'Nơi nghỉ',
-        'activity': 'Hoạt động',
-        'transport': 'Di chuyển'
-    };
-    
-    const typeColors = {
-        'meal': 'bg-orange-50 border-orange-200',
-        'accommodation': 'bg-blue-50 border-blue-200',
-        'activity': 'bg-green-50 border-green-200',
-        'transport': 'bg-purple-50 border-purple-200'
-    };
-    
-    if (dot) {
-        dot.innerHTML = `<span class="text-sm">${typeIcons[type] || '🎯'}</span>`;
-    }
-    
-    if (typeLabel) {
-        typeLabel.textContent = typeLabels[type] || 'Hoạt động';
-    }
-    
-    item.className = item.className.replace(/bg-\w+-\d+ border-\w+-\d+/g, '');
-    item.classList.add(...typeColors[type].split(' '));
-}
-
-function updateLocationFromProvider(select, dayNumber) {
-    const item = select.closest('.timeline-item') || select.closest('.itinerary-manager');
-    const locationInput = item ? item.querySelector('[name="timeline_location[]"], #modal-timeline-location-day-' + dayNumber) : null;
-    const selectedOption = select.options[select.selectedIndex];
-    const address = selectedOption.getAttribute('data-address');
-    
-    if (locationInput && address && !locationInput.value) {
-        locationInput.value = address;
-    }
-}
-
-function promptAddToDayServices(select, dayNumber) {
-    if (!select.value) return;
-    
-    const serviceId = select.value;
-    const serviceName = select.options[select.selectedIndex].text;
-    const providerSelect = select.closest('.timeline-item')?.querySelector('[name="timeline_service_provider[]"]') || 
-                          document.getElementById(`modal-timeline-provider-day-${dayNumber}`);
-    const providerId = providerSelect ? providerSelect.value : '';
-    
-    if (providerId && confirm(`Bạn có muốn thêm dịch vụ "${serviceName}" vào danh sách dịch vụ của ngày ${dayNumber} không?`)) {
-        // Auto-fill service modal
-        document.getElementById(`modal-service-id-day-${dayNumber}`).value = serviceId;
-        if (providerId) {
-            document.getElementById(`modal-service-provider-id-day-${dayNumber}`).value = providerId;
-        }
-        loadServiceInfo(document.getElementById(`modal-service-id-day-${dayNumber}`), dayNumber);
-        openAddServiceModal(dayNumber);
-    }
-}
-
-function loadServiceInfo(select, dayNumber) {
-    const serviceId = select.value;
-    if (!serviceId) return;
-    
-    fetch(`?act=admin&module=tours&action=getServiceInfo&id=${serviceId}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const priceInput = document.getElementById(`modal-unit-price-day-${dayNumber}`);
-                const unitInput = document.getElementById(`modal-unit-day-${dayNumber}`);
-                if (priceInput && data.data.unit_price > 0) {
-                    priceInput.value = data.data.unit_price;
-                }
-                if (unitInput && data.data.unit) {
-                    unitInput.value = data.data.unit;
-                }
-            }
-        });
-}
-
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('vi-VN').format(Math.round(amount || 0)) + 'đ';
-}
-
-function formatNumber(num) {
-    return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num);
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Data from PHP - Store in global scope for this day
-window.itineraryManagerData = window.itineraryManagerData || {};
-window.itineraryManagerData[<?= $day_number ?>] = {
-    destinations: <?= json_encode($destinations) ?>,
-    services: <?= json_encode($services) ?>,
-    serviceProviders: <?= json_encode($service_providers) ?>
-};
-
-function getServiceProviderOptions(dayNumber, selectedId) {
-    let options = '<option value="">-- Chọn nhà dịch vụ --</option>';
-    const data = window.itineraryManagerData[dayNumber];
-    if (!data || !data.serviceProviders) return options;
-    
-    const providers = data.serviceProviders;
-    if (Array.isArray(providers)) {
-        providers.forEach(provider => {
-            const id = (typeof provider === 'object' && provider.id) ? provider.id : null;
-            const name = (typeof provider === 'object' && provider.name) ? provider.name : provider;
-            const address = (typeof provider === 'object' && provider.address) ? provider.address : '';
-            const selected = selectedId && String(id) === String(selectedId) ? 'selected' : '';
-            options += `<option value="${id}" data-address="${escapeHtml(address)}" ${selected}>${escapeHtml(name)}</option>`;
-        });
-    } else {
-        for (const [id, name] of Object.entries(providers)) {
-            const selected = selectedId && String(id) === String(selectedId) ? 'selected' : '';
-            options += `<option value="${id}" ${selected}>${escapeHtml(name)}</option>`;
-        }
-    }
-    return options;
-}
-
-function getDestinationOptions(dayNumber, selectedId) {
-    let options = '<option value="">-- Chọn địa điểm --</option>';
-    const data = window.itineraryManagerData[dayNumber];
-    if (!data || !data.destinations) return options;
-    
-    const dests = data.destinations;
-    if (Array.isArray(dests)) {
-        dests.forEach(dest => {
-            const id = (typeof dest === 'object' && dest.id) ? dest.id : null;
-            const name = (typeof dest === 'object' && dest.name) ? dest.name : dest;
-            const selected = selectedId && String(id) === String(selectedId) ? 'selected' : '';
-            options += `<option value="${id}" ${selected}>${escapeHtml(name)}</option>`;
-        });
-    } else {
-        for (const [id, name] of Object.entries(dests)) {
-            const selected = selectedId && String(id) === String(selectedId) ? 'selected' : '';
-            options += `<option value="${id}" ${selected}>${escapeHtml(name)}</option>`;
-        }
-    }
-    return options;
-}
-
-function getServiceOptions(dayNumber, selectedId) {
-    let options = '<option value="">-- Chọn dịch vụ --</option>';
-    const data = window.itineraryManagerData[dayNumber];
-    if (!data || !data.services) return options;
-    
-    const services = data.services;
-    if (Array.isArray(services)) {
-        services.forEach(service => {
-            const id = (typeof service === 'object' && service.id) ? service.id : null;
-            const name = (typeof service === 'object' && service.name) ? service.name : service;
-            const selected = selectedId && String(id) === String(selectedId) ? 'selected' : '';
-            options += `<option value="${id}" ${selected}>${escapeHtml(name)}</option>`;
-        });
-    } else {
-        for (const [id, name] of Object.entries(services)) {
-            const selected = selectedId && String(id) === String(selectedId) ? 'selected' : '';
-            options += `<option value="${id}" ${selected}>${escapeHtml(name)}</option>`;
-        }
-    }
-    return options;
-}
+<!-- Data for JavaScript -->
+<script type="application/json" id="itinerary-manager-data-<?= $day_number ?>">
+<?= json_encode([
+    'day_number' => $day_number,
+    'timeline_count' => count($timeline_items),
+    'services_count' => count($day_services),
+    'destinations' => $destinations,
+    'services' => $services,
+    'service_providers' => $service_providers
+]) ?>
 </script>
-
