@@ -286,25 +286,23 @@
 
 <!-- Modal: Create/Edit Price -->
 <div id="priceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <h3 class="text-xl font-bold mb-4" id="priceModalTitle">Thêm giá dịch vụ</h3>
+        
+        <!-- Context Info -->
+        <div id="priceModalContext" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+            <div class="mb-2">
+                <span class="font-medium text-blue-800">📍 Nhà dịch vụ: </span>
+                <span id="priceContextText" class="text-blue-700"></span>
+            </div>
+            <div class="text-xs text-gray-600 mt-2">
+                <strong>💡 Lưu ý:</strong> Giá này áp dụng cho dịch vụ của nhà cung cấp. Bạn có thể thêm nhiều giá khác nhau cho cùng dịch vụ (khác loại giá hoặc khác thời gian).
+            </div>
+        </div>
+        
         <form id="priceForm">
             <input type="hidden" id="priceId" name="id">
             <input type="hidden" id="priceServiceId" name="service_id">
-
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-1">Tỉnh thành</label>
-                <select id="priceProvinceId" name="province_id" class="w-full px-3 py-2 border rounded">
-                    <option value="">-- Chọn tỉnh thành --</option>
-                </select>
-            </div>
-
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-1">Địa điểm</label>
-                <select id="priceDestinationId" name="destination_id" class="w-full px-3 py-2 border rounded">
-                    <option value="">-- Chọn địa điểm (tùy chọn) --</option>
-                </select>
-            </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1">Giá *</label>
@@ -313,31 +311,28 @@
             </div>
 
             <div class="mb-4">
-                <label class="block text-sm font-medium mb-1">Loại tiền</label>
-                <select id="priceCurrency" name="currency" class="w-full px-3 py-2 border rounded">
-                    <option value="VND">VND</option>
-                    <option value="USD">USD</option>
-                </select>
-            </div>
-
-            <div class="mb-4">
                 <label class="block text-sm font-medium mb-1">Loại giá</label>
                 <select id="priceType" name="price_type" class="w-full px-3 py-2 border rounded">
                     <option value="standard">Tiêu chuẩn</option>
-                    <option value="peak">Cao điểm</option>
-                    <option value="low">Thấp điểm</option>
-                    <option value="custom">Tùy chỉnh</option>
+                    <option value="peak">Cao điểm (Mùa cao điểm, lễ tết)</option>
+                    <option value="low">Thấp điểm (Mùa thấp điểm, off-season)</option>
                 </select>
+                <p class="text-xs text-gray-500 mt-1">
+                    <strong>Lưu ý:</strong> Có thể thêm nhiều giá cùng loại nhưng khác thời gian (từ ngày - đến ngày). 
+                    Ví dụ: Giá cao điểm từ 1/1-7/1 và giá cao điểm từ 15/1-20/1 là 2 giá riêng biệt.
+                </p>
             </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1">Từ ngày</label>
-                <input type="date" id="priceValidFrom" name="valid_from" class="w-full px-3 py-2 border rounded">
+                <input type="date" id="priceValidFrom" name="start_date" class="w-full px-3 py-2 border rounded">
+                <p class="text-xs text-gray-500 mt-1">Để trống nếu giá áp dụng vô thời hạn</p>
             </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1">Đến ngày</label>
-                <input type="date" id="priceValidTo" name="valid_to" class="w-full px-3 py-2 border rounded">
+                <input type="date" id="priceValidTo" name="end_date" class="w-full px-3 py-2 border rounded">
+                <p class="text-xs text-gray-500 mt-1">Để trống nếu giá áp dụng vô thời hạn</p>
             </div>
 
             <div class="mb-4">
@@ -766,43 +761,31 @@
         $('#priceId').val('');
         $('#priceServiceId').val(serviceId);
 
-        // Load dropdown data for price modal
+        // Load service info để hiển thị context
         $.ajax({
-            url: '?act=admin&module=location-services&action=getDropdownData',
+            url: `?act=admin&module=location-services&action=getService&id=${serviceId}`,
             method: 'GET',
             dataType: 'json',
-            success: function (response) {
-                if (response.success) {
-                    // Populate provinces
-                    const $provinceSelect = $('#priceProvinceId');
-                    $provinceSelect.empty().append('<option value="">-- Chọn tỉnh thành --</option>');
-                    if (response.data.provinces && Array.isArray(response.data.provinces)) {
-                        response.data.provinces.forEach(function (province) {
-                            const name = province.name || province;
-                            const id = province.id || province;
-                            $provinceSelect.append(`<option value="${id}">${name}</option>`);
-                        });
-                    } else if (typeof response.data.provinces === 'object') {
-                        for (const [id, name] of Object.entries(response.data.provinces)) {
-                            $provinceSelect.append(`<option value="${id}">${name}</option>`);
-                        }
-                    }
+            success: function (serviceResponse) {
+                if (serviceResponse.success && serviceResponse.data) {
+                    const service = serviceResponse.data;
+                    const providerName = service.service_provider_name || '';
+                    const serviceName = service.name || '';
 
-                    // Populate destinations
-                    const $destSelect = $('#priceDestinationId');
-                    $destSelect.empty().append('<option value="">-- Chọn địa điểm (tùy chọn) --</option>');
-                    if (response.data.destinations && Array.isArray(response.data.destinations)) {
-                        response.data.destinations.forEach(function (dest) {
-                            const name = dest.name || dest;
-                            const id = dest.id || dest;
-                            $destSelect.append(`<option value="${id}">${name}</option>`);
-                        });
-                    } else if (typeof response.data.destinations === 'object') {
-                        for (const [id, name] of Object.entries(response.data.destinations)) {
-                            $destSelect.append(`<option value="${id}">${name}</option>`);
-                        }
-                    }
+                    // Hiển thị context
+                    let contextParts = [];
+                    if (providerName) contextParts.push(providerName);
+                    if (serviceName) contextParts.push(serviceName);
+                    const contextText = contextParts.length > 0
+                        ? contextParts.join(' > ')
+                        : 'Đang thêm giá dịch vụ';
+                    $('#priceContextText').text(contextText);
+                } else {
+                    showToast('Không thể tải thông tin dịch vụ', 'error');
                 }
+            },
+            error: function () {
+                showToast('Lỗi khi tải thông tin dịch vụ', 'error');
             }
         });
 
@@ -815,6 +798,14 @@
 
     $('#priceForm').on('submit', function (e) {
         e.preventDefault();
+        
+        // Validate: service_id phải có
+        const serviceId = $('#priceServiceId').val();
+        if (!serviceId) {
+            showToast('Không thể xác định dịch vụ. Vui lòng thử lại.', 'error');
+            return;
+        }
+        
         const formData = $(this).serialize();
         const action = $('#priceId').val() ? 'updatePrice' : 'createPrice';
 

@@ -51,8 +51,8 @@ class ServicePrice
                 WHERE service_id = :service_id
                   AND status = 'active'
                   AND (
-                    (valid_from IS NULL OR valid_from <= :date)
-                    AND (valid_to IS NULL OR valid_to >= :date)
+                    (start_date IS NULL OR start_date <= :date)
+                    AND (end_date IS NULL OR end_date >= :date)
                   )
             ";
             $params = [
@@ -109,8 +109,8 @@ class ServicePrice
 
             if (!empty($filters['date'])) {
                 $where_conditions[] = "(
-                    (valid_from IS NULL OR valid_from <= :date)
-                    AND (valid_to IS NULL OR valid_to >= :date)
+                    (start_date IS NULL OR start_date <= :date)
+                    AND (end_date IS NULL OR end_date >= :date)
                 )";
                 $params['date'] = $filters['date'];
             }
@@ -126,7 +126,7 @@ class ServicePrice
                 LEFT JOIN destinations d ON sp.destination_id = d.id
                 LEFT JOIN provinces p ON sp.province_id = p.id
                 {$where_clause}
-                ORDER BY sp.destination_id DESC, sp.province_id DESC, sp.valid_from ASC
+                ORDER BY sp.destination_id DESC, sp.province_id DESC, sp.start_date ASC
             ";
 
             $stmt = $this->pdo->prepare($sql);
@@ -174,44 +174,48 @@ class ServicePrice
     public function create($data)
     {
         try {
-            // Validate: phải có destination_id HOẶC province_id
-            if (empty($data['destination_id']) && empty($data['province_id'])) {
-                throw new Exception("Phải chọn địa điểm (destination) hoặc tỉnh thành (province).");
+            // Validate: service_id là bắt buộc
+            if (empty($data['service_id'])) {
+                throw new Exception("Thiếu service_id.");
             }
 
-            // Validate: không được có cả 2
-            if (!empty($data['destination_id']) && !empty($data['province_id'])) {
-                throw new Exception("Chỉ được chọn một trong hai: địa điểm hoặc tỉnh thành.");
-            }
+            // destination_id và province_id là optional, không bắt buộc
+            // Nếu có destination_id thì không dùng province_id (destination cụ thể hơn)
 
-            // Validate: valid_to phải >= valid_from
-            if (!empty($data['valid_from']) && !empty($data['valid_to'])) {
-                if (strtotime($data['valid_to']) < strtotime($data['valid_from'])) {
+            // Validate: end_date phải >= start_date
+            $start_date = $data['start_date'] ?? $data['valid_from'] ?? null;
+            $end_date = $data['end_date'] ?? $data['valid_to'] ?? null;
+            
+            if (!empty($start_date) && !empty($end_date)) {
+                if (strtotime($end_date) < strtotime($start_date)) {
                     throw new Exception("Ngày kết thúc phải sau ngày bắt đầu.");
                 }
             }
 
-            // Check overlap với giá hiện có
-            $overlap = $this->checkPriceOverlap(
-                $data['service_id'],
-                $data['destination_id'] ?? null,
-                $data['province_id'] ?? null,
-                $data['valid_from'] ?? null,
-                $data['valid_to'] ?? null
-            );
+            // Check overlap với giá hiện có (chỉ check nếu có destination_id hoặc province_id)
+            // Nếu không có cả 2 thì cho phép nhiều giá cùng loại khác thời gian
+            if (!empty($data['destination_id']) || !empty($data['province_id'])) {
+                $overlap = $this->checkPriceOverlap(
+                    $data['service_id'],
+                    $data['destination_id'] ?? null,
+                    $data['province_id'] ?? null,
+                    $start_date,
+                    $end_date
+                );
 
-            if ($overlap) {
-                throw new Exception("Đã có giá cho khoảng thời gian này. Vui lòng kiểm tra lại.");
+                if ($overlap) {
+                    throw new Exception("Đã có giá cho địa điểm/tỉnh thành này trong khoảng thời gian này. Vui lòng kiểm tra lại.");
+                }
             }
 
             $stmt = $this->pdo->prepare("
                 INSERT INTO service_prices (
                     service_id, destination_id, province_id,
-                    unit_price, currency, valid_from, valid_to,
+                    unit_price, start_date, end_date,
                     price_type, notes, status, created_by
                 ) VALUES (
                     :service_id, :destination_id, :province_id,
-                    :unit_price, :currency, :valid_from, :valid_to,
+                    :unit_price, :start_date, :end_date,
                     :price_type, :notes, :status, :created_by
                 )
             ");
@@ -221,9 +225,8 @@ class ServicePrice
                 'destination_id' => $data['destination_id'] ?? null,
                 'province_id' => $data['province_id'] ?? null,
                 'unit_price' => $data['unit_price'],
-                'currency' => $data['currency'] ?? 'VND',
-                'valid_from' => $data['valid_from'] ?? null,
-                'valid_to' => $data['valid_to'] ?? null,
+                'start_date' => $data['valid_from'] ?? $data['start_date'] ?? null,
+                'end_date' => $data['valid_to'] ?? $data['end_date'] ?? null,
                 'price_type' => $data['price_type'] ?? 'standard',
                 'notes' => $data['notes'] ?? null,
                 'status' => $data['status'] ?? 'active',
@@ -241,7 +244,7 @@ class ServicePrice
     /**
      * Kiểm tra giá có bị trùng khoảng thời gian không
      */
-    private function checkPriceOverlap($service_id, $destination_id, $province_id, $valid_from, $valid_to)
+    private function checkPriceOverlap($service_id, $destination_id, $province_id, $start_date, $end_date)
     {
         try {
             $sql = "
@@ -267,19 +270,19 @@ class ServicePrice
             }
 
             // Check overlap
-            if ($valid_from && $valid_to) {
+            if ($start_date && $end_date) {
                 $sql .= " AND (
-                    (valid_from IS NULL OR valid_from <= :valid_to)
-                    AND (valid_to IS NULL OR valid_to >= :valid_from)
+                    (start_date IS NULL OR start_date <= :end_date)
+                    AND (end_date IS NULL OR end_date >= :start_date)
                 )";
-                $params['valid_from'] = $valid_from;
-                $params['valid_to'] = $valid_to;
-            } elseif ($valid_from) {
-                $sql .= " AND (valid_to IS NULL OR valid_to >= :valid_from)";
-                $params['valid_from'] = $valid_from;
-            } elseif ($valid_to) {
-                $sql .= " AND (valid_from IS NULL OR valid_from <= :valid_to)";
-                $params['valid_to'] = $valid_to;
+                $params['start_date'] = $start_date;
+                $params['end_date'] = $end_date;
+            } elseif ($start_date) {
+                $sql .= " AND (end_date IS NULL OR end_date >= :start_date)";
+                $params['start_date'] = $start_date;
+            } elseif ($end_date) {
+                $sql .= " AND (start_date IS NULL OR start_date <= :end_date)";
+                $params['end_date'] = $end_date;
             }
 
             $stmt = $this->pdo->prepare($sql);
@@ -301,8 +304,8 @@ class ServicePrice
     {
         try {
             $allowed_fields = [
-                'unit_price', 'currency', 'valid_from', 'valid_to',
-                'price_type', 'notes', 'status'
+                'unit_price', 'start_date', 'end_date',
+                'price_type', 'notes', 'status', 'min_quantity', 'max_quantity'
             ];
 
             $set_parts = [];
@@ -314,10 +317,22 @@ class ServicePrice
                     $params[$field] = $data[$field];
                 }
             }
+            
+            // Support both valid_from/valid_to and start_date/end_date
+            if (isset($data['valid_from']) && !isset($data['start_date'])) {
+                $set_parts[] = "start_date = :start_date";
+                $params['start_date'] = $data['valid_from'];
+            }
+            if (isset($data['valid_to']) && !isset($data['end_date'])) {
+                $set_parts[] = "end_date = :end_date";
+                $params['end_date'] = $data['valid_to'];
+            }
 
             // Validate dates
-            if (isset($data['valid_from']) && isset($data['valid_to'])) {
-                if (strtotime($data['valid_to']) < strtotime($data['valid_from'])) {
+            $start_date = $data['start_date'] ?? $data['valid_from'] ?? null;
+            $end_date = $data['end_date'] ?? $data['valid_to'] ?? null;
+            if ($start_date && $end_date) {
+                if (strtotime($end_date) < strtotime($start_date)) {
                     throw new Exception("Ngày kết thúc phải sau ngày bắt đầu.");
                 }
             }

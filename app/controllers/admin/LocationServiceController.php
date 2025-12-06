@@ -959,14 +959,21 @@ class LocationServiceController
                 throw new Exception("Vui lòng điền đầy đủ thông tin.");
             }
 
+            // Validate service tồn tại
+            $service = $this->serviceModel->findById((int) $_POST['service_id']);
+            if (!$service) {
+                throw new Exception("Không tìm thấy dịch vụ.");
+            }
+
+            // Giá chỉ gắn với service, không cần destination_id hay province_id
+            // destination_id và province_id là optional (nếu muốn giá riêng cho địa điểm/tỉnh cụ thể)
             $data = [
                 'service_id' => (int) $_POST['service_id'],
                 'destination_id' => !empty($_POST['destination_id']) ? (int) $_POST['destination_id'] : null,
                 'province_id' => !empty($_POST['province_id']) ? (int) $_POST['province_id'] : null,
                 'unit_price' => (float) $_POST['unit_price'],
-                'currency' => $_POST['currency'] ?? 'VND',
-                'valid_from' => !empty($_POST['valid_from']) ? $_POST['valid_from'] : null,
-                'valid_to' => !empty($_POST['valid_to']) ? $_POST['valid_to'] : null,
+                'start_date' => !empty($_POST['start_date']) ? $_POST['start_date'] : (!empty($_POST['valid_from']) ? $_POST['valid_from'] : null),
+                'end_date' => !empty($_POST['end_date']) ? $_POST['end_date'] : (!empty($_POST['valid_to']) ? $_POST['valid_to'] : null),
                 'price_type' => $_POST['price_type'] ?? 'standard',
                 'notes' => isset($_POST['notes']) ? sanitize($_POST['notes']) : null,
                 'status' => 'active'
@@ -1009,9 +1016,8 @@ class LocationServiceController
             $id = (int) $_POST['id'];
             $data = [
                 'unit_price' => (float) $_POST['unit_price'],
-                'currency' => $_POST['currency'] ?? 'VND',
-                'valid_from' => !empty($_POST['valid_from']) ? $_POST['valid_from'] : null,
-                'valid_to' => !empty($_POST['valid_to']) ? $_POST['valid_to'] : null,
+                'start_date' => !empty($_POST['start_date']) ? $_POST['start_date'] : (!empty($_POST['valid_from']) ? $_POST['valid_from'] : null),
+                'end_date' => !empty($_POST['end_date']) ? $_POST['end_date'] : (!empty($_POST['valid_to']) ? $_POST['valid_to'] : null),
                 'price_type' => $_POST['price_type'] ?? 'standard',
                 'notes' => isset($_POST['notes']) ? sanitize($_POST['notes']) : null
             ];

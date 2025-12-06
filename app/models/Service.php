@@ -133,10 +133,16 @@ class Service
                     s.*,
                     st.name as service_type_name,
                     sp.name as service_provider_name,
-                    sp.service_code as service_provider_code
+                    sp.service_code as service_provider_code,
+                    sp.province_id,
+                    sp.country_id,
+                    p.name as province_name,
+                    c.name as country_name
                 FROM services s
                 LEFT JOIN service_types st ON s.service_type_id = st.id
                 LEFT JOIN service_providers sp ON s.service_provider_id = sp.id
+                LEFT JOIN provinces p ON sp.province_id = p.id
+                LEFT JOIN countries c ON sp.country_id = c.id
                 WHERE s.id = :id
                 LIMIT 1
             ");
