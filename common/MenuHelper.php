@@ -84,34 +84,16 @@ function get_menu_items($role)
             ],
             // Danh mục & Cấu hình khác
             [
-                'icon' => '📂',
-                'label' => 'Danh mục Tour',
-                'url' => $base_url . '/?act=admin&module=categories',
-                'active_pattern' => 'admin:categories'
-            ],
-            [
                 'icon' => '🌍',
-                'label' => 'Địa điểm',
-                'url' => $base_url . '/?act=admin&module=destinations',
-                'active_pattern' => 'admin:destinations'
-            ],
-            [
-                'icon' => '🛠️',
-                'label' => 'Dịch vụ',
-                'url' => $base_url . '/?act=admin&module=services',
-                'active_pattern' => 'admin:services'
+                'label' => 'Địa điểm & Dịch vụ',
+                'url' => $base_url . '/?act=admin&module=location-services',
+                'active_pattern' => 'admin:location-services'
             ],
             [
                 'icon' => '🛎️',
                 'label' => 'Loại dịch vụ',
                 'url' => $base_url . '/?act=admin&module=service-types',
                 'active_pattern' => 'admin:service-types'
-            ],
-            [
-                'icon' => '🏢',
-                'label' => 'Nhà cung cấp',
-                'url' => $base_url . '/?act=admin&module=suppliers',
-                'active_pattern' => 'admin:suppliers'
             ],
         ],
 

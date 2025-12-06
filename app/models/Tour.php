@@ -1,17 +1,20 @@
 <?php
 /**
  * ==============================================================================
- * TOUR MODEL
+ * TOUR MODEL - HOÀN TOÀN MỚI THEO FLOW ANALYSIS
  * ==============================================================================
  * 
- * Quản lý toàn bộ dữ liệu về Tour:
- * - Thông tin cơ bản (tours table)
+ * Quản lý toàn bộ dữ liệu về Tour theo flow mới:
+ * - Thông tin cơ bản (tours table) - KHÔNG có category_id, price_based_on_pax
  * - Lịch trình (itineraries)
+ * - Timeline chi tiết (itinerary_timelines) - MỚI
+ * - Dịch vụ theo ngày (itinerary_day_services) - MỚI (thay thế tour_services)
+ * - Chính sách (tour_policies) - MỚI
  * - Hình ảnh (tour_images)
- * - Chính sách, FAQ, Highlights...
+ * - Highlights, Included/Excluded
  * 
- * @version 1.0
- * @date 2024-12-02
+ * @version 2.0
+ * @date 2024-12-06
  * ==============================================================================
  */
 
@@ -26,6 +29,7 @@ class Tour
 
     /**
      * Lấy danh sách tours (có phân trang & lọc)
+     * ĐÃ XÓA: category_id filter
      */
     public function getAll($filters = [], $page = 1, $per_page = 10)
     {
@@ -39,10 +43,10 @@ class Tour
                 $params['status'] = $filters['status'];
             }
 
-            // Filter by Category
-            if (!empty($filters['category_id'])) {
-                $where_conditions[] = "t.category_id = :category_id";
-                $params['category_id'] = $filters['category_id'];
+            // Filter by Approval Status
+            if (!empty($filters['approval_status'])) {
+                $where_conditions[] = "t.approval_status = :approval_status";
+                $params['approval_status'] = $filters['approval_status'];
             }
 
             // Filter by Tour Type
@@ -77,10 +81,9 @@ class Tour
             $params['limit'] = $per_page;
 
             $sql = "
-                SELECT t.*, c.name as category_name,
+                SELECT t.*,
                        (SELECT image_url FROM tour_images WHERE tour_id = t.id AND is_primary = 1 LIMIT 1) as thumbnail
                 FROM tours t
-                LEFT JOIN categories c ON t.category_id = c.id
                 {$where_clause}
                 ORDER BY t.created_at DESC
                 LIMIT :limit OFFSET :offset
@@ -129,12 +132,7 @@ class Tour
     {
         try {
             // 1. Basic Info
-            $stmt = $this->pdo->prepare("
-                SELECT t.*, c.name as category_name 
-                FROM tours t
-                LEFT JOIN categories c ON t.category_id = c.id
-                WHERE t.id = :id LIMIT 1
-            ");
+            $stmt = $this->pdo->prepare("SELECT * FROM tours WHERE id = :id LIMIT 1");
             $stmt->execute(['id' => $id]);
             $tour = $stmt->fetch();
 
@@ -147,12 +145,21 @@ class Tour
             // 3. Itinerary
             $tour['itinerary'] = $this->getItinerary($id);
 
-            // 4. Highlights
+            // 4. Itinerary Timelines (MỚI)
+            $tour['itinerary_timelines'] = $this->getItineraryTimelines($id);
+
+            // 5. Itinerary Day Services (MỚI)
+            $tour['itinerary_day_services'] = $this->getItineraryDayServices($id);
+
+            // 6. Highlights
             $tour['highlights'] = $this->getHighlights($id);
 
-            // 5. Included/Excluded
+            // 7. Included/Excluded
             $tour['includes'] = $this->getIncludedExcluded($id, 'included');
             $tour['excludes'] = $this->getIncludedExcluded($id, 'excluded');
+
+            // 8. Policies (MỚI)
+            $tour['policies'] = $this->getPolicies($id);
 
             return $tour;
 
@@ -164,13 +171,13 @@ class Tour
 
     /**
      * Lấy danh sách tours làm template (chỉ public tours đã approved)
+     * ĐÃ XÓA: category_id references
      */
     public function getTemplates()
     {
         $sql = "SELECT t.id, t.tour_code, t.name, t.duration_days, t.duration_nights,
-                       t.adult_price, t.category_id, c.name as category_name
+                       t.adult_price
                 FROM tours t
-                LEFT JOIN categories c ON t.category_id = c.id
                 WHERE t.tour_type = 'public' 
                   AND t.status = 'active'
                   AND t.approval_status = 'approved'
@@ -181,63 +188,69 @@ class Tour
     }
 
     /**
-     * Lấy thông tin đầy đủ của tour để clone (bao gồm itinerary, services, highlights)
+     * Lấy thông tin đầy đủ của tour để clone (bao gồm tất cả dữ liệu)
      */
     public function getForClone($id)
     {
         $tour = $this->findById($id);
-        if (!$tour) return null;
+        if (!$tour)
+            return null;
 
-        // Lấy thêm tour_services
-        $sql = "SELECT ts.*, s.name as service_name_original, s.supplier_id
-                FROM tour_services ts
-                LEFT JOIN services s ON ts.service_id = s.id
-                WHERE ts.tour_id = :id";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['id' => $id]);
-        $tour['services'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Clone tất cả dữ liệu (đã có trong findById)
+        // Không clone hình ảnh (phải upload mới)
+        unset($tour['images']);
 
         return $tour;
     }
 
     /**
-     * Tạo Tour mới (Transaction)
+     * Tạo Tour mới (Transaction) - THEO FLOW MỚI
      */
     public function create($data)
     {
         try {
             $this->pdo->beginTransaction();
 
-            // 1. Insert Tours Table
+            // 1. Insert Tours Table - ĐÃ XÓA category_id, price_based_on_pax
             $sql = "INSERT INTO tours (
-                tour_code, category_id, name, description, duration_days, duration_nights,
-                departure_location, min_participants, max_participants, price_based_on_pax,
-                adult_price, child_price, infant_price, deposit_percentage,
-                tour_type, status, parent_tour_id, created_by
+                tour_code, name, introduction, description, duration_days, duration_nights,
+                departure_location, min_participants, max_participants,
+                adult_price, child_price, infant_price, estimated_cost_per_person,
+                deposit_percentage, booking_deadline_days,
+                fixed_cost_guide, fixed_cost_management, fixed_cost_marketing, fixed_cost_other,
+                tour_type, approval_status, status, parent_tour_id, created_by
             ) VALUES (
-                :code, :category_id, :name, :description, :duration_days, :duration_nights,
-                :departure_location, :min_participants, :max_participants, :price_based_on_pax,
-                :adult_price, :child_price, :infant_price, :deposit_percentage,
-                :tour_type, :status, :parent_tour_id, :created_by
+                :code, :name, :introduction, :description, :duration_days, :duration_nights,
+                :departure_location, :min_participants, :max_participants,
+                :adult_price, :child_price, :infant_price, :estimated_cost_per_person,
+                :deposit_percentage, :booking_deadline_days,
+                :fixed_cost_guide, :fixed_cost_management, :fixed_cost_marketing, :fixed_cost_other,
+                :tour_type, :approval_status, :status, :parent_tour_id, :created_by
             )";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
                 'code' => $data['code'],
-                'category_id' => $data['category_id'],
                 'name' => $data['name'],
-                'description' => $data['description'] ?? '',
+                'introduction' => $data['introduction'] ?? null,
+                'description' => $data['description'] ?? null,
                 'duration_days' => $data['duration_days'],
-                'duration_nights' => $data['duration_nights'],
-                'departure_location' => $data['departure_location'],
-                'min_participants' => $data['min_participants'] ?? 10,
+                'duration_nights' => $data['duration_nights'] ?? 0,
+                'departure_location' => $data['departure_location'] ?? null,
+                'min_participants' => $data['min_participants'] ?? 15,
                 'max_participants' => $data['max_participants'] ?? 45,
-                'price_based_on_pax' => $data['price_based_on_pax'] ?? 30,
                 'adult_price' => $data['adult_price'],
                 'child_price' => $data['child_price'] ?? 0,
                 'infant_price' => $data['infant_price'] ?? 0,
+                'estimated_cost_per_person' => $data['estimated_cost_per_person'] ?? null,
                 'deposit_percentage' => $data['deposit_percentage'] ?? 30,
+                'booking_deadline_days' => $data['booking_deadline_days'] ?? 1,
+                'fixed_cost_guide' => $data['fixed_cost_guide'] ?? 0,
+                'fixed_cost_management' => $data['fixed_cost_management'] ?? 0,
+                'fixed_cost_marketing' => $data['fixed_cost_marketing'] ?? 0,
+                'fixed_cost_other' => $data['fixed_cost_other'] ?? 0,
                 'tour_type' => $data['tour_type'] ?? 'public',
+                'approval_status' => $data['approval_status'] ?? 'pending',
                 'status' => $data['status'] ?? 'draft',
                 'parent_tour_id' => $data['parent_tour_id'] ?? null,
                 'created_by' => get_user_id()
@@ -250,17 +263,32 @@ class Tour
                 $this->saveItinerary($tour_id, $data['itinerary']);
             }
 
-            // 3. Insert Highlights
+            // 3. Insert Itinerary Timelines (MỚI)
+            if (!empty($data['itinerary_timelines'])) {
+                $this->saveItineraryTimelines($tour_id, $data['itinerary_timelines']);
+            }
+
+            // 4. Insert Itinerary Day Services (MỚI)
+            if (!empty($data['itinerary_day_services'])) {
+                $this->saveItineraryDayServices($tour_id, $data['itinerary_day_services']);
+            }
+
+            // 5. Insert Highlights
             if (!empty($data['highlights'])) {
                 $this->saveHighlights($tour_id, $data['highlights']);
             }
 
-            // 4. Insert Included/Excluded
+            // 6. Insert Included/Excluded
             if (!empty($data['included'])) {
                 $this->saveIncludedExcluded($tour_id, 'included', $data['included']);
             }
             if (!empty($data['excluded'])) {
                 $this->saveIncludedExcluded($tour_id, 'excluded', $data['excluded']);
+            }
+
+            // 7. Insert Tour Policies (MỚI)
+            if (!empty($data['policy_ids'])) {
+                $this->saveTourPolicies($tour_id, $data['policy_ids']);
             }
 
             $this->pdo->commit();
@@ -274,69 +302,61 @@ class Tour
     }
 
     /**
-     * Lưu Included/Excluded items
-     */
-    private function saveIncludedExcluded($tour_id, $type, $items)
-    {
-        $sql = "INSERT INTO tour_included_excluded (tour_id, type, item, display_order) VALUES (:tour_id, :type, :item, :order)";
-        $stmt = $this->pdo->prepare($sql);
-
-        $order = 0;
-        foreach ($items as $item) {
-            if (empty(trim($item))) continue;
-            $stmt->execute([
-                'tour_id' => $tour_id,
-                'type' => $type,
-                'item' => trim($item),
-                'order' => $order++
-            ]);
-        }
-    }
-
-    /**
-     * Cập nhật Tour (Transaction)
+     * Cập nhật Tour (Transaction) - THEO FLOW MỚI
      */
     public function update($id, $data)
     {
         try {
             $this->pdo->beginTransaction();
 
-            // 1. Update Tours Table
-            $sql = "UPDATE tours SET 
-                category_id = :category_id,
-                name = :name,
-                description = :description,
-                duration_days = :duration_days,
-                duration_nights = :duration_nights,
-                departure_location = :departure_location,
-                min_participants = :min_participants,
-                max_participants = :max_participants,
-                price_based_on_pax = :price_based_on_pax,
-                adult_price = :adult_price,
-                child_price = :child_price,
-                infant_price = :infant_price,
-                deposit_percentage = :deposit_percentage,
-                tour_type = :tour_type,
-                status = :status,
-                updated_at = NOW()
-                WHERE id = :id";
+            // 1. Update Tours Table - ĐÃ XÓA category_id, price_based_on_pax
+            $update_fields = [
+                'name = :name',
+                'introduction = :introduction',
+                'description = :description',
+                'duration_days = :duration_days',
+                'duration_nights = :duration_nights',
+                'departure_location = :departure_location',
+                'min_participants = :min_participants',
+                'max_participants = :max_participants',
+                'adult_price = :adult_price',
+                'child_price = :child_price',
+                'infant_price = :infant_price',
+                'estimated_cost_per_person = :estimated_cost_per_person',
+                'deposit_percentage = :deposit_percentage',
+                'booking_deadline_days = :booking_deadline_days',
+                'fixed_cost_guide = :fixed_cost_guide',
+                'fixed_cost_management = :fixed_cost_management',
+                'fixed_cost_marketing = :fixed_cost_marketing',
+                'fixed_cost_other = :fixed_cost_other',
+                'tour_type = :tour_type',
+                'status = :status',
+                'updated_at = NOW()'
+            ];
+
+            $sql = "UPDATE tours SET " . implode(', ', $update_fields) . " WHERE id = :id";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
                 'id' => $id,
-                'category_id' => $data['category_id'],
                 'name' => $data['name'],
-                'description' => $data['description'] ?? '',
+                'introduction' => $data['introduction'] ?? null,
+                'description' => $data['description'] ?? null,
                 'duration_days' => $data['duration_days'],
-                'duration_nights' => $data['duration_nights'],
-                'departure_location' => $data['departure_location'],
-                'min_participants' => $data['min_participants'] ?? 10,
+                'duration_nights' => $data['duration_nights'] ?? 0,
+                'departure_location' => $data['departure_location'] ?? null,
+                'min_participants' => $data['min_participants'] ?? 15,
                 'max_participants' => $data['max_participants'] ?? 45,
-                'price_based_on_pax' => $data['price_based_on_pax'] ?? 30,
                 'adult_price' => $data['adult_price'],
                 'child_price' => $data['child_price'] ?? 0,
                 'infant_price' => $data['infant_price'] ?? 0,
+                'estimated_cost_per_person' => $data['estimated_cost_per_person'] ?? null,
                 'deposit_percentage' => $data['deposit_percentage'] ?? 30,
+                'booking_deadline_days' => $data['booking_deadline_days'] ?? 1,
+                'fixed_cost_guide' => $data['fixed_cost_guide'] ?? 0,
+                'fixed_cost_management' => $data['fixed_cost_management'] ?? 0,
+                'fixed_cost_marketing' => $data['fixed_cost_marketing'] ?? 0,
+                'fixed_cost_other' => $data['fixed_cost_other'] ?? 0,
                 'tour_type' => $data['tour_type'] ?? 'public',
                 'status' => $data['status']
             ]);
@@ -344,16 +364,40 @@ class Tour
             // 2. Update Itinerary
             if (isset($data['itinerary'])) {
                 $this->pdo->exec("DELETE FROM itineraries WHERE tour_id = $id");
-                $this->saveItinerary($id, $data['itinerary']);
+                if (!empty($data['itinerary'])) {
+                    $this->saveItinerary($id, $data['itinerary']);
+                }
             }
 
-            // 3. Update Highlights
+            // 3. Update Itinerary Timelines (MỚI)
+            if (isset($data['itinerary_timelines'])) {
+                require_once MODELS_PATH . '/ItineraryTimeline.php';
+                $timelineModel = new ItineraryTimeline($this->pdo);
+                $timelineModel->deleteByTourId($id);
+                if (!empty($data['itinerary_timelines'])) {
+                    $this->saveItineraryTimelines($id, $data['itinerary_timelines']);
+                }
+            }
+
+            // 4. Update Itinerary Day Services (MỚI)
+            if (isset($data['itinerary_day_services'])) {
+                require_once MODELS_PATH . '/ItineraryDayService.php';
+                $dayServiceModel = new ItineraryDayService($this->pdo);
+                $dayServiceModel->deleteByTourId($id);
+                if (!empty($data['itinerary_day_services'])) {
+                    $this->saveItineraryDayServices($id, $data['itinerary_day_services']);
+                }
+            }
+
+            // 5. Update Highlights
             if (isset($data['highlights'])) {
                 $this->pdo->exec("DELETE FROM tour_highlights WHERE tour_id = $id");
-                $this->saveHighlights($id, $data['highlights']);
+                if (!empty($data['highlights'])) {
+                    $this->saveHighlights($id, $data['highlights']);
+                }
             }
 
-            // 4. Update Included/Excluded
+            // 6. Update Included/Excluded
             if (isset($data['included']) || isset($data['excluded'])) {
                 $this->pdo->exec("DELETE FROM tour_included_excluded WHERE tour_id = $id");
                 if (!empty($data['included'])) {
@@ -361,6 +405,16 @@ class Tour
                 }
                 if (!empty($data['excluded'])) {
                     $this->saveIncludedExcluded($id, 'excluded', $data['excluded']);
+                }
+            }
+
+            // 7. Update Tour Policies (MỚI)
+            if (isset($data['policy_ids'])) {
+                require_once MODELS_PATH . '/Policy.php';
+                $policyModel = new Policy($this->pdo);
+                $policyModel->deleteByTourId($id);
+                if (!empty($data['policy_ids'])) {
+                    $this->saveTourPolicies($id, $data['policy_ids']);
                 }
             }
 
@@ -408,27 +462,129 @@ class Tour
         foreach ($items as $item) {
             $stmt->execute([
                 'tour_id' => $tour_id,
-                'day_number' => $item['day'],
-                'title' => $item['title'],
-                'description' => $item['description'],
+                'day_number' => $item['day_number'] ?? $item['day'],
+                'title' => $item['title'] ?? null,
+                'description' => $item['description'] ?? null,
                 'destination_id' => !empty($item['destination_id']) ? $item['destination_id'] : null
+            ]);
+        }
+    }
+
+    /**
+     * Lưu Itinerary Timelines (MỚI)
+     */
+    private function saveItineraryTimelines($tour_id, $timelines_data)
+    {
+        require_once MODELS_PATH . '/ItineraryTimeline.php';
+        $timelineModel = new ItineraryTimeline($this->pdo);
+
+        // Lấy itinerary_id từ day_number
+        $itinerary_map = [];
+        $stmt = $this->pdo->prepare("SELECT id, day_number FROM itineraries WHERE tour_id = :tour_id");
+        $stmt->execute(['tour_id' => $tour_id]);
+        foreach ($stmt->fetchAll() as $it) {
+            $itinerary_map[$it['day_number']] = $it['id'];
+        }
+
+        foreach ($timelines_data as $timeline) {
+            $day_number = $timeline['day_number'] ?? $timeline['day'];
+            if (!isset($itinerary_map[$day_number]))
+                continue;
+
+            $timelineModel->create([
+                'itinerary_id' => $itinerary_map[$day_number],
+                'timeline_time' => $timeline['timeline_time'],
+                'activity_title' => $timeline['activity_title'],
+                'activity_description' => $timeline['activity_description'] ?? null,
+                'location' => $timeline['location'] ?? null,
+                'destination_id' => $timeline['destination_id'] ?? null,
+                'service_provider_id' => $timeline['service_provider_id'] ?? null,
+                'service_id' => $timeline['service_id'] ?? null,
+                'timeline_type' => $timeline['timeline_type'] ?? 'activity',
+                'display_order' => $timeline['display_order'] ?? 0,
+                'notes' => $timeline['notes'] ?? null
+            ]);
+        }
+    }
+
+    /**
+     * Lưu Itinerary Day Services (MỚI)
+     */
+    private function saveItineraryDayServices($tour_id, $services_data)
+    {
+        require_once MODELS_PATH . '/ItineraryDayService.php';
+        $dayServiceModel = new ItineraryDayService($this->pdo);
+
+        // Lấy itinerary_id từ day_number
+        $itinerary_map = [];
+        $stmt = $this->pdo->prepare("SELECT id, day_number FROM itineraries WHERE tour_id = :tour_id");
+        $stmt->execute(['tour_id' => $tour_id]);
+        foreach ($stmt->fetchAll() as $it) {
+            $itinerary_map[$it['day_number']] = $it['id'];
+        }
+
+        foreach ($services_data as $service) {
+            $day_number = $service['day_number'] ?? $service['day'];
+            if (!isset($itinerary_map[$day_number]))
+                continue;
+
+            $dayServiceModel->create([
+                'itinerary_id' => $itinerary_map[$day_number],
+                'service_id' => $service['service_id'],
+                'service_provider_id' => $service['service_provider_id'] ?? null,
+                'service_name' => $service['service_name'] ?? null,
+                'unit_price' => $service['unit_price'],
+                'quantity' => $service['quantity'] ?? 1.00,
+                'unit' => $service['unit'] ?? null,
+                'is_included_in_price' => $service['is_included_in_price'] ?? 1,
+                'notes' => $service['notes'] ?? null
             ]);
         }
     }
 
     private function saveHighlights($tour_id, $highlights)
     {
-        $sql = "INSERT INTO tour_highlights (tour_id, highlight) VALUES (:tour_id, :highlight)";
+        $sql = "INSERT INTO tour_highlights (tour_id, highlight, display_order) VALUES (:tour_id, :highlight, :order)";
         $stmt = $this->pdo->prepare($sql);
 
+        $order = 0;
         foreach ($highlights as $hl) {
             if (!empty(trim($hl))) {
                 $stmt->execute([
                     'tour_id' => $tour_id,
-                    'highlight' => trim($hl)
+                    'highlight' => trim($hl),
+                    'order' => $order++
                 ]);
             }
         }
+    }
+
+    private function saveIncludedExcluded($tour_id, $type, $items)
+    {
+        $sql = "INSERT INTO tour_included_excluded (tour_id, type, item, display_order) VALUES (:tour_id, :type, :item, :order)";
+        $stmt = $this->pdo->prepare($sql);
+
+        $order = 0;
+        foreach ($items as $item) {
+            if (empty(trim($item)))
+                continue;
+            $stmt->execute([
+                'tour_id' => $tour_id,
+                'type' => $type,
+                'item' => trim($item),
+                'order' => $order++
+            ]);
+        }
+    }
+
+    /**
+     * Lưu Tour Policies (MỚI)
+     */
+    private function saveTourPolicies($tour_id, $policy_ids)
+    {
+        require_once MODELS_PATH . '/Policy.php';
+        $policyModel = new Policy($this->pdo);
+        return $policyModel->assignMultipleToTour($tour_id, $policy_ids);
     }
 
     // ========================================================================
@@ -455,18 +611,48 @@ class Tour
         return $stmt->fetchAll();
     }
 
+    /**
+     * Lấy Itinerary Timelines (MỚI)
+     */
+    public function getItineraryTimelines($tour_id)
+    {
+        require_once MODELS_PATH . '/ItineraryTimeline.php';
+        $timelineModel = new ItineraryTimeline($this->pdo);
+        return $timelineModel->getByTourId($tour_id);
+    }
+
+    /**
+     * Lấy Itinerary Day Services (MỚI)
+     */
+    public function getItineraryDayServices($tour_id)
+    {
+        require_once MODELS_PATH . '/ItineraryDayService.php';
+        $dayServiceModel = new ItineraryDayService($this->pdo);
+        return $dayServiceModel->getByTourId($tour_id);
+    }
+
     public function getHighlights($tour_id)
     {
-        $stmt = $this->pdo->prepare("SELECT highlight FROM tour_highlights WHERE tour_id = :id");
+        $stmt = $this->pdo->prepare("SELECT highlight FROM tour_highlights WHERE tour_id = :id ORDER BY display_order ASC");
         $stmt->execute(['id' => $tour_id]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
     public function getIncludedExcluded($tour_id, $type)
     {
-        $stmt = $this->pdo->prepare("SELECT item FROM tour_included_excluded WHERE tour_id = :id AND type = :type");
+        $stmt = $this->pdo->prepare("SELECT item FROM tour_included_excluded WHERE tour_id = :id AND type = :type ORDER BY display_order ASC");
         $stmt->execute(['id' => $tour_id, 'type' => $type]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Lấy Policies của tour (MỚI)
+     */
+    public function getPolicies($tour_id)
+    {
+        require_once MODELS_PATH . '/Policy.php';
+        $policyModel = new Policy($this->pdo);
+        return $policyModel->getByTourId($tour_id);
     }
 
     public function addImage($tour_id, $path, $is_primary = false)

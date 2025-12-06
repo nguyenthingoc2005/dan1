@@ -35,7 +35,7 @@ class ServiceType
             }
 
             if (!empty($filters['search'])) {
-                $where_conditions[] = "(name LIKE :search OR code LIKE :search OR description LIKE :search)";
+                $where_conditions[] = "(name LIKE :search OR description LIKE :search)";
                 $params['search'] = '%' . $filters['search'] . '%';
             }
 
@@ -53,10 +53,10 @@ class ServiceType
             $params['limit'] = $per_page;
 
             $data_sql = "
-                SELECT id, name, code, description, status, created_at
+                SELECT id, name, description, status, display_order, created_at
                 FROM service_types
                 {$where_clause}
-                ORDER BY name ASC
+                ORDER BY display_order ASC, name ASC
                 LIMIT :limit OFFSET :offset
             ";
             $data_stmt = $this->pdo->prepare($data_sql);
@@ -83,7 +83,7 @@ class ServiceType
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT id, name, code, description, status, created_at
+                SELECT id, name, description, status, display_order, created_at
                 FROM service_types
                 WHERE id = :id
                 LIMIT 1
@@ -99,19 +99,19 @@ class ServiceType
     }
 
     /**
-     * Tìm service type theo code
+     * Tìm service type theo name (thay vì code)
      */
-    public function findByCode($code)
+    public function findByName($name)
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT id, name, code FROM service_types WHERE code = :code LIMIT 1
+                SELECT id, name, description FROM service_types WHERE name = :name LIMIT 1
             ");
-            $stmt->execute(['code' => strtoupper($code)]);
+            $stmt->execute(['name' => $name]);
             return $stmt->fetch() ?: null;
 
         } catch (PDOException $e) {
-            error_log("ServiceType::findByCode() Error: " . $e->getMessage());
+            error_log("ServiceType::findByName() Error: " . $e->getMessage());
             return null;
         }
     }
@@ -123,15 +123,15 @@ class ServiceType
     {
         try {
             $stmt = $this->pdo->prepare("
-                INSERT INTO service_types (name, code, description, status)
-                VALUES (:name, :code, :description, :status)
+                INSERT INTO service_types (name, description, status, display_order)
+                VALUES (:name, :description, :status, :display_order)
             ");
 
             $success = $stmt->execute([
                 'name' => $data['name'],
-                'code' => strtoupper($data['code']), // Force uppercase
                 'description' => $data['description'] ?? null,
-                'status' => $data['status'] ?? 'active'
+                'status' => $data['status'] ?? 'active',
+                'display_order' => $data['display_order'] ?? 0
             ]);
 
             return $success ? $this->pdo->lastInsertId() : false;
@@ -240,10 +240,10 @@ class ServiceType
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT id, name, code
+                SELECT id, name, description
                 FROM service_types
                 WHERE status = 'active'
-                ORDER BY name ASC
+                ORDER BY display_order ASC, name ASC
             ");
 
             $stmt->execute();

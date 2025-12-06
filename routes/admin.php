@@ -512,6 +512,137 @@ switch ($module) {
         break;
 
     // ==========================================================================
+    // LOCATION SERVICES MODULE
+    // ==========================================================================
+    case 'location-services':
+        require_once CONTROLLERS_PATH . '/admin/LocationServiceController.php';
+        $locationServiceController = new LocationServiceController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $locationServiceController->index();
+                break;
+            // AJAX: Get data
+            case 'getProvinces':
+                $locationServiceController->getProvinces();
+                break;
+            case 'getServiceProviders':
+                $locationServiceController->getServiceProviders();
+                break;
+            case 'getServices':
+                $locationServiceController->getServices();
+                break;
+            case 'getServiceProvider':
+                $locationServiceController->getServiceProvider();
+                break;
+            case 'getDestination':
+                $locationServiceController->getDestination();
+                break;
+            case 'getService':
+                $locationServiceController->getService();
+                break;
+            case 'getPrices':
+                $locationServiceController->getPrices();
+                break;
+            case 'getDropdownData':
+                $locationServiceController->getDropdownData();
+                break;
+            // Service Provider CRUD
+            case 'createServiceProvider':
+                $locationServiceController->createServiceProvider();
+                break;
+            case 'updateServiceProvider':
+                $locationServiceController->updateServiceProvider();
+                break;
+            case 'deleteServiceProvider':
+                $locationServiceController->deleteServiceProvider();
+                break;
+            // Destination CRUD
+            case 'createDestination':
+                $locationServiceController->createDestination();
+                break;
+            case 'updateDestination':
+                $locationServiceController->updateDestination();
+                break;
+            case 'deleteDestination':
+                $locationServiceController->deleteDestination();
+                break;
+            // Service CRUD
+            case 'createService':
+                $locationServiceController->createService();
+                break;
+            case 'updateService':
+                $locationServiceController->updateService();
+                break;
+            case 'deleteService':
+                $locationServiceController->deleteService();
+                break;
+            // Price CRUD
+            case 'createPrice':
+                $locationServiceController->createPrice();
+                break;
+            case 'updatePrice':
+                $locationServiceController->updatePrice();
+                break;
+            case 'deletePrice':
+                $locationServiceController->deletePrice();
+                break;
+            // Form-based CRUD (using components)
+            case 'create-provider':
+                $locationServiceController->createProvider();
+                break;
+            case 'store-provider':
+                $locationServiceController->storeProvider();
+                break;
+            case 'edit-provider':
+                $locationServiceController->editProvider();
+                break;
+            case 'update-provider':
+                $locationServiceController->updateProvider();
+                break;
+            case 'create-destination':
+                $locationServiceController->createDestination();
+                break;
+            case 'store-destination':
+                $locationServiceController->storeDestination();
+                break;
+            case 'edit-destination':
+                $locationServiceController->editDestination();
+                break;
+            case 'update-destination':
+                $locationServiceController->updateDestination();
+                break;
+            case 'create-service':
+                $locationServiceController->createService();
+                break;
+            case 'store-service':
+                $locationServiceController->storeService();
+                break;
+            case 'edit-service':
+                $locationServiceController->editService();
+                break;
+            case 'update-service':
+                $locationServiceController->updateService();
+                break;
+            case 'getPrice':
+                $locationServiceController->getPrices();
+                break;
+            case 'store-price':
+                $locationServiceController->createPrice();
+                break;
+            case 'update-price':
+                $locationServiceController->updatePrice();
+                break;
+            case 'delete-price':
+                $locationServiceController->deletePrice();
+                break;
+            default:
+                $locationServiceController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
     // DEFAULT: DASHBOARD
     // ==========================================================================
     default:

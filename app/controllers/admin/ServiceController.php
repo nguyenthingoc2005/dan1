@@ -1,19 +1,20 @@
 <?php
 /**
  * ==============================================================================
- * SERVICE CONTROLLER (ADMIN)
+ * SERVICE CONTROLLER (ADMIN) - ĐÃ SỬA LẠI
  * ==============================================================================
  * 
  * Quản lý dịch vụ
  * Routing: ?act=admin&module=services&action=index
  * 
  * Validation:
- * - Service Type & Supplier: REQUIRED
+ * - Service Provider: REQUIRED
  * - Name: REQUIRED
- * - Unit Price: Numeric
+ * - Service Type: OPTIONAL
+ * - Unit: OPTIONAL
  * 
- * @version 1.0
- * @date 2024-12-02
+ * @version 2.0
+ * @date 2024-12-06
  * ==============================================================================
  */
 
@@ -22,18 +23,18 @@ class ServiceController
     private $db;
     private $serviceModel;
     private $serviceTypeModel;
-    private $supplierModel;
+    private $serviceProviderModel;
 
     public function __construct($pdo)
     {
         $this->db = $pdo;
         require_once MODELS_PATH . '/Service.php';
         require_once MODELS_PATH . '/ServiceType.php';
-        require_once MODELS_PATH . '/Supplier.php';
+        require_once MODELS_PATH . '/ServiceProvider.php';
 
         $this->serviceModel = new Service($pdo);
         $this->serviceTypeModel = new ServiceType($pdo);
-        $this->supplierModel = new Supplier($pdo);
+        $this->serviceProviderModel = new ServiceProvider($pdo);
     }
 
     /**
@@ -47,8 +48,8 @@ class ServiceController
         $filters = [];
         if (!empty($_GET['service_type_id']))
             $filters['service_type_id'] = (int) $_GET['service_type_id'];
-        if (!empty($_GET['supplier_id']))
-            $filters['supplier_id'] = (int) $_GET['supplier_id'];
+        if (!empty($_GET['service_provider_id']))
+            $filters['service_provider_id'] = (int) $_GET['service_provider_id'];
         if (!empty($_GET['status']))
             $filters['status'] = sanitize($_GET['status']);
         if (!empty($_GET['search']))
@@ -65,7 +66,7 @@ class ServiceController
 
         // Get data for filter dropdowns
         $service_types = $this->serviceTypeModel->getForDropdown();
-        $suppliers = $this->supplierModel->getForDropdown();
+        $service_providers = $this->serviceProviderModel->getForDropdown();
 
         $page_title = 'Quản lý dịch vụ';
         $content_file = VIEWS_PATH . '/admin/services/index.php';
@@ -81,7 +82,7 @@ class ServiceController
 
         // Get dropdown data
         $service_types = $this->serviceTypeModel->getForDropdown();
-        $suppliers = $this->supplierModel->getForDropdown();
+        $service_providers = $this->serviceProviderModel->getForDropdown();
 
         $page_title = 'Thêm dịch vụ mới';
         $content_file = VIEWS_PATH . '/admin/services/create.php';
@@ -99,45 +100,38 @@ class ServiceController
             require_once COMMON_PATH . '/ValidationHelper.php';
 
             // Validate required fields
-            if (empty($_POST['name']) || empty($_POST['service_type_id']) || empty($_POST['supplier_id'])) {
-                throw new Exception("Vui lòng nhập tên dịch vụ, chọn loại dịch vụ và nhà cung cấp.");
+            if (empty($_POST['name']) || empty($_POST['service_provider_id'])) {
+                throw new Exception("Vui lòng nhập tên dịch vụ và chọn nhà cung cấp dịch vụ.");
             }
 
-            // Validate service_type_id exists and active
-            $serviceType = $this->serviceTypeModel->findById($_POST['service_type_id']);
-            if (!$serviceType) {
-                throw new Exception("Loại dịch vụ không tồn tại trong hệ thống.");
+            // Validate service_provider_id exists and active
+            $serviceProvider = $this->serviceProviderModel->findById($_POST['service_provider_id']);
+            if (!$serviceProvider) {
+                throw new Exception("Nhà cung cấp dịch vụ không tồn tại trong hệ thống.");
             }
-            if ($serviceType['status'] != 'active') {
-                throw new Exception("Loại dịch vụ không khả dụng (đã bị vô hiệu hóa).");
-            }
-
-            // Validate supplier_id exists and active
-            $supplier = $this->supplierModel->findById($_POST['supplier_id']);
-            if (!$supplier) {
-                throw new Exception("Nhà cung cấp không tồn tại trong hệ thống.");
-            }
-            if ($supplier['status'] != 'active') {
-                throw new Exception("Nhà cung cấp không khả dụng (đã bị vô hiệu hóa).");
+            if ($serviceProvider['status'] != 'active') {
+                throw new Exception("Nhà cung cấp dịch vụ không khả dụng (đã bị vô hiệu hóa).");
             }
 
-            // Check duplicate service (same name + supplier + type)
-            $existing = $this->serviceModel->findByNameAndSupplier(
+            // Validate service_type_id if provided
+            if (!empty($_POST['service_type_id'])) {
+                $serviceType = $this->serviceTypeModel->findById($_POST['service_type_id']);
+                if (!$serviceType) {
+                    throw new Exception("Loại dịch vụ không tồn tại trong hệ thống.");
+                }
+                if ($serviceType['status'] != 'active') {
+                    throw new Exception("Loại dịch vụ không khả dụng (đã bị vô hiệu hóa).");
+                }
+            }
+
+            // Check duplicate service (same name + provider + type)
+            $existing = $this->serviceModel->findByNameAndServiceProvider(
                 $_POST['name'],
-                $_POST['supplier_id'],
-                $_POST['service_type_id']
+                $_POST['service_provider_id'],
+                !empty($_POST['service_type_id']) ? (int) $_POST['service_type_id'] : null
             );
             if ($existing) {
                 throw new Exception("Dịch vụ này đã tồn tại cho nhà cung cấp này. Vui lòng chọn tên khác hoặc sửa dịch vụ hiện có.");
-            }
-
-            // Validate price
-            $estimated_price = !empty($_POST['estimated_price']) ? (float) $_POST['estimated_price'] : 0;
-            if ($estimated_price < 0) {
-                throw new Exception("Giá dự kiến phải >= 0.");
-            }
-            if ($estimated_price > 0 && !ValidationHelper::validatePrice($estimated_price, 1000, 1000000000)) {
-                throw new Exception("Giá dự kiến phải từ 1,000 VNĐ đến 1,000,000,000 VNĐ.");
             }
 
             // Validate unit (if provided)
@@ -149,13 +143,11 @@ class ServiceController
 
             // Prepare data
             $data = [
-                'service_type_id' => (int) $_POST['service_type_id'],
-                'supplier_id' => (int) $_POST['supplier_id'],
+                'service_provider_id' => (int) $_POST['service_provider_id'],
+                'service_type_id' => !empty($_POST['service_type_id']) ? (int) $_POST['service_type_id'] : null,
                 'name' => sanitize($_POST['name']),
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
                 'unit' => isset($_POST['unit']) ? sanitize($_POST['unit']) : null,
-                'estimated_price' => $estimated_price,
-                'notes' => isset($_POST['notes']) ? sanitize($_POST['notes']) : null,
                 'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
             ];
 
@@ -194,7 +186,7 @@ class ServiceController
 
         // Get dropdown data
         $service_types = $this->serviceTypeModel->getForDropdown();
-        $suppliers = $this->supplierModel->getForDropdown();
+        $service_providers = $this->serviceProviderModel->getForDropdown();
 
         $page_title = 'Sửa dịch vụ';
         $content_file = VIEWS_PATH . '/admin/services/edit.php';
@@ -223,59 +215,39 @@ class ServiceController
             }
 
             // Validate required fields
-            if (empty($_POST['name']) || empty($_POST['service_type_id']) || empty($_POST['supplier_id'])) {
-                throw new Exception("Vui lòng nhập tên dịch vụ, chọn loại dịch vụ và nhà cung cấp.");
+            if (empty($_POST['name']) || empty($_POST['service_provider_id'])) {
+                throw new Exception("Vui lòng nhập tên dịch vụ và chọn nhà cung cấp dịch vụ.");
             }
 
-            // Validate service_type_id exists and active
-            $serviceType = $this->serviceTypeModel->findById($_POST['service_type_id']);
-            if (!$serviceType) {
-                throw new Exception("Loại dịch vụ không tồn tại trong hệ thống.");
+            // Validate service_provider_id exists and active
+            $serviceProvider = $this->serviceProviderModel->findById($_POST['service_provider_id']);
+            if (!$serviceProvider) {
+                throw new Exception("Nhà cung cấp dịch vụ không tồn tại trong hệ thống.");
             }
-            if ($serviceType['status'] != 'active') {
-                throw new Exception("Loại dịch vụ không khả dụng (đã bị vô hiệu hóa).");
+            if ($serviceProvider['status'] != 'active') {
+                throw new Exception("Nhà cung cấp dịch vụ không khả dụng (đã bị vô hiệu hóa).");
             }
 
-            // Validate supplier_id exists and active
-            $supplier = $this->supplierModel->findById($_POST['supplier_id']);
-            if (!$supplier) {
-                throw new Exception("Nhà cung cấp không tồn tại trong hệ thống.");
-            }
-            if ($supplier['status'] != 'active') {
-                throw new Exception("Nhà cung cấp không khả dụng (đã bị vô hiệu hóa).");
+            // Validate service_type_id if provided
+            if (!empty($_POST['service_type_id'])) {
+                $serviceType = $this->serviceTypeModel->findById($_POST['service_type_id']);
+                if (!$serviceType) {
+                    throw new Exception("Loại dịch vụ không tồn tại trong hệ thống.");
+                }
+                if ($serviceType['status'] != 'active') {
+                    throw new Exception("Loại dịch vụ không khả dụng (đã bị vô hiệu hóa).");
+                }
             }
 
             // Check duplicate (exclude current service)
-            $existing = $this->serviceModel->findByNameAndSupplier(
+            $existing = $this->serviceModel->findByNameAndServiceProvider(
                 $_POST['name'],
-                $_POST['supplier_id'],
-                $_POST['service_type_id'],
+                $_POST['service_provider_id'],
+                !empty($_POST['service_type_id']) ? (int) $_POST['service_type_id'] : null,
                 $service_id
             );
             if ($existing) {
                 throw new Exception("Dịch vụ này đã tồn tại cho nhà cung cấp này. Vui lòng chọn tên khác.");
-            }
-
-            // Check if service is being used in bookings (warn if changing supplier/type)
-            if ($service['supplier_id'] != $_POST['supplier_id'] || $service['service_type_id'] != $_POST['service_type_id']) {
-                $check_booking = $this->db->prepare("
-                    SELECT COUNT(*) as count FROM booking_services WHERE service_id = :id
-                ");
-                $check_booking->execute(['id' => $service_id]);
-                $booking_count = $check_booking->fetch()['count'];
-                
-                if ($booking_count > 0) {
-                    throw new Exception("Không thể thay đổi nhà cung cấp/loại dịch vụ vì dịch vụ này đang được sử dụng trong {$booking_count} booking.");
-                }
-            }
-
-            // Validate price
-            $estimated_price = !empty($_POST['estimated_price']) ? (float) $_POST['estimated_price'] : 0;
-            if ($estimated_price < 0) {
-                throw new Exception("Giá dự kiến phải >= 0.");
-            }
-            if ($estimated_price > 0 && !ValidationHelper::validatePrice($estimated_price, 1000, 1000000000)) {
-                throw new Exception("Giá dự kiến phải từ 1,000 VNĐ đến 1,000,000,000 VNĐ.");
             }
 
             // Validate unit (if provided)
@@ -287,13 +259,11 @@ class ServiceController
 
             // Prepare data
             $data = [
-                'service_type_id' => (int) $_POST['service_type_id'],
-                'supplier_id' => (int) $_POST['supplier_id'],
+                'service_provider_id' => (int) $_POST['service_provider_id'],
+                'service_type_id' => !empty($_POST['service_type_id']) ? (int) $_POST['service_type_id'] : null,
                 'name' => sanitize($_POST['name']),
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
                 'unit' => isset($_POST['unit']) ? sanitize($_POST['unit']) : null,
-                'estimated_price' => $estimated_price,
-                'notes' => isset($_POST['notes']) ? sanitize($_POST['notes']) : null,
                 'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
             ];
 
@@ -365,9 +335,8 @@ class ServiceController
                     'id' => $service['id'],
                     'name' => $service['name'],
                     'unit' => $service['unit'] ?? '',
-                    'estimated_price' => $service['estimated_price'] ?? 0,
-                    'service_type_id' => $service['service_type_id'],
-                    'supplier_id' => $service['supplier_id']
+                    'service_type_id' => $service['service_type_id'] ?? null,
+                    'service_provider_id' => $service['service_provider_id']
                 ]
             ]);
 

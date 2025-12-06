@@ -1,0 +1,170 @@
+<?php
+/**
+ * ==============================================================================
+ * CHECKIN MODEL
+ * ==============================================================================
+ * 
+ * Quản lý check-in hành khách cho tour
+ * 
+ * @version 1.0
+ * @date 2024-12-XX
+ * ==============================================================================
+ */
+
+class Checkin
+{
+    private $pdo;
+
+    public function __construct($pdo)
+    {
+        $this->pdo = $pdo;
+    }
+
+    /**
+     * Lấy danh sách check-in theo booking_id
+     */
+    public function getByBooking($booking_id)
+    {
+        $sql = "SELECT cc.*, c.full_name, c.phone, c.email
+                FROM customer_checkins cc
+                JOIN customers c ON cc.customer_id = c.id
+                WHERE cc.booking_id = :booking_id
+                ORDER BY cc.checkin_time DESC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['booking_id' => $booking_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Lấy check-in theo tour_schedule_id (tất cả bookings trong schedule)
+     */
+    public function getBySchedule($schedule_id)
+    {
+        $sql = "SELECT cc.*, c.full_name, c.phone, c.email, b.booking_code
+                FROM customer_checkins cc
+                JOIN customers c ON cc.customer_id = c.id
+                JOIN bookings b ON cc.booking_id = b.id
+                JOIN tour_schedules ts ON (b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
+                WHERE ts.id = :schedule_id
+                ORDER BY cc.checkin_time DESC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['schedule_id' => $schedule_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Lấy check-in status của một customer trong một booking
+     */
+    public function getCustomerCheckin($booking_id, $customer_id)
+    {
+        $sql = "SELECT * FROM customer_checkins 
+                WHERE booking_id = :booking_id AND customer_id = :customer_id
+                ORDER BY checkin_time DESC LIMIT 1";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'booking_id' => $booking_id,
+            'customer_id' => $customer_id
+        ]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Tạo hoặc cập nhật check-in
+     */
+    public function checkin($booking_id, $customer_id, $status, $notes = null, $checked_by = null)
+    {
+        // Check if already exists
+        $existing = $this->getCustomerCheckin($booking_id, $customer_id);
+
+        if ($existing) {
+            // Update existing
+            $sql = "UPDATE customer_checkins 
+                    SET status = :status, notes = :notes, checkin_time = NOW(), checked_by = :checked_by
+                    WHERE id = :id";
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute([
+                'id' => $existing['id'],
+                'status' => $status,
+                'notes' => $notes,
+                'checked_by' => $checked_by
+            ]);
+        } else {
+            // Create new
+            $sql = "INSERT INTO customer_checkins (booking_id, customer_id, status, notes, checked_by, checkin_time)
+                    VALUES (:booking_id, :customer_id, :status, :notes, :checked_by, NOW())";
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute([
+                'booking_id' => $booking_id,
+                'customer_id' => $customer_id,
+                'status' => $status,
+                'notes' => $notes,
+                'checked_by' => $checked_by
+            ]);
+        }
+    }
+
+    /**
+     * Batch check-in (nhiều khách cùng lúc)
+     */
+    public function batchCheckin($checkins, $checked_by = null)
+    {
+        try {
+            $this->pdo->beginTransaction();
+
+            foreach ($checkins as $checkin) {
+                $this->checkin(
+                    $checkin['booking_id'],
+                    $checkin['customer_id'],
+                    $checkin['status'],
+                    $checkin['notes'] ?? null,
+                    $checked_by
+                );
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Lấy thống kê check-in cho một schedule
+     */
+    public function getStatsBySchedule($schedule_id)
+    {
+        // Get all passengers in this schedule
+        $sql = "SELECT bc.customer_id, bc.booking_id
+                FROM booking_customers bc
+                JOIN bookings b ON bc.booking_id = b.id
+                JOIN tour_schedules ts ON (b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
+                WHERE ts.id = :schedule_id
+                AND b.approval_status = 'approved'";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['schedule_id' => $schedule_id]);
+        $all_passengers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $total = count($all_passengers);
+
+        // Get check-ins
+        $checkins = $this->getBySchedule($schedule_id);
+        $checked_in = count($checkins);
+        $present = count(array_filter($checkins, fn($c) => $c['status'] == 'present'));
+        $absent = count(array_filter($checkins, fn($c) => $c['status'] == 'absent'));
+        $late = count(array_filter($checkins, fn($c) => $c['status'] == 'late'));
+
+        return [
+            'total' => $total,
+            'checked_in' => $checked_in,
+            'not_checked' => $total - $checked_in,
+            'present' => $present,
+            'absent' => $absent,
+            'late' => $late
+        ];
+    }
+}
+

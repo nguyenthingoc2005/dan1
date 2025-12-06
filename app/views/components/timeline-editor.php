@@ -1,0 +1,249 @@
+<?php
+/**
+ * ==============================================================================
+ * TIMELINE EDITOR COMPONENT
+ * ==============================================================================
+ * 
+ * Component để quản lý timeline chi tiết cho một ngày của tour
+ * 
+ * Variables:
+ * - $day_number (required): Số ngày (1, 2, 3...)
+ * - $timeline_items (optional): Array các timeline items đã có
+ * - $destinations (optional): Array destinations cho dropdown
+ * - $service_providers (optional): Array service_providers cho dropdown
+ * - $services (optional): Array services cho dropdown
+ * 
+ * @version 1.0
+ * @date 2024-12-06
+ * ==============================================================================
+ */
+
+$day_number = $day_number ?? 1;
+$timeline_items = $timeline_items ?? [];
+$destinations = $destinations ?? [];
+$service_providers = $service_providers ?? [];
+$services = $services ?? [];
+?>
+
+<div class="timeline-editor" data-day="<?= $day_number ?>">
+    <div class="mb-4 flex justify-between items-center">
+        <h4 class="text-lg font-semibold text-gray-800">Timeline - Day <?= $day_number ?></h4>
+        <button type="button" onclick="addTimelineItem(<?= $day_number ?>)"
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm">
+            <i class="fas fa-plus mr-2"></i>Thêm timeline item
+        </button>
+    </div>
+
+    <!-- Timeline Items List -->
+    <div id="timeline-items-day-<?= $day_number ?>" class="space-y-3">
+        <?php if (empty($timeline_items)): ?>
+            <div class="text-gray-500 text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed">
+                <i class="fas fa-clock text-4xl mb-2"></i>
+                <p>Chưa có timeline nào cho ngày này</p>
+                <p class="text-sm mt-1">Click "Thêm timeline item" để bắt đầu</p>
+            </div>
+        <?php else: ?>
+            <?php foreach ($timeline_items as $idx => $item): ?>
+                <?php include __DIR__ . '/timeline-item-form.php'; ?>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+</div>
+
+<script>
+    // Timeline items counter per day
+    window.timelineCounter = window.timelineCounter || {};
+    window.timelineCounter[<?= $day_number ?>] = <?= count($timeline_items) ?>;
+
+    function addTimelineItem(dayNumber) {
+        const counter = window.timelineCounter[dayNumber] = (window.timelineCounter[dayNumber] || 0) + 1;
+        const container = document.getElementById(`timeline-items-day-${dayNumber}`);
+
+        const itemHtml = `
+        <div class="timeline-item bg-white border border-gray-200 rounded-lg p-4" data-day="${dayNumber}" data-index="${counter}">
+            <div class="flex justify-between items-start mb-3">
+                <h5 class="font-medium text-gray-700">Timeline Item #${counter}</h5>
+                <button type="button" onclick="removeTimelineItem(this)" class="text-red-500 hover:text-red-700">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Giờ <span class="text-red-500">*</span></label>
+                    <input type="time" 
+                           name="timeline_time[]" 
+                           value=""
+                           required
+                           class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Loại timeline</label>
+                    <select name="timeline_type[]" 
+                            class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                            onchange="updateTimelineType(this)">
+                        <option value="activity">Hoạt động</option>
+                        <option value="meal">Bữa ăn</option>
+                        <option value="accommodation">Nơi nghỉ</option>
+                        <option value="transport">Di chuyển</option>
+                    </select>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Hoạt động <span class="text-red-500">*</span></label>
+                    <input type="text" 
+                           name="timeline_activity_title[]" 
+                           placeholder="VD: Ăn sáng, Check-in, Tham quan..."
+                           required
+                           class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                    <input type="hidden" name="timeline_day_number[]" value="${dayNumber}">
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                    <textarea name="timeline_activity_description[]" 
+                              rows="2"
+                              class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                              placeholder="Mô tả chi tiết hoạt động..."></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Địa điểm</label>
+                    <input type="text" 
+                           name="timeline_location[]" 
+                           placeholder="VD: Nhà hàng ABC"
+                           class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nhà dịch vụ</label>
+                    <select name="timeline_service_provider[]" 
+                            class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                            onchange="updateLocationFromProvider(this)">
+                        <option value="">-- Chọn nhà dịch vụ --</option>
+                        <?php foreach ($service_providers as $provider): ?>
+                            <option value="<?= $provider['id'] ?>" data-address="<?= htmlspecialchars($provider['address'] ?? '') ?>">
+                                <?= htmlspecialchars($provider['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Địa điểm du lịch</label>
+                    <select name="timeline_destination[]" 
+                            class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                        <option value="">-- Chọn địa điểm --</option>
+                        <?php foreach ($destinations as $dest): ?>
+                            <option value="<?= $dest['id'] ?>"><?= htmlspecialchars($dest['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Dịch vụ</label>
+                    <select name="timeline_service[]" 
+                            class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                            onchange="promptAddToDayServices(this, ${dayNumber})">
+                        <option value="">-- Chọn dịch vụ --</option>
+                        <?php foreach ($services as $service): ?>
+                            <option value="<?= $service['id'] ?>"><?= htmlspecialchars($service['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                    <textarea name="timeline_notes[]" 
+                              rows="2"
+                              class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                              placeholder="Ghi chú thêm..."></textarea>
+                </div>
+                
+                <input type="hidden" name="timeline_display_order[]" value="${counter}">
+            </div>
+            
+            <div class="mt-3 flex justify-end gap-2">
+                <button type="button" onclick="moveTimelineUp(this)" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
+                    <i class="fas fa-arrow-up"></i>
+                </button>
+                <button type="button" onclick="moveTimelineDown(this)" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
+                    <i class="fas fa-arrow-down"></i>
+                </button>
+            </div>
+        </div>
+    `;
+
+        // Add to container
+        if (container.innerHTML.includes('Chưa có timeline')) {
+            container.innerHTML = itemHtml;
+        } else {
+            container.insertAdjacentHTML('beforeend', itemHtml);
+        }
+    }
+
+    function removeTimelineItem(btn) {
+        if (confirm('Bạn có chắc muốn xóa timeline item này?')) {
+            btn.closest('.timeline-item').remove();
+            // Show empty message if no items left
+            const container = btn.closest('.timeline-items');
+            if (container && container.children.length === 0) {
+                container.innerHTML = '<div class="text-gray-500 text-center py-8">Chưa có timeline nào</div>';
+            }
+        }
+    }
+
+    function updateTimelineType(select) {
+        const item = select.closest('.timeline-item');
+        const type = select.value;
+        const providerSelect = item.querySelector('[name="timeline_service_provider[]"]');
+
+        // Suggest service provider based on type
+        if (type === 'meal' || type === 'accommodation') {
+            providerSelect.style.borderColor = '#3b82f6';
+            providerSelect.title = 'Khuyến khích chọn nhà dịch vụ';
+        }
+    }
+
+    function updateLocationFromProvider(select) {
+        const item = select.closest('.timeline-item');
+        const locationInput = item.querySelector('[name="timeline_location[]"]');
+        const selectedOption = select.options[select.selectedIndex];
+        const address = selectedOption.getAttribute('data-address');
+
+        if (address && !locationInput.value) {
+            locationInput.value = address;
+        }
+    }
+
+    function promptAddToDayServices(select, dayNumber) {
+        if (!select.value) return;
+
+        const serviceId = select.value;
+        const serviceName = select.options[select.selectedIndex].text;
+        const providerSelect = select.closest('.timeline-item').querySelector('[name="timeline_service_provider[]"]');
+        const providerId = providerSelect ? providerSelect.value : '';
+
+        if (providerId && confirm(`Bạn có muốn thêm dịch vụ "${serviceName}" vào danh sách dịch vụ của ngày ${dayNumber} không?`)) {
+            // Trigger add to day services
+            addServiceToDayServices(dayNumber, serviceId, providerId);
+        }
+    }
+
+    function moveTimelineUp(btn) {
+        const item = btn.closest('.timeline-item');
+        const prev = item.previousElementSibling;
+        if (prev) {
+            item.parentNode.insertBefore(item, prev);
+        }
+    }
+
+    function moveTimelineDown(btn) {
+        const item = btn.closest('.timeline-item');
+        const next = item.nextElementSibling;
+        if (next) {
+            item.parentNode.insertBefore(next, item);
+        }
+    }
+</script>

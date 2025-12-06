@@ -36,10 +36,16 @@ class Destination
             $where_conditions = [];
             $params = [];
 
-            // Filter by category
-            if (!empty($filters['category_id'])) {
-                $where_conditions[] = "d.category_id = :category_id";
-                $params['category_id'] = $filters['category_id'];
+            // Filter by province
+            if (!empty($filters['province_id'])) {
+                $where_conditions[] = "d.province_id = :province_id";
+                $params['province_id'] = $filters['province_id'];
+            }
+
+            // Filter by country
+            if (!empty($filters['country_id'])) {
+                $where_conditions[] = "d.country_id = :country_id";
+                $params['country_id'] = $filters['country_id'];
             }
 
             // Filter by status
@@ -71,10 +77,12 @@ class Destination
             $data_sql = "
                 SELECT 
                     d.*,
-                    c.name as category_name,
+                    p.name as province_name,
+                    c.name as country_name,
                     (SELECT image_url FROM destination_images WHERE destination_id = d.id AND is_primary = 1 LIMIT 1) as thumbnail
                 FROM destinations d
-                LEFT JOIN categories c ON d.category_id = c.id
+                LEFT JOIN provinces p ON d.province_id = p.id
+                LEFT JOIN countries c ON d.country_id = c.id
                 {$where_clause}
                 ORDER BY d.created_at DESC
                 LIMIT :limit OFFSET :offset
@@ -104,9 +112,10 @@ class Destination
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT d.*, c.name as category_name
+                SELECT d.*, p.name as province_name, c.name as country_name
                 FROM destinations d
-                LEFT JOIN categories c ON d.category_id = c.id
+                LEFT JOIN provinces p ON d.province_id = p.id
+                LEFT JOIN countries c ON d.country_id = c.id
                 WHERE d.id = :id
                 LIMIT 1
             ");
@@ -147,14 +156,15 @@ class Destination
         try {
             $stmt = $this->pdo->prepare("
                 INSERT INTO destinations (
-                    category_id, name, description, locations, status, created_by
+                    province_id, country_id, name, description, locations, status, created_by
                 ) VALUES (
-                    :category_id, :name, :description, :locations, :status, :created_by
+                    :province_id, :country_id, :name, :description, :locations, :status, :created_by
                 )
             ");
 
             $success = $stmt->execute([
-                'category_id' => $data['category_id'] ?? null,
+                'province_id' => $data['province_id'] ?? null,
+                'country_id' => $data['country_id'] ?? null,
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'locations' => $data['locations'] ?? null,
@@ -176,7 +186,7 @@ class Destination
     public function update($id, $data)
     {
         try {
-            $allowed_fields = ['category_id', 'name', 'description', 'locations', 'status'];
+            $allowed_fields = ['province_id', 'country_id', 'name', 'description', 'locations', 'status'];
 
             $set_parts = [];
             $params = ['id' => $id];
@@ -343,17 +353,17 @@ class Destination
     }
 
     /**
-     * Lấy danh sách destinations theo category_id (cho AJAX)
+     * Lấy danh sách destinations theo province_id (cho AJAX)
      */
-    public function getByCategory($category_id = null)
+    public function getByProvince($province_id = null)
     {
         try {
-            $sql = "SELECT id, name, category_id FROM destinations WHERE status = 'active'";
+            $sql = "SELECT id, name, province_id, country_id FROM destinations WHERE status = 'active'";
             $params = [];
 
-            if ($category_id) {
-                $sql .= " AND category_id = :category_id";
-                $params['category_id'] = $category_id;
+            if ($province_id) {
+                $sql .= " AND province_id = :province_id";
+                $params['province_id'] = $province_id;
             }
 
             $sql .= " ORDER BY name ASC";
@@ -363,7 +373,7 @@ class Destination
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         } catch (PDOException $e) {
-            error_log("Destination::getByCategory() Error: " . $e->getMessage());
+            error_log("Destination::getByProvince() Error: " . $e->getMessage());
             return [];
         }
     }

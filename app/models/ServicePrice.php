@@ -1,0 +1,385 @@
+<?php
+/**
+ * ==============================================================================
+ * SERVICE PRICE MODEL
+ * ==============================================================================
+ * 
+ * Quản lý Giá dịch vụ theo địa điểm và mùa (Service Prices)
+ * 
+ * Relationships:
+ * - service_id → services (REQUIRED)
+ * - destination_id → destinations (Optional)
+ * - province_id → provinces (Optional)
+ * 
+ * Logic: Mỗi service có thể có nhiều giá cho các địa điểm khác nhau
+ * và các khoảng thời gian (mùa) khác nhau
+ * 
+ * @version 1.0
+ * @date 2024-12-XX
+ * ==============================================================================
+ */
+
+class ServicePrice
+{
+    private $pdo;
+
+    public function __construct($pdo)
+    {
+        $this->pdo = $pdo;
+    }
+
+    /**
+     * Lấy giá cho service tại một địa điểm và ngày cụ thể
+     * 
+     * @param int $service_id
+     * @param int|null $destination_id
+     * @param int|null $province_id
+     * @param string|null $date (Y-m-d format, null = today)
+     * @return array|null
+     */
+    public function getPriceForLocation($service_id, $destination_id = null, $province_id = null, $date = null)
+    {
+        try {
+            if ($date === null) {
+                $date = date('Y-m-d');
+            }
+
+            // Ưu tiên: destination_id > province_id
+            $sql = "
+                SELECT *
+                FROM service_prices
+                WHERE service_id = :service_id
+                  AND status = 'active'
+                  AND (
+                    (valid_from IS NULL OR valid_from <= :date)
+                    AND (valid_to IS NULL OR valid_to >= :date)
+                  )
+            ";
+            $params = [
+                'service_id' => $service_id,
+                'date' => $date
+            ];
+
+            // Ưu tiên destination cụ thể
+            if ($destination_id) {
+                $sql .= " AND destination_id = :destination_id";
+                $params['destination_id'] = $destination_id;
+            } elseif ($province_id) {
+                $sql .= " AND province_id = :province_id AND destination_id IS NULL";
+                $params['province_id'] = $province_id;
+            } else {
+                $sql .= " AND destination_id IS NULL AND province_id IS NULL";
+            }
+
+            $sql .= " ORDER BY destination_id DESC, province_id DESC, created_at DESC LIMIT 1";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetch() ?: null;
+
+        } catch (PDOException $e) {
+            error_log("ServicePrice::getPriceForLocation() Error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Lấy tất cả giá của một service
+     */
+    public function getByService($service_id, $filters = [])
+    {
+        try {
+            $where_conditions = ["service_id = :service_id"];
+            $params = ['service_id' => $service_id];
+
+            if (!empty($filters['destination_id'])) {
+                $where_conditions[] = "destination_id = :destination_id";
+                $params['destination_id'] = $filters['destination_id'];
+            }
+
+            if (!empty($filters['province_id'])) {
+                $where_conditions[] = "province_id = :province_id";
+                $params['province_id'] = $filters['province_id'];
+            }
+
+            if (!empty($filters['status'])) {
+                $where_conditions[] = "status = :status";
+                $params['status'] = $filters['status'];
+            }
+
+            if (!empty($filters['date'])) {
+                $where_conditions[] = "(
+                    (valid_from IS NULL OR valid_from <= :date)
+                    AND (valid_to IS NULL OR valid_to >= :date)
+                )";
+                $params['date'] = $filters['date'];
+            }
+
+            $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
+
+            $sql = "
+                SELECT 
+                    sp.*,
+                    d.name as destination_name,
+                    p.name as province_name
+                FROM service_prices sp
+                LEFT JOIN destinations d ON sp.destination_id = d.id
+                LEFT JOIN provinces p ON sp.province_id = p.id
+                {$where_clause}
+                ORDER BY sp.destination_id DESC, sp.province_id DESC, sp.valid_from ASC
+            ";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+
+        } catch (PDOException $e) {
+            error_log("ServicePrice::getByService() Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Tìm service price theo ID
+     */
+    public function findById($id)
+    {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT 
+                    sp.*,
+                    d.name as destination_name,
+                    p.name as province_name,
+                    s.name as service_name
+                FROM service_prices sp
+                LEFT JOIN destinations d ON sp.destination_id = d.id
+                LEFT JOIN provinces p ON sp.province_id = p.id
+                LEFT JOIN services s ON sp.service_id = s.id
+                WHERE sp.id = :id
+                LIMIT 1
+            ");
+
+            $stmt->execute(['id' => $id]);
+            return $stmt->fetch() ?: null;
+
+        } catch (PDOException $e) {
+            error_log("ServicePrice::findById() Error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Tạo service price mới
+     */
+    public function create($data)
+    {
+        try {
+            // Validate: phải có destination_id HOẶC province_id
+            if (empty($data['destination_id']) && empty($data['province_id'])) {
+                throw new Exception("Phải chọn địa điểm (destination) hoặc tỉnh thành (province).");
+            }
+
+            // Validate: không được có cả 2
+            if (!empty($data['destination_id']) && !empty($data['province_id'])) {
+                throw new Exception("Chỉ được chọn một trong hai: địa điểm hoặc tỉnh thành.");
+            }
+
+            // Validate: valid_to phải >= valid_from
+            if (!empty($data['valid_from']) && !empty($data['valid_to'])) {
+                if (strtotime($data['valid_to']) < strtotime($data['valid_from'])) {
+                    throw new Exception("Ngày kết thúc phải sau ngày bắt đầu.");
+                }
+            }
+
+            // Check overlap với giá hiện có
+            $overlap = $this->checkPriceOverlap(
+                $data['service_id'],
+                $data['destination_id'] ?? null,
+                $data['province_id'] ?? null,
+                $data['valid_from'] ?? null,
+                $data['valid_to'] ?? null
+            );
+
+            if ($overlap) {
+                throw new Exception("Đã có giá cho khoảng thời gian này. Vui lòng kiểm tra lại.");
+            }
+
+            $stmt = $this->pdo->prepare("
+                INSERT INTO service_prices (
+                    service_id, destination_id, province_id,
+                    unit_price, currency, valid_from, valid_to,
+                    price_type, notes, status, created_by
+                ) VALUES (
+                    :service_id, :destination_id, :province_id,
+                    :unit_price, :currency, :valid_from, :valid_to,
+                    :price_type, :notes, :status, :created_by
+                )
+            ");
+
+            $success = $stmt->execute([
+                'service_id' => $data['service_id'],
+                'destination_id' => $data['destination_id'] ?? null,
+                'province_id' => $data['province_id'] ?? null,
+                'unit_price' => $data['unit_price'],
+                'currency' => $data['currency'] ?? 'VND',
+                'valid_from' => $data['valid_from'] ?? null,
+                'valid_to' => $data['valid_to'] ?? null,
+                'price_type' => $data['price_type'] ?? 'standard',
+                'notes' => $data['notes'] ?? null,
+                'status' => $data['status'] ?? 'active',
+                'created_by' => get_user_id()
+            ]);
+
+            return $success ? $this->pdo->lastInsertId() : false;
+
+        } catch (Exception $e) {
+            error_log("ServicePrice::create() Error: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Kiểm tra giá có bị trùng khoảng thời gian không
+     */
+    private function checkPriceOverlap($service_id, $destination_id, $province_id, $valid_from, $valid_to)
+    {
+        try {
+            $sql = "
+                SELECT COUNT(*) as count
+                FROM service_prices
+                WHERE service_id = :service_id
+                  AND status = 'active'
+            ";
+            $params = ['service_id' => $service_id];
+
+            if ($destination_id) {
+                $sql .= " AND destination_id = :destination_id";
+                $params['destination_id'] = $destination_id;
+            } else {
+                $sql .= " AND destination_id IS NULL";
+            }
+
+            if ($province_id) {
+                $sql .= " AND province_id = :province_id";
+                $params['province_id'] = $province_id;
+            } else {
+                $sql .= " AND province_id IS NULL";
+            }
+
+            // Check overlap
+            if ($valid_from && $valid_to) {
+                $sql .= " AND (
+                    (valid_from IS NULL OR valid_from <= :valid_to)
+                    AND (valid_to IS NULL OR valid_to >= :valid_from)
+                )";
+                $params['valid_from'] = $valid_from;
+                $params['valid_to'] = $valid_to;
+            } elseif ($valid_from) {
+                $sql .= " AND (valid_to IS NULL OR valid_to >= :valid_from)";
+                $params['valid_from'] = $valid_from;
+            } elseif ($valid_to) {
+                $sql .= " AND (valid_from IS NULL OR valid_from <= :valid_to)";
+                $params['valid_to'] = $valid_to;
+            }
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $result = $stmt->fetch();
+
+            return ($result['count'] ?? 0) > 0;
+
+        } catch (PDOException $e) {
+            error_log("ServicePrice::checkPriceOverlap() Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Cập nhật service price
+     */
+    public function update($id, $data)
+    {
+        try {
+            $allowed_fields = [
+                'unit_price', 'currency', 'valid_from', 'valid_to',
+                'price_type', 'notes', 'status'
+            ];
+
+            $set_parts = [];
+            $params = ['id' => $id];
+
+            foreach ($allowed_fields as $field) {
+                if (isset($data[$field])) {
+                    $set_parts[] = "{$field} = :{$field}";
+                    $params[$field] = $data[$field];
+                }
+            }
+
+            // Validate dates
+            if (isset($data['valid_from']) && isset($data['valid_to'])) {
+                if (strtotime($data['valid_to']) < strtotime($data['valid_from'])) {
+                    throw new Exception("Ngày kết thúc phải sau ngày bắt đầu.");
+                }
+            }
+
+            if (empty($set_parts))
+                return false;
+
+            $set_clause = implode(', ', $set_parts);
+
+            $stmt = $this->pdo->prepare("
+                UPDATE service_prices
+                SET {$set_clause}, updated_at = NOW()
+                WHERE id = :id
+            ");
+
+            return $stmt->execute($params);
+
+        } catch (Exception $e) {
+            error_log("ServicePrice::update() Error: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Xóa service price
+     */
+    public function delete($id)
+    {
+        try {
+            // Soft delete
+            $stmt = $this->pdo->prepare("
+                UPDATE service_prices
+                SET status = 'inactive', updated_at = NOW()
+                WHERE id = :id
+            ");
+
+            return $stmt->execute(['id' => $id]);
+
+        } catch (PDOException $e) {
+            error_log("ServicePrice::delete() Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Toggle status
+     */
+    public function toggleStatus($id)
+    {
+        try {
+            $price = $this->findById($id);
+            if (!$price)
+                return false;
+
+            $new_status = ($price['status'] == 'active') ? 'inactive' : 'active';
+
+            return $this->update($id, ['status' => $new_status]);
+
+        } catch (PDOException $e) {
+            error_log("ServicePrice::toggleStatus() Error: " . $e->getMessage());
+            return false;
+        }
+    }
+}
+
