@@ -88,8 +88,7 @@ class ServiceTypeController
             $data = [
                 'name' => $name,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
-                'status' => isset($_POST['status']) ? $_POST['status'] : 'active',
-                'display_order' => isset($_POST['display_order']) ? (int) $_POST['display_order'] : 0
+                'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
             ];
 
             if ($this->serviceTypeModel->create($data)) {
@@ -165,8 +164,7 @@ class ServiceTypeController
             $data = [
                 'name' => $name,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
-                'status' => isset($_POST['status']) ? $_POST['status'] : 'active',
-                'display_order' => isset($_POST['display_order']) ? (int) $_POST['display_order'] : 0
+                'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
             ];
 
             if ($this->serviceTypeModel->update($service_type_id, $data)) {

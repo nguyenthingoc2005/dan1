@@ -30,15 +30,6 @@ if (!is_admin())
                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"><?= htmlspecialchars($service_type['description'] ?? '') ?></textarea>
         </div>
 
-        <!-- Thứ tự hiển thị -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Thứ tự hiển thị</label>
-            <input type="number" name="display_order"
-                value="<?= htmlspecialchars($service_type['display_order'] ?? 0) ?>" min="0"
-                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-            <small class="text-gray-500">Số nhỏ hơn sẽ hiển thị trước</small>
-        </div>
-
         <!-- Trạng thái -->
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>

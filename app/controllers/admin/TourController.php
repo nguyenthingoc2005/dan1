@@ -360,6 +360,35 @@ class TourController
             }
         }
 
+        // Validate Timeline chi tiết - BẮT BUỘC phải có timeline cho mỗi ngày
+        if (!empty($post['itinerary_day_number'])) {
+            $timeline_day_numbers = [];
+            if (!empty($post['timeline_day_number'])) {
+                $timeline_day_numbers = array_unique($post['timeline_day_number']);
+            }
+
+            $missing_timeline_days = [];
+            foreach ($post['itinerary_day_number'] as $day_num) {
+                if (!in_array($day_num, $timeline_day_numbers)) {
+                    $missing_timeline_days[] = $day_num;
+                }
+            }
+
+            if (!empty($missing_timeline_days)) {
+                $errors['timeline'] = "Vui lòng nhập timeline chi tiết cho các ngày: " . implode(', ', $missing_timeline_days);
+            }
+
+            // Validate mỗi timeline item phải có giờ và hoạt động
+            if (!empty($post['timeline_time']) && !empty($post['timeline_activity_title'])) {
+                foreach ($post['timeline_time'] as $idx => $time) {
+                    if (empty($time) || empty($post['timeline_activity_title'][$idx])) {
+                        $errors['timeline'] = "Timeline chi tiết: Mỗi timeline item phải có giờ và hoạt động";
+                        break;
+                    }
+                }
+            }
+        }
+
         // Validate Images
         if (!empty($_FILES['images']['name'][0])) {
             $count = count($_FILES['images']['name']);
@@ -831,6 +860,221 @@ class TourController
                 'message' => 'Không tìm thấy chính sách'
             ]);
         }
+        exit;
+    }
+
+    /**
+     * Load Day Services Editor Component (URL-based)
+     * URL: ?act=admin&module=tours&action=loadDayServicesEditor&day=1&tour_id=123
+     */
+    public function loadDayServicesEditor()
+    {
+        require_admin();
+
+        // Set header to prevent redirect
+        header('Content-Type: text/html; charset=utf-8');
+
+        $day_number = (int) ($_GET['day'] ?? 1);
+        $tour_id = (int) ($_GET['tour_id'] ?? 0);
+        $day_services = [];
+
+        // If editing existing tour, load day services from database
+        if ($tour_id > 0) {
+            $tour = $this->tourModel->findById($tour_id);
+            if ($tour && !empty($tour['itinerary_day_services'])) {
+                // Filter services by day_number
+                foreach ($tour['itinerary_day_services'] as $service) {
+                    if ($service['day_number'] == $day_number) {
+                        $day_services[] = $service;
+                    }
+                }
+            }
+        } else {
+            // If creating new tour, get from session or POST data
+            if (!empty($_SESSION['tour_form_data']['day_services'][$day_number])) {
+                $day_services = $_SESSION['tour_form_data']['day_services'][$day_number];
+            }
+        }
+
+        // Get services and service providers
+        $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
+        $service_providers = $this->serviceProviderModel->getForDropdown();
+
+        // Include component (only HTML, no layout)
+        $day_services_data = $day_services;
+        require VIEWS_PATH . '/components/day-services-editor.php';
+        exit;
+    }
+
+    /**
+     * Load Timeline Editor Component (URL-based)
+     * URL: ?act=admin&module=tours&action=loadTimelineEditor&day=1&tour_id=123
+     */
+    public function loadTimelineEditor()
+    {
+        require_admin();
+
+        // Set header to prevent redirect
+        header('Content-Type: text/html; charset=utf-8');
+
+        $day_number = (int) ($_GET['day'] ?? 1);
+        $tour_id = (int) ($_GET['tour_id'] ?? 0);
+        $timeline_items = [];
+
+        // If editing existing tour, load timeline items from database
+        if ($tour_id > 0) {
+            $tour = $this->tourModel->findById($tour_id);
+            if ($tour && !empty($tour['itinerary_timelines'])) {
+                // Filter timelines by day_number
+                foreach ($tour['itinerary_timelines'] as $timeline) {
+                    if (isset($timeline['itinerary_id'])) {
+                        // Get itinerary to check day_number
+                        $stmt = $this->db->prepare("SELECT day_number FROM itineraries WHERE id = :id");
+                        $stmt->execute(['id' => $timeline['itinerary_id']]);
+                        $itinerary = $stmt->fetch();
+                        if ($itinerary && $itinerary['day_number'] == $day_number) {
+                            $timeline_items[] = [
+                                'timeline_time' => $timeline['timeline_time'] ?? '',
+                                'activity_title' => $timeline['activity_title'] ?? '',
+                                'activity_description' => $timeline['activity_description'] ?? '',
+                                'location' => $timeline['location'] ?? '',
+                                'destination_id' => $timeline['destination_id'] ?? null,
+                                'service_provider_id' => $timeline['service_provider_id'] ?? null,
+                                'service_id' => $timeline['service_id'] ?? null,
+                                'timeline_type' => $timeline['timeline_type'] ?? 'activity',
+                                'display_order' => $timeline['display_order'] ?? 0,
+                                'notes' => $timeline['notes'] ?? ''
+                            ];
+                        }
+                    }
+                }
+            }
+        } else {
+            // If creating new tour, get from session or POST data
+            if (!empty($_SESSION['tour_form_data']['timeline_items'][$day_number])) {
+                $timeline_items = $_SESSION['tour_form_data']['timeline_items'][$day_number];
+            }
+        }
+
+        // Sort timeline items by time
+        usort($timeline_items, function ($a, $b) {
+            $time_a = $a['timeline_time'] ?? '00:00:00';
+            $time_b = $b['timeline_time'] ?? '00:00:00';
+            return strcmp($time_a, $time_b);
+        });
+
+        // Get data for dropdowns
+        $destinations = $this->destinationModel->getForDropdown();
+        $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
+        $service_providers = $this->serviceProviderModel->getForDropdown();
+
+        // Include component (only HTML, no layout)
+        require VIEWS_PATH . '/components/timeline-editor.php';
+        exit;
+    }
+
+    /**
+     * Load Itinerary Manager Component (URL-based) - Gộp Timeline và Dịch vụ
+     * URL: ?act=admin&module=tours&action=loadItineraryManager&day=1&step=2
+     */
+    public function loadItineraryManager()
+    {
+        require_admin();
+        
+        // Set header to prevent redirect
+        header('Content-Type: text/html; charset=utf-8');
+        
+        $day_number = (int) ($_GET['day'] ?? 1);
+        $step = (int) ($_GET['step'] ?? 2);
+        $tour_id = (int) ($_GET['tour_id'] ?? 0);
+        
+        $timeline_items = [];
+        $day_services = [];
+        
+        // Load from session if creating new tour
+        if ($tour_id == 0 && !empty($_SESSION['tour_form_data'])) {
+            $timeline_items = $_SESSION['tour_form_data']['timeline_items'][$day_number] ?? [];
+            $day_services = $_SESSION['tour_form_data']['day_services'][$day_number] ?? [];
+        }
+        
+        // If editing existing tour, load from database
+        if ($tour_id > 0) {
+            $tour = $this->tourModel->findById($tour_id);
+            if ($tour) {
+                // Load timelines
+                if (!empty($tour['itinerary_timelines'])) {
+                    foreach ($tour['itinerary_timelines'] as $timeline) {
+                        if (isset($timeline['itinerary_id'])) {
+                            $stmt = $this->db->prepare("SELECT day_number FROM itineraries WHERE id = :id");
+                            $stmt->execute(['id' => $timeline['itinerary_id']]);
+                            $itinerary = $stmt->fetch();
+                            if ($itinerary && $itinerary['day_number'] == $day_number) {
+                                $timeline_items[] = [
+                                    'timeline_time' => $timeline['timeline_time'] ?? '',
+                                    'activity_title' => $timeline['activity_title'] ?? '',
+                                    'activity_description' => $timeline['activity_description'] ?? '',
+                                    'location' => $timeline['location'] ?? '',
+                                    'destination_id' => $timeline['destination_id'] ?? null,
+                                    'service_provider_id' => $timeline['service_provider_id'] ?? null,
+                                    'service_id' => $timeline['service_id'] ?? null,
+                                    'timeline_type' => $timeline['timeline_type'] ?? 'activity',
+                                    'display_order' => $timeline['display_order'] ?? 0,
+                                    'notes' => $timeline['notes'] ?? ''
+                                ];
+                            }
+                        }
+                    }
+                }
+                
+                // Load day services
+                if (!empty($tour['itinerary_day_services'])) {
+                    foreach ($tour['itinerary_day_services'] as $service) {
+                        if ($service['day_number'] == $day_number) {
+                            $day_services[] = $service;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Get data for dropdowns
+        $destinations = $this->destinationModel->getForDropdown();
+        $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
+        $service_providers = $this->serviceProviderModel->getForDropdown();
+
+        // Include component (only HTML, no layout)
+        require VIEWS_PATH . '/components/itinerary-manager.php';
+        exit;
+    }
+
+    /**
+     * Save Form Data to Session (AJAX)
+     * URL: ?act=admin&module=tours&action=saveFormSession
+     */
+    public function saveFormSession()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+        
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!isset($_SESSION['tour_form_data'])) {
+            $_SESSION['tour_form_data'] = [];
+        }
+        
+        if (!empty($data['timeline_items'])) {
+            $_SESSION['tour_form_data']['timeline_items'] = $data['timeline_items'];
+        }
+        
+        if (!empty($data['day_services'])) {
+            $_SESSION['tour_form_data']['day_services'] = $data['day_services'];
+        }
+        
+        if (!empty($data['form_data'])) {
+            $_SESSION['tour_form_data']['form_data'] = $data['form_data'];
+        }
+        
+        echo json_encode(['success' => true]);
         exit;
     }
 }

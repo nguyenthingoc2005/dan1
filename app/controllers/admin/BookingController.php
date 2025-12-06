@@ -946,6 +946,20 @@ class BookingController
                     throw new Exception("Booking không tồn tại.");
                 }
 
+                // Validate deadline: Không được thêm dịch vụ nếu còn < 1 ngày đến ngày khởi hành
+                $today = date('Y-m-d');
+                $start_date = $booking['start_date'] ?? null;
+                if ($start_date) {
+                    $daysUntilStart = (strtotime($start_date) - strtotime($today)) / (60 * 60 * 24);
+                    if ($daysUntilStart < 1) {
+                        throw new Exception("Không thể thêm dịch vụ. Booking này khởi hành trong vòng 1 ngày hoặc đã khởi hành. Vui lòng liên hệ admin để xử lý.");
+                    }
+                }
+
+                if ($booking['approval_status'] === 'cancelled') {
+                    throw new Exception("Không thể thêm dịch vụ vào booking đã hủy.");
+                }
+
                 // Get service info
                 $service = $serviceModel->findById($service_id);
                 if (!$service || $service['status'] !== 'active') {
@@ -1068,6 +1082,16 @@ class BookingController
                 $booking = $this->bookingModel->getById($booking_id);
                 if (!$booking) {
                     throw new Exception("Booking không tồn tại.");
+                }
+
+                // Validate deadline: Không được thêm hành khách nếu còn < 1 ngày đến ngày khởi hành
+                $today = date('Y-m-d');
+                $start_date = $booking['start_date'] ?? null;
+                if ($start_date) {
+                    $daysUntilStart = (strtotime($start_date) - strtotime($today)) / (60 * 60 * 24);
+                    if ($daysUntilStart < 1) {
+                        throw new Exception("Không thể thêm hành khách. Booking này khởi hành trong vòng 1 ngày hoặc đã khởi hành. Vui lòng liên hệ admin để xử lý.");
+                    }
                 }
 
                 if ($booking['approval_status'] === 'cancelled') {

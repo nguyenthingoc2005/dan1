@@ -34,8 +34,8 @@ $services = $services ?? [];
         </button>
     </div>
 
-    <!-- Timeline Items List -->
-    <div id="timeline-items-day-<?= $day_number ?>" class="space-y-3">
+    <!-- Timeline Items List - Vertical Timeline View -->
+    <div id="timeline-items-day-<?= $day_number ?>" class="relative pl-12">
         <?php if (empty($timeline_items)): ?>
             <div class="text-gray-500 text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed">
                 <i class="fas fa-clock text-4xl mb-2"></i>
@@ -43,9 +43,14 @@ $services = $services ?? [];
                 <p class="text-sm mt-1">Click "Thêm timeline item" để bắt đầu</p>
             </div>
         <?php else: ?>
-            <?php foreach ($timeline_items as $idx => $item): ?>
-                <?php include __DIR__ . '/timeline-item-form.php'; ?>
-            <?php endforeach; ?>
+            <!-- Vertical Timeline Line -->
+            <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-blue-200"></div>
+            
+            <div class="space-y-4 relative">
+                <?php foreach ($timeline_items as $idx => $item): ?>
+                    <?php include __DIR__ . '/timeline-item-form.php'; ?>
+                <?php endforeach; ?>
+            </div>
         <?php endif; ?>
     </div>
 </div>
@@ -60,9 +65,22 @@ $services = $services ?? [];
         const container = document.getElementById(`timeline-items-day-${dayNumber}`);
 
         const itemHtml = `
-        <div class="timeline-item bg-white border border-gray-200 rounded-lg p-4" data-day="${dayNumber}" data-index="${counter}">
+        <div class="timeline-item bg-white border-2 bg-green-50 border-green-200 rounded-lg p-4 mb-4 relative" data-day="${dayNumber}" data-index="${counter}">
+            <!-- Timeline Dot -->
+            <div class="absolute -left-6 top-6 w-6 h-6 bg-white border-4 border-blue-500 rounded-full flex items-center justify-center z-10">
+                <span class="text-sm">🎯</span>
+            </div>
+            
             <div class="flex justify-between items-start mb-3">
-                <h5 class="font-medium text-gray-700">Timeline Item #${counter}</h5>
+                <div class="flex items-center gap-2">
+                    <input type="time" 
+                           name="timeline_time[]" 
+                           value=""
+                           required
+                           class="px-2 py-1 border rounded focus:border-blue-500 font-semibold text-blue-600 text-lg"
+                           onchange="sortTimelineByTime(${dayNumber})">
+                    <span class="text-sm font-medium text-gray-600 px-2 py-1 bg-white rounded">Hoạt động</span>
+                </div>
                 <button type="button" onclick="removeTimelineItem(this)" class="text-red-500 hover:text-red-700">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -198,11 +216,50 @@ $services = $services ?? [];
         const item = select.closest('.timeline-item');
         const type = select.value;
         const providerSelect = item.querySelector('[name="timeline_service_provider[]"]');
+        const dot = item.querySelector('.absolute.-left-6');
+        const typeLabel = item.querySelector('.text-sm.font-medium.text-gray-600');
+        
+        // Update icon and color based on type
+        const typeIcons = {
+            'meal': '🍽️',
+            'accommodation': '🏨',
+            'activity': '🎯',
+            'transport': '🚌'
+        };
+        
+        const typeLabels = {
+            'meal': 'Bữa ăn',
+            'accommodation': 'Nơi nghỉ',
+            'activity': 'Hoạt động',
+            'transport': 'Di chuyển'
+        };
+        
+        const typeColors = {
+            'meal': 'bg-orange-50 border-orange-200',
+            'accommodation': 'bg-blue-50 border-blue-200',
+            'activity': 'bg-green-50 border-green-200',
+            'transport': 'bg-purple-50 border-purple-200'
+        };
+        
+        if (dot) {
+            dot.innerHTML = `<span class="text-sm">${typeIcons[type] || '🎯'}</span>`;
+        }
+        
+        if (typeLabel) {
+            typeLabel.textContent = typeLabels[type] || 'Hoạt động';
+        }
+        
+        // Update border color
+        item.className = item.className.replace(/bg-\w+-\d+ border-\w+-\d+/g, '');
+        item.classList.add(...typeColors[type].split(' '));
 
         // Suggest service provider based on type
         if (type === 'meal' || type === 'accommodation') {
             providerSelect.style.borderColor = '#3b82f6';
             providerSelect.title = 'Khuyến khích chọn nhà dịch vụ';
+        } else {
+            providerSelect.style.borderColor = '';
+            providerSelect.title = '';
         }
     }
 
@@ -237,6 +294,7 @@ $services = $services ?? [];
         if (prev) {
             item.parentNode.insertBefore(item, prev);
         }
+        updateDisplayOrder(dayNumber);
     }
 
     function moveTimelineDown(btn) {
@@ -245,5 +303,33 @@ $services = $services ?? [];
         if (next) {
             item.parentNode.insertBefore(next, item);
         }
+        updateDisplayOrder(dayNumber);
+    }
+
+    function sortTimelineByTime(dayNumber) {
+        const container = document.getElementById(`timeline-items-day-${dayNumber}`);
+        const items = Array.from(container.querySelectorAll('.timeline-item'));
+        
+        // Sort by time
+        items.sort((a, b) => {
+            const timeA = a.querySelector('[name="timeline_time[]"]').value || '00:00:00';
+            const timeB = b.querySelector('[name="timeline_time[]"]').value || '00:00:00';
+            return timeA.localeCompare(timeB);
+        });
+        
+        // Re-append sorted items
+        items.forEach(item => container.appendChild(item));
+        updateDisplayOrder(dayNumber);
+    }
+
+    function updateDisplayOrder(dayNumber) {
+        const container = document.getElementById(`timeline-items-day-${dayNumber}`);
+        const items = container.querySelectorAll('.timeline-item');
+        items.forEach((item, index) => {
+            const orderInput = item.querySelector('[name="timeline_display_order[]"]');
+            if (orderInput) {
+                orderInput.value = index;
+            }
+        });
     }
 </script>

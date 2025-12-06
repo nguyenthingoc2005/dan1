@@ -122,11 +122,29 @@ $statusColors = [
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-bold text-sm text-gray-700">Danh sách đoàn
                         (<?= count($booking['passengers'] ?? []) ?> người)</h3>
-                    <?php if ($booking['approval_status'] != 'cancelled'): ?>
+                    <?php
+                    // Chỉ cho phép thêm khách nếu:
+                    // 1. Booking chưa bị hủy
+                    // 2. Còn >= 1 ngày đến ngày khởi hành
+                    $canAddPassenger = false;
+                    if ($booking['approval_status'] != 'cancelled') {
+                        $today = date('Y-m-d');
+                        $start_date = $booking['start_date'] ?? null;
+                        if ($start_date) {
+                            $daysUntilStart = (strtotime($start_date) - strtotime($today)) / (60 * 60 * 24);
+                            $canAddPassenger = $daysUntilStart >= 1;
+                        }
+                    }
+                    ?>
+                    <?php if ($canAddPassenger): ?>
                         <button onclick="openModal('addPassengerModal')"
                             class="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
                             + Thêm khách
                         </button>
+                    <?php elseif ($booking['approval_status'] != 'cancelled'): ?>
+                        <span class="text-xs text-gray-500 italic">
+                            ⚠️ Không thể thêm khách (còn < 1 ngày đến ngày khởi hành)
+                        </span>
                     <?php endif; ?>
                 </div>
                 <table class="w-full text-sm text-left text-gray-500 border rounded">
@@ -169,11 +187,29 @@ $statusColors = [
             <div class="bg-white p-6 rounded shadow-sm">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-bold text-gray-800">Dịch vụ bổ sung</h2>
-                    <?php if ($booking['approval_status'] != 'cancelled'): ?>
+                    <?php
+                    // Chỉ cho phép thêm dịch vụ nếu:
+                    // 1. Booking chưa bị hủy
+                    // 2. Còn >= 1 ngày đến ngày khởi hành
+                    $canAddService = false;
+                    if ($booking['approval_status'] != 'cancelled') {
+                        $today = date('Y-m-d');
+                        $start_date = $booking['start_date'] ?? null;
+                        if ($start_date) {
+                            $daysUntilStart = (strtotime($start_date) - strtotime($today)) / (60 * 60 * 24);
+                            $canAddService = $daysUntilStart >= 1;
+                        }
+                    }
+                    ?>
+                    <?php if ($canAddService): ?>
                         <button onclick="openModal('addServiceModal')"
                             class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                             + Thêm dịch vụ
                         </button>
+                    <?php elseif ($booking['approval_status'] != 'cancelled'): ?>
+                        <span class="text-xs text-gray-500 italic">
+                            ⚠️ Không thể thêm dịch vụ (còn < 1 ngày đến ngày khởi hành)
+                        </span>
                     <?php endif; ?>
                 </div>
 

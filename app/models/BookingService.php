@@ -32,8 +32,8 @@ class BookingService
     public function getByBookingId($bookingId)
     {
         $sql = "SELECT bs.*, 
-                       s.name as service_name_original, s.service_code,
-                       st.name as service_type_name, st.code as service_type_code,
+                       s.name as service_name_original,
+                       st.name as service_type_name,
                        sp.name as supplier_name, sp.service_code as supplier_code
                 FROM booking_services bs
                 LEFT JOIN services s ON bs.service_id = s.id

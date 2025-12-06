@@ -53,10 +53,10 @@ class ServiceType
             $params['limit'] = $per_page;
 
             $data_sql = "
-                SELECT id, name, description, status, display_order, created_at
+                SELECT id, name, description, status, created_at
                 FROM service_types
                 {$where_clause}
-                ORDER BY display_order ASC, name ASC
+                ORDER BY name ASC
                 LIMIT :limit OFFSET :offset
             ";
             $data_stmt = $this->pdo->prepare($data_sql);
@@ -83,7 +83,7 @@ class ServiceType
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT id, name, description, status, display_order, created_at
+                SELECT id, name, description, status, created_at
                 FROM service_types
                 WHERE id = :id
                 LIMIT 1
@@ -123,15 +123,14 @@ class ServiceType
     {
         try {
             $stmt = $this->pdo->prepare("
-                INSERT INTO service_types (name, description, status, display_order)
-                VALUES (:name, :description, :status, :display_order)
+                INSERT INTO service_types (name, description, status)
+                VALUES (:name, :description, :status)
             ");
 
             $success = $stmt->execute([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
-                'status' => $data['status'] ?? 'active',
-                'display_order' => $data['display_order'] ?? 0
+                'status' => $data['status'] ?? 'active'
             ]);
 
             return $success ? $this->pdo->lastInsertId() : false;
@@ -148,7 +147,7 @@ class ServiceType
     public function update($id, $data)
     {
         try {
-            $allowed_fields = ['name', 'description', 'status', 'display_order'];
+            $allowed_fields = ['name', 'description', 'status'];
             $set_parts = [];
             $params = ['id' => $id];
 
@@ -241,7 +240,7 @@ class ServiceType
                 SELECT id, name, description
                 FROM service_types
                 WHERE status = 'active'
-                ORDER BY display_order ASC, name ASC
+                ORDER BY name ASC
             ");
 
             $stmt->execute();

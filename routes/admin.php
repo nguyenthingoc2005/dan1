@@ -267,6 +267,28 @@ switch ($module) {
             case 'getServiceInfo':
                 $tourController->getServiceInfo();
                 break;
+            case 'getServiceProviders':
+                $tourController->getServiceProviders();
+                break;
+            case 'createPolicy':
+                $tourController->createPolicy();
+                break;
+            case 'getPolicy':
+                $tourController->getPolicy();
+                break;
+            // Component Loaders (URL-based)
+            case 'loadTimelineEditor':
+                $tourController->loadTimelineEditor();
+                break;
+            case 'loadDayServicesEditor':
+                $tourController->loadDayServicesEditor();
+                break;
+            case 'loadItineraryManager':
+                $tourController->loadItineraryManager();
+                break;
+            case 'saveFormSession':
+                $tourController->saveFormSession();
+                break;
             default:
                 $tourController->index();
                 break;

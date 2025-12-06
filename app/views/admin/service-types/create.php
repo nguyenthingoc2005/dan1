@@ -30,14 +30,6 @@ if (!is_admin())
                 placeholder="Mô tả ngắn về loại dịch vụ"></textarea>
         </div>
 
-        <!-- Thứ tự hiển thị -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Thứ tự hiển thị</label>
-            <input type="number" name="display_order" value="0" min="0"
-                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-            <small class="text-gray-500">Số nhỏ hơn sẽ hiển thị trước (mặc định: 0)</small>
-        </div>
-
         <!-- Trạng thái -->
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
