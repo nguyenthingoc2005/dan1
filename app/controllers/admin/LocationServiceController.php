@@ -151,6 +151,20 @@ class LocationServiceController
                     if (!isset($services['data'])) {
                         $services['data'] = [];
                     }
+
+                    // Load prices cho mỗi service
+                    foreach ($services['data'] as &$service) {
+                        try {
+                            $service['prices'] = $this->servicePriceModel->getByService($service['id'], ['status' => 'active']);
+                            if (!isset($service['prices']) || !is_array($service['prices'])) {
+                                $service['prices'] = [];
+                            }
+                        } catch (Exception $e) {
+                            error_log("Error loading prices for service {$service['id']}: " . $e->getMessage());
+                            $service['prices'] = [];
+                        }
+                    }
+                    unset($service); // Unset reference
                 } catch (PDOException $e) {
                     error_log("LocationServiceController::index() - Error loading services: " . $e->getMessage());
                     error_log("LocationServiceController::index() - Service Provider ID: " . $service_provider_id);
@@ -403,6 +417,41 @@ class LocationServiceController
     }
 
     /**
+     * AJAX: Lấy thông tin price theo ID
+     */
+    public function getPrice()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            $id = !empty($_GET['id']) ? (int) $_GET['id'] : null;
+
+            if (!$id) {
+                throw new Exception("Thiếu ID.");
+            }
+
+            $price = $this->servicePriceModel->findById($id);
+
+            if (!$price) {
+                throw new Exception("Không tìm thấy giá.");
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => $price
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
      * Form tạo service provider
      */
     public function createProvider()
@@ -442,16 +491,89 @@ class LocationServiceController
         require_admin();
 
         try {
+            require_once COMMON_PATH . '/ValidationHelper.php';
+
+            // Validate required fields
             if (empty($_POST['name']) || empty($_POST['province_id']) || empty($_POST['country_id'])) {
                 throw new Exception("Vui lòng điền đầy đủ thông tin.");
             }
 
+            $name = trim($_POST['name']);
+            $province_id = (int) $_POST['province_id'];
+            $country_id = (int) $_POST['country_id'];
+
+            // Validate name: min 3, max 200
+            if (mb_strlen($name) < 3) {
+                throw new Exception("Tên nhà dịch vụ phải có ít nhất 3 ký tự.");
+            }
+            if (mb_strlen($name) > 200) {
+                throw new Exception("Tên nhà dịch vụ không được quá 200 ký tự.");
+            }
+
+            // Validate province exists and active
+            $province = $this->provinceModel->findById($province_id);
+            if (!$province) {
+                throw new Exception("Tỉnh thành không tồn tại.");
+            }
+            if ($province['status'] != 'active') {
+                throw new Exception("Tỉnh thành không khả dụng (đã bị vô hiệu hóa).");
+            }
+
+            // Validate country exists and active
+            $country = $this->countryModel->findById($country_id);
+            if (!$country) {
+                throw new Exception("Quốc gia không tồn tại.");
+            }
+            if ($country['status'] != 'active') {
+                throw new Exception("Quốc gia không khả dụng (đã bị vô hiệu hóa).");
+            }
+
+            // Validate province belongs to country
+            if ($province['country_id'] != $country_id) {
+                throw new Exception("Tỉnh thành không thuộc quốc gia đã chọn.");
+            }
+
+            // Check duplicate name in same province
+            $existing = $this->serviceProviderModel->getAll([
+                'province_id' => $province_id,
+                'name' => $name
+            ], 1, 1);
+            if (!empty($existing['data']) && count($existing['data']) > 0) {
+                throw new Exception("Tên nhà dịch vụ đã tồn tại trong tỉnh này. Vui lòng chọn tên khác.");
+            }
+
+            // Validate service_type_id if provided
+            if (!empty($_POST['service_type_id'])) {
+                $service_type_id = (int) $_POST['service_type_id'];
+                $service_type = $this->serviceTypeModel->findById($service_type_id);
+                if (!$service_type) {
+                    throw new Exception("Loại dịch vụ không tồn tại.");
+                }
+                if ($service_type['status'] != 'active') {
+                    throw new Exception("Loại dịch vụ không khả dụng (đã bị vô hiệu hóa).");
+                }
+            }
+
+            // Validate email format if provided
+            if (!empty($_POST['email'])) {
+                if (!ValidationHelper::validateEmail($_POST['email'], false)) {
+                    throw new Exception("Email không hợp lệ.");
+                }
+            }
+
+            // Validate phone format if provided
+            if (!empty($_POST['phone'])) {
+                if (!ValidationHelper::validatePhone($_POST['phone'], false)) {
+                    throw new Exception("Số điện thoại không hợp lệ (VD: 0901234567).");
+                }
+            }
+
             $data = [
-                'name' => sanitize($_POST['name']),
+                'name' => sanitize($name),
                 'service_type_id' => !empty($_POST['service_type_id']) ? (int) $_POST['service_type_id'] : null,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
-                'province_id' => (int) $_POST['province_id'],
-                'country_id' => (int) $_POST['country_id'],
+                'province_id' => $province_id,
+                'country_id' => $country_id,
                 'contact_person' => isset($_POST['contact_person']) ? sanitize($_POST['contact_person']) : null,
                 'email' => isset($_POST['email']) ? sanitize($_POST['email']) : null,
                 'phone' => isset($_POST['phone']) ? sanitize($_POST['phone']) : null,
@@ -516,13 +638,76 @@ class LocationServiceController
         require_admin();
 
         try {
+            require_once COMMON_PATH . '/ValidationHelper.php';
+
             if (empty($_POST['id'])) {
                 throw new Exception("Thiếu ID.");
             }
 
             $id = (int) $_POST['id'];
+
+            // Check provider exists
+            $existing_provider = $this->serviceProviderModel->findById($id);
+            if (!$existing_provider) {
+                throw new Exception("Nhà dịch vụ không tồn tại.");
+            }
+
+            // Validate required fields
+            if (empty($_POST['name'])) {
+                throw new Exception("Vui lòng nhập tên nhà dịch vụ.");
+            }
+
+            $name = trim($_POST['name']);
+
+            // Validate name: min 3, max 200
+            if (mb_strlen($name) < 3) {
+                throw new Exception("Tên nhà dịch vụ phải có ít nhất 3 ký tự.");
+            }
+            if (mb_strlen($name) > 200) {
+                throw new Exception("Tên nhà dịch vụ không được quá 200 ký tự.");
+            }
+
+            // Check duplicate name in same province (exclude current provider)
+            $existing = $this->serviceProviderModel->getAll([
+                'province_id' => $existing_provider['province_id'],
+                'name' => $name
+            ], 1, 10);
+            if (!empty($existing['data'])) {
+                foreach ($existing['data'] as $provider) {
+                    if ($provider['id'] != $id && $provider['name'] == $name) {
+                        throw new Exception("Tên nhà dịch vụ đã tồn tại trong tỉnh này. Vui lòng chọn tên khác.");
+                    }
+                }
+            }
+
+            // Validate service_type_id if provided
+            if (!empty($_POST['service_type_id'])) {
+                $service_type_id = (int) $_POST['service_type_id'];
+                $service_type = $this->serviceTypeModel->findById($service_type_id);
+                if (!$service_type) {
+                    throw new Exception("Loại dịch vụ không tồn tại.");
+                }
+                if ($service_type['status'] != 'active') {
+                    throw new Exception("Loại dịch vụ không khả dụng (đã bị vô hiệu hóa).");
+                }
+            }
+
+            // Validate email format if provided
+            if (!empty($_POST['email'])) {
+                if (!ValidationHelper::validateEmail($_POST['email'], false)) {
+                    throw new Exception("Email không hợp lệ.");
+                }
+            }
+
+            // Validate phone format if provided
+            if (!empty($_POST['phone'])) {
+                if (!ValidationHelper::validatePhone($_POST['phone'], false)) {
+                    throw new Exception("Số điện thoại không hợp lệ (VD: 0901234567).");
+                }
+            }
+
             $data = [
-                'name' => sanitize($_POST['name']),
+                'name' => sanitize($name),
                 'service_type_id' => !empty($_POST['service_type_id']) ? (int) $_POST['service_type_id'] : null,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
                 'contact_person' => isset($_POST['contact_person']) ? sanitize($_POST['contact_person']) : null,
@@ -716,14 +901,55 @@ class LocationServiceController
         require_admin();
 
         try {
+            // Validate required fields
             if (empty($_POST['service_provider_id']) || empty($_POST['service_type_id']) || empty($_POST['name'])) {
                 throw new Exception("Vui lòng điền đầy đủ thông tin.");
             }
 
+            $name = trim($_POST['name']);
+            $service_provider_id = (int) $_POST['service_provider_id'];
+            $service_type_id = (int) $_POST['service_type_id'];
+
+            // Validate name: min 3, max 200
+            if (mb_strlen($name) < 3) {
+                throw new Exception("Tên dịch vụ phải có ít nhất 3 ký tự.");
+            }
+            if (mb_strlen($name) > 200) {
+                throw new Exception("Tên dịch vụ không được quá 200 ký tự.");
+            }
+
+            // Validate service_provider exists and active
+            $provider = $this->serviceProviderModel->findById($service_provider_id);
+            if (!$provider) {
+                throw new Exception("Nhà cung cấp dịch vụ không tồn tại.");
+            }
+            if ($provider['status'] != 'active') {
+                throw new Exception("Nhà cung cấp dịch vụ không khả dụng (đã bị vô hiệu hóa).");
+            }
+
+            // Validate service_type exists and active
+            $service_type = $this->serviceTypeModel->findById($service_type_id);
+            if (!$service_type) {
+                throw new Exception("Loại dịch vụ không tồn tại.");
+            }
+            if ($service_type['status'] != 'active') {
+                throw new Exception("Loại dịch vụ không khả dụng (đã bị vô hiệu hóa).");
+            }
+
+            // Check duplicate name in same service_provider and service_type
+            $existing = $this->serviceModel->getAll([
+                'service_provider_id' => $service_provider_id,
+                'service_type_id' => $service_type_id,
+                'name' => $name
+            ], 1, 1);
+            if (!empty($existing['data']) && count($existing['data']) > 0) {
+                throw new Exception("Dịch vụ này đã tồn tại cho nhà cung cấp này. Vui lòng chọn tên khác hoặc sửa dịch vụ hiện có.");
+            }
+
             $data = [
-                'service_provider_id' => (int) $_POST['service_provider_id'],
-                'service_type_id' => (int) $_POST['service_type_id'],
-                'name' => sanitize($_POST['name']),
+                'service_provider_id' => $service_provider_id,
+                'service_type_id' => $service_type_id,
+                'name' => sanitize($name),
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
                 'unit' => isset($_POST['unit']) ? sanitize($_POST['unit']) : null,
                 'notes' => isset($_POST['notes']) ? sanitize($_POST['notes']) : null,
@@ -790,9 +1016,58 @@ class LocationServiceController
             }
 
             $id = (int) $_POST['id'];
+
+            // Check service exists
+            $existing_service = $this->serviceModel->findById($id);
+            if (!$existing_service) {
+                throw new Exception("Dịch vụ không tồn tại.");
+            }
+
+            // Validate required fields
+            if (empty($_POST['name'])) {
+                throw new Exception("Vui lòng nhập tên dịch vụ.");
+            }
+
+            $name = trim($_POST['name']);
+
+            // Validate name: min 3, max 200
+            if (mb_strlen($name) < 3) {
+                throw new Exception("Tên dịch vụ phải có ít nhất 3 ký tự.");
+            }
+            if (mb_strlen($name) > 200) {
+                throw new Exception("Tên dịch vụ không được quá 200 ký tự.");
+            }
+
+            // Validate service_type_id if provided
+            $service_type_id = !empty($_POST['service_type_id']) ? (int) $_POST['service_type_id'] : $existing_service['service_type_id'];
+            if ($service_type_id) {
+                $service_type = $this->serviceTypeModel->findById($service_type_id);
+                if (!$service_type) {
+                    throw new Exception("Loại dịch vụ không tồn tại.");
+                }
+                if ($service_type['status'] != 'active') {
+                    throw new Exception("Loại dịch vụ không khả dụng (đã bị vô hiệu hóa).");
+                }
+            }
+
+            // Check duplicate name in same service_provider and service_type (exclude current service)
+            $service_provider_id = $existing_service['service_provider_id'];
+            $existing = $this->serviceModel->getAll([
+                'service_provider_id' => $service_provider_id,
+                'service_type_id' => $service_type_id,
+                'name' => $name
+            ], 1, 10);
+            if (!empty($existing['data'])) {
+                foreach ($existing['data'] as $service) {
+                    if ($service['id'] != $id && $service['name'] == $name) {
+                        throw new Exception("Dịch vụ này đã tồn tại cho nhà cung cấp này. Vui lòng chọn tên khác.");
+                    }
+                }
+            }
+
             $data = [
-                'name' => sanitize($_POST['name']),
-                'service_type_id' => !empty($_POST['service_type_id']) ? (int) $_POST['service_type_id'] : null,
+                'name' => sanitize($name),
+                'service_type_id' => $service_type_id,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
                 'unit' => isset($_POST['unit']) ? sanitize($_POST['unit']) : null,
                 'notes' => isset($_POST['notes']) ? sanitize($_POST['notes']) : null,
@@ -959,19 +1234,30 @@ class LocationServiceController
                 throw new Exception("Vui lòng điền đầy đủ thông tin.");
             }
 
+            $service_id = (int) $_POST['service_id'];
+            $unit_price = (float) $_POST['unit_price'];
+
             // Validate service tồn tại
-            $service = $this->serviceModel->findById((int) $_POST['service_id']);
+            $service = $this->serviceModel->findById($service_id);
             if (!$service) {
                 throw new Exception("Không tìm thấy dịch vụ.");
             }
 
-            // Giá chỉ gắn với service, không cần destination_id hay province_id
-            // destination_id và province_id là optional (nếu muốn giá riêng cho địa điểm/tỉnh cụ thể)
+            // Validate unit_price > 0
+            if ($unit_price <= 0) {
+                throw new Exception("Giá phải lớn hơn 0.");
+            }
+
+            // Validate price_type
+            $price_type = $_POST['price_type'] ?? 'standard';
+            $allowed_price_types = ['standard', 'peak', 'low'];
+            if (!in_array($price_type, $allowed_price_types)) {
+                throw new Exception("Loại giá không hợp lệ.");
+            }
+
             $data = [
-                'service_id' => (int) $_POST['service_id'],
-                'destination_id' => !empty($_POST['destination_id']) ? (int) $_POST['destination_id'] : null,
-                'province_id' => !empty($_POST['province_id']) ? (int) $_POST['province_id'] : null,
-                'unit_price' => (float) $_POST['unit_price'],
+                'service_id' => $service_id,
+                'unit_price' => $unit_price,
                 'start_date' => !empty($_POST['start_date']) ? $_POST['start_date'] : (!empty($_POST['valid_from']) ? $_POST['valid_from'] : null),
                 'end_date' => !empty($_POST['end_date']) ? $_POST['end_date'] : (!empty($_POST['valid_to']) ? $_POST['valid_to'] : null),
                 'price_type' => $_POST['price_type'] ?? 'standard',
@@ -1014,11 +1300,37 @@ class LocationServiceController
             }
 
             $id = (int) $_POST['id'];
+
+            // Check price exists
+            $existing_price = $this->servicePriceModel->findById($id);
+            if (!$existing_price) {
+                throw new Exception("Giá không tồn tại.");
+            }
+
+            // Validate required fields
+            if (empty($_POST['unit_price'])) {
+                throw new Exception("Vui lòng nhập giá.");
+            }
+
+            $unit_price = (float) $_POST['unit_price'];
+
+            // Validate unit_price > 0
+            if ($unit_price <= 0) {
+                throw new Exception("Giá phải lớn hơn 0.");
+            }
+
+            // Validate price_type
+            $price_type = $_POST['price_type'] ?? 'standard';
+            $allowed_price_types = ['standard', 'peak', 'low'];
+            if (!in_array($price_type, $allowed_price_types)) {
+                throw new Exception("Loại giá không hợp lệ.");
+            }
+
             $data = [
-                'unit_price' => (float) $_POST['unit_price'],
+                'unit_price' => $unit_price,
                 'start_date' => !empty($_POST['start_date']) ? $_POST['start_date'] : (!empty($_POST['valid_from']) ? $_POST['valid_from'] : null),
                 'end_date' => !empty($_POST['end_date']) ? $_POST['end_date'] : (!empty($_POST['valid_to']) ? $_POST['valid_to'] : null),
-                'price_type' => $_POST['price_type'] ?? 'standard',
+                'price_type' => $price_type,
                 'notes' => isset($_POST['notes']) ? sanitize($_POST['notes']) : null
             ];
 
@@ -1266,10 +1578,45 @@ class LocationServiceController
                 throw new Exception("Vui lòng điền đầy đủ thông tin.");
             }
 
+            $name = trim($_POST['name']);
+            $province_id = (int) $_POST['province_id'];
+            $country_id = (int) $_POST['country_id'];
+
+            // Validate name: min 3, max 200
+            if (mb_strlen($name) < 3) {
+                throw new Exception("Tên địa điểm phải có ít nhất 3 ký tự.");
+            }
+            if (mb_strlen($name) > 200) {
+                throw new Exception("Tên địa điểm không được quá 200 ký tự.");
+            }
+
+            // Validate province exists and active
+            $province = $this->provinceModel->findById($province_id);
+            if (!$province) {
+                throw new Exception("Tỉnh thành không tồn tại.");
+            }
+            if ($province['status'] != 'active') {
+                throw new Exception("Tỉnh thành không khả dụng (đã bị vô hiệu hóa).");
+            }
+
+            // Validate country exists and active
+            $country = $this->countryModel->findById($country_id);
+            if (!$country) {
+                throw new Exception("Quốc gia không tồn tại.");
+            }
+            if ($country['status'] != 'active') {
+                throw new Exception("Quốc gia không khả dụng (đã bị vô hiệu hóa).");
+            }
+
+            // Validate province belongs to country
+            if ($province['country_id'] != $country_id) {
+                throw new Exception("Tỉnh thành không thuộc quốc gia đã chọn.");
+            }
+
             $data = [
-                'name' => sanitize($_POST['name']),
-                'province_id' => (int) $_POST['province_id'],
-                'country_id' => (int) $_POST['country_id'],
+                'name' => sanitize($name),
+                'province_id' => $province_id,
+                'country_id' => $country_id,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
                 'locations' => isset($_POST['locations']) ? sanitize($_POST['locations']) : null,
                 'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
@@ -1334,8 +1681,30 @@ class LocationServiceController
             }
 
             $id = (int) $_POST['id'];
+
+            // Check destination exists
+            $existing_destination = $this->destinationModel->findById($id);
+            if (!$existing_destination) {
+                throw new Exception("Địa điểm không tồn tại.");
+            }
+
+            // Validate required fields
+            if (empty($_POST['name'])) {
+                throw new Exception("Vui lòng nhập tên địa điểm.");
+            }
+
+            $name = trim($_POST['name']);
+
+            // Validate name: min 3, max 200
+            if (mb_strlen($name) < 3) {
+                throw new Exception("Tên địa điểm phải có ít nhất 3 ký tự.");
+            }
+            if (mb_strlen($name) > 200) {
+                throw new Exception("Tên địa điểm không được quá 200 ký tự.");
+            }
+
             $data = [
-                'name' => sanitize($_POST['name']),
+                'name' => sanitize($name),
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
                 'locations' => isset($_POST['locations']) ? sanitize($_POST['locations']) : null,
                 'status' => isset($_POST['status']) ? $_POST['status'] : null

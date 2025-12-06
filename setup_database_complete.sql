@@ -246,8 +246,6 @@ CREATE TABLE IF NOT EXISTS `services` (
 CREATE TABLE IF NOT EXISTS `service_prices` (
   `id` int NOT NULL AUTO_INCREMENT,
   `service_id` int NOT NULL,
-  `destination_id` int DEFAULT NULL,
-  `province_id` int DEFAULT NULL,
   `price_type` enum('standard','peak','low') COLLATE utf8mb4_unicode_ci DEFAULT 'standard',
   `unit_price` decimal(15,2) NOT NULL,
   `start_date` date DEFAULT NULL,
@@ -261,13 +259,9 @@ CREATE TABLE IF NOT EXISTS `service_prices` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `service_id` (`service_id`),
-  KEY `destination_id` (`destination_id`),
-  KEY `province_id` (`province_id`),
   KEY `created_by` (`created_by`),
   CONSTRAINT `service_prices_ibfk_1` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `service_prices_ibfk_2` FOREIGN KEY (`destination_id`) REFERENCES `destinations` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `service_prices_ibfk_3` FOREIGN KEY (`province_id`) REFERENCES `provinces` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `service_prices_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `service_prices_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ==============================================================================

@@ -39,9 +39,21 @@ if (!is_admin())
                     </option>
                 <?php endforeach; ?>
             </select>
-            <div id="tour-info" class="mt-2 text-sm text-gray-600 hidden">
-                <span id="tour-type-badge" class="px-2 py-1 rounded text-xs"></span>
-                <span id="tour-participants" class="ml-2"></span>
+            <div id="tour-info" class="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                <div class="flex items-center gap-2 mb-2">
+                    <span id="tour-type-badge" class="px-2 py-1 rounded text-xs"></span>
+                    <span id="tour-participants" class="text-sm font-medium text-gray-700"></span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                    <div>
+                        <span class="font-medium">Thời gian:</span>
+                        <span id="tour-duration" class="ml-2"></span>
+                    </div>
+                    <div>
+                        <span class="font-medium">Giá mặc định:</span>
+                        <span id="tour-default-prices" class="ml-2"></span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -70,7 +82,7 @@ if (!is_admin())
                 Số chỗ mở bán (Quota) <span class="text-red-500">*</span>
             </label>
             <div class="flex items-center gap-2">
-                <input type="number" name="quota" id="quota" value="20" min="1" 
+                <input type="number" name="quota" id="quota" value="" min="1" 
                     class="w-full md:w-48 px-3 py-2 border rounded focus:border-accent focus:outline-none" required>
                 <span class="text-sm text-gray-500">
                     (Tối thiểu: <span id="min-pax-display">10</span>, 
@@ -78,6 +90,7 @@ if (!is_admin())
                 </span>
             </div>
             <p id="quota-warning" class="text-xs text-red-600 mt-1 hidden"></p>
+            <p class="text-xs text-gray-500 mt-1">Mặc định: Số chỗ = Số người tối đa của tour</p>
         </div>
 
         <!-- Guide Assignment (Optional) -->
@@ -180,8 +193,12 @@ if (!is_admin())
         const selectedOption = tourSelect.options[tourSelect.selectedIndex];
         if (selectedOption.value) {
             const tourType = selectedOption.dataset.tourType;
-            const minPax = selectedOption.dataset.minPax || 10;
-            const maxPax = selectedOption.dataset.maxPax || 45;
+            const minPax = parseInt(selectedOption.dataset.minPax) || 10;
+            const maxPax = parseInt(selectedOption.dataset.maxPax) || 45;
+            const duration = parseInt(selectedOption.dataset.duration) || 1;
+            const adultPrice = parseFloat(selectedOption.dataset.priceAdult) || 0;
+            const childPrice = parseFloat(selectedOption.dataset.priceChild) || 0;
+            const infantPrice = parseFloat(selectedOption.dataset.priceInfant) || 0;
 
             tourInfo.classList.remove('hidden');
             
@@ -197,13 +214,30 @@ if (!is_admin())
             minPaxDisplay.textContent = minPax;
             maxPaxDisplay.textContent = maxPax;
 
-            // Update quota max
-            quotaInput.max = maxPax;
-            if (parseInt(quotaInput.value) > maxPax) {
-                quotaInput.value = maxPax;
+            // Hiển thị thời gian
+            const durationDisplay = document.getElementById('tour-duration');
+            if (durationDisplay) {
+                durationDisplay.textContent = `${duration} ngày ${duration > 1 ? duration - 1 : 0} đêm`;
             }
+
+            // Hiển thị giá mặc định
+            const defaultPricesDisplay = document.getElementById('tour-default-prices');
+            if (defaultPricesDisplay) {
+                const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+                defaultPricesDisplay.innerHTML = `
+                    NL: <span class="font-bold text-blue-700">${formatPrice(adultPrice)}</span>, 
+                    TE: ${formatPrice(childPrice)}, 
+                    EB: ${formatPrice(infantPrice)}
+                `;
+            }
+
+            // Update quota: Set default = max_participants
+            quotaInput.min = minPax;
+            quotaInput.max = maxPax;
+            quotaInput.value = maxPax; // Default = max_participants
         } else {
             tourInfo.classList.add('hidden');
+            quotaInput.value = '';
         }
     }
 
@@ -227,10 +261,14 @@ if (!is_admin())
             return;
         }
 
+        const minPax = parseInt(selectedOption.dataset.minPax) || 10;
         const maxPax = parseInt(selectedOption.dataset.maxPax) || 45;
         const quota = parseInt(quotaInput.value) || 0;
 
-        if (quota > maxPax) {
+        if (quota < minPax) {
+            quotaWarning.textContent = `⚠ Số chỗ không được nhỏ hơn ${minPax} (số khách tối thiểu của tour)`;
+            quotaWarning.classList.remove('hidden');
+        } else if (quota > maxPax) {
             quotaWarning.textContent = `⚠ Số chỗ không được vượt quá ${maxPax} (số khách tối đa của tour)`;
             quotaWarning.classList.remove('hidden');
         } else {

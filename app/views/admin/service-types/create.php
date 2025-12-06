@@ -19,20 +19,7 @@ if (!is_admin())
             </label>
             <input type="text" name="name" required
                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
-                placeholder="VD: Khách sạn, Nhà hàng">
-        </div>
-
-        <!-- Mã Code -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-                Mã Code <span class="text-red-500">*</span>
-            </label>
-            <input type="text" name="code" required
-                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent font-mono uppercase"
-                placeholder="VD: HOTEL, RESTAURANT" pattern="[A-Z0-9_]+" title="Chỉ chữ in hoa, số và dấu gạch dưới"
-                oninput="this.value = this.value.toUpperCase()">
-            <small class="text-gray-500">Chỉ chữ in hoa, số và dấu gạch dưới (_). VD: HOTEL, RESTAURANT,
-                TOUR_GUIDE</small>
+                placeholder="VD: Khách sạn, Nhà hàng, Xe du lịch">
         </div>
 
         <!-- Mô tả -->
@@ -41,6 +28,14 @@ if (!is_admin())
             <textarea name="description" rows="3"
                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
                 placeholder="Mô tả ngắn về loại dịch vụ"></textarea>
+        </div>
+
+        <!-- Thứ tự hiển thị -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Thứ tự hiển thị</label>
+            <input type="number" name="display_order" value="0" min="0"
+                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+            <small class="text-gray-500">Số nhỏ hơn sẽ hiển thị trước (mặc định: 0)</small>
         </div>
 
         <!-- Trạng thái -->

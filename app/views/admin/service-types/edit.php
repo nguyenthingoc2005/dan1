@@ -23,19 +23,20 @@ if (!is_admin())
                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
         </div>
 
-        <!-- Mã Code - READ ONLY -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Mã Code</label>
-            <input type="text" value="<?= htmlspecialchars($service_type['code']) ?>" disabled
-                class="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100 font-mono">
-            <small class="text-gray-500">Mã code không thể thay đổi</small>
-        </div>
-
         <!-- Mô tả -->
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
             <textarea name="description" rows="3"
                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"><?= htmlspecialchars($service_type['description'] ?? '') ?></textarea>
+        </div>
+
+        <!-- Thứ tự hiển thị -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Thứ tự hiển thị</label>
+            <input type="number" name="display_order"
+                value="<?= htmlspecialchars($service_type['display_order'] ?? 0) ?>" min="0"
+                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+            <small class="text-gray-500">Số nhỏ hơn sẽ hiển thị trước</small>
         </div>
 
         <!-- Trạng thái -->

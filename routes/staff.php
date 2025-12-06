@@ -128,6 +128,21 @@ switch ($module) {
             case 'update':
                 $controller->update();
                 break;
+            case 'import':
+                $controller->import();
+                break;
+            case 'importStore':
+                $controller->importStore();
+                break;
+            case 'importResult':
+                $controller->importResult();
+                break;
+            case 'importLogs':
+                $controller->importLogs();
+                break;
+            case 'downloadTemplate':
+                $controller->downloadTemplate();
+                break;
             default:
                 $controller->index();
                 break;

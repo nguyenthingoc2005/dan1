@@ -180,7 +180,7 @@ if (!is_admin())
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <div class="flex items-center justify-end gap-2">
+                                <div class="flex items-center justify-end gap-2 flex-wrap">
                                     <a href="?act=admin&module=schedules&action=show&id=<?= $s['id'] ?>"
                                         class="text-blue-600 hover:text-blue-800" title="Xem chi tiết">
                                         👁️
@@ -189,6 +189,12 @@ if (!is_admin())
                                         class="text-green-600 hover:text-green-800" title="Sửa">
                                         ✏️
                                     </a>
+                                    <!-- Phân công Guide -->
+                                    <a href="?act=admin&module=schedules&action=assignGuideForm&id=<?= $s['id'] ?>"
+                                        class="text-purple-600 hover:text-purple-800" title="Phân công guide">
+                                        👤
+                                    </a>
+                                    <!-- Đóng/Mở -->
                                     <?php if ($s['status'] == 'open'): ?>
                                         <form method="POST" action="?act=admin&module=schedules&action=changeStatus" class="inline">
                                             <input type="hidden" name="id" value="<?= $s['id'] ?>">
@@ -208,7 +214,15 @@ if (!is_admin())
                                             </button>
                                         </form>
                                     <?php endif; ?>
-                                    <?php if ($s['booked'] == 0): ?>
+                                    <!-- Hủy lịch trình (chỉ khi status != completed) -->
+                                    <?php if ($s['status'] != 'completed' && $s['status'] != 'cancelled'): ?>
+                                        <a href="?act=admin&module=schedules&action=cancelForm&id=<?= $s['id'] ?>"
+                                            class="text-red-600 hover:text-red-800" title="Hủy lịch trình">
+                                            ⚠️
+                                        </a>
+                                    <?php endif; ?>
+                                    <!-- Xóa (chỉ khi không có booking) -->
+                                    <?php if ($s['booked'] == 0 && $s['status'] != 'completed'): ?>
                                         <a href="?act=admin&module=schedules&action=delete&id=<?= $s['id'] ?>"
                                             class="text-red-600 hover:text-red-800" title="Xóa"
                                             onclick="return confirm('Xóa lịch này?')">

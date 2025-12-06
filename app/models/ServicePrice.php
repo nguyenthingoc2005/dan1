@@ -29,22 +29,19 @@ class ServicePrice
     }
 
     /**
-     * Lấy giá cho service tại một địa điểm và ngày cụ thể
+     * Lấy giá cho service tại một ngày cụ thể
      * 
      * @param int $service_id
-     * @param int|null $destination_id
-     * @param int|null $province_id
      * @param string|null $date (Y-m-d format, null = today)
      * @return array|null
      */
-    public function getPriceForLocation($service_id, $destination_id = null, $province_id = null, $date = null)
+    public function getPriceForService($service_id, $date = null)
     {
         try {
             if ($date === null) {
                 $date = date('Y-m-d');
             }
 
-            // Ưu tiên: destination_id > province_id
             $sql = "
                 SELECT *
                 FROM service_prices
@@ -54,31 +51,20 @@ class ServicePrice
                     (start_date IS NULL OR start_date <= :date)
                     AND (end_date IS NULL OR end_date >= :date)
                   )
+                ORDER BY created_at DESC
+                LIMIT 1
             ";
             $params = [
                 'service_id' => $service_id,
                 'date' => $date
             ];
 
-            // Ưu tiên destination cụ thể
-            if ($destination_id) {
-                $sql .= " AND destination_id = :destination_id";
-                $params['destination_id'] = $destination_id;
-            } elseif ($province_id) {
-                $sql .= " AND province_id = :province_id AND destination_id IS NULL";
-                $params['province_id'] = $province_id;
-            } else {
-                $sql .= " AND destination_id IS NULL AND province_id IS NULL";
-            }
-
-            $sql .= " ORDER BY destination_id DESC, province_id DESC, created_at DESC LIMIT 1";
-
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetch() ?: null;
 
         } catch (PDOException $e) {
-            error_log("ServicePrice::getPriceForLocation() Error: " . $e->getMessage());
+            error_log("ServicePrice::getPriceForService() Error: " . $e->getMessage());
             return null;
         }
     }
@@ -91,16 +77,6 @@ class ServicePrice
         try {
             $where_conditions = ["service_id = :service_id"];
             $params = ['service_id' => $service_id];
-
-            if (!empty($filters['destination_id'])) {
-                $where_conditions[] = "destination_id = :destination_id";
-                $params['destination_id'] = $filters['destination_id'];
-            }
-
-            if (!empty($filters['province_id'])) {
-                $where_conditions[] = "province_id = :province_id";
-                $params['province_id'] = $filters['province_id'];
-            }
 
             if (!empty($filters['status'])) {
                 $where_conditions[] = "status = :status";
@@ -118,15 +94,10 @@ class ServicePrice
             $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
 
             $sql = "
-                SELECT 
-                    sp.*,
-                    d.name as destination_name,
-                    p.name as province_name
+                SELECT sp.*
                 FROM service_prices sp
-                LEFT JOIN destinations d ON sp.destination_id = d.id
-                LEFT JOIN provinces p ON sp.province_id = p.id
                 {$where_clause}
-                ORDER BY sp.destination_id DESC, sp.province_id DESC, sp.start_date ASC
+                ORDER BY sp.start_date ASC, sp.created_at DESC
             ";
 
             $stmt = $this->pdo->prepare($sql);
@@ -148,12 +119,8 @@ class ServicePrice
             $stmt = $this->pdo->prepare("
                 SELECT 
                     sp.*,
-                    d.name as destination_name,
-                    p.name as province_name,
                     s.name as service_name
                 FROM service_prices sp
-                LEFT JOIN destinations d ON sp.destination_id = d.id
-                LEFT JOIN provinces p ON sp.province_id = p.id
                 LEFT JOIN services s ON sp.service_id = s.id
                 WHERE sp.id = :id
                 LIMIT 1
@@ -179,9 +146,6 @@ class ServicePrice
                 throw new Exception("Thiếu service_id.");
             }
 
-            // destination_id và province_id là optional, không bắt buộc
-            // Nếu có destination_id thì không dùng province_id (destination cụ thể hơn)
-
             // Validate: end_date phải >= start_date
             $start_date = $data['start_date'] ?? $data['valid_from'] ?? null;
             $end_date = $data['end_date'] ?? $data['valid_to'] ?? null;
@@ -192,38 +156,32 @@ class ServicePrice
                 }
             }
 
-            // Check overlap với giá hiện có (chỉ check nếu có destination_id hoặc province_id)
-            // Nếu không có cả 2 thì cho phép nhiều giá cùng loại khác thời gian
-            if (!empty($data['destination_id']) || !empty($data['province_id'])) {
+            // Check overlap với giá hiện có (nếu có thời gian cụ thể)
+            // Cho phép nhiều giá cùng loại nhưng khác thời gian
+            if ($start_date || $end_date) {
                 $overlap = $this->checkPriceOverlap(
                     $data['service_id'],
-                    $data['destination_id'] ?? null,
-                    $data['province_id'] ?? null,
                     $start_date,
                     $end_date
                 );
 
                 if ($overlap) {
-                    throw new Exception("Đã có giá cho địa điểm/tỉnh thành này trong khoảng thời gian này. Vui lòng kiểm tra lại.");
+                    throw new Exception("Đã có giá cho dịch vụ này trong khoảng thời gian này. Vui lòng kiểm tra lại.");
                 }
             }
 
             $stmt = $this->pdo->prepare("
                 INSERT INTO service_prices (
-                    service_id, destination_id, province_id,
-                    unit_price, start_date, end_date,
+                    service_id, unit_price, start_date, end_date,
                     price_type, notes, status, created_by
                 ) VALUES (
-                    :service_id, :destination_id, :province_id,
-                    :unit_price, :start_date, :end_date,
+                    :service_id, :unit_price, :start_date, :end_date,
                     :price_type, :notes, :status, :created_by
                 )
             ");
 
             $success = $stmt->execute([
                 'service_id' => $data['service_id'],
-                'destination_id' => $data['destination_id'] ?? null,
-                'province_id' => $data['province_id'] ?? null,
                 'unit_price' => $data['unit_price'],
                 'start_date' => $data['valid_from'] ?? $data['start_date'] ?? null,
                 'end_date' => $data['valid_to'] ?? $data['end_date'] ?? null,
@@ -244,7 +202,7 @@ class ServicePrice
     /**
      * Kiểm tra giá có bị trùng khoảng thời gian không
      */
-    private function checkPriceOverlap($service_id, $destination_id, $province_id, $start_date, $end_date)
+    private function checkPriceOverlap($service_id, $start_date, $end_date)
     {
         try {
             $sql = "
@@ -254,20 +212,6 @@ class ServicePrice
                   AND status = 'active'
             ";
             $params = ['service_id' => $service_id];
-
-            if ($destination_id) {
-                $sql .= " AND destination_id = :destination_id";
-                $params['destination_id'] = $destination_id;
-            } else {
-                $sql .= " AND destination_id IS NULL";
-            }
-
-            if ($province_id) {
-                $sql .= " AND province_id = :province_id";
-                $params['province_id'] = $province_id;
-            } else {
-                $sql .= " AND province_id IS NULL";
-            }
 
             // Check overlap
             if ($start_date && $end_date) {

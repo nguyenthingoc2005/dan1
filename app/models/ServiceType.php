@@ -148,7 +148,7 @@ class ServiceType
     public function update($id, $data)
     {
         try {
-            $allowed_fields = ['name', 'description', 'status'];
+            $allowed_fields = ['name', 'description', 'status', 'display_order'];
             $set_parts = [];
             $params = ['id' => $id];
 
@@ -158,8 +158,6 @@ class ServiceType
                     $params[$field] = $data[$field];
                 }
             }
-
-            // KHÔNG cho phép sửa code (vì đã có trong system)
 
             if (empty($set_parts))
                 return false;

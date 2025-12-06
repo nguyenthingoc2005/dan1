@@ -77,25 +77,19 @@ class ServiceTypeController
                 throw new Exception("Vui lòng nhập tên loại dịch vụ.");
             }
 
+            // Check for duplicate name
             $name = sanitize($_POST['name']);
-
-            // Auto-generate code from name
-            $code = strtoupper(str_replace(' ', '_', remove_accents($name)));
-
-            // Check for duplicate code
-            $counter = 1;
-            $original_code = $code;
-            while ($this->serviceTypeModel->findByCode($code)) {
-                $code = $original_code . '_' . $counter;
-                $counter++;
+            $existing = $this->serviceTypeModel->findByName($name);
+            if ($existing) {
+                throw new Exception("Tên loại dịch vụ đã tồn tại. Vui lòng chọn tên khác.");
             }
 
             // Prepare data
             $data = [
                 'name' => $name,
-                'code' => $code,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
-                'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
+                'status' => isset($_POST['status']) ? $_POST['status'] : 'active',
+                'display_order' => isset($_POST['display_order']) ? (int) $_POST['display_order'] : 0
             ];
 
             if ($this->serviceTypeModel->create($data)) {
@@ -160,13 +154,19 @@ class ServiceTypeController
                 throw new Exception("Vui lòng nhập tên loại dịch vụ.");
             }
 
-            // KHÔNG cho sửa code (vì đã có trong system)
+            // Check for duplicate name (excluding current record)
+            $name = sanitize($_POST['name']);
+            $existing = $this->serviceTypeModel->findByName($name);
+            if ($existing && $existing['id'] != $service_type_id) {
+                throw new Exception("Tên loại dịch vụ đã tồn tại. Vui lòng chọn tên khác.");
+            }
 
             // Prepare data
             $data = [
-                'name' => sanitize($_POST['name']),
+                'name' => $name,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
-                'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
+                'status' => isset($_POST['status']) ? $_POST['status'] : 'active',
+                'display_order' => isset($_POST['display_order']) ? (int) $_POST['display_order'] : 0
             ];
 
             if ($this->serviceTypeModel->update($service_type_id, $data)) {

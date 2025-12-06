@@ -26,7 +26,7 @@ if (!is_admin())
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <input type="text" name="search" value="<?= $_GET['search'] ?? '' ?>"
-                    placeholder="Tìm theo tên hoặc code..."
+                    placeholder="Tìm theo tên hoặc mô tả..."
                     class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
             </div>
             <div>
@@ -52,7 +52,6 @@ if (!is_admin())
             <thead class="bg-slate-50 border-b border-slate-200">
                 <tr>
                     <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">ID</th>
-                    <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Mã Code</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Tên loại dịch vụ</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Mô tả</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Trạng thái</th>
@@ -62,7 +61,7 @@ if (!is_admin())
             <tbody class="divide-y divide-slate-200">
                 <?php if (empty($service_types)): ?>
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                        <td colspan="5" class="px-4 py-8 text-center text-slate-500">
                             Chưa có loại dịch vụ nào.
                             <a href="?act=admin&module=service-types&action=create" class="text-accent hover:underline">Thêm
                                 mới</a>
@@ -72,11 +71,6 @@ if (!is_admin())
                     <?php foreach ($service_types as $type): ?>
                         <tr class="hover:bg-slate-50">
                             <td class="px-4 py-3 text-sm"><?= $type['id'] ?></td>
-                            <td class="px-4 py-3 text-sm">
-                                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-mono">
-                                    <?= htmlspecialchars($type['code']) ?>
-                                </span>
-                            </td>
                             <td class="px-4 py-3 text-sm font-medium"><?= htmlspecialchars($type['name']) ?></td>
                             <td class="px-4 py-3 text-sm text-slate-600">
                                 <?= htmlspecialchars(substr($type['description'] ?? '', 0, 50)) ?>

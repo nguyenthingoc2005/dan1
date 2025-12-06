@@ -16,6 +16,7 @@
                 </div>
                 <div class="card-body">
                     <form action="?act=admin&module=customers&action=update" method="POST">
+                        <?php echo csrf_field(); ?>
                         <input type="hidden" name="id" value="<?= $customer['id'] ?>">
 
                         <div class="row mb-3">
@@ -120,6 +121,12 @@
                                         Blacklist</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Yêu cầu đặc biệt</label>
+                            <textarea name="special_requirements" class="form-control"
+                                rows="3" placeholder="Nhập yêu cầu đặc biệt của khách hàng..."><?= htmlspecialchars($customer['special_requirements'] ?? '') ?></textarea>
                         </div>
 
                         <div class="mb-3">

@@ -760,6 +760,7 @@
         $('#priceForm')[0].reset();
         $('#priceId').val('');
         $('#priceServiceId').val(serviceId);
+        $('#priceType').val('standard');
 
         // Load service info để hiển thị context
         $.ajax({

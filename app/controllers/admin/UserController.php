@@ -96,8 +96,17 @@ class UserController
 
             // Password: chỉ check độ dài
             $password = $_POST['password'];
-            if (strlen($password) < 6) {
-                throw new Exception("Mật khẩu tối thiểu 6 ký tự.");
+            if (strlen($password) < 8) {
+                throw new Exception("Mật khẩu tối thiểu 8 ký tự.");
+            }
+
+            // Password confirmation
+            if (empty($_POST['password_confirmation'])) {
+                throw new Exception("Vui lòng xác nhận mật khẩu.");
+            }
+
+            if ($password !== $_POST['password_confirmation']) {
+                throw new Exception("Mật khẩu xác nhận không khớp.");
             }
 
             // Avatar upload (optional)
@@ -188,6 +197,12 @@ class UserController
                 throw new Exception("Vui lòng điền Tên và Vai trò.");
             }
 
+            // Business rule: Không được thay đổi role của chính mình
+            $current_user_id = get_user_id();
+            if ($user_id == $current_user_id && $_POST['role_id'] != $user['role_id']) {
+                throw new Exception("Bạn không thể thay đổi vai trò của chính mình!");
+            }
+
             // Validate email unique (nếu có thay đổi email)
             if (!empty($_POST['email']) && $_POST['email'] != $user['email']) {
                 $email = trim($_POST['email']);
@@ -201,8 +216,8 @@ class UserController
             }
 
             // Password: chỉ check NẾU có nhập
-            if (!empty($_POST['password']) && strlen($_POST['password']) < 6) {
-                throw new Exception("Mật khẩu tối thiểu 6 ký tự.");
+            if (!empty($_POST['password']) && strlen($_POST['password']) < 8) {
+                throw new Exception("Mật khẩu tối thiểu 8 ký tự.");
             }
 
             // Avatar upload (optional)

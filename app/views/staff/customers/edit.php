@@ -15,6 +15,7 @@
         </div>
 
         <form action="?act=staff-customers&action=update" method="POST" class="p-6">
+            <?php echo csrf_field(); ?>
             <input type="hidden" name="id" value="<?php echo $customer['id']; ?>">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -71,6 +72,14 @@
                     <input type="text" name="address"
                         class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
                         value="<?php echo htmlspecialchars($customer['address'] ?? ''); ?>">
+                </div>
+
+                <!-- Special Requirements -->
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Yêu Cầu Đặc Biệt</label>
+                    <textarea name="special_requirements" rows="3"
+                        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
+                        placeholder="Nhập yêu cầu đặc biệt của khách hàng..."><?php echo htmlspecialchars($customer['special_requirements'] ?? ''); ?></textarea>
                 </div>
 
                 <!-- Notes -->

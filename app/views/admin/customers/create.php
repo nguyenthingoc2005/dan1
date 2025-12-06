@@ -20,6 +20,7 @@
         </div>
 
         <form action="?act=admin&module=customers&action=store" method="POST" class="p-6">
+            <?php echo csrf_field(); ?>
             <!-- Basic Info -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
@@ -111,6 +112,14 @@
                         <option value="walk_in">Trực tiếp</option>
                     </select>
                 </div>
+            </div>
+
+            <!-- Special Requirements -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Yêu cầu đặc biệt</label>
+                <textarea name="special_requirements" rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    placeholder="Nhập yêu cầu đặc biệt của khách hàng..."></textarea>
             </div>
 
             <!-- Notes -->

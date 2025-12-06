@@ -197,23 +197,33 @@ class Customer
 
     /**
      * Generate customer code
-     * Format: KH-YYYYMM-XXXX
+     * Format: CUS-YYYYMMDD-XXX
      */
     public function generateCustomerCode()
     {
-        $prefix = 'KH-' . date('Ym') . '-';
+        $date = date('Ymd'); // YYYYMMDD
+        $prefix = 'CUS-' . $date . '-';
         
-        $sql = "SELECT customer_code FROM customers WHERE customer_code LIKE :prefix ORDER BY id DESC LIMIT 1";
+        $sql = "SELECT customer_code FROM customers 
+                WHERE customer_code LIKE :prefix 
+                ORDER BY id DESC LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['prefix' => $prefix . '%']);
         $lastCode = $stmt->fetchColumn();
         
         if ($lastCode) {
-            $number = (int) substr($lastCode, -4);
-            return $prefix . str_pad($number + 1, 4, '0', STR_PAD_LEFT);
+            $number = (int) substr($lastCode, -3); // Lấy 3 số cuối
+            $nextNumber = $number + 1;
+            
+            // Edge case: Nếu vượt quá 999, tăng lên 4 số
+            if ($nextNumber > 999) {
+                return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            }
+            
+            return $prefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
         }
         
-        return $prefix . '0001';
+        return $prefix . '001';
     }
 
     // ========================================================================

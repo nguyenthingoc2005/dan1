@@ -166,28 +166,86 @@ if (!is_admin())
                     <div class="text-center py-10 text-gray-500">Chưa có dịch vụ nào. Hãy thêm mới!</div>
                 <?php else: ?>
                     <?php foreach ($services['data'] as $service): ?>
-                        <div class="border-l-4 border-blue-500 pl-3 mb-3">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h5 class="font-semibold"><?= htmlspecialchars($service['service_type_name'] ?? '') ?> - <?= htmlspecialchars($service['name']) ?></h5>
+                        <div class="border-l-4 border-blue-500 pl-4 mb-4 bg-gray-50 rounded-r-lg p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex-1">
+                                    <h5 class="font-semibold text-lg"><?= htmlspecialchars($service['service_type_name'] ?? '') ?> - <?= htmlspecialchars($service['name']) ?></h5>
                                     <?php if (!empty($service['description'])): ?>
-                                        <p class="text-sm text-gray-600"><?= htmlspecialchars($service['description']) ?></p>
+                                        <p class="text-sm text-gray-600 mt-1"><?= htmlspecialchars($service['description']) ?></p>
+                                    <?php endif; ?>
+                                    <?php if (!empty($service['unit'])): ?>
+                                        <p class="text-xs text-gray-500 mt-1">Đơn vị: <?= htmlspecialchars($service['unit']) ?></p>
                                     <?php endif; ?>
                                 </div>
-                                <div>
-                                    <button class="px-2 py-1 bg-blue-500 text-white rounded text-xs mr-1" 
+                                <div class="flex gap-1 ml-4">
+                                    <button class="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600" 
                                             onclick="openCreatePriceModal(<?= $service['id'] ?>)">
-                                        + Giá
+                                        + Thêm giá
                                     </button>
                                     <a href="?act=admin&module=location-services&action=edit-service&id=<?= $service['id'] ?>"
-                                       class="px-2 py-1 bg-yellow-500 text-white rounded text-xs mr-1 inline-block">
+                                       class="px-3 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600 inline-block">
                                         Sửa
                                     </a>
-                                    <button class="px-2 py-1 bg-red-500 text-white rounded text-xs" 
+                                    <button class="px-3 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600" 
                                             onclick="deleteService(<?= $service['id'] ?>)">
                                         Xóa
                                     </button>
                                 </div>
+                            </div>
+                            
+                            <!-- Danh sách giá -->
+                            <div class="mt-4 border-t pt-3">
+                                <h6 class="font-semibold text-sm mb-2 text-gray-700">
+                                    💰 Bảng giá (<?= count($service['prices'] ?? []) ?>)
+                                </h6>
+                                <?php if (empty($service['prices'])): ?>
+                                    <p class="text-xs text-gray-500 italic">Chưa có giá nào. Nhấn "+ Thêm giá" để thêm giá mới.</p>
+                                <?php else: ?>
+                                    <div class="space-y-2">
+                                        <?php foreach ($service['prices'] as $price): ?>
+                                            <div class="bg-white border border-gray-200 rounded p-3 flex justify-between items-center hover:shadow-sm transition">
+                                                <div class="flex-1">
+                                                    <div class="flex items-center gap-3">
+                                                        <span class="font-semibold text-blue-600">
+                                                            <?= number_format($price['unit_price'], 0, ',', '.') ?> VND
+                                                        </span>
+                                                        <span class="px-2 py-0.5 text-xs rounded 
+                                                            <?= $price['price_type'] == 'peak' ? 'bg-red-100 text-red-700' : 
+                                                                ($price['price_type'] == 'low' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700') ?>">
+                                                        <?= $price['price_type'] == 'peak' ? 'Cao điểm' : 
+                                                            ($price['price_type'] == 'low' ? 'Thấp điểm' : 'Tiêu chuẩn') ?>
+                                                        </span>
+                                                    </div>
+                                                    <div class="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                                                        <?php if (!empty($price['start_date']) || !empty($price['end_date'])): ?>
+                                                            <span>
+                                                                📅 
+                                                                <?= !empty($price['start_date']) ? date('d/m/Y', strtotime($price['start_date'])) : '...' ?> 
+                                                                - 
+                                                                <?= !empty($price['end_date']) ? date('d/m/Y', strtotime($price['end_date'])) : '...' ?>
+                                                            </span>
+                                                        <?php else: ?>
+                                                            <span class="text-gray-400">📅 Vô thời hạn</span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($price['notes'])): ?>
+                                                            <span class="italic">💬 <?= htmlspecialchars(substr($price['notes'], 0, 50)) ?><?= strlen($price['notes']) > 50 ? '...' : '' ?></span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                                <div class="flex gap-1 ml-4">
+                                                    <button class="px-2 py-1 bg-yellow-400 text-white rounded text-xs hover:bg-yellow-500" 
+                                                            onclick="openEditPriceModal(<?= $price['id'] ?>)">
+                                                        Sửa
+                                                    </button>
+                                                    <button class="px-2 py-1 bg-red-400 text-white rounded text-xs hover:bg-red-500" 
+                                                            onclick="deletePrice(<?= $price['id'] ?>)">
+                                                        Xóa
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -420,7 +478,7 @@ $(document).ready(function() {
         window.location.href = url.toString();
     };
 
-    window.deletePrice = function(priceId, serviceId) {
+    window.deletePrice = function(priceId) {
         if (!confirm('Bạn có chắc muốn xóa giá này?')) return;
         
         const url = new URL(window.location.href);
@@ -430,6 +488,61 @@ $(document).ready(function() {
         url.searchParams.set('id', priceId);
         
         window.location.href = url.toString();
+    };
+    
+    window.openEditPriceModal = function(priceId) {
+        // Load price data và mở modal
+        $.ajax({
+            url: `?act=admin&module=location-services&action=getPrice&id=${priceId}`,
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    const price = response.data;
+                    
+                    // Set form data
+                    $('#priceId').val(price.id);
+                    $('#priceServiceId').val(price.service_id);
+                    $('#priceUnitPrice').val(price.unit_price);
+                    $('#priceType').val(price.price_type || 'standard');
+                    $('#priceValidFrom').val(price.start_date || '');
+                    $('#priceValidTo').val(price.end_date || '');
+                    $('#priceNotes').val(price.notes || '');
+                    
+                    // Update modal title
+                    $('#priceModalTitle').text('Sửa giá dịch vụ');
+                    
+                    // Load service info để hiển thị context
+                    $.ajax({
+                        url: `?act=admin&module=location-services&action=getService&id=${price.service_id}`,
+                        method: 'GET',
+                        dataType: 'json',
+                        success: function(serviceResponse) {
+                            if (serviceResponse.success && serviceResponse.data) {
+                                const service = serviceResponse.data;
+                                const providerName = service.service_provider_name || '';
+                                const serviceName = service.name || '';
+                                
+                                let contextParts = [];
+                                if (providerName) contextParts.push(providerName);
+                                if (serviceName) contextParts.push(serviceName);
+                                const contextText = contextParts.length > 0
+                                    ? contextParts.join(' > ')
+                                    : 'Đang sửa giá dịch vụ';
+                                $('#priceContextText').text(contextText);
+                            }
+                        }
+                    });
+                    
+                    $('#priceModal').removeClass('hidden');
+                } else {
+                    showToast('Không thể tải thông tin giá', 'error');
+                }
+            },
+            error: function() {
+                showToast('Lỗi khi tải thông tin giá', 'error');
+            }
+        });
     };
 
     

@@ -50,11 +50,6 @@ class TourSchedule
             }
         }
 
-        if (!empty($filters['category_id'])) {
-            $where[] = "t.category_id = :category_id";
-            $params['category_id'] = $filters['category_id'];
-        }
-
         // Count total
         $countSql = "SELECT COUNT(*) FROM tour_schedules ts WHERE " . implode(" AND ", $where);
         $stmt = $this->pdo->prepare($countSql);
@@ -64,11 +59,10 @@ class TourSchedule
         // Get Data
         $offset = ($page - 1) * $limit;
         $sql = "SELECT ts.*, t.name as tour_name, t.tour_code, t.duration_days, t.duration_nights,
-                       t.departure_location, t.category_id, c.name as category_name,
+                       t.departure_location,
                        u.full_name as guide_name, u.phone as guide_phone, u.email as guide_email
                 FROM tour_schedules ts
                 JOIN tours t ON ts.tour_id = t.id
-                LEFT JOIN categories c ON t.category_id = c.id
                 LEFT JOIN users u ON ts.guide_id = u.id
                 WHERE " . implode(" AND ", $where) . "
                 ORDER BY ts.start_date ASC
@@ -104,23 +98,25 @@ class TourSchedule
 
     public function create($data)
     {
-        $sql = "INSERT INTO tour_schedules (tour_id, start_date, end_date, quota, adult_price, child_price, infant_price, guide_id, guide_notes)
-                VALUES (:tour_id, :start_date, :end_date, :quota, :adult_price, :child_price, :infant_price, :guide_id, :guide_notes)";
+        $sql = "INSERT INTO tour_schedules (tour_id, start_date, end_date, quota, booked, status, adult_price, child_price, infant_price, guide_id, guide_notes)
+                VALUES (:tour_id, :start_date, :end_date, :quota, :booked, :status, :adult_price, :child_price, :infant_price, :guide_id, :guide_notes)";
         $stmt = $this->pdo->prepare($sql);
-        
-        // Ensure guide_id and guide_notes are set (can be null)
+
+        // Ensure default values
         $params = [
             'tour_id' => $data['tour_id'],
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
             'quota' => $data['quota'],
+            'booked' => $data['booked'] ?? 0, // DEFAULT 0
+            'status' => $data['status'] ?? 'open', // DEFAULT 'open'
             'adult_price' => $data['adult_price'],
             'child_price' => $data['child_price'],
             'infant_price' => $data['infant_price'],
             'guide_id' => $data['guide_id'] ?? null,
             'guide_notes' => $data['guide_notes'] ?? null
         ];
-        
+
         if ($stmt->execute($params)) {
             return $this->pdo->lastInsertId();
         }
@@ -213,9 +209,9 @@ class TourSchedule
         if (!$schedule) {
             return false;
         }
-        
+
         $newBooked = max(0, $schedule['booked'] - $decrement);
-        
+
         $sql = "UPDATE tour_schedules SET booked = :booked WHERE id = :id";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute(['booked' => $newBooked, 'id' => $schedule_id]);
@@ -233,7 +229,7 @@ class TourSchedule
                 AND end_date = :end_date";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
-            'tour_id' => $tour_id, 
+            'tour_id' => $tour_id,
             'start_date' => $start_date,
             'end_date' => $end_date
         ]);
@@ -378,7 +374,7 @@ class TourSchedule
         $sql = "INSERT INTO schedule_guide_history 
                 (schedule_id, old_guide_id, new_guide_id, old_guide_name, new_guide_name, changed_by, reason, notes)
                 VALUES (:schedule_id, :old_guide_id, :new_guide_id, :old_guide_name, :new_guide_name, :changed_by, :reason, :notes)";
-        
+
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
             'schedule_id' => $schedule_id,
@@ -404,7 +400,7 @@ class TourSchedule
                 LEFT JOIN users u ON h.changed_by = u.id
                 WHERE h.schedule_id = :schedule_id
                 ORDER BY h.created_at DESC";
-        
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['schedule_id' => $schedule_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

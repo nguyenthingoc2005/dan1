@@ -26,9 +26,18 @@ if (!is_admin())
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu <span
                     class="text-red-500">*</span></label>
-            <input type="password" name="password" required
+            <input type="password" name="password" required minlength="8"
                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-            <small class="text-gray-500">Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số</small>
+            <small class="text-gray-500">Tối thiểu 8 ký tự. Khuyến nghị: Có chữ hoa, chữ thường, số và ký tự đặc biệt</small>
+        </div>
+
+        <!-- Password Confirmation -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu <span
+                    class="text-red-500">*</span></label>
+            <input type="password" name="password_confirmation" required minlength="8"
+                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
+                placeholder="Nhập lại mật khẩu">
         </div>
 
         <!-- Full Name -->

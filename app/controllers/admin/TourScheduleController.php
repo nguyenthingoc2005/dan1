@@ -47,7 +47,11 @@ class TourScheduleController
     {
         require_admin();
 
+        // Filter tours: status = 'active' AND approval_status = 'approved'
         $tours = $this->tourModel->getAll(['status' => 'active'], 1, 1000)['data'];
+        $tours = array_filter($tours, function ($tour) {
+            return (!isset($tour['approval_status']) || $tour['approval_status'] === 'approved');
+        });
 
         // Get all guides for dropdown
         require_once MODELS_PATH . '/TourAssignment.php';
@@ -94,8 +98,19 @@ class TourScheduleController
                     throw new Exception("Ngày khởi hành phải từ hôm nay trở đi");
                 }
 
+                // Calculate end_date: start_date + duration_days - 1
                 $duration = $tour['duration_days'] ?? 1;
-                $end_date = date('Y-m-d', strtotime($start_date . " + $duration days"));
+                $end_date = date('Y-m-d', strtotime($start_date . " + " . ($duration - 1) . " days"));
+
+                // Validate end_date if provided manually
+                if (!empty($_POST['end_date'])) {
+                    $manual_end_date = $_POST['end_date'];
+                    $expected_days = (strtotime($manual_end_date) - strtotime($start_date)) / (60 * 60 * 24) + 1;
+                    if ($expected_days != $duration) {
+                        throw new Exception("Ngày kết thúc không đúng. Tour này có {$duration} ngày, ngày kết thúc phải là: " . $end_date);
+                    }
+                    $end_date = $manual_end_date;
+                }
 
                 // 1. Kiểm tra tour_type
                 $tour_type = $tour['tour_type'] ?? 'public';
@@ -108,11 +123,16 @@ class TourScheduleController
                     }
                 }
 
-                // 2. Kiểm tra quota không vượt max participants của tour
-                $quota = $_POST['quota'] ?? 20;
+                // 2. Validate quota: >= min_participants, <= max_participants
+                $quota = (int) ($_POST['quota'] ?? 20);
+                $min_participants = $tour['min_participants'] ?? 15;
                 $max_participants = $tour['max_participants'] ?? 45;
+
+                if ($quota < $min_participants) {
+                    throw new Exception("Số chỗ không được nhỏ hơn số người tối thiểu của tour ($min_participants)");
+                }
                 if ($quota > $max_participants) {
-                    throw new Exception("Quota không được vượt quá số người tối đa của tour ($max_participants)");
+                    throw new Exception("Số chỗ không được vượt quá số người tối đa của tour ($max_participants)");
                 }
 
                 // 3. Kiểm tra lịch trùng (cùng tour, ngày bắt đầu hoặc ngày kết thúc chồng lấn)
@@ -154,6 +174,8 @@ class TourScheduleController
                     'start_date' => $start_date,
                     'end_date' => $end_date,
                     'quota' => $quota,
+                    'booked' => 0, // DEFAULT 0
+                    'status' => $_POST['status'] ?? 'open', // DEFAULT 'open'
                     'adult_price' => !empty($_POST['adult_price']) ? $_POST['adult_price'] : $tour['adult_price'],
                     'child_price' => !empty($_POST['child_price']) ? $_POST['child_price'] : $tour['child_price'],
                     'infant_price' => !empty($_POST['infant_price']) ? $_POST['infant_price'] : $tour['infant_price'],
@@ -175,8 +197,9 @@ class TourScheduleController
                     );
                 }
 
-                set_success("Đã tạo lịch khởi hành thành công!");
-                redirect('?act=admin&module=schedules');
+                set_success("Tạo lịch trình tour thành công!");
+                // Redirect về danh sách lịch trình của tour đó
+                redirect('?act=admin&module=schedules&tour_id=' . $tour_id);
 
             } catch (Exception $e) {
                 set_error($e->getMessage());
@@ -239,15 +262,30 @@ class TourScheduleController
                 if (!$tour)
                     throw new Exception("Tour không tồn tại");
 
-                // Validate quota không vượt max_participants
+                // Validate quota: >= min_participants, <= max_participants
+                $min_participants = $tour['min_participants'] ?? 15;
                 $max_participants = $tour['max_participants'] ?? 45;
+
+                if ($quota < $min_participants) {
+                    throw new Exception("Số chỗ không được nhỏ hơn số người tối thiểu của tour ($min_participants)");
+                }
                 if ($quota > $max_participants) {
                     throw new Exception("Số chỗ không được vượt quá số người tối đa của tour ($max_participants)");
                 }
 
-                // Calculate end_date
+                // Calculate end_date: start_date + duration_days - 1
                 $duration = $tour['duration_days'] ?? 1;
-                $end_date = date('Y-m-d', strtotime($start_date . " + $duration days"));
+                $end_date = date('Y-m-d', strtotime($start_date . " + " . ($duration - 1) . " days"));
+
+                // Validate end_date if provided manually
+                if (!empty($_POST['end_date'])) {
+                    $manual_end_date = $_POST['end_date'];
+                    $expected_days = (strtotime($manual_end_date) - strtotime($start_date)) / (60 * 60 * 24) + 1;
+                    if ($expected_days != $duration) {
+                        throw new Exception("Ngày kết thúc không đúng. Tour này có {$duration} ngày, ngày kết thúc phải là: " . $end_date);
+                    }
+                    $end_date = $manual_end_date;
+                }
 
                 // Validate start_date (only if changed)
                 if ($start_date != $schedule['start_date']) {
@@ -440,9 +478,17 @@ class TourScheduleController
             return;
         }
 
-        $allowed_statuses = ['open', 'closed', 'completed', 'cancelled'];
-        if (!in_array($status, $allowed_statuses)) {
-            set_error('Trạng thái không hợp lệ');
+        // Validation: Chỉ cho phép đóng/mở (open ↔ closed)
+        // Không cho phép đổi sang completed hoặc cancelled từ đây
+        $current_status = $schedule['status'];
+        if (!in_array($current_status, ['open', 'closed'])) {
+            set_error('Chỉ có thể đóng/mở lịch trình khi trạng thái là "Mở đặt" hoặc "Đóng đặt"');
+            redirect('?act=admin&module=schedules');
+            return;
+        }
+
+        if (!in_array($status, ['open', 'closed'])) {
+            set_error('Chỉ có thể chuyển sang trạng thái "Mở đặt" hoặc "Đóng đặt"');
             redirect('?act=admin&module=schedules');
             return;
         }
@@ -499,5 +545,373 @@ class TourScheduleController
         }
 
         redirect('?act=admin&module=schedules');
+    }
+
+    /**
+     * LUỒNG 2: PHÂN CÔNG GUIDE CHO LỊCH TRÌNH (TOUR-010)
+     * Form phân công guide
+     */
+    public function assignGuideForm()
+    {
+        require_admin();
+
+        $id = $_GET['id'] ?? 0;
+        $schedule = $this->scheduleModel->findById($id);
+
+        if (!$schedule) {
+            set_error("Lịch khởi hành không tồn tại");
+            redirect('?act=admin&module=schedules');
+        }
+
+        // Get tour info for min_participants
+        $tour = $this->tourModel->findById($schedule['tour_id']);
+        if (!$tour) {
+            set_error("Tour không tồn tại");
+            redirect('?act=admin&module=schedules');
+        }
+
+        // Kiểm tra điều kiện: booked >= min_participants
+        $booked = $schedule['booked'] ?? 0;
+        $min_participants = $tour['min_participants'] ?? 15;
+        $can_assign = ($booked >= $min_participants);
+
+        // Get all guides for dropdown
+        $sql = "SELECT u.id, u.full_name, u.phone, u.email
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE r.name = 'guide' AND u.status = 'active'
+                ORDER BY u.full_name";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        $guides = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $page_title = 'Phân công Hướng dẫn viên';
+        $content_file = 'app/views/admin/schedules/assign_guide.php';
+        require_once 'app/views/layouts/admin_layout.php';
+    }
+
+    /**
+     * LUỒNG 2: PHÂN CÔNG GUIDE CHO LỊCH TRÌNH (TOUR-010)
+     * Xử lý phân công guide
+     */
+    public function assignGuide()
+    {
+        require_admin();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $id = $_POST['id'] ?? 0;
+                $schedule = $this->scheduleModel->findById($id);
+
+                if (!$schedule) {
+                    throw new Exception("Lịch khởi hành không tồn tại");
+                }
+
+                // Get tour info
+                $tour = $this->tourModel->findById($schedule['tour_id']);
+                if (!$tour) {
+                    throw new Exception("Tour không tồn tại");
+                }
+
+                // Validation quan trọng: booked >= min_participants
+                $booked = $schedule['booked'] ?? 0;
+                $min_participants = $tour['min_participants'] ?? 15;
+
+                if ($booked < $min_participants) {
+                    throw new Exception("Tour này chưa đủ số người tối thiểu ($booked/$min_participants). Chỉ phân công guide khi đã đủ số người.");
+                }
+
+                // Validate guide
+                $guide_id = !empty($_POST['guide_id']) ? (int) $_POST['guide_id'] : null;
+                if (!$guide_id) {
+                    throw new Exception("Vui lòng chọn hướng dẫn viên");
+                }
+
+                require_once MODELS_PATH . '/TourAssignment.php';
+                $assignmentModel = new TourAssignment($this->pdo);
+
+                // Validate guide is actually a guide
+                if (!$assignmentModel->isGuide($guide_id)) {
+                    throw new Exception("Người dùng này không phải là Hướng dẫn viên hoặc đã bị vô hiệu hóa");
+                }
+
+                // Check guide availability (optional - cảnh báo nhưng vẫn cho phép)
+                $availability = $assignmentModel->checkGuideAvailability($guide_id, $schedule['start_date'], $schedule['end_date'], null, $id);
+                if (!$availability['available']) {
+                    $conflict = $availability['conflict'];
+                    $conflictInfo = '';
+                    if (isset($conflict['tour_name'])) {
+                        $conflictInfo = $conflict['tour_name'] . " ({$conflict['start_date']} - {$conflict['end_date']})";
+                    } else {
+                        $conflictInfo = "Lịch khác ({$conflict['start_date']} - {$conflict['end_date']})";
+                    }
+                    // Cảnh báo nhưng vẫn cho phép lưu
+                    set_error("Cảnh báo: HDV đã có lịch trùng: " . $conflictInfo . ". Bạn vẫn có thể tiếp tục.");
+                }
+
+                $old_guide_id = $schedule['guide_id'] ?? null;
+                $guide_notes = !empty($_POST['guide_notes']) ? sanitize($_POST['guide_notes']) : null;
+
+                // Update schedule
+                $updateData = [
+                    'guide_id' => $guide_id,
+                    'guide_notes' => $guide_notes
+                ];
+
+                // Tự động set status = 'pending' nếu hiện tại là 'open' hoặc 'closed'
+                $current_status = $schedule['status'];
+                if (in_array($current_status, ['open', 'closed'])) {
+                    $updateData['status'] = 'pending';
+                }
+
+                $this->scheduleModel->update($id, $updateData);
+
+                // Lưu lịch sử thay đổi guide
+                $this->scheduleModel->logGuideChange(
+                    $id,
+                    $old_guide_id,
+                    $guide_id,
+                    get_user_id(),
+                    $old_guide_id ? 'Thay đổi HDV' : 'Gán HDV lần đầu',
+                    $guide_notes
+                );
+
+                set_success("Phân công guide thành công! Tour đã sẵn sàng khởi hành (trạng thái: Pending).");
+                redirect('?act=admin&module=schedules&action=show&id=' . $id);
+
+            } catch (Exception $e) {
+                set_error($e->getMessage());
+                redirect('?act=admin&module=schedules&action=assignGuideForm&id=' . ($_POST['id'] ?? 0));
+            }
+        }
+    }
+
+    /**
+     * LUỒNG 4: HỦY LỊCH TRÌNH (TOUR-013)
+     * Form hủy schedule
+     */
+    public function cancelForm()
+    {
+        require_admin();
+
+        $id = $_GET['id'] ?? 0;
+        $schedule = $this->scheduleModel->findById($id);
+
+        if (!$schedule) {
+            set_error("Lịch khởi hành không tồn tại");
+            redirect('?act=admin&module=schedules');
+        }
+
+        // Validation: Chỉ cho phép hủy khi status != 'completed'
+        if ($schedule['status'] === 'completed') {
+            set_error("Không thể hủy lịch trình đã hoàn thành");
+            redirect('?act=admin&module=schedules');
+        }
+
+        // Get bookings for this schedule
+        // Bookings are linked to schedule by tour_id + start_date (exact match)
+        require_once MODELS_PATH . '/Booking.php';
+        $bookingModel = new Booking($this->pdo);
+        $bookings = $bookingModel->getAll([
+            'tour_id' => $schedule['tour_id'],
+            'start_date' => $schedule['start_date'],
+            'exact_date' => true  // Exact match for start_date
+        ], 1, 100);
+
+        // Filter only active bookings (not cancelled/rejected)
+        $active_bookings = array_filter($bookings, function ($b) {
+            return !in_array($b['approval_status'] ?? '', ['cancelled', 'rejected']);
+        });
+
+        // Get other schedules of the same tour (for Option 2: chuyển schedule)
+        $other_schedules = [];
+        if (!empty($active_bookings)) {
+            $result = $this->scheduleModel->getAll([
+                'tour_id' => $schedule['tour_id'],
+                'status' => 'open,pending' // Multiple statuses
+            ], 1, 100);
+            $other_schedules = $result['data'] ?? [];
+
+            // Exclude current schedule
+            $other_schedules = array_filter($other_schedules, function ($s) use ($id) {
+                return $s['id'] != $id;
+            });
+        }
+
+        $page_title = 'Hủy Lịch Trình Tour';
+        $content_file = 'app/views/admin/schedules/cancel.php';
+        require_once 'app/views/layouts/admin_layout.php';
+    }
+
+    /**
+     * LUỒNG 4: HỦY LỊCH TRÌNH (TOUR-013)
+     * Xử lý hủy schedule với xử lý bookings
+     */
+    public function cancel()
+    {
+        require_admin();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $id = $_POST['id'] ?? 0;
+                $schedule = $this->scheduleModel->findById($id);
+
+                if (!$schedule) {
+                    throw new Exception("Lịch khởi hành không tồn tại");
+                }
+
+                // Validation: Chỉ cho phép hủy khi status != 'completed'
+                if ($schedule['status'] === 'completed') {
+                    throw new Exception("Không thể hủy lịch trình đã hoàn thành");
+                }
+
+                $cancellation_reason = !empty($_POST['cancellation_reason']) ? sanitize($_POST['cancellation_reason']) : null;
+                $action_type = $_POST['action_type'] ?? 'cancel_all'; // cancel_all, transfer, cancel_with_policy
+
+                require_once MODELS_PATH . '/Booking.php';
+                $bookingModel = new Booking($this->pdo);
+
+                // Get bookings for this schedule
+                // Bookings are linked to schedule by tour_id + start_date (exact match)
+                $bookings = $bookingModel->getAll([
+                    'tour_id' => $schedule['tour_id'],
+                    'start_date' => $schedule['start_date'],
+                    'exact_date' => true  // Exact match for start_date
+                ], 1, 100);
+
+                // Filter only active bookings
+                $active_bookings = array_filter($bookings, function ($b) {
+                    return !in_array($b['approval_status'] ?? '', ['cancelled', 'rejected']);
+                });
+
+                $this->pdo->beginTransaction();
+
+                try {
+                    // Option 1: Tự động hủy bookings & Hoàn tiền 100%
+                    if ($action_type === 'cancel_all') {
+                        foreach ($active_bookings as $booking) {
+                            // Update booking: cancelled, hoàn tiền 100%
+                            $total_participants = ($booking['adult_count'] ?? 0) + ($booking['child_count'] ?? 0) + ($booking['infant_count'] ?? 0);
+                            $paid_amount = (float) ($booking['paid_amount'] ?? 0);
+
+                            $sql = "UPDATE bookings SET 
+                                    approval_status = 'cancelled',
+                                    cancellation_date = NOW(),
+                                    cancellation_reason = :reason,
+                                    cancellation_fee = 0,
+                                    refund_amount = :refund,
+                                    payment_status = CASE 
+                                        WHEN :refund > 0 THEN 'refund_pending'
+                                        ELSE payment_status
+                                    END
+                                    WHERE id = :id";
+
+                            $reason = "Lịch trình tour bị hủy" . ($cancellation_reason ? ": " . $cancellation_reason : "");
+                            $stmt = $this->pdo->prepare($sql);
+                            $stmt->execute([
+                                'reason' => $reason,
+                                'refund' => $paid_amount,
+                                'id' => $booking['id']
+                            ]);
+
+                            // Tạo refund record (nếu có bảng refunds)
+                            if ($paid_amount > 0) {
+                                try {
+                                    $refundSql = "INSERT INTO refunds (booking_id, refund_amount, refund_reason, refund_status, created_at)
+                                                  VALUES (:booking_id, :amount, :reason, 'pending', NOW())";
+                                    $refundStmt = $this->pdo->prepare($refundSql);
+                                    $refundStmt->execute([
+                                        'booking_id' => $booking['id'],
+                                        'amount' => $paid_amount,
+                                        'reason' => "Tour bị hủy bởi công ty"
+                                    ]);
+                                } catch (Exception $e) {
+                                    // Bảng refunds có thể chưa có, bỏ qua
+                                }
+                            }
+
+                            // Trả lại quota
+                            $this->scheduleModel->decrementBooked($schedule['id'], $total_participants);
+                        }
+
+                        // Option 2: Chuyển sang schedule khác
+                    } elseif ($action_type === 'transfer') {
+                        $new_schedule_id = (int) ($_POST['new_schedule_id'] ?? 0);
+                        if (!$new_schedule_id) {
+                            throw new Exception("Vui lòng chọn lịch trình mới");
+                        }
+
+                        $new_schedule = $this->scheduleModel->findById($new_schedule_id);
+                        if (!$new_schedule) {
+                            throw new Exception("Lịch trình mới không tồn tại");
+                        }
+
+                        // Kiểm tra quota của schedule mới
+                        $total_participants_needed = 0;
+                        foreach ($active_bookings as $booking) {
+                            $total_participants_needed += ($booking['adult_count'] ?? 0) + ($booking['child_count'] ?? 0) + ($booking['infant_count'] ?? 0);
+                        }
+
+                        $available_slots = ($new_schedule['quota'] ?? 0) - ($new_schedule['booked'] ?? 0);
+                        if ($total_participants_needed > $available_slots) {
+                            throw new Exception("Lịch trình mới không đủ chỗ. Cần $total_participants_needed chỗ, chỉ còn $available_slots chỗ.");
+                        }
+
+                        // Chuyển bookings sang schedule mới
+                        foreach ($active_bookings as $booking) {
+                            $total_participants = ($booking['adult_count'] ?? 0) + ($booking['child_count'] ?? 0) + ($booking['infant_count'] ?? 0);
+
+                            // Update tour_schedule_id
+                            $updateSql = "UPDATE bookings SET tour_schedule_id = :new_schedule_id WHERE id = :id";
+                            $updateStmt = $this->pdo->prepare($updateSql);
+                            $updateStmt->execute([
+                                'new_schedule_id' => $new_schedule_id,
+                                'id' => $booking['id']
+                            ]);
+
+                            // Cập nhật quota
+                            $this->scheduleModel->decrementBooked($schedule['id'], $total_participants);
+                            $this->scheduleModel->incrementBooked($new_schedule_id, $total_participants);
+                        }
+
+                        // Option 3: Hủy bookings & Hoàn tiền theo chính sách hủy
+                    } elseif ($action_type === 'cancel_with_policy') {
+                        foreach ($active_bookings as $booking) {
+                            // Sử dụng method cancel của Booking model (tính phí hủy)
+                            $total_participants = ($booking['adult_count'] ?? 0) + ($booking['child_count'] ?? 0) + ($booking['infant_count'] ?? 0);
+
+                            $reason = "Lịch trình tour bị hủy" . ($cancellation_reason ? ": " . $cancellation_reason : "");
+                            $result = $bookingModel->cancel($booking['id'], $reason, get_user_id());
+
+                            // Trả lại quota
+                            $this->scheduleModel->decrementBooked($schedule['id'], $total_participants);
+                        }
+                    }
+
+                    // Cập nhật trạng thái schedule
+                    $this->scheduleModel->update($id, [
+                        'status' => 'cancelled',
+                        'booked' => 0 // Reset booked nếu đã hủy tất cả
+                    ]);
+
+                    $this->pdo->commit();
+
+                    $message = "Đã hủy lịch trình thành công!";
+                    if (!empty($active_bookings)) {
+                        $message .= " Đã xử lý " . count($active_bookings) . " booking.";
+                    }
+                    set_success($message);
+                    redirect('?act=admin&module=schedules');
+
+                } catch (Exception $e) {
+                    $this->pdo->rollBack();
+                    throw $e;
+                }
+
+            } catch (Exception $e) {
+                set_error($e->getMessage());
+                redirect('?act=admin&module=schedules&action=cancelForm&id=' . ($_POST['id'] ?? 0));
+            }
+        }
     }
 }
