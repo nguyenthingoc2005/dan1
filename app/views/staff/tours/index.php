@@ -13,7 +13,7 @@ require_staff_or_admin();
         <a href="?act=staff-tours&action=selectTemplate"
             class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Thêm Tour mới
         </a>
@@ -44,25 +44,13 @@ require_staff_or_admin();
 
     <!-- Search & Filter -->
     <form method="GET" class="bg-white p-4 rounded shadow-sm mb-6">
-        <input type="hidden" name="act" value="admin">
-        <input type="hidden" name="module" value="tours">
+        <input type="hidden" name="act" value="staff-tours">
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="md:col-span-2">
                 <input type="text" name="search" value="<?= $_GET['search'] ?? '' ?>"
                     placeholder="Tìm kiếm tên tour, mã tour..."
                     class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-            </div>
-            <div>
-                <select name="category_id"
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-                    <option value="">-- Tất cả danh mục --</option>
-                    <?php foreach ($categories as $id => $name): ?>
-                        <option value="<?= $id ?>" <?= ($_GET['category_id'] ?? '') == $id ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($name) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
             </div>
             <div>
                 <button type="submit" class="w-full px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">
@@ -109,10 +97,7 @@ require_staff_or_admin();
                                 <?= htmlspecialchars($tour['tour_code']) ?>
                             </td>
                             <td class="px-4 py-3">
-                                <div class="font-medium text-gray-800 mb-1"><?= htmlspecialchars($tour['name']) ?></div>
-                                <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                                    <?= htmlspecialchars($tour['category_name'] ?? 'Chưa phân loại') ?>
-                                </span>
+                                <div class="font-medium text-gray-800"><?= htmlspecialchars($tour['name']) ?></div>
                             </td>
                             <td class="px-4 py-3 font-bold text-accent">
                                 <?= number_format($tour['adult_price'], 0, ',', '.') ?> đ
@@ -146,7 +131,7 @@ require_staff_or_admin();
     <?php if ($total_pages > 1): ?>
         <div class="mt-6 flex justify-center gap-2">
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                <a href="?act=staff-tours&page=<?= $i ?>&search=<?= $_GET['search'] ?? '' ?>&approval_status=<?= $_GET['approval_status'] ?? '' ?>&tour_type=<?= $_GET['tour_type'] ?? '' ?>"
+                <a href="?act=staff-tours&page=<?= $i ?>&search=<?= $_GET['search'] ?? '' ?>&status=<?= $_GET['status'] ?? '' ?>&approval_status=<?= $_GET['approval_status'] ?? '' ?>&tour_type=<?= $_GET['tour_type'] ?? '' ?>"
                     class="px-3 py-1 rounded <?= $i == $current_page ? 'bg-accent text-white' : 'bg-white border hover:bg-gray-100' ?>">
                     <?= $i ?>
                 </a>

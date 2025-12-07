@@ -686,8 +686,9 @@ class TourController
         // Có thể có từ POST hoặc từ session (khi tạo từ template)
         $day_services_to_validate = [];
 
-        // Lấy từ POST nếu có
-        if (!empty($post['day_service_day_number'])) {
+        // Lấy từ POST nếu có (ưu tiên user input)
+        // Dùng isset() để phân biệt: POST không có field vs POST có field nhưng rỗng
+        if (isset($post['day_service_day_number']) && is_array($post['day_service_day_number']) && !empty($post['day_service_day_number'])) {
             foreach ($post['day_service_day_number'] as $key => $day_number) {
                 $day_services_to_validate[] = [
                     'day_number' => (int) $day_number,
@@ -698,9 +699,9 @@ class TourController
                 ];
             }
         }
-
-        // Nếu không có trong POST, lấy từ session (khi tạo từ template)
-        if (empty($day_services_to_validate) && !empty($session_data['itinerary_day_services'])) {
+        // Nếu POST không có field (user chưa chỉnh sửa), lấy từ session (khi tạo từ template)
+        // Chỉ check session nếu POST hoàn toàn không có field (không phải array rỗng)
+        elseif (!isset($post['day_service_day_number']) && !empty($session_data['itinerary_day_services'])) {
             $session_services = $this->normalizeDayServicesFormat($session_data['itinerary_day_services']);
             if (!empty($session_services)) {
                 foreach ($session_services as $service) {
@@ -849,6 +850,7 @@ class TourController
     /**
      * Normalize day services format từ session data
      * Chuyển đổi từ associative array {1: [...], 2: [...]} sang indexed array
+     * Hoặc giữ nguyên nếu đã là indexed array format từ database
      */
     private function normalizeDayServicesFormat($day_services)
     {
@@ -856,27 +858,51 @@ class TourController
             return [];
         }
 
-        // Nếu đã là indexed array format: [{day_number: 1, ...}, {day_number: 2, ...}]
+        // Nếu là array rỗng
+        if (empty($day_services)) {
+            return [];
+        }
+
+        // Kiểm tra format: Nếu phần tử đầu tiên có key là số (0, 1, 2...) và có 'service_id'
+        // => Đây là indexed array từ database: [{service_id: 1, ...}, {service_id: 2, ...}]
         $first_key = array_key_first($day_services);
-        if (!is_numeric($first_key) || $first_key <= 0 || $first_key > 10) {
-            return $day_services;
+        $first_item = $day_services[$first_key] ?? null;
+
+        // Nếu đã là indexed array format từ database: [{day_number: 1, service_id: 1, ...}, ...]
+        if (is_numeric($first_key) && is_array($first_item) && isset($first_item['service_id'])) {
+            // Đã đúng format, chỉ cần đảm bảo có day_number
+            $normalized = [];
+            foreach ($day_services as $service) {
+                if (is_array($service) && isset($service['service_id'])) {
+                    // Đảm bảo có day_number
+                    if (!isset($service['day_number']) && isset($service['day'])) {
+                        $service['day_number'] = (int) $service['day'];
+                    }
+                    $normalized[] = $service;
+                }
+            }
+            return $normalized;
         }
 
         // Nếu là associative array với key là day_number: {1: [...], 2: [...]}
+        // Hoặc {1: {service_id: 1, ...}, 2: {service_id: 2, ...}}
         $flattened = [];
         foreach ($day_services as $day_num => $services) {
             if (is_array($services)) {
-                // Nếu là array of services
-                foreach ($services as $service) {
-                    if (is_array($service) && isset($service['service_id'])) {
-                        $service['day_number'] = is_numeric($day_num) ? (int) $day_num : ($service['day_number'] ?? 1);
-                        $flattened[] = $service;
+                // Nếu là array of services: {1: [{service_id: 1, ...}, {service_id: 2, ...}]}
+                if (isset($services[0]) && is_array($services[0])) {
+                    foreach ($services as $service) {
+                        if (is_array($service) && isset($service['service_id'])) {
+                            $service['day_number'] = is_numeric($day_num) ? (int) $day_num : ($service['day_number'] ?? 1);
+                            $flattened[] = $service;
+                        }
                     }
                 }
-            } elseif (is_array($services) && isset($services['service_id'])) {
-                // Single service object
-                $services['day_number'] = is_numeric($day_num) ? (int) $day_num : ($services['day_number'] ?? 1);
-                $flattened[] = $services;
+                // Nếu là single service object: {1: {service_id: 1, ...}}
+                elseif (isset($services['service_id'])) {
+                    $services['day_number'] = is_numeric($day_num) ? (int) $day_num : ($services['day_number'] ?? 1);
+                    $flattened[] = $services;
+                }
             }
         }
 
