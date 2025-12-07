@@ -33,6 +33,18 @@ if (!is_admin())
         background-color: #2563eb;
     }
 
+    /* Style cho thẻ <a> trong tree-item */
+    .tree-item a.no-underline {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .tree-item a.no-underline:hover {
+        text-decoration: none;
+        color: inherit;
+    }
+
     .tree-children {
         margin-left: 32px;
         margin-top: 4px;
@@ -235,24 +247,25 @@ if (!is_admin())
                     <div class="tree-item country <?= $is_expanded ? 'expanded active' : '' ?>"
                         data-country-id="<?= $country_id ?>">
                         <div class="flex items-center justify-between w-full">
-                            <div class="flex items-center flex-1" style="cursor: pointer;">
+                            <a href="?act=admin&module=location-services&country_id=<?= $country_id ?>" 
+                               class="flex items-center flex-1 no-underline" style="cursor: pointer; text-decoration: none; color: inherit;">
                                 <i class="fas fa-globe tree-icon"></i>
                                 <span class="tree-label"><?= htmlspecialchars($country['name']) ?></span>
                                 <span class="tree-badge"><?= $country['provinces_count'] ?? 0 ?></span>
                                 <i class="fas fa-chevron-<?= $is_expanded ? 'down' : 'right' ?> tree-toggle"
                                     style="cursor: pointer;"></i>
-                            </div>
+                            </a>
                             <div class="tree-actions" onclick="event.stopPropagation();">
                                 <a href="?act=admin&module=location-services&action=edit-country&id=<?= $country['id'] ?>"
-                                    class="tree-action-btn bg-blue-500 text-white hover:bg-blue-600" title="Sửa">
+                                    class="tree-action-btn bg-blue-500 text-white hover:bg-blue-600" title="Sửa" onclick="event.stopPropagation();">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <button onclick="toggleCountryStatus(<?= $country['id'] ?>, '<?= $country['status'] ?>')"
+                                <button onclick="event.stopPropagation(); toggleCountryStatus(<?= $country['id'] ?>, '<?= $country['status'] ?>')"
                                     class="tree-action-btn <?= $country['status'] == 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500' ?> text-white"
                                     title="<?= $country['status'] == 'active' ? 'Vô hiệu hóa' : 'Kích hoạt' ?>">
                                     <i class="fas fa-<?= $country['status'] == 'active' ? 'check' : 'times' ?>"></i>
                                 </button>
-                                <button onclick="deleteCountry(<?= $country['id'] ?>)"
+                                <button onclick="event.stopPropagation(); deleteCountry(<?= $country['id'] ?>)"
                                     class="tree-action-btn bg-red-500 text-white hover:bg-red-600" title="Xóa">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -277,34 +290,36 @@ if (!is_admin())
                                 $displayed_tree_province_ids[] = $province_id;
 
                                 $is_province_active = (!empty($current_province_id) && $current_province_id == $province_id);
+                                $province_url = "?act=admin&module=location-services&country_id={$province['country_id']}&province_id={$province['id']}&tab=providers";
                                 ?>
-                                <div class="tree-item province <?= $is_province_active ? 'active' : '' ?>"
-                                    data-province-id="<?= $province['id'] ?>">
+                                <a href="<?= $province_url ?>" 
+                                   class="tree-item province <?= $is_province_active ? 'active' : '' ?> no-underline"
+                                   style="display: block; text-decoration: none; color: inherit;">
                                     <div class="flex items-center justify-between w-full">
-                                        <div class="flex items-center flex-1" style="cursor: pointer;">
+                                        <div class="flex items-center flex-1">
                                             <i class="fas fa-map-marker-alt tree-icon"></i>
                                             <span class="tree-label"><?= htmlspecialchars($province['name']) ?></span>
                                             <span class="tree-badge"><?= $province['providers_count'] ?? 0 ?></span>
                                         </div>
-                                        <div class="tree-actions" onclick="event.stopPropagation();">
-                                            <a href="?act=admin&module=location-services&action=edit-province&id=<?= $province['id'] ?>&country_id=<?= $current_country_id ?>"
-                                                class="tree-action-btn bg-blue-500 text-white hover:bg-blue-600" title="Sửa">
+                                        <div class="tree-actions" onclick="event.stopPropagation(); event.preventDefault();">
+                                            <a href="?act=admin&module=location-services&action=edit-province&id=<?= $province['id'] ?>&country_id=<?= $province['country_id'] ?>"
+                                                class="tree-action-btn bg-blue-500 text-white hover:bg-blue-600" title="Sửa" onclick="event.stopPropagation();">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <button
-                                                onclick="toggleProvinceStatus(<?= $province['id'] ?>, '<?= $province['status'] ?? 'active' ?>')"
+                                                onclick="event.stopPropagation(); event.preventDefault(); toggleProvinceStatus(<?= $province['id'] ?>, '<?= $province['status'] ?? 'active' ?>')"
                                                 class="tree-action-btn <?= ($province['status'] ?? 'active') == 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500' ?> text-white"
                                                 title="<?= ($province['status'] ?? 'active') == 'active' ? 'Vô hiệu hóa' : 'Kích hoạt' ?>">
                                                 <i
                                                     class="fas fa-<?= ($province['status'] ?? 'active') == 'active' ? 'check' : 'times' ?>"></i>
                                             </button>
-                                            <button onclick="deleteProvince(<?= $province['id'] ?>, <?= $current_country_id ?>)"
+                                            <button onclick="event.stopPropagation(); event.preventDefault(); deleteProvince(<?= $province['id'] ?>, <?= $province['country_id'] ?>)"
                                                 class="tree-action-btn bg-red-500 text-white hover:bg-red-600" title="Xóa">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+                                </a>
                             <?php endforeach; ?>
                             <?php if (empty($provinces) || count($displayed_tree_province_ids) == 0): ?>
                                 <div class="tree-item" style="padding-left: 20px; color: #94a3b8; font-size: 13px;">
@@ -675,72 +690,8 @@ if (!is_admin())
         window.currentServiceProviderId = null;
         let currentServiceId = null;
 
-        // Tree view functionality - Dùng URL parameters thay vì AJAX
-        $(document).on('click', '.tree-item.country .flex.items-center.flex-1', function (e) {
-            e.stopPropagation();
-            const $item = $(this).closest('.tree-item.country');
-            const countryId = $item.data('country-id');
-
-            // Redirect với country_id parameter
-            const url = new URL(window.location.href);
-            url.searchParams.set('act', 'admin');
-            url.searchParams.set('module', 'location-services');
-            url.searchParams.set('country_id', countryId);
-            // Xóa province_id và service_provider_id khi chọn country mới
-            url.searchParams.delete('province_id');
-            url.searchParams.delete('service_provider_id');
-            url.searchParams.delete('tab');
-
-            window.location.href = url.toString();
-        });
-
-        // Toggle expand/collapse cho country (click vào toggle hoặc label)
-        $(document).on('click', '.tree-item.country .tree-toggle', function (e) {
-            e.stopPropagation();
-            const $item = $(this).closest('.tree-item.country');
-            const countryId = $item.data('country-id');
-            const $children = $(`#country-${countryId}-children`);
-
-            if ($children.hasClass('hidden')) {
-                // Expand - redirect với country_id
-                const url = new URL(window.location.href);
-                url.searchParams.set('act', 'admin');
-                url.searchParams.set('module', 'location-services');
-                url.searchParams.set('country_id', countryId);
-                url.searchParams.delete('province_id');
-                url.searchParams.delete('service_provider_id');
-                url.searchParams.delete('tab');
-                window.location.href = url.toString();
-            } else {
-                // Collapse - chỉ ẩn children
-                $children.addClass('hidden');
-                $item.removeClass('expanded');
-                $(this).removeClass('fa-chevron-down').addClass('fa-chevron-right');
-            }
-        });
-
-        // Select province - Dùng URL parameters
-        // Select province - Dùng URL parameters (nếu provinces được render từ server)
-        $(document).on('click', '.tree-item.province', function (e) {
-            e.stopPropagation();
-            const provinceId = $(this).data('province-id');
-            const $countryItem = $(this).closest('.tree-children').siblings('.tree-item.country');
-            const countryId = $countryItem.data('country-id') || <?= json_encode($current_country_id ?? null) ?>;
-
-            // Redirect với province_id parameter
-            const url = new URL(window.location.href);
-            url.searchParams.set('act', 'admin');
-            url.searchParams.set('module', 'location-services');
-            if (countryId) {
-                url.searchParams.set('country_id', countryId);
-            }
-            url.searchParams.set('province_id', provinceId);
-            url.searchParams.set('tab', 'providers'); // Default tab
-            // Xóa service_provider_id khi chọn province mới
-            url.searchParams.delete('service_provider_id');
-
-            window.location.href = url.toString();
-        });
+        // Không cần JavaScript handlers cho tree-item click nữa vì đã dùng thẻ <a>
+        // Các buttons (edit, delete, toggle status) vẫn dùng JavaScript với preventDefault
 
         // Không cần AJAX nữa - data đã được load từ server
 
