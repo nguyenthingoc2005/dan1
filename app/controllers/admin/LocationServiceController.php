@@ -1839,20 +1839,25 @@ class LocationServiceController
 
             if ($this->destinationModel->update($id, $data)) {
                 // Xóa ảnh cũ nếu có
-                if (!empty($_POST['delete_images']) && is_array($_POST['delete_images'])) {
+                $deleted_count = 0;
+                if (isset($_POST['delete_images']) && is_array($_POST['delete_images'])) {
                     foreach ($_POST['delete_images'] as $image_id) {
                         $image_id = (int) $image_id;
-                        // Lấy thông tin ảnh trước khi xóa
-                        $stmt = $this->db->prepare("SELECT image_url FROM destination_images WHERE id = :id AND destination_id = :destination_id");
-                        $stmt->execute(['id' => $image_id, 'destination_id' => $id]);
-                        $image = $stmt->fetch();
+                        if ($image_id > 0) {
+                            // Lấy thông tin ảnh trước khi xóa
+                            $stmt = $this->db->prepare("SELECT image_url FROM destination_images WHERE id = :id AND destination_id = :destination_id");
+                            $stmt->execute(['id' => $image_id, 'destination_id' => $id]);
+                            $image = $stmt->fetch();
 
-                        if ($image) {
-                            // Xóa từ database
-                            $this->destinationModel->deleteImage($image_id);
-                            // Xóa file vật lý
-                            if (file_exists($image['image_url'])) {
-                                @unlink($image['image_url']);
+                            if ($image) {
+                                // Xóa từ database
+                                if ($this->destinationModel->deleteImage($image_id)) {
+                                    // Xóa file vật lý
+                                    if (file_exists($image['image_url'])) {
+                                        @unlink($image['image_url']);
+                                    }
+                                    $deleted_count++;
+                                }
                             }
                         }
                     }
@@ -1860,18 +1865,44 @@ class LocationServiceController
 
                 // Upload ảnh mới nếu có
                 $uploaded_count = 0;
-                if (!empty($_FILES['images']['name'][0])) {
-                    $uploaded_count = $this->handleDestinationImageUploads($id, $_FILES['images']);
+                if (isset($_FILES['images']) && isset($_FILES['images']['name']) && is_array($_FILES['images']['name'])) {
+                    // Kiểm tra xem có ít nhất một file được chọn không
+                    $has_files = false;
+                    foreach ($_FILES['images']['name'] as $filename) {
+                        if (!empty($filename)) {
+                            $has_files = true;
+                            break;
+                        }
+                    }
+
+                    if ($has_files) {
+                        $uploaded_count = $this->handleDestinationImageUploads($id, $_FILES['images']);
+                        if ($uploaded_count === 0) {
+                            error_log("Warning: No images were uploaded despite files being selected. Check file validation.");
+                        }
+                    }
                 }
 
+                // Tạo thông báo thành công
+                $messages = [];
+                if ($deleted_count > 0) {
+                    $messages[] = "Đã xóa {$deleted_count} ảnh";
+                }
                 if ($uploaded_count > 0) {
-                    set_success("Cập nhật thành công! Đã upload {$uploaded_count} ảnh mới.");
+                    $messages[] = "Đã upload {$uploaded_count} ảnh mới";
+                }
+
+                if (!empty($messages)) {
+                    set_success("Cập nhật thành công! " . implode(", ", $messages) . ".");
                 } else {
                     set_success('Cập nhật thành công!');
                 }
 
+                // Redirect về trang list destinations
                 $destination = $this->destinationModel->findById($id);
-                redirect('?act=admin&module=location-services&action=edit-destination&id=' . $id . '&country_id=' . $destination['country_id'] . '&province_id=' . $destination['province_id']);
+                $country_id = $destination['country_id'] ?? $_POST['country_id'] ?? null;
+                $province_id = $destination['province_id'] ?? $_POST['province_id'] ?? null;
+                redirect('?act=admin&module=location-services&country_id=' . $country_id . '&province_id=' . $province_id . '&tab=destinations');
             } else {
                 throw new Exception("Không thể cập nhật.");
             }
@@ -1971,35 +2002,39 @@ class LocationServiceController
     {
         require_admin();
 
+        // Trả về JSON vì được gọi qua AJAX
+        header('Content-Type: application/json');
+
         try {
             if (empty($_GET['id'])) {
                 throw new Exception("Thiếu ID.");
             }
 
             $id = (int) $_GET['id'];
-            $destination = $this->destinationModel->findById($id);
-            $country_id = $destination['country_id'] ?? (!empty($_GET['country_id']) ? (int) $_GET['country_id'] : null);
-            $province_id = $destination['province_id'] ?? (!empty($_GET['province_id']) ? (int) $_GET['province_id'] : null);
 
+            // Lấy thông tin destination TRƯỚC KHI xóa để lấy country_id và province_id
+            $destination = $this->destinationModel->findById($id);
+            if (!$destination) {
+                throw new Exception("Địa điểm không tồn tại.");
+            }
+
+            // Gọi phương thức delete (sẽ kiểm tra phụ thuộc và thực hiện soft delete)
             if ($this->destinationModel->delete($id)) {
-                set_success('Xóa địa điểm thành công!');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Đã vô hiệu hóa địa điểm thành công!'
+                ]);
             } else {
-                throw new Exception("Không thể xóa.");
+                throw new Exception("Không thể vô hiệu hóa địa điểm.");
             }
 
         } catch (Exception $e) {
-            set_error($e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
         }
-
-        // Redirect về trang trước
-        $redirect_url = '?act=admin&module=location-services';
-        if ($country_id) {
-            $redirect_url .= '&country_id=' . $country_id;
-        }
-        if ($province_id) {
-            $redirect_url .= '&province_id=' . $province_id . '&tab=destinations';
-        }
-        redirect($redirect_url);
+        exit;
     }
 
     /**
@@ -2698,6 +2733,7 @@ class LocationServiceController
 
         $count = count($files['name']);
         $uploaded_count = 0;
+        $skipped_count = 0;
 
         // Check if destination already has images to determine primary
         $existing_images = $this->destinationModel->getImages($destination_id);
@@ -2710,39 +2746,66 @@ class LocationServiceController
         }
 
         for ($i = 0; $i < $count; $i++) {
-            if ($files['error'][$i] === UPLOAD_ERR_OK) {
-                $tmp_name = $files['tmp_name'][$i];
-                $name = basename($files['name'][$i]);
-                $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-
-                // Basic extension check
-                if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                    continue;
-                }
-
-                // Size check (5MB limit)
-                if ($files['size'][$i] > 5 * 1024 * 1024) {
-                    continue;
-                }
-
-                // Validate image file (MIME type + dimensions)
-                $validation = ValidationHelper::validateImageFile($tmp_name);
-                if (!$validation['valid']) {
-                    error_log("Image upload validation failed: " . $validation['error']);
-                    continue;
-                }
-
-                // Generate unique name
-                $new_name = 'dest_' . $destination_id . '_' . uniqid() . '.' . $ext;
-                $destination_path = $upload_dir . $new_name;
-
-                if (move_uploaded_file($tmp_name, $destination_path)) {
-                    $is_primary = (!$has_primary && $uploaded_count === 0);
-
-                    $this->destinationModel->addImage($destination_id, $destination_path, $is_primary);
-                    $uploaded_count++;
-                }
+            // Skip empty file names
+            if (empty($files['name'][$i])) {
+                continue;
             }
+
+            // Check upload error
+            if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+                error_log("File upload error for file {$i}: " . $files['error'][$i]);
+                $skipped_count++;
+                continue;
+            }
+
+            $tmp_name = $files['tmp_name'][$i];
+            $name = basename($files['name'][$i]);
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+            // Basic extension check
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                error_log("Invalid file extension for file {$i}: {$ext}");
+                $skipped_count++;
+                continue;
+            }
+
+            // Size check (5MB limit)
+            if ($files['size'][$i] > 5 * 1024 * 1024) {
+                error_log("File too large for file {$i}: " . round($files['size'][$i] / 1024 / 1024, 2) . "MB");
+                $skipped_count++;
+                continue;
+            }
+
+            // Validate image file (MIME type + dimensions)
+            $validation = ValidationHelper::validateImageFile($tmp_name);
+            if (!$validation['valid']) {
+                error_log("Image upload validation failed for file {$i}: " . $validation['error']);
+                $skipped_count++;
+                continue;
+            }
+
+            // Generate unique name
+            $new_name = 'dest_' . $destination_id . '_' . uniqid() . '.' . $ext;
+            $destination_path = $upload_dir . $new_name;
+
+            if (move_uploaded_file($tmp_name, $destination_path)) {
+                $is_primary = (!$has_primary && $uploaded_count === 0);
+
+                if ($this->destinationModel->addImage($destination_id, $destination_path, $is_primary)) {
+                    $uploaded_count++;
+                } else {
+                    error_log("Failed to add image to database for file {$i}. Removing uploaded file.");
+                    @unlink($destination_path);
+                    $skipped_count++;
+                }
+            } else {
+                error_log("Failed to move uploaded file {$i} to {$destination_path}");
+                $skipped_count++;
+            }
+        }
+
+        if ($skipped_count > 0) {
+            error_log("Skipped {$skipped_count} files during upload for destination {$destination_id}");
         }
 
         return $uploaded_count;

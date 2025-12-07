@@ -38,15 +38,6 @@ if (!is_admin())
                             class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
-                        <select name="category_id" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
-                            <option value="">-- Chọn danh mục --</option>
-                            <?php foreach ($categories as $id => $name): ?>
-                                <option value="<?= $id ?>" <?= $tour['category_id'] == $id ? 'selected' : '' ?>><?= htmlspecialchars($name) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Điểm khởi hành</label>
                         <input type="text" name="departure_location" value="<?= htmlspecialchars($tour['departure_location']) ?>"
                             class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
@@ -63,8 +54,12 @@ if (!is_admin())
                             class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả ngắn</label>
-                        <textarea name="description" rows="3" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none"><?= htmlspecialchars($tour['description']) ?></textarea>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Giới thiệu ngắn</label>
+                        <textarea name="introduction" rows="2" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none" placeholder="Giới thiệu ngắn gọn về tour..."><?= htmlspecialchars($tour['introduction'] ?? '') ?></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
+                        <textarea name="description" rows="4" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none"><?= htmlspecialchars($tour['description'] ?? '') ?></textarea>
                     </div>
                 </div>
 
@@ -83,14 +78,6 @@ if (!is_admin())
                                 class="w-full px-3 py-2 border rounded focus:border-accent text-center">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Giá tính cho</label>
-                            <div class="flex items-center">
-                                <input type="number" name="price_based_on_pax" min="1" value="<?= $tour['price_based_on_pax'] ?? 30 ?>"
-                                    class="w-full px-3 py-2 border rounded-l focus:border-accent text-center">
-                                <span class="px-3 py-2 bg-gray-100 border border-l-0 rounded-r text-sm text-gray-600">khách</span>
-                            </div>
-                        </div>
-                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Tỷ lệ đặt cọc</label>
                             <div class="flex items-center">
                                 <input type="number" name="deposit_percentage" min="0" max="100" value="<?= $tour['deposit_percentage'] ?? 30 ?>"
@@ -98,6 +85,63 @@ if (!is_admin())
                                 <span class="px-3 py-2 bg-gray-100 border border-l-0 rounded-r text-sm text-gray-600">%</span>
                             </div>
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Hạn đặt tour (ngày)</label>
+                            <div class="flex items-center">
+                                <input type="number" name="booking_deadline_days" min="0" value="<?= $tour['booking_deadline_days'] ?? 1 ?>"
+                                    class="w-full px-3 py-2 border rounded-l focus:border-accent text-center">
+                                <span class="px-3 py-2 bg-gray-100 border border-l-0 rounded-r text-sm text-gray-600">ngày</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Số ngày trước khi khởi hành phải đặt tour</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chi phí cố định -->
+                <div class="mt-5 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <h4 class="font-medium text-yellow-900 mb-3">💼 Chi phí cố định (chia đều cho số người)</h4>
+                    <p class="text-sm text-yellow-700 mb-4">
+                        Nhập các chi phí cố định cho tour (lương HDV, quản lý, marketing...).
+                        Hệ thống sẽ tự động chia đều cho số người tối thiểu để tính chi phí/người.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Lương HDV (Hướng dẫn viên)
+                            </label>
+                            <input type="number" name="fixed_cost_guide" id="fixed_cost_guide" min="0" step="10000"
+                                value="<?= $tour['fixed_cost_guide'] ?? '0' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-yellow-500" placeholder="VD: 2000000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Chi phí quản lý
+                            </label>
+                            <input type="number" name="fixed_cost_management" id="fixed_cost_management" min="0"
+                                step="10000" value="<?= $tour['fixed_cost_management'] ?? '0' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-yellow-500" placeholder="VD: 1500000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Chi phí marketing
+                            </label>
+                            <input type="number" name="fixed_cost_marketing" id="fixed_cost_marketing" min="0"
+                                step="10000" value="<?= $tour['fixed_cost_marketing'] ?? '0' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-yellow-500" placeholder="VD: 500000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Chi phí khác
+                            </label>
+                            <input type="number" name="fixed_cost_other" id="fixed_cost_other" min="0" step="10000"
+                                value="<?= $tour['fixed_cost_other'] ?? '0' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-yellow-500" placeholder="VD: 0">
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-yellow-100 rounded text-sm text-yellow-800">
+                        <strong>💡 Lưu ý:</strong> Chi phí cố định sẽ được chia đều cho <span
+                            id="min-participants-display" class="font-bold"><?= $tour['min_participants'] ?? 15 ?></span> người (số người tối thiểu).
+                        Chi phí cố định/người = Tổng chi phí cố định ÷ Số người tối thiểu.
                     </div>
                 </div>
 
@@ -148,13 +192,17 @@ if (!is_admin())
             <div class="p-5" id="itinerary-container">
                 <?php if (!empty($tour['itinerary'])): ?>
                     <?php foreach ($tour['itinerary'] as $item): ?>
-                        <div class="bg-gray-50 p-4 rounded border mb-3 itinerary-item">
-                            <input type="hidden" name="itinerary_day[]" value="<?= $item['day_number'] ?>">
+                        <?php 
+                        $day_num = $item['day_number'];
+                        $day_services = $tour['day_services_by_day'][$day_num] ?? [];
+                        ?>
+                        <div class="bg-gray-50 p-4 rounded border mb-3 itinerary-item" data-day="<?= $day_num ?>">
+                            <input type="hidden" name="itinerary_day_number[]" value="<?= $day_num ?>">
                             <div class="flex items-center gap-3 mb-2">
-                                <span class="w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"><?= $item['day_number'] ?></span>
+                                <span class="w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"><?= $day_num ?></span>
                                 <input type="text" name="itinerary_title[]" value="<?= htmlspecialchars($item['title']) ?>" placeholder="Tiêu đề..."
                                     class="flex-1 px-3 py-2 border rounded focus:border-accent focus:outline-none">
-                                <select name="itinerary_dest[]" class="px-3 py-2 border rounded focus:border-accent focus:outline-none w-48">
+                                <select name="itinerary_destination[]" class="px-3 py-2 border rounded focus:border-accent focus:outline-none w-48">
                                     <option value="">-- Điểm đến --</option>
                                     <?php foreach ($destinations as $id => $name): ?>
                                         <option value="<?= $id ?>" <?= $item['destination_id'] == $id ? 'selected' : '' ?>><?= htmlspecialchars($name) ?></option>
@@ -162,8 +210,65 @@ if (!is_admin())
                                 </select>
                                 <button type="button" onclick="this.closest('.itinerary-item').remove()" class="text-red-500 hover:text-red-700">✕</button>
                             </div>
-                            <textarea name="itinerary_desc[]" rows="2" placeholder="Mô tả hoạt động..."
-                                class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none text-sm"><?= htmlspecialchars($item['description']) ?></textarea>
+                            <div class="mb-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả lịch trình</label>
+                                <textarea name="itinerary_description[]" 
+                                    id="itinerary-description-day-<?= $day_num ?>"
+                                    rows="6"
+                                    class="w-full px-3 py-2 border rounded tinymce-editor"
+                                    placeholder="Mô tả chi tiết lịch trình ngày <?= $day_num ?>..."><?= htmlspecialchars($item['description'] ?? '') ?></textarea>
+                            </div>
+                            
+                            <!-- Dịch vụ theo ngày -->
+                            <div class="mt-4 border-t pt-4">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="font-semibold text-gray-700">
+                                        <i class="fas fa-concierge-bell mr-2 text-green-500"></i>Dịch vụ theo ngày
+                                    </h4>
+                                    <button type="button" onclick="openAddServiceModal(<?= $day_num ?>)"
+                                        class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">
+                                        <i class="fas fa-plus mr-2"></i>Thêm dịch vụ
+                                    </button>
+                                </div>
+                                
+                                <div id="day-services-list-day-<?= $day_num ?>" class="space-y-3">
+                                    <?php if (!empty($day_services)): ?>
+                                        <?php foreach ($day_services as $service): ?>
+                                            <div class="bg-white p-3 rounded border border-green-200 day-service-item" data-service-id="<?= $service['id'] ?? '' ?>">
+                                                <div class="flex justify-between items-start">
+                                                    <div class="flex-1">
+                                                        <div class="font-medium text-gray-800"><?= htmlspecialchars($service['service_name'] ?? 'N/A') ?></div>
+                                                        <div class="text-sm text-gray-600 mt-1">
+                                                            Giá: <?= number_format($service['unit_price'] ?? 0) ?>đ / <?= htmlspecialchars($service['unit'] ?? 'đơn vị') ?>
+                                                            × <?= $service['quantity'] ?? 1 ?>
+                                                            <?= ($service['is_included_in_price'] ?? 0) ? '<span class="text-green-600 ml-2">✓ Bao gồm trong giá</span>' : '' ?>
+                                                        </div>
+                                                        <?php if (!empty($service['notes'])): ?>
+                                                            <div class="text-xs text-gray-500 mt-1">Ghi chú: <?= htmlspecialchars($service['notes']) ?></div>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <button type="button" onclick="removeDayService(this)" class="text-red-500 hover:text-red-700 ml-2">✕</button>
+                                                </div>
+                                                <!-- Hidden inputs -->
+                                                <input type="hidden" name="day_service_day_number[]" value="<?= $day_num ?>">
+                                                <input type="hidden" name="day_service_service_id[]" value="<?= $service['service_id'] ?? '' ?>">
+                                                <input type="hidden" name="day_service_provider_id[]" value="<?= $service['service_provider_id'] ?? '' ?>">
+                                                <input type="hidden" name="day_service_name[]" value="<?= htmlspecialchars($service['service_name'] ?? '') ?>">
+                                                <input type="hidden" name="day_service_unit_price[]" value="<?= $service['unit_price'] ?? 0 ?>">
+                                                <input type="hidden" name="day_service_quantity[]" value="<?= $service['quantity'] ?? 1 ?>">
+                                                <input type="hidden" name="day_service_unit[]" value="<?= htmlspecialchars($service['unit'] ?? '') ?>">
+                                                <input type="hidden" name="day_service_included[]" value="<?= ($service['is_included_in_price'] ?? 0) ? '1' : '' ?>">
+                                                <input type="hidden" name="day_service_notes[]" value="<?= htmlspecialchars($service['notes'] ?? '') ?>">
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <div class="text-gray-500 text-center py-4 bg-gray-50 rounded border-2 border-dashed">
+                                            <i class="fas fa-concierge-bell text-2xl mb-2"></i>
+                                            <p class="text-sm">Chưa có dịch vụ nào</p>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -219,10 +324,39 @@ if (!is_admin())
             </div>
         </div>
 
-        <!-- Section 5: Hình ảnh & Highlights -->
+        <!-- Section 5: Chính sách -->
         <div class="bg-white rounded-lg shadow-sm overflow-hidden">
             <div class="bg-gray-50 px-5 py-3 border-b">
-                <h2 class="font-bold text-gray-800">5. Hình ảnh & Điểm nổi bật</h2>
+                <h2 class="font-bold text-gray-800">5. Chính sách</h2>
+            </div>
+            <div class="p-5">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Chọn các chính sách áp dụng cho tour</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <?php if (!empty($policies)): ?>
+                        <?php foreach ($policies as $policy): ?>
+                            <label class="flex items-start gap-2 p-3 border rounded hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" name="policy_ids[]" value="<?= $policy['id'] ?>"
+                                    <?= in_array($policy['id'], $tour['policy_ids'] ?? []) ? 'checked' : '' ?>
+                                    class="mt-1">
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-800"><?= htmlspecialchars($policy['name']) ?></div>
+                                    <?php if (!empty($policy['description'])): ?>
+                                        <div class="text-xs text-gray-500 mt-1"><?= htmlspecialchars($policy['description']) ?></div>
+                                    <?php endif; ?>
+                                </div>
+                            </label>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="text-gray-500 text-sm">Chưa có chính sách nào. <a href="?act=admin&module=policies&action=create" class="text-accent hover:underline">Tạo mới</a></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 6: Hình ảnh & Highlights -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="bg-gray-50 px-5 py-3 border-b">
+                <h2 class="font-bold text-gray-800">6. Hình ảnh & Điểm nổi bật</h2>
             </div>
             <div class="p-5 space-y-5">
                 <!-- Current Images -->
@@ -273,9 +407,33 @@ if (!is_admin())
     </form>
 </div>
 
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
     const destinations = <?= json_encode($destinations) ?>;
+    const services = <?= json_encode($services ?? []) ?>;
+    const serviceProviders = <?= json_encode($service_providers ?? []) ?>;
     let dayCount = <?= count($tour['itinerary'] ?? []) ?>;
+
+    // Initialize TinyMCE for existing textareas
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize TinyMCE for all itinerary description textareas
+        const textareas = document.querySelectorAll('.tinymce-editor');
+        textareas.forEach(textarea => {
+            if (typeof tinymce !== 'undefined' && !tinymce.get(textarea.id)) {
+                tinymce.init({
+                    selector: '#' + textarea.id,
+                    license_key: 'gpl',
+                    height: 300,
+                    menubar: false,
+                    plugins: ['advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen', 'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'],
+                    toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | outdent indent | removeformat | image link | code | fullscreen | help',
+                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
+                    branding: false,
+                    promotion: false
+                });
+            }
+        });
+    });
 
     function addItineraryDay() {
         dayCount++;
@@ -286,22 +444,85 @@ if (!is_admin())
         }
 
         const html = `
-            <div class="bg-gray-50 p-4 rounded border mb-3 itinerary-item">
-                <input type="hidden" name="itinerary_day[]" value="${dayCount}">
+            <div class="bg-gray-50 p-4 rounded border mb-3 itinerary-item" data-day="${dayCount}">
+                <input type="hidden" name="itinerary_day_number[]" value="${dayCount}">
                 <div class="flex items-center gap-3 mb-2">
                     <span class="w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">${dayCount}</span>
                     <input type="text" name="itinerary_title[]" placeholder="Tiêu đề..."
                         class="flex-1 px-3 py-2 border rounded focus:border-accent focus:outline-none">
-                    <select name="itinerary_dest[]" class="px-3 py-2 border rounded focus:border-accent focus:outline-none w-48">
+                    <select name="itinerary_destination[]" class="px-3 py-2 border rounded focus:border-accent focus:outline-none w-48">
                         ${destOptions}
                     </select>
                     <button type="button" onclick="this.closest('.itinerary-item').remove()" class="text-red-500 hover:text-red-700">✕</button>
                 </div>
-                <textarea name="itinerary_desc[]" rows="2" placeholder="Mô tả hoạt động..."
-                    class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none text-sm"></textarea>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả lịch trình</label>
+                    <textarea name="itinerary_description[]" 
+                        id="itinerary-description-day-${dayCount}"
+                        rows="6"
+                        class="w-full px-3 py-2 border rounded tinymce-editor"
+                        placeholder="Mô tả chi tiết lịch trình ngày ${dayCount}..."></textarea>
+                </div>
+                <div class="mt-4 border-t pt-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-semibold text-gray-700">
+                            <i class="fas fa-concierge-bell mr-2 text-green-500"></i>Dịch vụ theo ngày
+                        </h4>
+                        <button type="button" onclick="openAddServiceModal(${dayCount})"
+                            class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">
+                            <i class="fas fa-plus mr-2"></i>Thêm dịch vụ
+                        </button>
+                    </div>
+                    <div id="day-services-list-day-${dayCount}" class="space-y-3">
+                        <div class="text-gray-500 text-center py-4 bg-gray-50 rounded border-2 border-dashed">
+                            <i class="fas fa-concierge-bell text-2xl mb-2"></i>
+                            <p class="text-sm">Chưa có dịch vụ nào</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', html);
+        
+        // Initialize TinyMCE for the new textarea
+        setTimeout(() => {
+            if (typeof tinymce !== 'undefined') {
+                tinymce.init({
+                    selector: '#itinerary-description-day-' + dayCount,
+                    license_key: 'gpl',
+                    height: 300,
+                    menubar: false,
+                    plugins: ['advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen', 'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'],
+                    toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | outdent indent | removeformat | image link | code | fullscreen | help',
+                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
+                    branding: false,
+                    promotion: false
+                });
+            }
+        }, 100);
+    }
+
+    function openAddServiceModal(dayNumber) {
+        // Load day services editor via AJAX (sử dụng endpoint có sẵn)
+        fetch(`?act=admin&module=tours&action=loadDayServicesEditor&day=${dayNumber}&tour_id=<?= $tour['id'] ?>`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Hiển thị modal hoặc load vào container
+                    // Tạm thời: redirect đến trang loadDayServicesEditor
+                    window.open(`?act=admin&module=tours&action=loadDayServicesEditor&day=${dayNumber}&tour_id=<?= $tour['id'] ?>`, '_blank');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading service editor:', error);
+                alert('Không thể tải trình chỉnh sửa dịch vụ. Vui lòng thử lại.');
+            });
+    }
+
+    function removeDayService(button) {
+        if (confirm('Bạn có chắc muốn xóa dịch vụ này?')) {
+            button.closest('.day-service-item').remove();
+        }
     }
 
     function addIncludedItem(text = '') {

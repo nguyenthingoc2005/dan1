@@ -138,11 +138,16 @@ class BookingController
                     throw new \Exception("Vui lòng chọn hoặc tạo khách hàng.");
                 }
 
-                // Validate start_date >= today + 1 day (DEADLINE: Phải đặt trước 1 ngày)
+                // Validate start_date >= today + booking_deadline_days (DEADLINE: Phải đặt trước deadline)
+                $tour = $this->tourModel->findById($_POST['tour_id']);
+                if (!$tour) {
+                    throw new \Exception("Tour không tồn tại.");
+                }
+                $deadline_days = (int) ($tour['booking_deadline_days'] ?? 1);
                 $today = date('Y-m-d');
-                $minStartDate = date('Y-m-d', strtotime($today . ' +1 day'));
+                $minStartDate = date('Y-m-d', strtotime($today . " +{$deadline_days} day"));
                 if ($_POST['start_date'] < $minStartDate) {
-                    throw new \Exception("Không thể đặt booking. Phải đặt trước 1 ngày so với ngày khởi hành. (Hôm nay: {$today}, Ngày khởi hành tối thiểu: {$minStartDate})");
+                    throw new \Exception("Không thể đặt booking. Phải đặt trước {$deadline_days} ngày so với ngày khởi hành. (Hôm nay: {$today}, Ngày khởi hành tối thiểu: {$minStartDate})");
                 }
 
                 // Validate counts

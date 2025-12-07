@@ -40,10 +40,12 @@ if (!is_admin())
                         <span class="block text-sm text-gray-500">Tên Tour</span>
                         <span class="font-bold text-lg text-gray-900"><?= htmlspecialchars($tour['name']) ?></span>
                     </div>
-                    <div>
-                        <span class="block text-sm text-gray-500">Danh mục</span>
-                        <span class="text-blue-600"><?= htmlspecialchars($tour['category_name'] ?? 'Chưa phân loại') ?></span>
+                    <?php if (!empty($tour['introduction'])): ?>
+                    <div class="col-span-2">
+                        <span class="block text-sm text-gray-500">Giới thiệu ngắn</span>
+                        <p class="text-gray-700 mt-1 text-sm"><?= nl2br(htmlspecialchars($tour['introduction'])) ?></p>
                     </div>
+                    <?php endif; ?>
                     <div>
                         <span class="block text-sm text-gray-500">Điểm khởi hành</span>
                         <span class="text-gray-900"><?= htmlspecialchars($tour['departure_location'] ?: '-') ?></span>
@@ -56,11 +58,63 @@ if (!is_admin())
                         <span class="block text-sm text-gray-500">Số khách</span>
                         <span class="font-medium"><?= $tour['min_participants'] ?? 10 ?> - <?= $tour['max_participants'] ?? 45 ?> người</span>
                     </div>
+                    <div>
+                        <span class="block text-sm text-gray-500">Hạn đặt tour</span>
+                        <span class="font-medium"><?= $tour['booking_deadline_days'] ?? 1 ?> ngày trước khởi hành</span>
+                    </div>
                     <div class="col-span-2">
-                        <span class="block text-sm text-gray-500">Mô tả</span>
+                        <span class="block text-sm text-gray-500">Mô tả chi tiết</span>
                         <p class="text-gray-700 mt-1 text-sm"><?= nl2br(htmlspecialchars($tour['description'] ?: 'Chưa có mô tả')) ?></p>
                     </div>
                 </div>
+
+                <!-- Chi phí cố định -->
+                <?php if (!empty($tour['fixed_cost_guide']) || !empty($tour['fixed_cost_management']) || !empty($tour['fixed_cost_marketing']) || !empty($tour['fixed_cost_other'])): ?>
+                <div class="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <h3 class="font-medium text-yellow-900 mb-3">💼 Chi phí cố định</h3>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <?php if (!empty($tour['fixed_cost_guide'])): ?>
+                        <div>
+                            <span class="text-gray-600">Lương HDV:</span>
+                            <span class="font-medium ml-2"><?= number_format($tour['fixed_cost_guide'], 0, ',', '.') ?> đ</span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if (!empty($tour['fixed_cost_management'])): ?>
+                        <div>
+                            <span class="text-gray-600">Chi phí quản lý:</span>
+                            <span class="font-medium ml-2"><?= number_format($tour['fixed_cost_management'], 0, ',', '.') ?> đ</span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if (!empty($tour['fixed_cost_marketing'])): ?>
+                        <div>
+                            <span class="text-gray-600">Chi phí marketing:</span>
+                            <span class="font-medium ml-2"><?= number_format($tour['fixed_cost_marketing'], 0, ',', '.') ?> đ</span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if (!empty($tour['fixed_cost_other'])): ?>
+                        <div>
+                            <span class="text-gray-600">Chi phí khác:</span>
+                            <span class="font-medium ml-2"><?= number_format($tour['fixed_cost_other'], 0, ',', '.') ?> đ</span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php 
+                    $totalFixedCost = ($tour['fixed_cost_guide'] ?? 0) + ($tour['fixed_cost_management'] ?? 0) + ($tour['fixed_cost_marketing'] ?? 0) + ($tour['fixed_cost_other'] ?? 0);
+                    $minParticipants = $tour['min_participants'] ?? 15;
+                    $fixedCostPerPerson = $minParticipants > 0 ? $totalFixedCost / $minParticipants : 0;
+                    ?>
+                    <div class="mt-3 pt-3 border-t border-yellow-300">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Tổng chi phí cố định:</span>
+                            <span class="font-bold text-yellow-900"><?= number_format($totalFixedCost, 0, ',', '.') ?> đ</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-1">
+                            <span class="text-gray-600 text-sm">Chi phí cố định/người:</span>
+                            <span class="font-medium text-sm"><?= number_format($fixedCostPerPerson, 0, ',', '.') ?> đ</span>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
 
             <!-- Itinerary -->
@@ -70,18 +124,69 @@ if (!is_admin())
                 </h2>
                 <?php if (!empty($tour['itinerary'])): ?>
                     <div class="space-y-4">
+                        <?php 
+                        // Group day services by day_number
+                        $day_services_by_day = [];
+                        if (!empty($tour['itinerary_day_services'])) {
+                            foreach ($tour['itinerary_day_services'] as $service) {
+                                $day = $service['day_number'] ?? null;
+                                if ($day) {
+                                    if (!isset($day_services_by_day[$day])) {
+                                        $day_services_by_day[$day] = [];
+                                    }
+                                    $day_services_by_day[$day][] = $service;
+                                }
+                            }
+                        }
+                        ?>
                         <?php foreach ($tour['itinerary'] as $item): ?>
-                            <div class="flex gap-4 p-3 bg-gray-50 rounded-lg">
-                                <div class="w-10 h-10 bg-accent text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
-                                    <?= $item['day_number'] ?>
+                            <?php 
+                            $day_num = $item['day_number'];
+                            $day_services = $day_services_by_day[$day_num] ?? [];
+                            ?>
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex gap-4 mb-3">
+                                    <div class="w-10 h-10 bg-accent text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                                        <?= $day_num ?>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-gray-800"><?= htmlspecialchars($item['title'] ?: "Ngày $day_num") ?></h4>
+                                        <?php if (!empty($item['destination_name'])): ?>
+                                            <p class="text-sm text-blue-600">📍 <?= htmlspecialchars($item['destination_name']) ?></p>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-gray-800"><?= htmlspecialchars($item['title']) ?></h4>
-                                    <?php if (!empty($item['destination_name'])): ?>
-                                        <p class="text-sm text-blue-600">📍 <?= htmlspecialchars($item['destination_name']) ?></p>
-                                    <?php endif; ?>
-                                    <p class="text-sm text-gray-600 mt-1"><?= nl2br(htmlspecialchars($item['description'])) ?></p>
+                                <?php if (!empty($item['description'])): ?>
+                                <div class="ml-14 mb-3">
+                                    <div class="text-sm text-gray-700 prose max-w-none"><?= $item['description'] ?></div>
                                 </div>
+                                <?php endif; ?>
+                                
+                                <!-- Dịch vụ theo ngày -->
+                                <?php if (!empty($day_services)): ?>
+                                <div class="ml-14 mt-3 pt-3 border-t border-gray-200">
+                                    <h5 class="text-sm font-semibold text-gray-700 mb-2">
+                                        <i class="fas fa-concierge-bell mr-1 text-green-500"></i>Dịch vụ theo ngày:
+                                    </h5>
+                                    <div class="space-y-2">
+                                        <?php foreach ($day_services as $service): ?>
+                                        <div class="bg-green-50 border border-green-200 rounded p-2 text-sm">
+                                            <div class="font-medium text-gray-800"><?= htmlspecialchars($service['service_name'] ?? 'N/A') ?></div>
+                                            <div class="text-gray-600 mt-1">
+                                                Giá: <?= number_format($service['unit_price'] ?? 0, 0, ',', '.') ?>đ / <?= htmlspecialchars($service['unit'] ?? 'đơn vị') ?>
+                                                × <?= $service['quantity'] ?? 1 ?>
+                                                <?php if ($service['is_included_in_price'] ?? 0): ?>
+                                                    <span class="text-green-600 ml-2">✓ Bao gồm trong giá</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if (!empty($service['notes'])): ?>
+                                            <div class="text-xs text-gray-500 mt-1">Ghi chú: <?= htmlspecialchars($service['notes']) ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -208,15 +313,34 @@ if (!is_admin())
                     </div>
                     <hr>
                     <div class="flex justify-between items-center text-sm">
-                        <span class="text-gray-500">Giá tính cho</span>
-                        <span class="text-gray-700"><?= $tour['price_based_on_pax'] ?? 30 ?> khách</span>
-                    </div>
-                    <div class="flex justify-between items-center text-sm">
                         <span class="text-gray-500">Đặt cọc</span>
                         <span class="text-gray-700"><?= $tour['deposit_percentage'] ?? 30 ?>%</span>
                     </div>
+                    <?php if (!empty($tour['estimated_cost_per_person'])): ?>
+                    <div class="flex justify-between items-center text-sm mt-2 pt-2 border-t">
+                        <span class="text-gray-500">Chi phí ước tính/người</span>
+                        <span class="text-gray-700 font-medium"><?= number_format($tour['estimated_cost_per_person'], 0, ',', '.') ?> đ</span>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
+
+            <!-- Policies -->
+            <?php if (!empty($tour['policies'])): ?>
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Chính sách</h2>
+                <div class="space-y-3">
+                    <?php foreach ($tour['policies'] as $policy): ?>
+                    <div class="border border-gray-200 rounded p-3">
+                        <div class="font-medium text-gray-800"><?= htmlspecialchars($policy['name']) ?></div>
+                        <?php if (!empty($policy['description'])): ?>
+                        <div class="text-xs text-gray-500 mt-1"><?= htmlspecialchars($policy['description']) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Highlights -->
             <div class="bg-white rounded-lg shadow-sm p-6">

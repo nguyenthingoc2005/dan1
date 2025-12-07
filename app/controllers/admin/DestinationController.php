@@ -238,9 +238,9 @@ class DestinationController
 
             // Delete sẽ tự động check usage trong Model
             if ($this->destinationModel->delete($id)) {
-                set_success("Đã vô hiệu hóa địa điểm.");
+                set_success("Đã vô hiệu hóa địa điểm thành công!");
             } else {
-                throw new Exception("Không thể xóa địa điểm.");
+                throw new Exception("Không thể vô hiệu hóa địa điểm.");
             }
 
         } catch (Exception $e) {

@@ -699,6 +699,184 @@ class TourController
     }
 
     /**
+     * Form sửa Tour
+     */
+    public function edit()
+    {
+        require_admin();
+
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+        $tour = $this->tourModel->findById($id);
+
+        if (!$tour) {
+            set_error("Không tìm thấy tour.");
+            redirect('?act=admin&module=tours');
+            return;
+        }
+
+        // Load dropdown data
+        $destinations = $this->destinationModel->getForDropdown();
+        $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
+        $service_providers = $this->serviceProviderModel->getForDropdown();
+        $policies = $this->policyModel->getAll(['status' => 'active']);
+
+        // Prepare itinerary day services by day
+        $day_services_by_day = [];
+        if (!empty($tour['itinerary_day_services']) && is_array($tour['itinerary_day_services'])) {
+            foreach ($tour['itinerary_day_services'] as $service) {
+                $day = $service['day_number'] ?? 1;
+                if (!isset($day_services_by_day[$day])) {
+                    $day_services_by_day[$day] = [];
+                }
+                $day_services_by_day[$day][] = $service;
+            }
+        }
+        $tour['day_services_by_day'] = $day_services_by_day;
+
+        // Prepare policy IDs
+        $tour['policy_ids'] = array_column($tour['policies'] ?? [], 'id');
+
+        $page_title = 'Sửa Tour: ' . htmlspecialchars($tour['name']);
+        $content_file = VIEWS_PATH . '/admin/tours/edit.php';
+        require VIEWS_PATH . '/layouts/admin_layout.php';
+    }
+
+    /**
+     * Xử lý cập nhật Tour
+     */
+    public function update()
+    {
+        require_admin();
+
+        try {
+            $id = (int) ($_POST['id'] ?? 0);
+            $tour = $this->tourModel->findById($id);
+
+            if (!$tour) {
+                set_error("Không tìm thấy tour.");
+                redirect('?act=admin&module=tours');
+                return;
+            }
+
+            // Validation
+            $errors = $this->validateTourData($_POST, []);
+
+            if (!empty($errors)) {
+                // Có lỗi: Load lại form với errors
+                $destinations = $this->destinationModel->getForDropdown();
+                $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
+                $service_providers = $this->serviceProviderModel->getForDropdown();
+                $policies = $this->policyModel->getAll(['status' => 'active']);
+                
+                // Merge tour data với POST để giữ lại dữ liệu đã nhập
+                $tour = array_merge($tour, $_POST);
+                
+                $page_title = 'Sửa Tour: ' . htmlspecialchars($tour['name']);
+                $content_file = VIEWS_PATH . '/admin/tours/edit.php';
+                require VIEWS_PATH . '/layouts/admin_layout.php';
+                return;
+            }
+
+            // Calculate pricing từ PricingHelper
+            $fixed_costs = [
+                'guide' => (float) ($_POST['fixed_cost_guide'] ?? 0),
+                'management' => (float) ($_POST['fixed_cost_management'] ?? 0),
+                'marketing' => (float) ($_POST['fixed_cost_marketing'] ?? 0),
+                'other' => (float) ($_POST['fixed_cost_other'] ?? 0)
+            ];
+            $min_participants = (int) ($_POST['min_participants'] ?? 15);
+
+            // Prepare Tour Data
+            $data = [
+                'name' => sanitize($_POST['name'] ?? ''),
+                'introduction' => sanitize($_POST['introduction'] ?? ''),
+                'description' => $_POST['description'] ?? '',
+                'duration_days' => (int) ($_POST['duration_days'] ?? 0),
+                'duration_nights' => (int) ($_POST['duration_nights'] ?? 0),
+                'departure_location' => sanitize($_POST['departure_location'] ?? ''),
+                'min_participants' => $min_participants,
+                'max_participants' => (int) ($_POST['max_participants'] ?? 45),
+                'adult_price' => (float) ($_POST['adult_price'] ?? 0),
+                'child_price' => (float) ($_POST['child_price'] ?? 0),
+                'infant_price' => (float) ($_POST['infant_price'] ?? 0),
+                'estimated_cost_per_person' => null, // Sẽ tính lại sau
+                'deposit_percentage' => (float) ($_POST['deposit_percentage'] ?? 30),
+                'booking_deadline_days' => (int) ($_POST['booking_deadline_days'] ?? 1),
+                'fixed_cost_guide' => $fixed_costs['guide'],
+                'fixed_cost_management' => $fixed_costs['management'],
+                'fixed_cost_marketing' => $fixed_costs['marketing'],
+                'fixed_cost_other' => $fixed_costs['other'],
+                'tour_type' => $_POST['tour_type'] ?? 'public',
+                'status' => $_POST['status'] ?? 'draft'
+            ];
+
+            // Prepare Itinerary Data
+            $data['itinerary'] = $this->prepareItineraryData($_POST);
+
+            // Prepare Itinerary Day Services Data
+            $data['itinerary_day_services'] = $this->prepareItineraryDayServicesData($_POST, $data['itinerary']);
+
+            // Prepare Highlights
+            if (!empty($_POST['highlights'])) {
+                $highlights = is_array($_POST['highlights'])
+                    ? $_POST['highlights']
+                    : explode("\n", $_POST['highlights']);
+                $data['highlights'] = array_filter(array_map('trim', $highlights));
+            } else {
+                $data['highlights'] = [];
+            }
+
+            // Prepare Included/Excluded
+            if (!empty($_POST['included'])) {
+                $included = is_array($_POST['included']) ? $_POST['included'] : [$_POST['included']];
+                $data['included'] = array_filter(array_map('trim', $included));
+            } else {
+                $data['included'] = [];
+            }
+
+            if (!empty($_POST['excluded'])) {
+                $excluded = is_array($_POST['excluded']) ? $_POST['excluded'] : [$_POST['excluded']];
+                $data['excluded'] = array_filter(array_map('trim', $excluded));
+            } else {
+                $data['excluded'] = [];
+            }
+
+            // Prepare Policy IDs
+            if (!empty($_POST['policy_ids'])) {
+                $data['policy_ids'] = array_map('intval', $_POST['policy_ids']);
+            } else {
+                $data['policy_ids'] = [];
+            }
+
+            // Update Tour
+            $this->tourModel->update($id, $data);
+
+            // Calculate và update estimated_cost_per_person sau khi có day_services
+            require_once COMMON_PATH . '/PricingHelper.php';
+            $estimated_cost = calculateTotalCostPerPerson(
+                $this->db,
+                $id,
+                $fixed_costs,
+                $min_participants
+            );
+            $this->tourModel->updateStatus($id, ['estimated_cost_per_person' => $estimated_cost]);
+
+            // Handle Images
+            if (!empty($_FILES['images']['name'][0])) {
+                $this->handleImageUploads($id, $_FILES['images']);
+            }
+
+            set_success("Cập nhật tour thành công!");
+            redirect('?act=admin&module=tours&action=show&id=' . $id);
+
+        } catch (Exception $e) {
+            error_log("TourController::update() Error: " . $e->getMessage());
+            set_error("Có lỗi xảy ra khi cập nhật tour: " . $e->getMessage());
+            redirect('?act=admin&module=tours&action=edit&id=' . ($id ?? 0));
+        }
+    }
+
+    /**
      * Thay đổi trạng thái Tour (Duyệt/Từ chối/Ẩn)
      */
     public function changeStatus()

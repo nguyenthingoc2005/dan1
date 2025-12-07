@@ -361,17 +361,59 @@ class Destination
     public function delete($id)
     {
         try {
-            // Check usage in itineraries
-            $check_stmt = $this->pdo->prepare("
-                SELECT COUNT(*) as count FROM itineraries WHERE destination_id = :id
-            ");
-            $check_stmt->execute(['id' => $id]);
-            $count = $check_stmt->fetch()['count'];
-
-            if ($count > 0) {
-                throw new Exception("Không thể xóa địa điểm đang được sử dụng trong {$count} lịch trình tour.");
+            // Kiểm tra destination có tồn tại không
+            $destination = $this->findById($id);
+            if (!$destination) {
+                throw new Exception("Địa điểm không tồn tại.");
             }
 
+            // Kiểm tra đã bị vô hiệu hóa chưa
+            if ($destination['status'] === 'inactive') {
+                throw new Exception("Địa điểm này đã bị vô hiệu hóa rồi.");
+            }
+
+            // Check usage in itineraries
+            try {
+                $check_itineraries = $this->pdo->prepare("
+                    SELECT COUNT(*) as count FROM itineraries WHERE destination_id = :id
+                ");
+                $check_itineraries->execute(['id' => $id]);
+                $itinerary_result = $check_itineraries->fetch(PDO::FETCH_ASSOC);
+                $itinerary_count = $itinerary_result ? (int) $itinerary_result['count'] : 0;
+            } catch (PDOException $e) {
+                error_log("Destination::delete() - Error checking itineraries: " . $e->getMessage());
+                $itinerary_count = 0;
+            }
+
+            // Check usage in itinerary_timelines (bảng có thể không tồn tại trong một số hệ thống cũ)
+            $timeline_count = 0;
+            try {
+                $check_timelines = $this->pdo->prepare("
+                    SELECT COUNT(*) as count FROM itinerary_timelines WHERE destination_id = :id
+                ");
+                $check_timelines->execute(['id' => $id]);
+                $timeline_result = $check_timelines->fetch(PDO::FETCH_ASSOC);
+                $timeline_count = $timeline_result ? (int) $timeline_result['count'] : 0;
+            } catch (PDOException $e) {
+                // Bảng itinerary_timelines có thể không tồn tại, bỏ qua lỗi này
+                error_log("Destination::delete() - itinerary_timelines table may not exist: " . $e->getMessage());
+                $timeline_count = 0;
+            }
+
+            // Tạo thông báo lỗi nếu có phụ thuộc
+            if ($itinerary_count > 0 || $timeline_count > 0) {
+                $parts = [];
+                if ($itinerary_count > 0) {
+                    $parts[] = "{$itinerary_count} lịch trình tour";
+                }
+                if ($timeline_count > 0) {
+                    $parts[] = "{$timeline_count} timeline chi tiết";
+                }
+                $message = "Không thể xóa địa điểm đang được sử dụng trong " . implode(" và ", $parts) . ".";
+                throw new Exception($message);
+            }
+
+            // Soft delete - vô hiệu hóa
             $stmt = $this->pdo->prepare("
                 UPDATE destinations
                 SET status = 'inactive', updated_at = NOW()

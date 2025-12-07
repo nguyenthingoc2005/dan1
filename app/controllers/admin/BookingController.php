@@ -105,11 +105,16 @@ class BookingController
                     throw new Exception("Vui lòng chọn hoặc tạo khách hàng.");
                 }
 
-                // 1. Validate start_date >= today + 1 day (DEADLINE: Phải đặt trước 1 ngày)
+                // 1. Validate start_date >= today + booking_deadline_days (DEADLINE: Phải đặt trước deadline)
+                $tour = $this->tourModel->findById($_POST['tour_id']);
+                if (!$tour) {
+                    throw new Exception("Tour không tồn tại.");
+                }
+                $deadline_days = (int) ($tour['booking_deadline_days'] ?? 1);
                 $today = date('Y-m-d');
-                $minStartDate = date('Y-m-d', strtotime($today . ' +1 day'));
+                $minStartDate = date('Y-m-d', strtotime($today . " +{$deadline_days} day"));
                 if ($_POST['start_date'] < $minStartDate) {
-                    throw new Exception("Không thể đặt booking. Phải đặt trước 1 ngày so với ngày khởi hành. (Hôm nay: {$today}, Ngày khởi hành tối thiểu: {$minStartDate})");
+                    throw new Exception("Không thể đặt booking. Phải đặt trước {$deadline_days} ngày so với ngày khởi hành. (Hôm nay: {$today}, Ngày khởi hành tối thiểu: {$minStartDate})");
                 }
 
                 // 2. Validate adult_count >= 1
@@ -946,13 +951,17 @@ class BookingController
                     throw new Exception("Booking không tồn tại.");
                 }
 
-                // Validate deadline: Không được thêm dịch vụ nếu còn < 1 ngày đến ngày khởi hành
+                // Validate deadline: Không được thêm dịch vụ nếu đã qua deadline
                 $today = date('Y-m-d');
                 $start_date = $booking['start_date'] ?? null;
                 if ($start_date) {
+                    // Lấy booking_deadline_days từ tour
+                    $tour = $this->tourModel->findById($booking['tour_id']);
+                    $deadline_days = (int) ($tour['booking_deadline_days'] ?? 1);
+                    
                     $daysUntilStart = (strtotime($start_date) - strtotime($today)) / (60 * 60 * 24);
-                    if ($daysUntilStart < 1) {
-                        throw new Exception("Không thể thêm dịch vụ. Booking này khởi hành trong vòng 1 ngày hoặc đã khởi hành. Vui lòng liên hệ admin để xử lý.");
+                    if ($daysUntilStart < $deadline_days) {
+                        throw new Exception("Không thể thêm dịch vụ. Booking này khởi hành trong vòng {$deadline_days} ngày hoặc đã khởi hành. Vui lòng liên hệ admin để xử lý.");
                     }
                 }
 
@@ -1084,13 +1093,17 @@ class BookingController
                     throw new Exception("Booking không tồn tại.");
                 }
 
-                // Validate deadline: Không được thêm hành khách nếu còn < 1 ngày đến ngày khởi hành
+                // Validate deadline: Không được thêm hành khách nếu đã qua deadline
                 $today = date('Y-m-d');
                 $start_date = $booking['start_date'] ?? null;
                 if ($start_date) {
+                    // Lấy booking_deadline_days từ tour
+                    $tour = $this->tourModel->findById($booking['tour_id']);
+                    $deadline_days = (int) ($tour['booking_deadline_days'] ?? 1);
+                    
                     $daysUntilStart = (strtotime($start_date) - strtotime($today)) / (60 * 60 * 24);
-                    if ($daysUntilStart < 1) {
-                        throw new Exception("Không thể thêm hành khách. Booking này khởi hành trong vòng 1 ngày hoặc đã khởi hành. Vui lòng liên hệ admin để xử lý.");
+                    if ($daysUntilStart < $deadline_days) {
+                        throw new Exception("Không thể thêm hành khách. Booking này khởi hành trong vòng {$deadline_days} ngày hoặc đã khởi hành. Vui lòng liên hệ admin để xử lý.");
                     }
                 }
 

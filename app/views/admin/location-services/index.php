@@ -340,24 +340,37 @@ if (!is_admin())
                     </div>
                 <?php else: ?>
                     <?php foreach ($services['data'] as $service): ?>
-                        <div class="service-card mb-4">
+                        <?php
+                        $is_inactive = ($service['status'] ?? 'active') === 'inactive';
+                        ?>
+                        <div class="service-card mb-4 <?= $is_inactive ? 'opacity-60 border-2 border-gray-300 bg-gray-50' : '' ?>">
                             <div class="flex justify-between items-start mb-4">
                                 <div class="flex-1">
-                                    <h5 class="font-semibold text-lg text-primary mb-1">
-                                        <?= htmlspecialchars($service['service_type_name'] ?? '') ?> -
-                                        <?= htmlspecialchars($service['name']) ?>
-                                    </h5>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h5 class="font-semibold text-lg <?= $is_inactive ? 'text-gray-500' : 'text-primary' ?>">
+                                            <?= htmlspecialchars($service['service_type_name'] ?? '') ?> -
+                                            <?= htmlspecialchars($service['name']) ?>
+                                        </h5>
+                                        <!-- Status Badge -->
+                                        <span
+                                            class="px-2 py-1 text-xs font-medium rounded <?= $is_inactive ? 'bg-gray-400 text-white' : 'bg-green-500 text-white' ?>">
+                                            <?= $is_inactive ? '⛔ Đã vô hiệu hóa' : '✓ Hoạt động' ?>
+                                        </span>
+                                    </div>
                                     <?php if (!empty($service['description'])): ?>
-                                        <p class="text-sm text-gray-600 mt-2"><?= htmlspecialchars($service['description']) ?></p>
+                                        <p class="text-sm <?= $is_inactive ? 'text-gray-400' : 'text-gray-600' ?> mt-2">
+                                            <?= htmlspecialchars($service['description']) ?></p>
                                     <?php endif; ?>
                                     <?php if (!empty($service['unit'])): ?>
-                                        <p class="text-xs text-gray-500 mt-2">Đơn vị: <?= htmlspecialchars($service['unit']) ?></p>
+                                        <p class="text-xs <?= $is_inactive ? 'text-gray-400' : 'text-gray-500' ?> mt-2">Đơn vị:
+                                            <?= htmlspecialchars($service['unit']) ?></p>
                                     <?php endif; ?>
                                 </div>
                                 <div class="flex gap-2 ml-4">
                                     <button
-                                        class="px-3 py-1.5 bg-accent text-white text-xs font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-1.5"
-                                        onclick="openCreatePriceModal(<?= $service['id'] ?>)">
+                                        class="px-3 py-1.5 bg-accent text-white text-xs font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-1.5 <?= $is_inactive ? 'opacity-50 cursor-not-allowed' : '' ?>"
+                                        onclick="<?= $is_inactive ? 'return false;' : 'openCreatePriceModal(' . $service['id'] . ')' ?>"
+                                        <?= $is_inactive ? 'disabled title="Dịch vụ đã bị vô hiệu hóa"' : '' ?>>
                                         <i class="fas fa-plus text-xs"></i>
                                         <span>Thêm giá</span>
                                     </button>
