@@ -436,27 +436,34 @@ class TourScheduleController
             set_error("Lịch khởi hành không tồn tại");
             redirect('?act=admin&module=schedules');
         }
+        
+        // Debug: Log schedule info
+        error_log("=== Schedule Show Debug - ID: $id ===");
+        error_log("Schedule - tour_id: " . $schedule['tour_id']);
+        error_log("Schedule - start_date: " . $schedule['start_date']);
+        error_log("Schedule - booked (from DB): " . ($schedule['booked'] ?? 0));
 
         // Get bookings for this schedule
         // Bookings are linked to schedule by tour_id + start_date (exact match)
         require_once MODELS_PATH . '/Booking.php';
         $bookingModel = new Booking($this->pdo);
         
-        // Get all bookings for this schedule (including cancelled/rejected for admin view)
-        // Use direct SQL query to ensure we get all bookings
+        // Get all bookings for this schedule (KHÔNG filter approval_status để xem tất cả)
+        // Try both tour_schedule_id (if exists) and tour_id + start_date match
         $sql = "SELECT b.*, 
                        t.name as tour_name, t.tour_code,
                        c.full_name as customer_name, c.phone as customer_phone, c.email as customer_email
                 FROM bookings b
                 LEFT JOIN tours t ON b.tour_id = t.id
                 LEFT JOIN customers c ON b.customer_id = c.id
-                WHERE b.tour_id = :tour_id 
-                  AND b.start_date = :start_date
+                WHERE (b.tour_schedule_id = :schedule_id 
+                   OR (b.tour_id = :tour_id AND b.start_date = :start_date))
                 ORDER BY b.created_at DESC
                 LIMIT 100";
         
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
+            'schedule_id' => $id,
             'tour_id' => $schedule['tour_id'],
             'start_date' => $schedule['start_date']
         ]);
@@ -464,22 +471,64 @@ class TourScheduleController
         
         // Calculate actual booked count from SQL (chính xác hơn)
         // Tính tổng số người từ bookings approved/pending/completed (không tính cancelled/rejected)
+        // Try both tour_schedule_id and tour_id + start_date
         $countSql = "SELECT 
                         COUNT(*) as booking_count,
-                        COALESCE(SUM(adult_count + child_count + infant_count), 0) as total_participants
+                        COALESCE(SUM(adult_count + child_count + infant_count), 0) as total_participants,
+                        SUM(CASE WHEN approval_status IN ('approved', 'pending', 'completed') THEN 1 ELSE 0 END) as active_booking_count,
+                        SUM(CASE WHEN approval_status IN ('approved', 'pending', 'completed') THEN (adult_count + child_count + infant_count) ELSE 0 END) as active_participants
                      FROM bookings
-                     WHERE tour_id = :tour_id 
-                       AND start_date = :start_date
-                       AND approval_status IN ('approved', 'pending', 'completed')";
+                     WHERE (tour_schedule_id = :schedule_id 
+                        OR (tour_id = :tour_id AND start_date = :start_date))";
         
         $countStmt = $this->pdo->prepare($countSql);
         $countStmt->execute([
+            'schedule_id' => $id,
             'tour_id' => $schedule['tour_id'],
             'start_date' => $schedule['start_date']
         ]);
         $countResult = $countStmt->fetch(PDO::FETCH_ASSOC);
-        $actualBookedCount = (int) ($countResult['total_participants'] ?? 0);
-        $approvedBookingsCount = (int) ($countResult['booking_count'] ?? 0);
+        $actualBookedCount = (int) ($countResult['active_participants'] ?? 0);
+        $approvedBookingsCount = (int) ($countResult['active_booking_count'] ?? 0);
+        $totalBookingsCount = (int) ($countResult['booking_count'] ?? 0);
+        
+        // Debug: Log booking count results
+        error_log("=== Schedule Show Debug - ID: $id ===");
+        error_log("Schedule - tour_id: " . $schedule['tour_id'] . ", start_date: " . $schedule['start_date']);
+        error_log("Bookings found (all): " . count($bookings));
+        error_log("Actual booked count (active only): $actualBookedCount");
+        error_log("Approved bookings count: $approvedBookingsCount");
+        error_log("Total bookings count (all status): " . ($totalBookingsCount ?? 0));
+        
+        // Debug: Check if there are bookings with different tour_id or start_date
+        // Sử dụng placeholder riêng cho mỗi lần sử dụng để tránh lỗi PDO
+        $debugSql = "SELECT 
+                        COUNT(*) as total,
+                        COUNT(CASE WHEN tour_schedule_id = :schedule_id1 THEN 1 END) as by_schedule_id,
+                        COUNT(CASE WHEN tour_id = :tour_id1 AND start_date = :start_date1 THEN 1 END) as by_tour_date,
+                        COUNT(CASE WHEN tour_id = :tour_id2 THEN 1 END) as by_tour_only,
+                        COUNT(CASE WHEN start_date = :start_date2 THEN 1 END) as by_date_only
+                     FROM bookings";
+        $debugStmt = $this->pdo->prepare($debugSql);
+        $debugStmt->execute([
+            'schedule_id1' => $id,
+            'tour_id1' => $schedule['tour_id'],
+            'start_date1' => $schedule['start_date'],
+            'tour_id2' => $schedule['tour_id'],
+            'start_date2' => $schedule['start_date']
+        ]);
+        $debugResult = $debugStmt->fetch(PDO::FETCH_ASSOC);
+        error_log("Debug - Total bookings in DB: " . ($debugResult['total'] ?? 0));
+        error_log("Debug - By schedule_id=$id: " . ($debugResult['by_schedule_id'] ?? 0));
+        error_log("Debug - By tour_id={$schedule['tour_id']} AND start_date={$schedule['start_date']}: " . ($debugResult['by_tour_date'] ?? 0));
+        error_log("Debug - By tour_id={$schedule['tour_id']} only: " . ($debugResult['by_tour_only'] ?? 0));
+        error_log("Debug - By start_date={$schedule['start_date']} only: " . ($debugResult['by_date_only'] ?? 0));
+        
+        if (!empty($bookings)) {
+            error_log("First booking sample: " . json_encode($bookings[0]));
+        } else {
+            error_log("No bookings found for schedule ID: $id");
+        }
         
         // Update schedule booked count if it's different (sync issue fix)
         if ($schedule['booked'] != $actualBookedCount) {

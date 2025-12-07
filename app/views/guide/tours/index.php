@@ -7,6 +7,22 @@
 <div class="max-w-6xl mx-auto">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Lịch Tour Của Tôi</h1>
+        
+        <!-- Filter Buttons -->
+        <div class="flex gap-2">
+            <a href="?act=guide-tours&filter=all" 
+               class="px-4 py-2 rounded border <?= (!isset($_GET['filter']) || $_GET['filter'] === 'all') ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' ?>">
+                Tất cả
+            </a>
+            <a href="?act=guide-tours&filter=upcoming" 
+               class="px-4 py-2 rounded border <?= (isset($_GET['filter']) && $_GET['filter'] === 'upcoming') ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' ?>">
+                Sắp tới
+            </a>
+            <a href="?act=guide-tours&filter=history" 
+               class="px-4 py-2 rounded border <?= (isset($_GET['filter']) && $_GET['filter'] === 'history') ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' ?>">
+                Đã qua
+            </a>
+        </div>
     </div>
 
     <div class="bg-panel rounded overflow-hidden border border-slate-200">
@@ -72,8 +88,10 @@
         <?php if ($total_pages > 1): ?>
             <div class="px-6 py-4 border-t border-gray-100 flex justify-center">
                 <div class="flex gap-2">
-                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <a href="?act=guide-tours&page=<?= $i ?>"
+                    <?php 
+                    $filter_param = isset($_GET['filter']) ? '&filter=' . htmlspecialchars($_GET['filter']) : '';
+                    for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <a href="?act=guide-tours&page=<?= $i ?><?= $filter_param ?>"
                             class="px-3 py-1 rounded border <?= $i == $current_page ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' ?>">
                             <?= $i ?>
                         </a>

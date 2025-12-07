@@ -8,6 +8,22 @@
 <div class="max-w-6xl mx-auto">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Check-in Hành khách</h1>
+        
+        <!-- Filter Buttons -->
+        <div class="flex gap-2">
+            <a href="?act=guide-checkin&filter=all" 
+               class="px-4 py-2 rounded border <?= (!isset($_GET['filter']) || $_GET['filter'] === 'all') ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' ?>">
+                Tất cả
+            </a>
+            <a href="?act=guide-checkin&filter=upcoming" 
+               class="px-4 py-2 rounded border <?= (isset($_GET['filter']) && $_GET['filter'] === 'upcoming') || !isset($_GET['filter']) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' ?>">
+                Sắp tới
+            </a>
+            <a href="?act=guide-checkin&filter=history" 
+               class="px-4 py-2 rounded border <?= (isset($_GET['filter']) && $_GET['filter'] === 'history') ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' ?>">
+                Đã qua
+            </a>
+        </div>
     </div>
 
     <!-- Stats Summary -->
@@ -59,6 +75,8 @@
                     <tr class="bg-gray-50 text-gray-600 text-sm uppercase tracking-wider">
                         <th class="px-6 py-4 font-medium">Tour</th>
                         <th class="px-6 py-4 font-medium">Ngày khởi hành</th>
+                        <th class="px-6 py-4 font-medium">Ngày kết thúc</th>
+                        <th class="px-6 py-4 font-medium">Thời lượng</th>
                         <th class="px-6 py-4 font-medium">Hành khách</th>
                         <th class="px-6 py-4 font-medium">Check-in</th>
                         <th class="px-6 py-4 font-medium text-right">Hành động</th>
@@ -74,9 +92,18 @@
                             <td class="px-6 py-4">
                                 <div class="font-medium text-gray-900"><?= htmlspecialchars($schedule['tour_name']) ?></div>
                                 <div class="text-xs text-gray-500 font-mono"><?= htmlspecialchars($schedule['tour_code']) ?></div>
+                                <?php if (!empty($schedule['departure_location'])): ?>
+                                    <div class="text-xs text-gray-500 mt-1">📍 <?= htmlspecialchars($schedule['departure_location']) ?></div>
+                                <?php endif; ?>
                             </td>
                             <td class="px-6 py-4 text-gray-600">
                                 <?= date('d/m/Y', strtotime($schedule['start_date'])) ?>
+                            </td>
+                            <td class="px-6 py-4 text-gray-600">
+                                <?= date('d/m/Y', strtotime($schedule['end_date'])) ?>
+                            </td>
+                            <td class="px-6 py-4 text-gray-600 text-sm">
+                                <?= $schedule['duration_days'] ?? 'N/A' ?> ngày <?= $schedule['duration_nights'] ?? 'N/A' ?> đêm
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm">
@@ -118,12 +145,14 @@
             <?php if ($total_pages > 1): ?>
                 <div class="px-6 py-4 border-t border-gray-100 flex justify-center">
                     <div class="flex gap-2">
-                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                            <a href="?act=guide-checkin&page=<?= $i ?>"
-                                class="px-3 py-1 rounded border <?= $i == $current_page ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' ?>">
-                                <?= $i ?>
-                            </a>
-                        <?php endfor; ?>
+                    <?php 
+                    $filter_param = isset($_GET['filter']) ? '&filter=' . htmlspecialchars($_GET['filter']) : '';
+                    for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <a href="?act=guide-checkin&page=<?= $i ?><?= $filter_param ?>"
+                            class="px-3 py-1 rounded border <?= $i == $current_page ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' ?>">
+                            <?= $i ?>
+                        </a>
+                    <?php endfor; ?>
                     </div>
                 </div>
             <?php endif; ?>

@@ -3,12 +3,8 @@
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-bold text-slate-800">Nhật ký Tour</h1>
-            <p class="text-sm text-gray-500 mt-1">Ghi nhận và theo dõi hoạt động của các tour đang diễn ra</p>
+            <p class="text-sm text-gray-500 mt-1">Xem nhật ký của các tour đã hoàn thành hoặc đang diễn ra</p>
         </div>
-        <a href="?act=admin&module=journals&action=create"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
-            <i class="fas fa-pen"></i> <span>Viết nhật ký</span>
-        </a>
     </div>
 
     <!-- Journals Grid -->
@@ -64,11 +60,7 @@
                         <i class="fas fa-book-open text-2xl text-gray-400"></i>
                     </div>
                     <h3 class="text-lg font-medium text-gray-900 mb-1">Chưa có nhật ký nào</h3>
-                    <p class="text-gray-500 mb-4">Hãy bắt đầu ghi lại những khoảnh khắc đáng nhớ của các tour.</p>
-                    <a href="?act=admin&module=journals&action=create"
-                        class="text-blue-600 hover:text-blue-700 font-medium hover:underline">
-                        Viết nhật ký đầu tiên
-                    </a>
+                    <p class="text-gray-500 mb-4">Chỉ hiển thị nhật ký của các tour đã hoàn thành hoặc đang diễn ra.</p>
                 </div>
             </div>
         <?php endif; ?>

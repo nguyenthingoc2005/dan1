@@ -11,9 +11,13 @@
             <h1 class="text-2xl font-bold text-gray-800"><?= htmlspecialchars($journal['title']) ?></h1>
             <p class="text-gray-500 text-sm mt-1">
                 <?= htmlspecialchars($journal['tour_name']) ?> 
-                (<?= htmlspecialchars($journal['tour_code']) ?>) • 
-                KH: <?= date('d/m/Y', strtotime($journal['booking_start_date'])) ?> • 
-                Ngày viết: <?= date('d/m/Y', strtotime($journal['journal_date'])) ?>
+                (<?= htmlspecialchars($journal['tour_code']) ?>) 
+                <?php if (!empty($journal['schedule_start_date'])): ?>
+                    • KH: <?= date('d/m/Y', strtotime($journal['schedule_start_date'])) ?>
+                <?php elseif (!empty($journal['booking_start_date'])): ?>
+                    • KH: <?= date('d/m/Y', strtotime($journal['booking_start_date'])) ?>
+                <?php endif; ?>
+                • Ngày viết: <?= date('d/m/Y', strtotime($journal['journal_date'])) ?>
                 <?php if ($journal['day_number']): ?>
                     • Ngày <?= $journal['day_number'] ?>
                 <?php endif; ?>
@@ -39,9 +43,55 @@
         <div class="p-6">
             <!-- Tour Info -->
             <div class="bg-gray-50 p-4 rounded mb-6">
-                <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                         <span class="text-gray-500">Tour:</span>
+                        <div class="font-medium"><?= htmlspecialchars($journal['tour_name']) ?></div>
+                        <div class="text-xs text-gray-500 font-mono"><?= htmlspecialchars($journal['tour_code']) ?></div>
+                    </div>
+                    <?php if (!empty($journal['schedule_start_date'])): ?>
+                        <div>
+                            <span class="text-gray-500">Ngày khởi hành:</span>
+                            <div class="font-medium"><?= date('d/m/Y', strtotime($journal['schedule_start_date'])) ?></div>
+                            <?php if (!empty($journal['schedule_end_date'])): ?>
+                                <div class="text-xs text-gray-500">Kết thúc: <?= date('d/m/Y', strtotime($journal['schedule_end_date'])) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($journal['duration_days'])): ?>
+                        <div>
+                            <span class="text-gray-500">Thời lượng:</span>
+                            <div class="font-medium"><?= $journal['duration_days'] ?> ngày <?= $journal['duration_nights'] ?> đêm</div>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($journal['departure_location'])): ?>
+                        <div>
+                            <span class="text-gray-500">Điểm khởi hành:</span>
+                            <div class="font-medium"><?= htmlspecialchars($journal['departure_location']) ?></div>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($journal['guide_name'])): ?>
+                        <div>
+                            <span class="text-gray-500">HDV:</span>
+                            <div class="font-medium"><?= htmlspecialchars($journal['guide_name']) ?></div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Journal Date Info -->
+            <div class="bg-blue-50 p-4 rounded mb-6">
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-500">Ngày viết nhật ký:</span>
+                        <div class="font-medium"><?= date('d/m/Y', strtotime($journal['journal_date'])) ?></div>
+                    </div>
+                    <?php if ($journal['day_number']): ?>
+                        <div>
+                            <span class="text-gray-500">Ngày trong tour:</span>
+                            <div class="font-medium">Ngày <?= $journal['day_number'] ?></div>
+                        </div>
+                    <?php endif; ?>
                         <span class="font-medium text-gray-900 ml-2"><?= htmlspecialchars($journal['tour_name']) ?></span>
                         <span class="text-gray-500 ml-1">(<?= htmlspecialchars($journal['tour_code']) ?>)</span>
                     </div>

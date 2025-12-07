@@ -12,8 +12,17 @@
             <p class="text-gray-500 text-sm mt-1">
                 <?= htmlspecialchars($tour['tour_code']) ?> - <?= htmlspecialchars($tour['name']) ?>
                 <span class="mx-2">•</span>
-                <?= date('d/m/Y', strtotime($schedule['start_date'])) ?>
+                <?= date('d/m/Y', strtotime($schedule['start_date'])) ?> - <?= date('d/m/Y', strtotime($schedule['end_date'])) ?>
+                <?php if (!empty($tour['duration_days'])): ?>
+                    <span class="mx-2">•</span>
+                    <?= $tour['duration_days'] ?> ngày <?= $tour['duration_nights'] ?> đêm
+                <?php endif; ?>
             </p>
+            <?php if (!empty($tour['departure_location'])): ?>
+                <p class="text-gray-500 text-sm mt-1">
+                    📍 Điểm khởi hành: <?= htmlspecialchars($tour['departure_location']) ?>
+                </p>
+            <?php endif; ?>
         </div>
         <div class="flex gap-2">
             <a href="?act=guide-checkin&action=printManifest&schedule_id=<?= $schedule['id'] ?>" target="_blank"
@@ -23,6 +32,32 @@
             <a href="?act=guide-checkin" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
                 ← Quay lại
             </a>
+        </div>
+    </div>
+
+    <!-- Tour Info Card -->
+    <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+                <span class="text-gray-500">Thời gian tour:</span>
+                <div class="font-medium"><?= date('d/m/Y', strtotime($schedule['start_date'])) ?> - <?= date('d/m/Y', strtotime($schedule['end_date'])) ?></div>
+            </div>
+            <?php if (!empty($tour['duration_days'])): ?>
+                <div>
+                    <span class="text-gray-500">Thời lượng:</span>
+                    <div class="font-medium"><?= $tour['duration_days'] ?> ngày <?= $tour['duration_nights'] ?> đêm</div>
+                </div>
+            <?php endif; ?>
+            <div>
+                <span class="text-gray-500">Số khách:</span>
+                <div class="font-medium"><?= $schedule['booked'] ?> / <?= $schedule['quota'] ?></div>
+            </div>
+            <?php if (!empty($schedule['guide_name'])): ?>
+                <div>
+                    <span class="text-gray-500">HDV:</span>
+                    <div class="font-medium"><?= htmlspecialchars($schedule['guide_name']) ?></div>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 

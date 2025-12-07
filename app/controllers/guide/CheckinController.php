@@ -40,11 +40,23 @@ class CheckinController
         require_guide();
         $user_id = get_user_id();
 
-        // Get schedules assigned to this guide (today or upcoming)
+        // Filter: Only my assigned tours (KHÔNG filter start_date mặc định - hiển thị TẤT CẢ)
         $filters = [
-            'guide_id' => $user_id,
-            'start_date' => date('Y-m-d') // Today or later
+            'guide_id' => $user_id
         ];
+
+        // Allow filtering by date range if provided
+        $filter_type = $_GET['filter'] ?? 'upcoming'; // upcoming (default), all, history
+        $today = date('Y-m-d');
+        
+        if ($filter_type === 'upcoming') {
+            // Chỉ lấy tours từ hôm nay trở đi (mặc định)
+            $filters['start_date'] = $today;
+        } elseif ($filter_type === 'history') {
+            // Chỉ lấy tours trong quá khứ (trước hôm nay)
+            $filters['end_date'] = date('Y-m-d', strtotime('-1 day'));
+        }
+        // Nếu filter_type === 'all', không thêm filter start_date/end_date
 
         $page = $_GET['page'] ?? 1;
         $result = $this->scheduleModel->getAll($filters, $page, 10);
@@ -237,10 +249,17 @@ class CheckinController
             return;
         }
 
-        // Get Tour Details
+        // Get Tour Details với đầy đủ thông tin
         require_once MODELS_PATH . '/Tour.php';
         $tourModel = new \Tour($this->db);
         $tour = $tourModel->findById($schedule['tour_id']);
+        
+        // Bổ sung thông tin từ schedule vào tour để hiển thị đầy đủ
+        $tour['schedule_start_date'] = $schedule['start_date'];
+        $tour['schedule_end_date'] = $schedule['end_date'];
+        $tour['schedule_quota'] = $schedule['quota'];
+        $tour['schedule_booked'] = $schedule['booked'];
+        $tour['schedule_status'] = $schedule['status'];
 
         // Get all bookings for this schedule
         $allBookings = $this->bookingModel->getAll([

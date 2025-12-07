@@ -30,15 +30,22 @@ class TourController
 
         // Filter: Only my assigned tours
         $filters = [
-            'guide_id' => $user_id,
-            'start_date' => date('Y-m-d') // Default: Upcoming
+            'guide_id' => $user_id
+            // KHÔNG filter start_date mặc định - hiển thị TẤT CẢ tours được gán
         ];
 
-        // Allow filtering by status/date if needed
-        if (isset($_GET['status']) && $_GET['status'] == 'history') {
-            // Logic for history could be start_date < today
-            // For now, let's keep it simple
+        // Allow filtering by date range if provided
+        $filter_type = $_GET['filter'] ?? 'all'; // all, upcoming, history
+        $today = date('Y-m-d');
+        
+        if ($filter_type === 'upcoming') {
+            // Chỉ lấy tours từ hôm nay trở đi
+            $filters['start_date'] = $today;
+        } elseif ($filter_type === 'history') {
+            // Chỉ lấy tours trong quá khứ (trước hôm nay)
+            $filters['end_date'] = date('Y-m-d', strtotime('-1 day'));
         }
+        // Nếu filter_type === 'all' hoặc không có, không thêm filter start_date/end_date
 
         $result = $this->scheduleModel->getAll($filters, $page, $limit);
         $schedules = $result['data'];

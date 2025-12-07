@@ -250,18 +250,12 @@ switch ($module) {
             case 'delete':
                 $tourController->delete();
                 break;
-            case 'store':
-                $tourController->store();
-                break;
             // NEW: Custom Tour from Template
             case 'selectTemplate':
                 $tourController->selectTemplate();
                 break;
             case 'createFromTemplate':
                 $tourController->createFromTemplate();
-                break;
-            case 'getTemplateData':
-                $tourController->getTemplateData();
                 break;
             // AJAX APIs
             case 'getDestinations':
@@ -476,6 +470,7 @@ switch ($module) {
 
     // ==========================================================================
     // MODULE: JOURNALS (Nhật ký Tour)
+    // Admin chỉ xem được nhật ký, không được viết
     // ==========================================================================
     case 'journals':
         require_once CONTROLLERS_PATH . '/admin/JournalController.php';
@@ -484,12 +479,6 @@ switch ($module) {
         switch ($action) {
             case 'index':
                 $journalController->index();
-                break;
-            case 'create':
-                $journalController->create();
-                break;
-            case 'store':
-                $journalController->store();
                 break;
             case 'show':
                 $journalController->show();

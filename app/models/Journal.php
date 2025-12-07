@@ -33,13 +33,16 @@ class Journal
     {
         $sql = "SELECT j.*, 
                        b.booking_code, b.start_date as booking_start_date,
-                       t.name as tour_name, t.tour_code,
-                       ts.id as schedule_id,
-                       u.full_name as guide_name
+                       t.name as tour_name, t.tour_code, t.id as tour_id, 
+                       t.duration_days, t.duration_nights, t.departure_location,
+                       ts.id as schedule_id, ts.start_date as schedule_start_date, 
+                       ts.start_date as start_date,
+                       ts.end_date as schedule_end_date, ts.status as schedule_status,
+                       u.full_name as guide_name, u.full_name as author_name
                 FROM journals j
-                JOIN bookings b ON j.booking_id = b.id
-                JOIN tours t ON b.tour_id = t.id
-                LEFT JOIN tour_schedules ts ON (b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
+                LEFT JOIN tour_schedules ts ON j.tour_schedule_id = ts.id
+                LEFT JOIN tours t ON ts.tour_id = t.id
+                LEFT JOIN bookings b ON j.booking_id = b.id
                 LEFT JOIN users u ON j.guide_id = u.id
                 WHERE 1=1";
         
@@ -61,9 +64,31 @@ class Journal
         }
 
         if (!empty($filters['tour_schedule_id'])) {
-            // Filter by schedule (through bookings)
-            $sql .= " AND ts.id = :schedule_id";
+            // Filter by schedule (direct join)
+            $sql .= " AND j.tour_schedule_id = :schedule_id";
             $params['schedule_id'] = $filters['tour_schedule_id'];
+        }
+
+        // Filter by schedule status (for admin: only completed or ongoing tours)
+        if (!empty($filters['schedule_status'])) {
+            if (is_array($filters['schedule_status'])) {
+                $status_placeholders = [];
+                foreach ($filters['schedule_status'] as $idx => $status) {
+                    $key = 'schedule_status_' . $idx;
+                    $status_placeholders[] = ":{$key}";
+                    $params[$key] = $status;
+                }
+                $sql .= " AND ts.status IN (" . implode(', ', $status_placeholders) . ")";
+            } else {
+                $sql .= " AND ts.status = :schedule_status";
+                $params['schedule_status'] = $filters['schedule_status'];
+            }
+        }
+
+        // Filter for ongoing tours (closed status and current date between start_date and end_date)
+        if (!empty($filters['only_ongoing_or_completed'])) {
+            // Use CURDATE() instead of parameter to avoid binding same parameter twice
+            $sql .= " AND (ts.status = 'completed' OR (ts.status = 'closed' AND CURDATE() >= ts.start_date AND CURDATE() <= ts.end_date))";
         }
 
         $sql .= " ORDER BY j.journal_date DESC, j.created_at DESC";
@@ -97,12 +122,15 @@ class Journal
         $sql = "SELECT j.*, 
                        b.booking_code, b.start_date as booking_start_date,
                        t.name as tour_name, t.tour_code, t.id as tour_id,
-                       ts.id as schedule_id,
-                       u.full_name as guide_name
+                       t.duration_days, t.duration_nights, t.departure_location,
+                       ts.id as schedule_id, ts.start_date as schedule_start_date,
+                       ts.start_date as start_date,
+                       ts.end_date as schedule_end_date, ts.status as schedule_status,
+                       u.full_name as guide_name, u.full_name as author_name
                 FROM journals j
-                JOIN bookings b ON j.booking_id = b.id
-                JOIN tours t ON b.tour_id = t.id
-                LEFT JOIN tour_schedules ts ON (b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
+                LEFT JOIN tour_schedules ts ON j.tour_schedule_id = ts.id
+                LEFT JOIN tours t ON ts.tour_id = t.id
+                LEFT JOIN bookings b ON j.booking_id = b.id
                 LEFT JOIN users u ON j.guide_id = u.id
                 WHERE j.id = :id";
 
@@ -121,43 +149,39 @@ class Journal
     public function create($data)
     {
         // 1. Validate required fields
-        $required = ['booking_id', 'guide_id', 'journal_date', 'title', 'content'];
+        $required = ['tour_schedule_id', 'guide_id', 'journal_date', 'title', 'content'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
                 throw new Exception("Thiếu thông tin bắt buộc: $field");
             }
         }
 
-        // 2. Validate booking belongs to guide's assigned schedule
-        $bookingSql = "SELECT b.*, ts.guide_id, ts.status as schedule_status
-                       FROM bookings b
-                       LEFT JOIN tour_schedules ts ON (b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
-                       WHERE b.id = :booking_id";
-        $bookingStmt = $this->pdo->prepare($bookingSql);
-        $bookingStmt->execute(['booking_id' => $data['booking_id']]);
-        $booking = $bookingStmt->fetch(PDO::FETCH_ASSOC);
+        // 2. Validate schedule belongs to guide
+        $scheduleSql = "SELECT ts.*, t.id as tour_id 
+                       FROM tour_schedules ts
+                       JOIN tours t ON ts.tour_id = t.id
+                       WHERE ts.id = :schedule_id";
+        $scheduleStmt = $this->pdo->prepare($scheduleSql);
+        $scheduleStmt->execute(['schedule_id' => $data['tour_schedule_id']]);
+        $schedule = $scheduleStmt->fetch(PDO::FETCH_ASSOC);
         
-        if (!$booking) {
-            throw new Exception("Booking không tồn tại");
-        }
-        
-        // Check if booking is approved
-        if ($booking['approval_status'] !== 'approved') {
-            throw new Exception("Chỉ có thể viết nhật ký cho booking đã được duyệt");
+        if (!$schedule) {
+            throw new Exception("Lịch tour không tồn tại");
         }
         
         // Check if guide is assigned to this schedule
-        if (!empty($booking['guide_id']) && $booking['guide_id'] != $data['guide_id']) {
+        if (empty($schedule['guide_id']) || $schedule['guide_id'] != $data['guide_id']) {
             throw new Exception("Bạn không được phân công tour này");
         }
 
-        // 3. Insert journal
-        $sql = "INSERT INTO journals (booking_id, guide_id, journal_date, day_number, title, content, weather, highlights, issues) 
-                VALUES (:booking_id, :guide_id, :journal_date, :day_number, :title, :content, :weather, :highlights, :issues)";
+        // 3. Insert journal (booking_id có thể NULL)
+        $sql = "INSERT INTO journals (tour_schedule_id, booking_id, guide_id, journal_date, day_number, title, content, weather, highlights, issues) 
+                VALUES (:tour_schedule_id, :booking_id, :guide_id, :journal_date, :day_number, :title, :content, :weather, :highlights, :issues)";
 
         $stmt = $this->pdo->prepare($sql);
         $success = $stmt->execute([
-            'booking_id' => $data['booking_id'],
+            'tour_schedule_id' => $data['tour_schedule_id'],
+            'booking_id' => $data['booking_id'] ?? null,
             'guide_id' => $data['guide_id'],
             'journal_date' => $data['journal_date'],
             'day_number' => !empty($data['day_number']) ? (int) $data['day_number'] : null,

@@ -68,7 +68,7 @@
         <div class="text-3xl font-bold text-yellow-600">
             <?php echo number_format($stats['pending_tours'] ?? 0); ?>
         </div>
-        <a href="<?php echo BASE_URL; ?>/admin/tours/pending"
+        <a href="<?php echo BASE_URL; ?>/?act=admin&module=tours&approval_status=pending"
             class="text-sm text-accent hover:underline mt-2 inline-block">
             → Xem chi tiết
         </a>
@@ -79,7 +79,7 @@
 <div class="bg-panel rounded-lg border border-slate-200 mb-8">
     <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
         <h2 class="text-lg font-bold text-primary">Booking Gần Đây</h2>
-        <a href="<?php echo BASE_URL; ?>/admin/bookings" class="text-accent hover:text-blue-700 text-sm">
+        <a href="<?php echo BASE_URL; ?>/?act=admin&module=bookings" class="text-accent hover:text-blue-700 text-sm">
             Xem tất cả →
         </a>
     </div>
@@ -141,7 +141,7 @@
 <div class="bg-panel rounded-lg border border-slate-200">
     <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
         <h2 class="text-lg font-bold text-primary">Tours Chờ Duyệt</h2>
-        <a href="<?php echo BASE_URL; ?>/admin/tours/pending" class="text-accent hover:text-blue-700 text-sm">
+        <a href="<?php echo BASE_URL; ?>/?act=admin&module=tours&approval_status=pending" class="text-accent hover:text-blue-700 text-sm">
             Xem tất cả →
         </a>
     </div>

@@ -254,12 +254,15 @@ function redirect_to_dashboard()
 
     switch ($role) {
         case 'admin':
-            header('Location: ' . $base_url . '/?act=admin-dashboard');
+            // Admin routes: ?act=admin (không có module) -> default case -> dashboard
+            header('Location: ' . $base_url . '/?act=admin');
             break;
         case 'staff':
+            // Staff routes: ?act=staff-dashboard -> case 'dashboard' -> dashboard
             header('Location: ' . $base_url . '/?act=staff-dashboard');
             break;
         case 'guide':
+            // Guide routes: ?act=guide-dashboard -> case 'dashboard' -> dashboard
             header('Location: ' . $base_url . '/?act=guide-dashboard');
             break;
         default:

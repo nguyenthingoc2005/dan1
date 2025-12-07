@@ -170,9 +170,10 @@ class JournalController
                 $uploaded_images = $this->handleImageUploads($_FILES['images']);
             }
 
-            // Prepare data
+            // Prepare data (sử dụng tour_schedule_id làm chính)
             $data = [
-                'booking_id' => $booking_id,
+                'tour_schedule_id' => $schedule_id,
+                'booking_id' => $booking_id, // Giữ lại để backward compatible
                 'guide_id' => $user_id,
                 'journal_date' => sanitize($_POST['journal_date']),
                 'day_number' => !empty($_POST['day_number']) ? (int) $_POST['day_number'] : null,

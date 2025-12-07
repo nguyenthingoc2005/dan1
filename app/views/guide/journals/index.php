@@ -76,9 +76,20 @@
                                     <span class="font-medium text-gray-700"><?= htmlspecialchars($journal['tour_name']) ?></span>
                                     <span class="mx-2">•</span>
                                     <span class="font-mono text-xs"><?= htmlspecialchars($journal['tour_code']) ?></span>
-                                    <?php if ($journal['schedule_id']): ?>
+                                    <?php if (!empty($journal['schedule_start_date'])): ?>
+                                        <span class="mx-2">•</span>
+                                        <span>KH: <?= date('d/m/Y', strtotime($journal['schedule_start_date'])) ?></span>
+                                        <?php if (!empty($journal['duration_days'])): ?>
+                                            <span class="mx-2">•</span>
+                                            <span><?= $journal['duration_days'] ?>N<?= $journal['duration_nights'] ?>Đ</span>
+                                        <?php endif; ?>
+                                    <?php elseif (!empty($journal['booking_start_date'])): ?>
                                         <span class="mx-2">•</span>
                                         <span>KH: <?= date('d/m/Y', strtotime($journal['booking_start_date'])) ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($journal['departure_location'])): ?>
+                                        <span class="mx-2">•</span>
+                                        <span>📍 <?= htmlspecialchars($journal['departure_location']) ?></span>
                                     <?php endif; ?>
                                     <span class="mx-2">•</span>
                                     <span>Ngày viết: <?= date('d/m/Y', strtotime($journal['journal_date'])) ?></span>

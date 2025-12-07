@@ -216,15 +216,38 @@ if (!is_admin())
         <h2 class="text-lg font-bold text-gray-800 mb-4">
             Danh sách khách hàng đã đặt tour 
             <span class="text-blue-600">
-                (<?= count($bookings ?? []) ?> booking<?= count($bookings ?? []) > 1 ? 's' : '' ?><?= isset($actualBookedCount) && $actualBookedCount > 0 ? ' - ' . $actualBookedCount . ' người' : '' ?>)
+                (<?= isset($totalBookingsCount) ? $totalBookingsCount : count($bookings ?? []) ?> booking<?= (isset($totalBookingsCount) ? $totalBookingsCount : count($bookings ?? [])) > 1 ? 's' : '' ?><?= isset($actualBookedCount) && $actualBookedCount > 0 ? ' - ' . $actualBookedCount . ' người' : '' ?>)
             </span>
+            <?php if (isset($totalBookingsCount) && $totalBookingsCount > $approvedBookingsCount): ?>
+                <span class="text-xs text-gray-500 ml-2">
+                    (<?= $approvedBookingsCount ?> đã duyệt/chờ duyệt, <?= $totalBookingsCount - $approvedBookingsCount ?> đã hủy/từ chối)
+                </span>
+            <?php endif; ?>
         </h2>
         <p class="text-sm text-gray-500 mb-4">
             Danh sách tất cả khách hàng đã đặt tour cho lịch khởi hành này (ngày <?= date('d/m/Y', strtotime($schedule['start_date'])) ?>)
         </p>
         <?php if (empty($bookings)): ?>
             <div class="text-center py-8 text-gray-500">
-                Chưa có đặt tour nào cho lịch này
+                <p>Chưa có đặt tour nào cho lịch này</p>
+                <?php if (isset($schedule['booked']) && $schedule['booked'] > 0): ?>
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left max-w-2xl mx-auto">
+                        <p class="text-sm text-yellow-800 font-medium mb-2">
+                            ⚠️ Lưu ý: Schedule có <strong>booked = <?= $schedule['booked'] ?></strong> trong database nhưng không tìm thấy bookings.
+                        </p>
+                        <p class="text-xs text-yellow-700 mb-2">
+                            Có thể:
+                        </p>
+                        <ul class="text-xs text-yellow-700 list-disc list-inside mb-2">
+                            <li>Bookings đã bị xóa hoặc tour_id/start_date không khớp</li>
+                            <li>Bookings có tour_schedule_id = NULL hoặc khác schedule ID này</li>
+                            <li>Bookings có approval_status = 'cancelled' hoặc 'rejected' (không được tính)</li>
+                        </ul>
+                        <p class="text-xs text-yellow-700">
+                            Vui lòng chạy các query trong file <code class="bg-yellow-100 px-2 py-1 rounded">test_schedule_bookings.sql</code> để kiểm tra chi tiết.
+                        </p>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="overflow-x-auto">

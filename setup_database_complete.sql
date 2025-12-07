@@ -28,9 +28,13 @@
 -- - ✅ Thêm itinerary_day_services (dịch vụ theo từng ngày)
 -- - ❌ Bỏ itinerary_timelines (không dùng timeline chi tiết nữa)
 -- - ✅ tour_schedules.status: thêm 'pending', 'in_progress'
+-- - ✅ Thêm journals.tour_schedule_id (journal theo tour, không chỉ theo booking)
 -- 
 -- FIXES (2024-12-06):
 -- - ✅ Thêm FOREIGN KEY constraint cho booking_services.booking_id → bookings.id (CASCADE)
+-- 
+-- FIXES (2024-12-XX):
+-- - ✅ Journals: Thêm tour_schedule_id (bắt buộc), booking_id có thể NULL (backward compatible)
 -- 
 -- DEPRECATED (giữ lại để backward compatible):
 -- - ⚠️ tours.markup_percentage (default: 0, không dùng nữa)
@@ -38,6 +42,7 @@
 -- Tổng số bảng: 38 bảng
 -- 
 -- Date: 2024-12-06
+-- Updated: 2024-12-XX (Thêm tour_schedule_id vào journals table)
 -- ==============================================================================
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -848,10 +853,11 @@ CREATE TABLE IF NOT EXISTS `tour_assignments` (
   CONSTRAINT `tour_assignments_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Journals (link với booking_id - cho từng tour riêng lẻ)
+-- Journals (link với tour_schedule_id - theo tour, booking_id giữ lại để backward compatible)
 CREATE TABLE IF NOT EXISTS `journals` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `booking_id` int NOT NULL,
+  `tour_schedule_id` int NOT NULL COMMENT 'Foreign key → tour_schedules (journal theo tour)',
+  `booking_id` int DEFAULT NULL COMMENT 'Giữ lại để backward compatible, có thể NULL',
   `guide_id` int NOT NULL,
   `journal_date` date NOT NULL,
   `day_number` int DEFAULT NULL,
@@ -865,8 +871,10 @@ CREATE TABLE IF NOT EXISTS `journals` (
   PRIMARY KEY (`id`),
   KEY `booking_id` (`booking_id`),
   KEY `guide_id` (`guide_id`),
-  CONSTRAINT `journals_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`),
-  CONSTRAINT `journals_ibfk_2` FOREIGN KEY (`guide_id`) REFERENCES `users` (`id`)
+  KEY `idx_journals_tour_schedule_id` (`tour_schedule_id`),
+  CONSTRAINT `journals_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `journals_ibfk_2` FOREIGN KEY (`guide_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `journals_ibfk_schedule` FOREIGN KEY (`tour_schedule_id`) REFERENCES `tour_schedules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Journal Images
