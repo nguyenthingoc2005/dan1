@@ -266,22 +266,13 @@ class BookingController
                 }
 
                 $total_amount = $priceAdult * $adult + $priceChild * $child + $priceInfant * $infant;
-                $discount = (int) ($_POST['discount_amount'] ?? 0);
-
-                // 5. Validate discount <= total_amount
-                if ($discount > $total_amount) {
-                    throw new Exception("Số tiền giảm giá ($discount) không được lớn hơn tổng tiền ($total_amount)");
-                }
-
-                $final_amount = max(0, $total_amount - $discount);
-                $deposit = (int) ($_POST['deposit_amount'] ?? 0);
-
-                // 6. Validate deposit <= final_amount
-                if ($deposit > $final_amount) {
-                    throw new Exception("Tiền cọc ($deposit) không được lớn hơn số tiền sau giảm ($final_amount)");
-                }
-
-                $remaining = max(0, $final_amount - $deposit);
+                
+                // Không xử lý discount và deposit ở bước tạo booking
+                // Sẽ được xử lý sau khi tạo booking thành công
+                $discount = 0;
+                $final_amount = $total_amount; // Không có discount
+                $deposit = 0; // Không có đặt cọc
+                $remaining = $final_amount; // Còn lại = thành tiền
 
                 // 7. Check duplicate booking (same customer, tour, date)
                 $duplicate = $this->bookingModel->checkDuplicate(
@@ -325,12 +316,12 @@ class BookingController
                         'start_date' => $_POST['start_date'],
                         'end_date' => $end_date,
                         'total_amount' => $total_amount,
-                        'discount_code' => !empty($_POST['discount_code']) ? sanitize($_POST['discount_code']) : null,
-                        'discount_amount' => $discount,
+                        'discount_code' => null, // Không có mã giảm giá ở bước tạo
+                        'discount_amount' => 0, // Không có giảm giá ở bước tạo
                         'final_amount' => $final_amount,
-                        'deposit_amount' => $deposit,
+                        'deposit_amount' => 0, // Không có đặt cọc ở bước tạo
                         'remaining_amount' => $remaining,
-                        'payment_status' => $_POST['payment_status'] ?? 'unpaid',
+                        'payment_status' => 'unpaid', // Luôn là unpaid khi tạo
                         'source' => !empty($_POST['source']) ? sanitize($_POST['source']) : null,
                         'special_requests' => !empty($_POST['special_requests']) ? sanitize($_POST['special_requests']) : null,
                         'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
@@ -390,8 +381,8 @@ class BookingController
                     // Commit transaction
                     $this->pdo->commit();
 
-                    set_success("Tạo Booking thành công!");
-                    redirect('?act=admin&module=bookings');
+                    set_success("Tạo Booking thành công! Bạn có thể áp dụng mã giảm giá và đặt cọc ở trang chi tiết.");
+                    redirect('?act=admin&module=bookings&action=show&id=' . $booking_id);
 
                 } catch (Exception $e) {
                     // Rollback transaction on any error
@@ -474,8 +465,8 @@ class BookingController
                 }
 
                 // Validate booking status
-                if ($booking['approval_status'] == 'cancelled') {
-                    throw new Exception("Không thể thanh toán cho booking đã hủy");
+                if (in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
+                    throw new Exception("Không thể thanh toán cho booking đã hủy/từ chối");
                 }
 
                 if ($amount <= 0) {
@@ -512,14 +503,96 @@ class BookingController
                 // Update Booking Status
                 $this->bookingModel->updatePaymentStatus($bookingId);
 
-                // Log History
-                $this->bookingModel->logHistory($bookingId, 'payment', 'payment', $_SESSION['user_id'], "Thêm thanh toán: " . number_format($amount));
+                // Log History - Lấy payment_status mới sau khi update
+                $updatedBooking = $this->bookingModel->getById($bookingId);
+                $oldPaymentStatus = $booking['payment_status'];
+                $newPaymentStatus = $updatedBooking['payment_status'] ?? $oldPaymentStatus;
+                $this->bookingModel->logHistory($bookingId, $oldPaymentStatus, $newPaymentStatus, $_SESSION['user_id'], "Thêm thanh toán: " . number_format($amount));
 
                 set_success("Đã thêm thanh toán thành công!");
                 redirect("?act=admin&module=bookings&action=show&id=$bookingId");
 
             } catch (Exception $e) {
                 set_error($e->getMessage());
+                redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
+            }
+        }
+    }
+
+    /**
+     * Áp dụng mã giảm giá cho booking
+     */
+    public function applyDiscount()
+    {
+        require_admin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            require_csrf_token();
+
+            try {
+                $booking_id = $_POST['booking_id'] ?? null;
+                $discount_code = $_POST['discount_code'] ?? '';
+                $discount_amount = (float) ($_POST['discount_amount'] ?? 0);
+
+                if (!$booking_id) {
+                    throw new Exception("Booking ID không hợp lệ");
+                }
+
+                $booking = $this->bookingModel->getById($booking_id);
+                if (!$booking) {
+                    throw new Exception("Booking không tồn tại");
+                }
+
+                // Validate booking status
+                if (in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
+                    throw new Exception("Không thể áp dụng mã giảm giá cho booking đã hủy/từ chối");
+                }
+
+                // Validate discount amount
+                $total_amount = (float) $booking['total_amount'];
+                if ($discount_amount > $total_amount) {
+                    throw new Exception("Số tiền giảm giá không được lớn hơn tổng tiền tour (" . number_format($total_amount) . " đ)");
+                }
+
+                if ($discount_amount < 0) {
+                    throw new Exception("Số tiền giảm giá không được âm");
+                }
+
+                // Calculate new amounts
+                $new_final_amount = max(0, $total_amount - $discount_amount);
+                $current_deposit = (float) ($booking['deposit_amount'] ?? 0);
+                $new_remaining = max(0, $new_final_amount - $current_deposit);
+
+                // Update booking
+                $sql = "UPDATE bookings SET 
+                        discount_code = :discount_code,
+                        discount_amount = :discount_amount,
+                        final_amount = :final_amount,
+                        remaining_amount = :remaining_amount
+                        WHERE id = :id";
+
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([
+                    'discount_code' => !empty($discount_code) ? sanitize($discount_code) : null,
+                    'discount_amount' => $discount_amount,
+                    'final_amount' => $new_final_amount,
+                    'remaining_amount' => $new_remaining,
+                    'id' => $booking_id
+                ]);
+
+                // Log history
+                $this->bookingModel->logHistory(
+                    $booking_id,
+                    $booking['payment_status'],
+                    $booking['payment_status'],
+                    $_SESSION['user_id'] ?? null,
+                    "Áp dụng mã giảm giá: " . ($discount_code ?: 'Giảm trực tiếp') . " - " . number_format($discount_amount) . " đ"
+                );
+
+                set_success("Đã áp dụng mã giảm giá thành công!");
+                redirect("?act=admin&module=bookings&action=show&id=$booking_id");
+
+            } catch (Exception $e) {
+                set_error("Lỗi: " . $e->getMessage());
                 redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
             }
         }
@@ -543,34 +616,10 @@ class BookingController
                 }
 
                 if ($action == 'approve') {
-                    // Check if booking is pending
-                    if ($booking['approval_status'] !== 'pending') {
-                        throw new Exception("Chỉ có thể duyệt booking đang chờ duyệt");
-                    }
-
-                    // Note: Quota đã được check và trừ khi tạo booking (pending)
-                    // Khi approve, cần check lại schedule status để đảm bảo vẫn còn open
-                    require_once 'app/models/TourSchedule.php';
-                    $scheduleModel = new TourSchedule($this->pdo);
-                    $schedule = $scheduleModel->getByTourAndDateRange(
-                        $booking['tour_id'],
-                        $booking['start_date'],
-                        $booking['end_date']
-                    );
-
-                    if ($schedule) {
-                        // Check schedule status must be 'open'
-                        if ($schedule['status'] !== 'open') {
-                            throw new Exception("Không thể duyệt booking. Lịch khởi hành không còn khả dụng (Status: {$schedule['status']}). Vui lòng kiểm tra lại lịch khởi hành.");
-                        }
-                    } else {
-                        // Schedule không tồn tại - có thể đã bị xóa
-                        throw new Exception("Không thể duyệt booking. Lịch khởi hành không tồn tại. Vui lòng kiểm tra lại.");
-                    }
-
-                    $this->bookingModel->updateStatus($id, 'approved', 'approval', $userId);
-                    $this->bookingModel->logHistory($id, 'pending', 'approved', $userId, "Duyệt thủ công");
-                    set_success("Đã duyệt Booking!");
+                    // NOTE: Đã bỏ action "approve" vì payment_status đã thể hiện trạng thái
+                    // Nếu muốn duyệt thủ công booking chưa thanh toán, có thể set payment_status = 'partial' với paid_amount = 0
+                    // Nhưng hiện tại bỏ luôn để đơn giản hóa
+                    throw new Exception("Tính năng duyệt thủ công đã được bỏ. Booking sẽ tự động được coi là 'duyệt' khi thanh toán.");
 
                 } elseif ($action == 'reject') {
                     $reason = $_POST['reason'] ?? '';
@@ -862,8 +911,8 @@ class BookingController
                 // Validate deadline: Không được thêm dịch vụ nếu đã qua deadline
                 $this->validateBookingDeadline($booking);
 
-                if ($booking['approval_status'] === 'cancelled') {
-                    throw new Exception("Không thể thêm dịch vụ vào booking đã hủy.");
+                if (in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
+                    throw new Exception("Không thể thêm dịch vụ vào booking đã hủy/từ chối.");
                 }
 
                 // Get service info
@@ -991,8 +1040,8 @@ class BookingController
                 // Validate deadline: Không được thêm hành khách nếu đã qua deadline
                 $this->validateBookingDeadline($booking, "Không thể thêm hành khách");
 
-                if ($booking['approval_status'] === 'cancelled') {
-                    throw new Exception("Không thể thêm khách vào booking đã hủy.");
+                if (in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
+                    throw new Exception("Không thể thêm khách vào booking đã hủy/từ chối.");
                 }
 
                 // Validate age_type
@@ -1017,18 +1066,50 @@ class BookingController
                     }
                 }
 
-                // Add passenger
-                $sql = "INSERT INTO booking_customers (booking_id, customer_id, age_type, is_primary) 
-                        VALUES (:booking_id, :customer_id, :age_type, :is_primary)";
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute([
-                    'booking_id' => $booking_id,
-                    'customer_id' => $customer_id,
-                    'age_type' => $age_type,
-                    'is_primary' => $is_primary
-                ]);
+                // Get Tour and Schedule info for quota check and pricing
+                $tour = $this->tourModel->findById($booking['tour_id']);
+                if (!$tour) {
+                    throw new Exception("Tour không tồn tại.");
+                }
 
-                // Update booking counts
+                require_once 'app/models/TourSchedule.php';
+                $scheduleModel = new TourSchedule($this->pdo);
+                $schedule = null;
+
+                // Get schedule if booking has tour_schedule_id
+                if (!empty($booking['tour_schedule_id'])) {
+                    $schedule = $scheduleModel->getById($booking['tour_schedule_id']);
+                } else {
+                    // Fallback: Try to find schedule by tour_id and start_date
+                    $schedule = $scheduleModel->getByTourAndStartDate($booking['tour_id'], $booking['start_date']);
+                }
+
+                // Check quota before adding passenger
+                if ($schedule) {
+                    $currentParticipants = $booking['adult_count'] + $booking['child_count'] + $booking['infant_count'];
+                    $newParticipants = $currentParticipants + 1; // Thêm 1 người
+                    $available = $schedule['quota'] - $schedule['booked'];
+
+                    if ($available < 1) {
+                        throw new Exception("Không còn chỗ trống trong lịch khởi hành (Còn $available chỗ).");
+                    }
+
+                    // For custom tour, check max_participants
+                    if ($tour['tour_type'] == 'custom') {
+                        $maxParticipants = (int) ($tour['max_participants'] ?? 999);
+                        $newBooked = $schedule['booked'] + 1;
+                        if ($newBooked > $maxParticipants) {
+                            throw new Exception("Số lượng người tham gia vượt quá giới hạn tối đa của tour ($maxParticipants người).");
+                        }
+                    }
+                }
+
+                // Get pricing (ưu tiên schedule, fallback tour)
+                $priceAdult = $schedule['adult_price'] ?? $tour['adult_price'] ?? 0;
+                $priceChild = $schedule['child_price'] ?? $tour['child_price'] ?? 0;
+                $priceInfant = $schedule['infant_price'] ?? $tour['infant_price'] ?? 0;
+
+                // Calculate new counts
                 $currentAdult = $booking['adult_count'];
                 $currentChild = $booking['child_count'];
                 $currentInfant = $booking['infant_count'];
@@ -1041,30 +1122,79 @@ class BookingController
                     $currentInfant++;
                 }
 
-                $updateSql = "UPDATE bookings SET 
-                              adult_count = :adult,
-                              child_count = :child,
-                              infant_count = :infant
-                              WHERE id = :id";
-                $updateStmt = $this->pdo->prepare($updateSql);
-                $updateStmt->execute([
-                    'adult' => $currentAdult,
-                    'child' => $currentChild,
-                    'infant' => $currentInfant,
-                    'id' => $booking_id
-                ]);
+                // Calculate new total amount
+                $newTotalAmount = ($priceAdult * $currentAdult) + ($priceChild * $currentChild) + ($priceInfant * $currentInfant);
+                
+                // Calculate new final amount (consider existing discount)
+                $currentDiscount = (float) ($booking['discount_amount'] ?? 0);
+                $newFinalAmount = max(0, $newTotalAmount - $currentDiscount);
+                
+                // Calculate new remaining amount (consider existing deposit)
+                $currentDeposit = (float) ($booking['deposit_amount'] ?? 0);
+                $newRemainingAmount = max(0, $newFinalAmount - $currentDeposit);
 
-                // Log history
-                $this->bookingModel->logHistory(
-                    $booking_id,
-                    $booking['approval_status'],
-                    $booking['approval_status'],
-                    $_SESSION['user_id'] ?? null,
-                    "Thêm khách hàng vào booking"
-                );
+                // Start transaction
+                $this->pdo->beginTransaction();
 
-                set_success("Đã thêm khách hàng vào booking!");
-                redirect("?act=admin&module=bookings&action=show&id=$booking_id");
+                try {
+                    // Add passenger
+                    $sql = "INSERT INTO booking_customers (booking_id, customer_id, age_type, is_primary) 
+                            VALUES (:booking_id, :customer_id, :age_type, :is_primary)";
+                    $stmt = $this->pdo->prepare($sql);
+                    $stmt->execute([
+                        'booking_id' => $booking_id,
+                        'customer_id' => $customer_id,
+                        'age_type' => $age_type,
+                        'is_primary' => $is_primary
+                    ]);
+
+                    // Update booking counts and amounts
+                    $updateSql = "UPDATE bookings SET 
+                                  adult_count = :adult,
+                                  child_count = :child,
+                                  infant_count = :infant,
+                                  total_amount = :total_amount,
+                                  final_amount = :final_amount,
+                                  remaining_amount = :remaining_amount
+                                  WHERE id = :id";
+                    $updateStmt = $this->pdo->prepare($updateSql);
+                    $updateStmt->execute([
+                        'adult' => $currentAdult,
+                        'child' => $currentChild,
+                        'infant' => $currentInfant,
+                        'total_amount' => $newTotalAmount,
+                        'final_amount' => $newFinalAmount,
+                        'remaining_amount' => $newRemainingAmount,
+                        'id' => $booking_id
+                    ]);
+
+                    // Increment booked count of schedule
+                    if ($schedule) {
+                        if (!$scheduleModel->incrementBooked($schedule['id'], 1)) {
+                            throw new Exception("Không thể cập nhật số lượng đã đặt cho lịch khởi hành");
+                        }
+                    }
+
+                    // Commit transaction
+                    $this->pdo->commit();
+
+                    // Log history
+                    $this->bookingModel->logHistory(
+                        $booking_id,
+                        $booking['payment_status'],
+                        $booking['payment_status'],
+                        $_SESSION['user_id'] ?? null,
+                        "Thêm khách hàng vào booking (Loại: " . ($age_type === 'adult' ? 'Người lớn' : ($age_type === 'child' ? 'Trẻ em' : 'Em bé')) . "). Tổng tiền mới: " . number_format($newTotalAmount) . " đ"
+                    );
+
+                    set_success("Đã thêm khách hàng vào booking! Tổng tiền đã được cập nhật.");
+                    redirect("?act=admin&module=bookings&action=show&id=$booking_id");
+
+                } catch (Exception $e) {
+                    // Rollback transaction on error
+                    $this->pdo->rollBack();
+                    throw $e;
+                }
 
             } catch (Exception $e) {
                 set_error($e->getMessage());

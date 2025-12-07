@@ -118,8 +118,8 @@
                         </td>
                         <td class="px-6 py-4">
                             <span
-                                class="px-3 py-1 rounded-full text-xs font-medium <?php echo get_status_color($booking['approval_status']); ?>">
-                                <?php echo approval_status_text($booking['approval_status']); ?>
+                                class="px-3 py-1 rounded-full text-xs font-medium <?php echo get_payment_status_color($booking['payment_status']); ?>">
+                                <?php echo payment_status_text($booking['payment_status']); ?>
                             </span>
                         </td>
                     </tr>

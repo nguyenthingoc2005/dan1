@@ -149,17 +149,17 @@ class JournalController
                 throw new \Exception("Bạn không được phân công tour này.");
             }
 
-            // Get first approved booking from this schedule (for database constraint)
+            // Get first paid booking from this schedule (for database constraint)
             // Journal is for the tour, but we need a booking_id for the database
             $bookings = $this->bookingModel->getAll([
                 'tour_id' => $schedule['tour_id'],
                 'start_date' => $schedule['start_date'],
                 'exact_date' => true,
-                'status' => 'approved'
+                'status' => 'paid'
             ], 1, 1);
 
             if (empty($bookings)) {
-                throw new \Exception("Tour này chưa có booking nào được duyệt.");
+                throw new \Exception("Tour này chưa có booking nào đã thanh toán.");
             }
 
             $booking_id = $bookings[0]['id'];

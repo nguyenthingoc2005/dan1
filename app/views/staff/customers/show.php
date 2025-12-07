@@ -96,27 +96,8 @@
                                         <?php
                                         $statusClass = '';
                                         $statusText = '';
-                                        switch ($booking['approval_status']) {
-                                            case 'approved':
-                                                $statusClass = 'bg-green-100 text-green-700';
-                                                $statusText = 'Đã duyệt';
-                                                break;
-                                            case 'pending':
-                                                $statusClass = 'bg-yellow-100 text-yellow-700';
-                                                $statusText = 'Chờ duyệt';
-                                                break;
-                                            case 'cancelled':
-                                                $statusClass = 'bg-red-100 text-red-700';
-                                                $statusText = 'Đã hủy';
-                                                break;
-                                            case 'rejected':
-                                                $statusClass = 'bg-red-100 text-red-700';
-                                                $statusText = 'Từ chối';
-                                                break;
-                                            default:
-                                                $statusClass = 'bg-slate-100 text-slate-700';
-                                                $statusText = $booking['approval_status'];
-                                        }
+                                        $statusClass = get_payment_status_color($booking['payment_status'] ?? 'unpaid');
+                                        $statusText = payment_status_text($booking['payment_status'] ?? 'unpaid');
                                         ?>
                                         <span class="px-2 py-1 rounded text-xs font-medium <?php echo $statusClass; ?>">
                                             <?php echo $statusText; ?>

@@ -115,7 +115,7 @@ foreach ($active_bookings as $b) {
                                 <td class="px-4 py-3 text-sm text-red-600"><?= number_format($remaining) ?> đ</td>
                                 <td class="px-4 py-3 text-sm">
                                     <span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700">
-                                        <?= ucfirst($booking['approval_status'] ?? 'pending') ?>
+                                        <?= payment_status_text($booking['payment_status'] ?? 'unpaid') ?>
                                     </span>
                                 </td>
                             </tr>

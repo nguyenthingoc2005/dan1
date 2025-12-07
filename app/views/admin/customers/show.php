@@ -157,24 +157,9 @@ if (!function_exists('format_currency')) {
                                             <?php
                                             $statusClass = 'bg-gray-100 text-gray-800';
                                             $statusText = 'Chờ duyệt';
-                                            switch ($booking['approval_status']) {
-                                                case 'approved':
-                                                    $statusClass = 'bg-green-100 text-green-800';
-                                                    $statusText = 'Đã duyệt';
-                                                    break;
-                                                case 'rejected':
-                                                    $statusClass = 'bg-red-100 text-red-800';
-                                                    $statusText = 'Từ chối';
-                                                    break;
-                                                case 'cancelled':
-                                                    $statusClass = 'bg-gray-800 text-white';
-                                                    $statusText = 'Đã hủy';
-                                                    break;
-                                                case 'completed':
-                                                    $statusClass = 'bg-blue-100 text-blue-800';
-                                                    $statusText = 'Hoàn thành';
-                                                    break;
-                                            }
+                                            // Sử dụng payment_status thay vì approval_status
+                                            $statusClass = get_payment_status_color($booking['payment_status']);
+                                            $statusText = payment_status_text($booking['payment_status']);
                                             ?>
                                             <span
                                                 class="px-2 py-1 rounded-full text-xs font-bold uppercase <?= $statusClass ?>">

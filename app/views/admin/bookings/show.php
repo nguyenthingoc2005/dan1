@@ -13,16 +13,24 @@ if (!function_exists('format_currency')) {
     }
 }
 
-// Status Colors
+// Status Colors (chỉ dùng payment_status)
 $statusColors = [
-    'pending' => 'bg-yellow-100 text-yellow-800',
-    'approved' => 'bg-blue-100 text-blue-800',
-    'rejected' => 'bg-gray-100 text-gray-800',
-    'cancelled' => 'bg-red-100 text-red-800',
-    'unpaid' => 'bg-red-100 text-red-800',
-    'partial' => 'bg-yellow-100 text-yellow-800',
+    'unpaid' => 'bg-yellow-100 text-yellow-800',
+    'partial' => 'bg-orange-100 text-orange-800',
     'paid' => 'bg-green-100 text-green-800',
-    'refunded' => 'bg-purple-100 text-purple-800'
+    'rejected' => 'bg-gray-200 text-gray-800',
+    'cancelled' => 'bg-red-100 text-red-800',
+    'refunded' => 'bg-blue-100 text-blue-800'
+];
+
+// Status Text (tiếng Việt)
+$statusTexts = [
+    'unpaid' => 'Chờ thanh toán',
+    'partial' => 'Đã cọc',
+    'paid' => 'Đã thanh toán',
+    'rejected' => 'Từ chối',
+    'cancelled' => 'Đã hủy',
+    'refunded' => 'Đã hoàn tiền'
 ];
 ?>
 
@@ -33,12 +41,8 @@ $statusColors = [
             <div class="flex items-center gap-3 mb-2">
                 <h1 class="text-2xl font-bold text-primary">Booking: <?= $booking['booking_code'] ?></h1>
                 <span
-                    class="px-3 py-1 rounded-full text-xs font-bold uppercase <?= $statusColors[$booking['approval_status']] ?? 'bg-gray-100' ?>">
-                    <?= $booking['approval_status'] ?>
-                </span>
-                <span
                     class="px-3 py-1 rounded-full text-xs font-bold uppercase <?= $statusColors[$booking['payment_status']] ?? 'bg-gray-100' ?>">
-                    <?= $booking['payment_status'] ?>
+                    <?= $statusTexts[$booking['payment_status']] ?? $booking['payment_status'] ?>
                 </span>
             </div>
             <p class="text-gray-500 text-sm">Tạo ngày <?= date('d/m/Y H:i', strtotime($booking['created_at'])) ?> bởi
@@ -50,23 +54,15 @@ $statusColors = [
                 ← Quay lại
             </a>
 
-            <?php if ($booking['approval_status'] == 'pending'): ?>
-                <form action="?act=admin&module=bookings&action=changeStatus" method="POST" class="inline">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="id" value="<?= $booking['id'] ?>">
-                    <input type="hidden" name="action" value="approve">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow"
-                        onclick="return confirm('Duyệt booking này?')">
-                        ✓ Duyệt Booking
-                    </button>
-                </form>
+            <?php if ($booking['payment_status'] == 'unpaid'): ?>
+                <!-- Bỏ button "Duyệt" vì đã bỏ tính năng duyệt thủ công -->
                 <button onclick="openModal('rejectModal')"
                     class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 shadow">
                     ✗ Từ chối
                 </button>
             <?php endif; ?>
 
-            <?php if ($booking['approval_status'] == 'approved'): ?>
+            <?php if (in_array($booking['payment_status'], ['unpaid', 'partial', 'paid'])): ?>
                 <button onclick="openModal('cancelModal')"
                     class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 shadow">
                     ⚠ Hủy Booking
@@ -127,7 +123,7 @@ $statusColors = [
                     // 1. Booking chưa bị hủy
                     // 2. Còn >= 1 ngày đến ngày khởi hành
                     $canAddPassenger = false;
-                    if ($booking['approval_status'] != 'cancelled') {
+                    if (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
                         $today = date('Y-m-d');
                         $start_date = $booking['start_date'] ?? null;
                         if ($start_date) {
@@ -141,7 +137,7 @@ $statusColors = [
                             class="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
                             + Thêm khách
                         </button>
-                    <?php elseif ($booking['approval_status'] != 'cancelled'): ?>
+                    <?php elseif (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])): ?>
                         <span class="text-xs text-gray-500 italic">
                             ⚠️ Không thể thêm khách (còn < 1 ngày đến ngày khởi hành)
                         </span>
@@ -192,7 +188,7 @@ $statusColors = [
                     // 1. Booking chưa bị hủy
                     // 2. Còn >= 1 ngày đến ngày khởi hành
                     $canAddService = false;
-                    if ($booking['approval_status'] != 'cancelled') {
+                    if (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
                         $today = date('Y-m-d');
                         $start_date = $booking['start_date'] ?? null;
                         if ($start_date) {
@@ -206,7 +202,7 @@ $statusColors = [
                             class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                             + Thêm dịch vụ
                         </button>
-                    <?php elseif ($booking['approval_status'] != 'cancelled'): ?>
+                    <?php elseif (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])): ?>
                         <span class="text-xs text-gray-500 italic">
                             ⚠️ Không thể thêm dịch vụ (còn < 1 ngày đến ngày khởi hành)
                         </span>
@@ -262,7 +258,7 @@ $statusColors = [
                                     <td class="px-3 py-2 text-right font-medium"><?= format_currency($service['total_price']) ?>
                                     </td>
                                     <td class="px-3 py-2 text-center">
-                                        <?php if ($service['paid_amount'] == 0 && $booking['approval_status'] != 'cancelled'): ?>
+                                        <?php if ($service['paid_amount'] == 0 && !in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])): ?>
                                             <?php if ($isFromTour): ?>
                                                 <span class="text-xs text-gray-400 italic">Không thể xóa</span>
                                             <?php else: ?>
@@ -326,6 +322,40 @@ $statusColors = [
         <!-- RIGHT COLUMN: FINANCIALS -->
         <div class="lg:col-span-1 space-y-6">
 
+            <!-- KHUYẾN MÃI -->
+            <div class="bg-white p-6 rounded shadow-sm border-t-4 border-green-500">
+                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Khuyến mãi</h2>
+                
+                <?php if (empty($booking['discount_code']) && $booking['discount_amount'] == 0): ?>
+                    <div class="space-y-3">
+                        <p class="text-sm text-gray-600">Chưa áp dụng mã giảm giá</p>
+                        <?php if (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])): ?>
+                            <button onclick="openModal('discountModal')" 
+                                class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 shadow">
+                                ✨ Áp dụng mã giảm giá
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Mã giảm giá:</span>
+                            <span class="font-bold text-green-600"><?= htmlspecialchars($booking['discount_code'] ?: 'Giảm trực tiếp') ?></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Số tiền giảm:</span>
+                            <span class="font-bold text-green-600">-<?= format_currency($booking['discount_amount']) ?></span>
+                        </div>
+                        <?php if (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])): ?>
+                            <button onclick="openModal('discountModal')" 
+                                class="w-full text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                                ✏️ Sửa mã giảm giá
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
             <!-- FINANCIAL SUMMARY -->
             <div class="bg-white p-6 rounded shadow-sm border-t-4 border-accent">
                 <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Thanh toán</h2>
@@ -365,7 +395,7 @@ $statusColors = [
                     </div>
                 </div>
 
-                <?php if ($booking['remaining_amount'] > 0 && $booking['approval_status'] != 'cancelled'): ?>
+                <?php if ($booking['remaining_amount'] > 0 && !in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])): ?>
                     <button onclick="openModal('paymentModal')"
                         class="w-full py-2 bg-accent text-white font-bold rounded hover:bg-blue-600 shadow">
                         + Thêm thanh toán
@@ -452,7 +482,49 @@ $statusColors = [
     </div>
 </div>
 
-<!-- 2. Cancel Modal -->
+<!-- 2. Discount Modal -->
+<div id="discountModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg w-full max-w-md p-6">
+        <h3 class="text-lg font-bold mb-4">Áp dụng mã giảm giá</h3>
+        <form action="?act=admin&module=bookings&action=applyDiscount" method="POST">
+            <?= csrf_field() ?>
+            <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Mã giảm giá (Tùy chọn)</label>
+                    <input type="text" name="discount_code" 
+                        value="<?= htmlspecialchars($booking['discount_code'] ?? '') ?>"
+                        placeholder="Nhập mã giảm giá (nếu có)"
+                        class="w-full px-3 py-2 border rounded">
+                    <p class="text-xs text-gray-500 mt-1">Có thể để trống nếu chỉ giảm trực tiếp</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Số tiền giảm (VNĐ) <span class="text-red-500">*</span></label>
+                    <input type="number" name="discount_amount" 
+                        value="<?= $booking['discount_amount'] ?? 0 ?>"
+                        min="0" max="<?= $booking['total_amount'] ?>"
+                        step="1000"
+                        class="w-full px-3 py-2 border rounded" required>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Tối đa: <?= format_currency($booking['total_amount']) ?>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-2 mt-6">
+                <button type="button" onclick="closeModal('discountModal')"
+                    class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Hủy</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    Áp dụng
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. Cancel Modal -->
 <div id="cancelModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
     <div class="bg-white rounded-lg w-full max-w-md p-6">
         <h3 class="text-lg font-bold mb-4 text-red-600">Xác nhận Hủy Booking</h3>

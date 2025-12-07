@@ -108,7 +108,7 @@ class ExpenseController
         // Get bookings for this schedule
         $bookings = $this->bookingModel->getAll([
             'tour_schedule_id' => $schedule_id,
-            'status' => 'approved'
+            'status' => 'paid'
         ], 1, 1000);
         
         if (empty($bookings)) {
@@ -116,7 +116,7 @@ class ExpenseController
                 'tour_id' => $schedule['tour_id'],
                 'start_date' => $schedule['start_date'],
                 'exact_date' => true,
-                'status' => 'approved'
+                'status' => 'paid'
             ], 1, 1000);
         }
 
@@ -166,7 +166,7 @@ class ExpenseController
         // Get bookings for this schedule
         $bookings = $this->bookingModel->getAll([
             'tour_schedule_id' => $schedule_id,
-            'status' => 'approved'
+            'status' => 'paid'
         ], 1, 1000);
         
         if (empty($bookings)) {
@@ -174,7 +174,7 @@ class ExpenseController
                 'tour_id' => $schedule['tour_id'],
                 'start_date' => $schedule['start_date'],
                 'exact_date' => true,
-                'status' => 'approved'
+                'status' => 'paid'
             ], 1, 1000);
         }
 

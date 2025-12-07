@@ -93,7 +93,7 @@ class TourController
         // Fallback to tour_id + start_date for backward compatibility
         $bookings = $this->bookingModel->getAll([
             'tour_schedule_id' => $id,
-            'status' => 'approved'
+            'status' => 'paid'
         ], 1, 1000);
         
         // If no bookings found by tour_schedule_id, try fallback method
@@ -102,7 +102,7 @@ class TourController
                 'tour_id' => $schedule['tour_id'],
                 'start_date' => $schedule['start_date'],
                 'exact_date' => true,
-                'status' => 'approved'
+                'status' => 'paid'
             ], 1, 1000);
         }
 

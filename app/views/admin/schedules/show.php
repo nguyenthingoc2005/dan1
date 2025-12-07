@@ -241,7 +241,7 @@ if (!is_admin())
                         <ul class="text-xs text-yellow-700 list-disc list-inside mb-2">
                             <li>Bookings đã bị xóa hoặc tour_id/start_date không khớp</li>
                             <li>Bookings có tour_schedule_id = NULL hoặc khác schedule ID này</li>
-                            <li>Bookings có approval_status = 'cancelled' hoặc 'rejected' (không được tính)</li>
+                            <li>Bookings có payment_status = 'cancelled', 'rejected' hoặc 'refunded' (không được tính)</li>
                         </ul>
                         <p class="text-xs text-yellow-700">
                             Vui lòng chạy các query trong file <code class="bg-yellow-100 px-2 py-1 rounded">test_schedule_bookings.sql</code> để kiểm tra chi tiết.
@@ -287,27 +287,9 @@ if (!is_admin())
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     <?php
-                                    $approvalStatus = $b['approval_status'] ?? '';
                                     $paymentStatus = $b['payment_status'] ?? '';
-                                    $statusClass = '';
-                                    $statusText = '';
-                                    
-                                    if ($approvalStatus == 'approved') {
-                                        $statusClass = 'bg-green-100 text-green-800';
-                                        $statusText = 'Đã duyệt';
-                                    } elseif ($approvalStatus == 'pending') {
-                                        $statusClass = 'bg-yellow-100 text-yellow-800';
-                                        $statusText = 'Chờ duyệt';
-                                    } elseif ($approvalStatus == 'rejected') {
-                                        $statusClass = 'bg-red-100 text-red-800';
-                                        $statusText = 'Đã từ chối';
-                                    } elseif ($approvalStatus == 'cancelled') {
-                                        $statusClass = 'bg-red-100 text-red-800';
-                                        $statusText = 'Đã hủy';
-                                    } else {
-                                        $statusClass = 'bg-gray-100 text-gray-800';
-                                        $statusText = ucfirst($approvalStatus ?: 'N/A');
-                                    }
+                                    $statusClass = get_payment_status_color($paymentStatus);
+                                    $statusText = payment_status_text($paymentStatus);
                                     ?>
                                     <span class="px-2 py-1 text-xs rounded-full font-medium <?= $statusClass ?>">
                                         <?= $statusText ?>

@@ -508,8 +508,8 @@ class BookingController
                     throw new \Exception("Bạn không có quyền thao tác booking này");
                 }
 
-                if ($booking['approval_status'] == 'cancelled') {
-                    throw new \Exception("Không thể thanh toán cho booking đã hủy");
+                if (in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
+                    throw new \Exception("Không thể thanh toán cho booking đã hủy/từ chối");
                 }
 
                 if ($amount <= 0) {
@@ -550,7 +550,11 @@ class BookingController
                     $this->bookingModel->updatePaymentStatus($bookingId);
 
                     // Log payment action
-                    $this->bookingModel->logHistory($bookingId, 'payment', $booking['approval_status'], get_user_id(), "Thanh toán: " . number_format($amount, 0, ',', '.') . " đ");
+                    // Log history với payment_status
+                    $updatedBooking = $this->bookingModel->getById($bookingId);
+                    $oldPaymentStatus = $booking['payment_status'];
+                    $newPaymentStatus = $updatedBooking['payment_status'] ?? $oldPaymentStatus;
+                    $this->bookingModel->logHistory($bookingId, $oldPaymentStatus, $newPaymentStatus, get_user_id(), "Thanh toán: " . number_format($amount, 0, ',', '.') . " đ");
 
                     // Commit transaction
                     $this->pdo->commit();
@@ -752,7 +756,7 @@ class BookingController
                 // Validate deadline: Không được thêm dịch vụ nếu đã qua deadline
                 $this->validateBookingDeadline($booking);
 
-                if ($booking['approval_status'] === 'cancelled') {
+                if (in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
                     throw new \Exception("Không thể thêm dịch vụ vào booking đã hủy.");
                 }
 
@@ -895,7 +899,7 @@ class BookingController
                 // Validate deadline: Không được thêm hành khách nếu đã qua deadline
                 $this->validateBookingDeadline($booking, "Không thể thêm hành khách");
 
-                if ($booking['approval_status'] === 'cancelled') {
+                if (in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
                     throw new \Exception("Không thể thêm khách vào booking đã hủy.");
                 }
 
@@ -961,8 +965,8 @@ class BookingController
                 // Log history
                 $this->bookingModel->logHistory(
                     $booking_id,
-                    $booking['approval_status'],
-                    $booking['approval_status'],
+                    $booking['payment_status'],
+                    $booking['payment_status'],
                     get_user_id(),
                     "Thêm khách hàng vào booking"
                 );

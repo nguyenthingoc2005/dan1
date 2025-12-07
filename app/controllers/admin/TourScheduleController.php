@@ -312,7 +312,7 @@ class TourScheduleController
 
                     $confirmed_count = 0;
                     foreach ($bookings as $b) {
-                        if (in_array($b['approval_status'] ?? '', ['approved', 'pending'])) {
+                        if (in_array($b['payment_status'] ?? '', ['unpaid', 'partial', 'paid'])) {
                             $confirmed_count++;
                         }
                     }
@@ -470,8 +470,8 @@ class TourScheduleController
         $countSql = "SELECT 
                         COUNT(*) as booking_count,
                         COALESCE(SUM(adult_count + child_count + infant_count), 0) as total_participants,
-                        SUM(CASE WHEN approval_status IN ('approved', 'pending', 'completed') THEN 1 ELSE 0 END) as active_booking_count,
-                        SUM(CASE WHEN approval_status IN ('approved', 'pending', 'completed') THEN (adult_count + child_count + infant_count) ELSE 0 END) as active_participants
+                        SUM(CASE WHEN payment_status IN ('unpaid', 'partial', 'paid') THEN 1 ELSE 0 END) as active_booking_count,
+                        SUM(CASE WHEN payment_status IN ('unpaid', 'partial', 'paid') THEN (adult_count + child_count + infant_count) ELSE 0 END) as active_participants
                      FROM bookings
                      WHERE (tour_schedule_id = :schedule_id 
                         OR (tour_id = :tour_id AND start_date = :start_date))";
@@ -599,7 +599,7 @@ class TourScheduleController
 
             $confirmed_count = 0;
             foreach ($bookings as $b) {
-                if (in_array($b['approval_status'] ?? '', ['approved', 'pending'])) {
+                if (in_array($b['payment_status'] ?? '', ['unpaid', 'partial', 'paid'])) {
                     $confirmed_count++;
                 }
             }
@@ -810,7 +810,7 @@ class TourScheduleController
 
         // Filter only active bookings (not cancelled/rejected)
         $active_bookings = array_filter($bookings, function ($b) {
-            return !in_array($b['approval_status'] ?? '', ['cancelled', 'rejected']);
+            return !in_array($b['payment_status'] ?? '', ['cancelled', 'rejected', 'refunded']);
         });
 
         // Get other schedules of the same tour (for Option 2: chuyển schedule)
@@ -871,7 +871,7 @@ class TourScheduleController
 
                 // Filter only active bookings
                 $active_bookings = array_filter($bookings, function ($b) {
-                    return !in_array($b['approval_status'] ?? '', ['cancelled', 'rejected']);
+                    return !in_array($b['payment_status'] ?? '', ['cancelled', 'rejected', 'refunded']);
                 });
 
                 $this->pdo->beginTransaction();
@@ -884,21 +884,21 @@ class TourScheduleController
                             $total_participants = ($booking['adult_count'] ?? 0) + ($booking['child_count'] ?? 0) + ($booking['infant_count'] ?? 0);
                             $paid_amount = (float) ($booking['paid_amount'] ?? 0);
 
+                            // Xác định payment_status: cancelled (không hoàn tiền) hoặc refunded (có hoàn tiền)
+                            $payment_status = ($paid_amount > 0) ? 'refunded' : 'cancelled';
+                            
                             $sql = "UPDATE bookings SET 
-                                    approval_status = 'cancelled',
+                                    payment_status = :payment_status,
                                     cancellation_date = NOW(),
                                     cancellation_reason = :reason,
                                     cancellation_fee = 0,
-                                    refund_amount = :refund,
-                                    payment_status = CASE 
-                                        WHEN :refund > 0 THEN 'refund_pending'
-                                        ELSE payment_status
-                                    END
+                                    refund_amount = :refund
                                     WHERE id = :id";
 
                             $reason = "Lịch trình tour bị hủy" . ($cancellation_reason ? ": " . $cancellation_reason : "");
                             $stmt = $this->pdo->prepare($sql);
                             $stmt->execute([
+                                'payment_status' => $payment_status,
                                 'reason' => $reason,
                                 'refund' => $paid_amount,
                                 'id' => $booking['id']

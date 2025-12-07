@@ -183,19 +183,8 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <span class="px-2 py-1 text-xs rounded-full font-medium
-                                        <?= ($b['approval_status'] ?? '') == 'approved' ? 'bg-green-100 text-green-800' :
-                                            (($b['approval_status'] ?? '') == 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                (($b['approval_status'] ?? '') == 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')) ?>">
-                                        <?php
-                                        $status_names = [
-                                            'approved' => 'Đã duyệt',
-                                            'pending' => 'Chờ duyệt',
-                                            'rejected' => 'Từ chối',
-                                            'cancelled' => 'Đã hủy'
-                                        ];
-                                        echo $status_names[$b['approval_status']] ?? $b['approval_status'];
-                                        ?>
+                                    <span class="px-2 py-1 text-xs rounded-full font-medium <?= get_payment_status_color($b['payment_status'] ?? 'unpaid') ?>">
+                                        <?= payment_status_text($b['payment_status'] ?? 'unpaid') ?>
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-right">

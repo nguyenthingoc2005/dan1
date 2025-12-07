@@ -65,7 +65,7 @@ class DashboardController
                                  JOIN booking_customers bc ON b.id = bc.booking_id
                                  WHERE ts.guide_id = :guide_id
                                    AND ts.end_date < :today
-                                   AND b.approval_status = 'approved'
+                                   AND b.payment_status IN ('paid', 'partial')
                                    AND bc.customer_id IS NOT NULL";
         $stmt = $this->db->prepare($customers_served_sql);
         $stmt->execute(['guide_id' => $user_id, 'today' => $today]);

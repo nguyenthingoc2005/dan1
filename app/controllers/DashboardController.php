@@ -44,14 +44,14 @@ class DashboardController
             $stmt->execute();
             $total_bookings = (int) $stmt->fetchColumn();
 
-            // 2. Số bookings đã duyệt
-            $sql_approved_bookings = "SELECT COUNT(*) as total FROM bookings WHERE approval_status = 'approved'";
+            // 2. Số bookings đã thanh toán (coi như đã duyệt)
+            $sql_approved_bookings = "SELECT COUNT(*) as total FROM bookings WHERE payment_status IN ('partial', 'paid')";
             $stmt = $this->db->prepare($sql_approved_bookings);
             $stmt->execute();
             $approved_bookings = (int) $stmt->fetchColumn();
 
-            // 3. Số bookings chờ duyệt
-            $sql_pending_bookings = "SELECT COUNT(*) as total FROM bookings WHERE approval_status = 'pending'";
+            // 3. Số bookings chờ thanh toán (coi như chờ duyệt)
+            $sql_pending_bookings = "SELECT COUNT(*) as total FROM bookings WHERE payment_status = 'unpaid'";
             $stmt = $this->db->prepare($sql_pending_bookings);
             $stmt->execute();
             $pending_bookings = (int) $stmt->fetchColumn();
@@ -65,19 +65,18 @@ class DashboardController
             $stmt->execute();
             $total_revenue = (float) $stmt->fetchColumn();
 
-            // 5. Số tours hoạt động (active và approved)
+            // 5. Số tours hoạt động (status = 'active')
             $sql_active_tours = "SELECT COUNT(*) as total 
                                 FROM tours 
-                                WHERE status = 'active' 
-                                AND approval_status = 'approved'";
+                                WHERE status = 'active'";
             $stmt = $this->db->prepare($sql_active_tours);
             $stmt->execute();
             $active_tours = (int) $stmt->fetchColumn();
 
-            // 6. Số tours chờ duyệt
+            // 6. Số tours chờ duyệt (status = 'pending')
             $sql_pending_tours = "SELECT COUNT(*) as total 
                                  FROM tours 
-                                 WHERE approval_status = 'pending'";
+                                 WHERE status = 'pending'";
             $stmt = $this->db->prepare($sql_pending_tours);
             $stmt->execute();
             $pending_tours_count = (int) $stmt->fetchColumn();
@@ -90,7 +89,7 @@ class DashboardController
                                         b.booking_code,
                                         b.start_date,
                                         b.final_amount,
-                                        b.approval_status,
+                                        b.payment_status,
                                         t.name as tour_name,
                                         c.full_name as customer_name
                                     FROM bookings b

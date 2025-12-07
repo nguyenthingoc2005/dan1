@@ -17,7 +17,7 @@
 class TourAssignment
 {
     private $pdo;
-    
+
     // Lương mặc định theo ngày (có thể cấu hình)
     const DEFAULT_DAILY_SALARY = 500000; // 500k/ngày
 
@@ -62,32 +62,32 @@ class TourAssignment
                 JOIN tours t ON b.tour_id = t.id
                 WHERE ta.guide_id = :guide_id
                   AND ta.status NOT IN ('cancelled', 'completed')
-                  AND b.approval_status NOT IN ('cancelled', 'rejected')
+                  AND b.payment_status NOT IN ('cancelled', 'rejected', 'refunded')
                   AND b.start_date <= :end_date
                   AND b.end_date >= :start_date";
-        
+
         $params = [
             'guide_id' => $guideId,
             'start_date' => $startDate,
             'end_date' => $endDate
         ];
-        
+
         if ($excludeAssignmentId) {
             $sql .= " AND ta.id != :exclude_id";
             $params['exclude_id'] = $excludeAssignmentId;
         }
-        
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($conflict) {
             return [
                 'available' => false,
                 'conflict' => $conflict
             ];
         }
-        
+
         // Cũng check trong tour_schedules nếu guide được assign trực tiếp
         $sql2 = "SELECT ts.id, ts.start_date, ts.end_date, t.name as tour_name
                  FROM tour_schedules ts
@@ -96,29 +96,29 @@ class TourAssignment
                    AND ts.status NOT IN ('cancelled', 'completed')
                    AND ts.start_date <= :end_date
                    AND ts.end_date >= :start_date";
-        
+
         $params2 = [
             'guide_id' => $guideId,
             'start_date' => $startDate,
             'end_date' => $endDate
         ];
-        
+
         if ($excludeScheduleId) {
             $sql2 .= " AND ts.id != :exclude_schedule_id";
             $params2['exclude_schedule_id'] = $excludeScheduleId;
         }
-        
+
         $stmt2 = $this->pdo->prepare($sql2);
         $stmt2->execute($params2);
         $conflict2 = $stmt2->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($conflict2) {
             return [
                 'available' => false,
                 'conflict' => $conflict2
             ];
         }
-        
+
         return ['available' => true, 'conflict' => null];
     }
 
@@ -150,11 +150,11 @@ class TourAssignment
                 JOIN roles r ON u.role_id = r.id
                 WHERE r.name = 'guide' AND u.status = 'active'
                 ORDER BY current_tours ASC, u.full_name ASC";
-        
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
         $allGuides = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // Filter những guide có sẵn
         $availableGuides = [];
         foreach ($allGuides as $guide) {
@@ -163,7 +163,7 @@ class TourAssignment
                 $availableGuides[] = $guide;
             }
         }
-        
+
         return $availableGuides;
     }
 
@@ -183,12 +183,12 @@ class TourAssignment
     {
         try {
             $this->pdo->beginTransaction();
-            
+
             // 1. Validate Guide is actually a guide
             if (!$this->isGuide($guideId)) {
                 throw new Exception("Người dùng này không phải là Hướng dẫn viên hoặc đã bị vô hiệu hóa");
             }
-            
+
             // 2. Get schedule info
             $sql = "SELECT ts.*, t.name as tour_name, t.duration_days
                     FROM tour_schedules ts
@@ -197,22 +197,22 @@ class TourAssignment
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute(['id' => $scheduleId]);
             $schedule = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             if (!$schedule) {
                 throw new Exception("Lịch khởi hành không tồn tại");
             }
-            
+
             // 3. Check guide availability
             $availability = $this->checkGuideAvailability($guideId, $schedule['start_date'], $schedule['end_date']);
             if (!$availability['available']) {
                 $conflict = $availability['conflict'];
-                throw new Exception("HDV đã có lịch trùng: " . $conflict['tour_name'] . 
+                throw new Exception("HDV đã có lịch trùng: " . $conflict['tour_name'] .
                     " ({$conflict['start_date']} - {$conflict['end_date']})");
             }
-            
+
             // 4. Calculate salary if not provided
             $salary = $data['salary_amount'] ?? $this->calculateSalary($schedule['duration_days']);
-            
+
             // 5. Update tour_schedules with guide_id
             $updateSql = "UPDATE tour_schedules SET guide_id = :guide_id, guide_notes = :notes WHERE id = :id";
             $this->pdo->prepare($updateSql)->execute([
@@ -220,14 +220,14 @@ class TourAssignment
                 'notes' => $data['notes'] ?? null,
                 'id' => $scheduleId
             ]);
-            
+
             // 6. Also create tour_assignment record for any bookings in this schedule
             // Find all approved bookings for this schedule
             $bookingsSql = "SELECT id FROM bookings 
                            WHERE tour_id = :tour_id 
                            AND start_date = :start_date 
                            AND end_date = :end_date
-                           AND approval_status IN ('pending', 'approved')";
+                           AND payment_status IN ('unpaid', 'partial', 'paid')";
             $bookingsStmt = $this->pdo->prepare($bookingsSql);
             $bookingsStmt->execute([
                 'tour_id' => $schedule['tour_id'],
@@ -235,14 +235,14 @@ class TourAssignment
                 'end_date' => $schedule['end_date']
             ]);
             $bookings = $bookingsStmt->fetchAll(PDO::FETCH_COLUMN);
-            
+
             $assignmentId = null;
             foreach ($bookings as $bookingId) {
                 // Check if assignment already exists
                 $checkSql = "SELECT id FROM tour_assignments WHERE tour_schedule_id = :schedule_id AND booking_id = :booking_id";
                 $checkStmt = $this->pdo->prepare($checkSql);
                 $checkStmt->execute(['schedule_id' => $scheduleId, 'booking_id' => $bookingId]);
-                
+
                 if (!$checkStmt->fetch()) {
                     $insertSql = "INSERT INTO tour_assignments (
                         tour_schedule_id, booking_id, guide_id, assignment_date,
@@ -251,7 +251,7 @@ class TourAssignment
                         :schedule_id, :booking_id, :guide_id, :assignment_date,
                         :salary, :salary_status, :notes, :status, :created_by
                     )";
-                    
+
                     $this->pdo->prepare($insertSql)->execute([
                         'schedule_id' => $scheduleId,
                         'booking_id' => $bookingId,
@@ -263,22 +263,22 @@ class TourAssignment
                         'status' => 'assigned',
                         'created_by' => $data['created_by'] ?? ($_SESSION['user_id'] ?? null)
                     ]);
-                    
+
                     if (!$assignmentId) {
                         $assignmentId = $this->pdo->lastInsertId();
                     }
                 }
             }
-            
+
             $this->pdo->commit();
-            
+
             return [
                 'success' => true,
                 'message' => "Phân công HDV thành công! Lương dự kiến: " . number_format($salary) . " VNĐ",
                 'id' => $assignmentId,
                 'salary' => $salary
             ];
-            
+
         } catch (Exception $e) {
             $this->pdo->rollBack();
             return [
@@ -327,18 +327,18 @@ class TourAssignment
     {
         try {
             $this->pdo->beginTransaction();
-            
+
             // Update tour_schedules
             $sql = "UPDATE tour_schedules SET guide_id = NULL, guide_notes = NULL WHERE id = :id";
             $this->pdo->prepare($sql)->execute(['id' => $scheduleId]);
-            
+
             // Update tour_assignments status
             $sql2 = "UPDATE tour_assignments SET status = 'cancelled' WHERE tour_schedule_id = :schedule_id";
             $this->pdo->prepare($sql2)->execute(['schedule_id' => $scheduleId]);
-            
+
             $this->pdo->commit();
             return true;
-            
+
         } catch (Exception $e) {
             $this->pdo->rollBack();
             return false;

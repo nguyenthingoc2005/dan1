@@ -310,33 +310,15 @@ unset($_SESSION['old']);
                         <input type="hidden" name="total_amount" id="total_amount" value="0">
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mã giảm giá</label>
-                        <input type="text" name="discount_code" id="discount_code"
-                            value="<?= $old['discount_code'] ?? '' ?>" placeholder="Nhập mã giảm giá (nếu có)"
-                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giảm giá (VNĐ)</label>
-                        <input type="number" name="discount_amount" id="discount_amount"
-                            value="<?= $old['discount_amount'] ?? 0 ?>" min="0"
-                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent text-right">
-                    </div>
-
                     <div class="border-t pt-4">
                         <label class="block text-sm text-gray-600 font-bold">THÀNH TIỀN</label>
                         <input type="text" id="final_amount_display"
                             class="w-full text-right font-bold text-red-600 bg-white border-0 text-xl" value="0 đ"
                             readonly>
                         <input type="hidden" name="final_amount" id="final_amount" value="0">
-                    </div>
-
-                    <div class="border-t pt-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Đã thanh toán / Cọc</label>
-                        <input type="number" name="deposit_amount" id="deposit_amount"
-                            value="<?= $old['deposit_amount'] ?? 0 ?>" min="0"
-                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent text-right font-bold text-green-600">
+                        <p class="text-xs text-gray-500 mt-1 text-center">
+                            💡 Mã giảm giá và đặt cọc sẽ được xử lý sau khi tạo booking
+                        </p>
                     </div>
 
                     <div>
@@ -344,16 +326,6 @@ unset($_SESSION['old']);
                         <input type="text" id="remaining_amount_display"
                             class="w-full text-right font-bold text-gray-500 bg-gray-50 border-0" value="0 đ" readonly>
                         <input type="hidden" name="remaining_amount" id="remaining_amount" value="0">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái thanh toán</label>
-                        <select name="payment_status" id="payment_status"
-                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-                            <option value="unpaid">Chưa thanh toán</option>
-                            <option value="partial">Đã đặt cọc</option>
-                            <option value="paid">Đã thanh toán hết</option>
-                        </select>
                     </div>
 
                     <button type="submit"
@@ -572,30 +544,18 @@ unset($_SESSION['old']);
             totalAmountInput.value = total;
             totalAmountDisplay.value = formatCurrency(total);
 
-            const discount = parseInt(discountInput.value) || 0;
-            const final = Math.max(0, total - discount);
-            console.log('💵 Final (after discount):', final);
+            // Không có discount và deposit ở bước tạo booking
+            const final = total; // final_amount = total_amount (không có discount)
+            console.log('💵 Final (no discount):', final);
 
             finalAmountInput.value = final;
             finalAmountDisplay.value = formatCurrency(final);
 
-            const deposit = parseInt(depositInput.value) || 0;
-            const remaining = Math.max(0, final - deposit);
-            console.log('💵 Remaining:', remaining);
+            const remaining = final; // remaining_amount = final_amount (không có deposit)
+            console.log('💵 Remaining (no deposit):', remaining);
 
             remainingAmountInput.value = remaining;
             remainingAmountDisplay.value = formatCurrency(remaining);
-
-            // Auto update payment status
-            const paymentStatusSelect = document.getElementById('payment_status');
-            if (deposit >= final && final > 0) {
-                paymentStatusSelect.value = 'paid';
-            } else if (deposit > 0) {
-                paymentStatusSelect.value = 'partial';
-            } else {
-                paymentStatusSelect.value = 'unpaid';
-            }
-            console.log('💳 Payment status:', paymentStatusSelect.value);
         }
 
         // Update tour price display
@@ -694,7 +654,7 @@ unset($_SESSION['old']);
             }
         });
 
-        [adultCountInput, childCountInput, infantCountInput, discountInput, depositInput].forEach(input => {
+        [adultCountInput, childCountInput, infantCountInput].forEach(input => {
             input.addEventListener('input', calculateTotal);
         });
 

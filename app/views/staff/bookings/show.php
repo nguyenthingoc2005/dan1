@@ -12,16 +12,14 @@ if (!function_exists('format_currency')) {
     }
 }
 
-// Status Colors
+// Status Colors (chỉ dùng payment_status)
 $statusColors = [
-    'pending' => 'bg-yellow-100 text-yellow-800',
-    'approved' => 'bg-blue-100 text-blue-800',
-    'rejected' => 'bg-gray-100 text-gray-800',
-    'cancelled' => 'bg-red-100 text-red-800',
-    'unpaid' => 'bg-red-100 text-red-800',
-    'partial' => 'bg-yellow-100 text-yellow-800',
+    'unpaid' => 'bg-yellow-100 text-yellow-800',
+    'partial' => 'bg-orange-100 text-orange-800',
     'paid' => 'bg-green-100 text-green-800',
-    'refunded' => 'bg-purple-100 text-purple-800'
+    'rejected' => 'bg-gray-200 text-gray-800',
+    'cancelled' => 'bg-red-100 text-red-800',
+    'refunded' => 'bg-blue-100 text-blue-800'
 ];
 ?>
 
@@ -32,12 +30,8 @@ $statusColors = [
             <div class="flex items-center gap-3 mb-2">
                 <h1 class="text-2xl font-bold text-primary">Booking: <?= $booking['booking_code'] ?></h1>
                 <span
-                    class="px-3 py-1 rounded-full text-xs font-bold uppercase <?= $statusColors[$booking['approval_status']] ?? 'bg-gray-100' ?>">
-                    <?= $booking['approval_status'] ?>
-                </span>
-                <span
                     class="px-3 py-1 rounded-full text-xs font-bold uppercase <?= $statusColors[$booking['payment_status']] ?? 'bg-gray-100' ?>">
-                    <?= $booking['payment_status'] ?>
+                    <?= payment_status_text($booking['payment_status']) ?>
                 </span>
             </div>
             <p class="text-gray-500 text-sm">Tạo ngày <?= date('d/m/Y H:i', strtotime($booking['created_at'])) ?> bởi
@@ -104,7 +98,7 @@ $statusColors = [
                     // 1. Booking chưa bị hủy
                     // 2. Còn >= 1 ngày đến ngày khởi hành
                     $canAddPassenger = false;
-                    if ($booking['approval_status'] != 'cancelled') {
+                    if (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
                         $today = date('Y-m-d');
                         $start_date = $booking['start_date'] ?? null;
                         if ($start_date) {
@@ -118,7 +112,7 @@ $statusColors = [
                             class="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
                             + Thêm khách
                         </button>
-                    <?php elseif ($booking['approval_status'] != 'cancelled'): ?>
+                    <?php elseif (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])): ?>
                         <span class="text-xs text-gray-500 italic">
                             ⚠️ Không thể thêm khách (còn < 1 ngày đến ngày khởi hành)
                         </span>
@@ -169,7 +163,7 @@ $statusColors = [
                     // 1. Booking chưa bị hủy
                     // 2. Còn >= 1 ngày đến ngày khởi hành
                     $canAddService = false;
-                    if ($booking['approval_status'] != 'cancelled') {
+                    if (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
                         $today = date('Y-m-d');
                         $start_date = $booking['start_date'] ?? null;
                         if ($start_date) {
@@ -183,7 +177,7 @@ $statusColors = [
                             class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                             + Thêm dịch vụ
                         </button>
-                    <?php elseif ($booking['approval_status'] != 'cancelled'): ?>
+                    <?php elseif (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])): ?>
                         <span class="text-xs text-gray-500 italic">
                             ⚠️ Không thể thêm dịch vụ (còn < 1 ngày đến ngày khởi hành)
                         </span>
@@ -239,7 +233,7 @@ $statusColors = [
                                     <td class="px-3 py-2 text-right font-medium"><?= format_currency($service['total_price']) ?>
                                     </td>
                                     <td class="px-3 py-2 text-center">
-                                        <?php if ($service['paid_amount'] == 0 && $booking['approval_status'] != 'cancelled'): ?>
+                                        <?php if ($service['paid_amount'] == 0 && $booking['payment_status'] != 'cancelled'): ?>
                                             <?php if ($isFromTour): ?>
                                                 <span class="text-xs text-gray-400 italic">Không thể xóa</span>
                                             <?php else: ?>
@@ -342,7 +336,7 @@ $statusColors = [
                     </div>
                 </div>
 
-                <?php if ($booking['remaining_amount'] > 0 && $booking['approval_status'] != 'cancelled'): ?>
+                <?php if ($booking['remaining_amount'] > 0 && $booking['payment_status'] != 'cancelled'): ?>
                     <button onclick="openModal('paymentModal')"
                         class="w-full py-2 bg-accent text-white font-bold rounded hover:bg-blue-600 shadow">
                         + Thêm thanh toán

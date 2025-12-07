@@ -34,12 +34,12 @@ class Customer
     {
         $sql = "SELECT id FROM customers WHERE phone = :phone";
         $params = ['phone' => $phone];
-        
+
         if ($excludeId) {
             $sql .= " AND id != :exclude_id";
             $params['exclude_id'] = $excludeId;
         }
-        
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetch() !== false;
@@ -53,16 +53,17 @@ class Customer
      */
     public function isEmailExists($email, $excludeId = null)
     {
-        if (empty($email)) return false;
-        
+        if (empty($email))
+            return false;
+
         $sql = "SELECT id FROM customers WHERE email = :email";
         $params = ['email' => $email];
-        
+
         if ($excludeId) {
             $sql .= " AND id != :exclude_id";
             $params['exclude_id'] = $excludeId;
         }
-        
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetch() !== false;
@@ -76,16 +77,17 @@ class Customer
      */
     public function isIdCardExists($idCard, $excludeId = null)
     {
-        if (empty($idCard)) return false;
-        
+        if (empty($idCard))
+            return false;
+
         $sql = "SELECT id FROM customers WHERE id_card = :id_card";
         $params = ['id_card' => $idCard];
-        
+
         if ($excludeId) {
             $sql .= " AND id != :exclude_id";
             $params['exclude_id'] = $excludeId;
         }
-        
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetch() !== false;
@@ -153,7 +155,7 @@ class Customer
             $dob = strtotime($data['date_of_birth']);
             $today = strtotime('today');
             $minDate = strtotime('-120 years'); // Max 120 tuổi
-            
+
             if ($dob >= $today) {
                 $errors['date_of_birth'] = 'Ngày sinh phải là ngày trong quá khứ';
             } elseif ($dob < $minDate) {
@@ -203,26 +205,26 @@ class Customer
     {
         $date = date('Ymd'); // YYYYMMDD
         $prefix = 'CUS-' . $date . '-';
-        
+
         $sql = "SELECT customer_code FROM customers 
                 WHERE customer_code LIKE :prefix 
                 ORDER BY id DESC LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['prefix' => $prefix . '%']);
         $lastCode = $stmt->fetchColumn();
-        
+
         if ($lastCode) {
             $number = (int) substr($lastCode, -3); // Lấy 3 số cuối
             $nextNumber = $number + 1;
-            
+
             // Edge case: Nếu vượt quá 999, tăng lên 4 số
             if ($nextNumber > 999) {
                 return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
             }
-            
+
             return $prefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
         }
-        
+
         return $prefix . '001';
     }
 
@@ -366,10 +368,10 @@ class Customer
     {
         // Generate customer code
         $customerCode = $this->generateCustomerCode();
-        
+
         // Normalize phone number
         $phone = preg_replace('/[\s\-\(\)]/', '', $data['phone']);
-        
+
         $sql = "INSERT INTO customers (
                     customer_code, full_name, phone, email, address, 
                     gender, date_of_birth, id_card, passport, nationality,
@@ -464,7 +466,7 @@ class Customer
         $bookingsSql = "SELECT COUNT(*) 
                         FROM bookings 
                         WHERE customer_id = :customer_id 
-                          AND approval_status IN ('approved', 'completed')";
+                          AND payment_status IN ('partial', 'paid')";
         $stmt = $this->pdo->prepare($bookingsSql);
         $stmt->execute(['customer_id' => $customer_id]);
         $total_bookings = (int) $stmt->fetchColumn();
@@ -473,7 +475,7 @@ class Customer
         $spentSql = "SELECT COALESCE(SUM(final_amount), 0) 
                      FROM bookings 
                      WHERE customer_id = :customer_id 
-                       AND approval_status IN ('approved', 'completed')";
+                       AND payment_status IN ('partial', 'paid')";
         $stmt = $this->pdo->prepare($spentSql);
         $stmt->execute(['customer_id' => $customer_id]);
         $total_spent = (float) $stmt->fetchColumn();
@@ -505,7 +507,7 @@ class Customer
         $bookingsSql = "SELECT COUNT(*) 
                         FROM bookings 
                         WHERE customer_id = :customer_id 
-                          AND approval_status IN ('approved', 'completed')";
+                          AND payment_status IN ('partial', 'paid')";
         $stmt = $this->pdo->prepare($bookingsSql);
         $stmt->execute(['customer_id' => $customer_id]);
         $total_bookings = (int) $stmt->fetchColumn();
@@ -514,7 +516,7 @@ class Customer
         $spentSql = "SELECT COALESCE(SUM(final_amount), 0) 
                      FROM bookings 
                      WHERE customer_id = :customer_id 
-                       AND approval_status IN ('approved', 'completed')";
+                       AND payment_status IN ('partial', 'paid')";
         $stmt = $this->pdo->prepare($spentSql);
         $stmt->execute(['customer_id' => $customer_id]);
         $total_spent = (float) $stmt->fetchColumn();
@@ -535,14 +537,14 @@ class Customer
         $sql = "SELECT id FROM customers";
         $stmt = $this->pdo->query($sql);
         $customers = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        
+
         $updated = 0;
         foreach ($customers as $customer_id) {
             if ($this->updateCustomerStats($customer_id)) {
                 $updated++;
             }
         }
-        
+
         return $updated;
     }
 }

@@ -205,6 +205,10 @@ function get_status_color($status)
  * @param string $status
  * @return string
  */
+/**
+ * DEPRECATED: Chuyển sang payment_status_text()
+ * Giữ lại để backward compatible
+ */
 function approval_status_text($status)
 {
     switch ($status) {
@@ -1143,6 +1147,44 @@ function require_csrf_token()
     if (!verify_csrf_token($token)) {
         throw new Exception("CSRF token không hợp lệ. Vui lòng thử lại.");
     }
+}
+
+/**
+ * Chuyển payment_status sang text tiếng Việt
+ * 
+ * @param string $status payment_status
+ * @return string Text tiếng Việt
+ */
+function payment_status_text($status)
+{
+    $texts = [
+        'unpaid' => 'Chờ thanh toán',
+        'partial' => 'Đã cọc',
+        'paid' => 'Đã thanh toán',
+        'rejected' => 'Từ chối',
+        'cancelled' => 'Đã hủy',
+        'refunded' => 'Đã hoàn tiền'
+    ];
+    return $texts[$status] ?? $status;
+}
+
+/**
+ * Lấy màu CSS cho payment_status
+ * 
+ * @param string $status payment_status
+ * @return string CSS classes
+ */
+function get_payment_status_color($status)
+{
+    $colors = [
+        'unpaid' => 'bg-yellow-100 text-yellow-700',
+        'partial' => 'bg-orange-100 text-orange-700',
+        'paid' => 'bg-green-100 text-green-700',
+        'rejected' => 'bg-gray-200 text-gray-700',
+        'cancelled' => 'bg-red-100 text-red-700',
+        'refunded' => 'bg-blue-100 text-blue-700'
+    ];
+    return $colors[$status] ?? 'bg-gray-100 text-gray-700';
 }
 
 // ============================================================================

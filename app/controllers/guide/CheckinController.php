@@ -112,7 +112,7 @@ class CheckinController
         // Fallback to tour_id + start_date for backward compatibility with old bookings
         $allBookings = $this->bookingModel->getAll([
             'tour_schedule_id' => $schedule_id,
-            'status' => 'approved'
+            'status' => 'paid'
         ], 1, 1000);
         
         // If no bookings found by tour_schedule_id, try fallback method (for old bookings)
@@ -121,16 +121,15 @@ class CheckinController
                 'tour_id' => $schedule['tour_id'],
                 'start_date' => $schedule['start_date'],
                 'exact_date' => true,
-                'status' => 'approved'
+                'status' => 'paid'
             ], 1, 1000);
         }
 
         // Filter bookings: Chỉ cho phép check-in nếu đã thanh toán đủ
-        // Điều kiện: approval_status = 'approved' AND payment_status = 'paid' AND remaining_amount = 0
+        // Điều kiện: payment_status = 'paid' AND remaining_amount = 0
         $bookings = [];
         foreach ($allBookings as $booking) {
-            if ($booking['approval_status'] === 'approved' 
-                && $booking['payment_status'] === 'paid' 
+            if (in_array($booking['payment_status'], ['partial', 'paid']) 
                 && (float)$booking['remaining_amount'] == 0) {
                 $bookings[] = $booking;
             }
@@ -208,10 +207,7 @@ class CheckinController
                         throw new \Exception("Chưa đến ngày bắt đầu tour. Chỉ có thể check-in từ ngày " . date('d/m/Y', strtotime($schedule['start_date'])) . " trở đi.");
                     }
 
-                    // Điều kiện check-in: approval_status = 'approved' AND payment_status = 'paid' AND remaining_amount = 0
-                    if ($booking['approval_status'] !== 'approved') {
-                        throw new \Exception("Booking #{$booking['booking_code']} chưa được duyệt. Không thể check-in.");
-                    }
+                    // Điều kiện check-in: payment_status = 'paid' AND remaining_amount = 0
                     if ($booking['payment_status'] !== 'paid') {
                         throw new \Exception("Booking #{$booking['booking_code']} chưa thanh toán đủ. Vui lòng thanh toán trước khi check-in.");
                     }
@@ -297,7 +293,7 @@ class CheckinController
         // Fallback to tour_id + start_date for backward compatibility with old bookings
         $allBookings = $this->bookingModel->getAll([
             'tour_schedule_id' => $schedule_id,
-            'status' => 'approved'
+            'status' => 'paid'
         ], 1, 1000);
         
         // If no bookings found by tour_schedule_id, try fallback method (for old bookings)
@@ -306,16 +302,15 @@ class CheckinController
                 'tour_id' => $schedule['tour_id'],
                 'start_date' => $schedule['start_date'],
                 'exact_date' => true,
-                'status' => 'approved'
+                'status' => 'paid'
             ], 1, 1000);
         }
 
         // Filter bookings: Chỉ cho phép check-in nếu đã thanh toán đủ
-        // Điều kiện: approval_status = 'approved' AND payment_status = 'paid' AND remaining_amount = 0
+        // Điều kiện: payment_status = 'paid' AND remaining_amount = 0
         $bookings = [];
         foreach ($allBookings as $booking) {
-            if ($booking['approval_status'] === 'approved' 
-                && $booking['payment_status'] === 'paid' 
+            if (in_array($booking['payment_status'], ['partial', 'paid']) 
                 && (float)$booking['remaining_amount'] == 0) {
                 $bookings[] = $booking;
             }

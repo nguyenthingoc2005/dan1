@@ -36,6 +36,7 @@
 -- FIXES (2024-12-XX):
 -- - ✅ Journals: Thêm tour_schedule_id (bắt buộc), booking_id có thể NULL (backward compatible)
 -- - ✅ Tours: Xóa cột approval_status, gộp vào status (draft, pending, active, rejected, inactive)
+-- - ✅ Bookings: Xóa cột approval_status, gộp vào payment_status (unpaid, partial, paid, rejected, cancelled, refunded)
 -- 
 -- DEPRECATED (giữ lại để backward compatible):
 -- - ⚠️ tours.markup_percentage (default: 0, không dùng nữa)
@@ -603,10 +604,9 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   `deposit_amount` decimal(15,2) DEFAULT '0.00',
   `paid_amount` decimal(15,2) DEFAULT '0.00',
   `remaining_amount` decimal(15,2) DEFAULT '0.00',
-  `payment_status` enum('unpaid','partial','paid','refunded') COLLATE utf8mb4_unicode_ci DEFAULT 'unpaid',
-  `approval_status` enum('pending','approved','rejected','cancelled') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
-  `approved_by` int DEFAULT NULL,
-  `approved_at` timestamp NULL DEFAULT NULL,
+  `payment_status` enum('unpaid','partial','paid','rejected','cancelled','refunded') COLLATE utf8mb4_unicode_ci DEFAULT 'unpaid',
+  `approved_by` int DEFAULT NULL COMMENT 'DEPRECATED - Giữ lại để audit, không dùng nữa',
+  `approved_at` timestamp NULL DEFAULT NULL COMMENT 'DEPRECATED - Giữ lại để audit, không dùng nữa',
   `rejection_reason` text COLLATE utf8mb4_unicode_ci,
   `rejected_by` int DEFAULT NULL,
   `rejected_at` timestamp NULL DEFAULT NULL,
@@ -628,7 +628,6 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   KEY `cancellation_policy_id` (`cancellation_policy_id`),
   KEY `created_by` (`created_by`),
   KEY `tour_schedule_id` (`tour_schedule_id`),
-  KEY `idx_bookings_approval_status` (`approval_status`),
   KEY `idx_bookings_payment_status` (`payment_status`),
   KEY `idx_bookings_tour_id` (`tour_id`),
   KEY `idx_bookings_customer_id` (`customer_id`),

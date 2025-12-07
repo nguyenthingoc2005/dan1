@@ -321,6 +321,9 @@ switch ($module) {
             case 'storePayment':
                 $bookingController->storePayment();
                 break;
+            case 'applyDiscount':
+                $bookingController->applyDiscount();
+                break;
             case 'importPassengers':
                 $bookingController->importPassengers();
                 break;

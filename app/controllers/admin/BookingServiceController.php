@@ -95,8 +95,8 @@ class BookingServiceController
             if (!$booking) {
                 throw new Exception("Booking không tồn tại");
             }
-            if ($booking['approval_status'] === 'cancelled') {
-                throw new Exception("Không thể thêm dịch vụ cho booking đã hủy");
+            if (in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
+                throw new Exception("Không thể thêm dịch vụ cho booking đã hủy/từ chối");
             }
             
             // Prepare data

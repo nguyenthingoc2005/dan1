@@ -23,10 +23,12 @@ if (!is_admin())
             $current_status = $_GET['status'] ?? '';
             $tabs = [
                 '' => 'Tất cả',
-                'pending' => 'Chờ duyệt',
-                'approved' => 'Đã duyệt',
+                'unpaid' => 'Chờ thanh toán',
+                'partial' => 'Đã cọc',
                 'paid' => 'Đã thanh toán',
-                'cancelled' => 'Đã hủy'
+                'rejected' => 'Từ chối',
+                'cancelled' => 'Đã hủy',
+                'refunded' => 'Đã hoàn tiền'
             ];
             ?>
             <?php foreach ($tabs as $key => $label): ?>
@@ -119,32 +121,35 @@ if (!is_admin())
                                 <?= number_format($b['final_amount'], 0, ',', '.') ?> đ
                             </td>
                             <td class="px-4 py-3 text-center">
-                                <!-- Approval Status -->
-                                <?php if ($b['approval_status'] == 'approved'): ?>
-                                    <span class="block px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full mb-1">Đã
-                                        duyệt</span>
-                                <?php elseif ($b['approval_status'] == 'cancelled'): ?>
-                                    <span class="block px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full mb-1">Đã hủy</span>
-                                <?php elseif ($b['approval_status'] == 'rejected'): ?>
-                                    <span class="block px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full mb-1">Từ
-                                        chối</span>
-                                <?php else: ?>
-                                    <span class="block px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full mb-1">Chờ
-                                        duyệt</span>
-                                <?php endif; ?>
-
-                                <!-- Payment Status -->
-                                <?php if ($b['payment_status'] == 'paid'): ?>
-                                    <span class="text-[10px] font-bold text-green-600 uppercase">Đã thanh toán</span>
-                                <?php elseif ($b['payment_status'] == 'partial'): ?>
-                                    <span class="text-[10px] font-bold text-orange-500 uppercase">Đã cọc</span>
-                                <?php else: ?>
-                                    <span class="text-[10px] font-bold text-gray-400 uppercase">Chưa thanh toán</span>
-                                <?php endif; ?>
+                                <!-- Payment Status (đã gộp approval_status) -->
+                                <?php
+                                switch ($b['payment_status']) {
+                                    case 'unpaid':
+                                        echo '<span class="block px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full mb-1">Chờ thanh toán</span>';
+                                        break;
+                                    case 'partial':
+                                        echo '<span class="block px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full mb-1">Đã cọc</span>';
+                                        break;
+                                    case 'paid':
+                                        echo '<span class="block px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full mb-1">Đã thanh toán</span>';
+                                        break;
+                                    case 'rejected':
+                                        echo '<span class="block px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full mb-1">Từ chối</span>';
+                                        break;
+                                    case 'cancelled':
+                                        echo '<span class="block px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full mb-1">Đã hủy</span>';
+                                        break;
+                                    case 'refunded':
+                                        echo '<span class="block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full mb-1">Đã hoàn tiền</span>';
+                                        break;
+                                    default:
+                                        echo '<span class="block px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full mb-1">' . htmlspecialchars($b['payment_status']) . '</span>';
+                                }
+                                ?>
 
                                 <?php
                                 $daysToStart = (strtotime($b['start_date']) - time()) / (60 * 60 * 24);
-                                if ($daysToStart <= 1 && $b['payment_status'] != 'paid' && $b['approval_status'] != 'cancelled'):
+                                if ($daysToStart <= 1 && !in_array($b['payment_status'], ['paid', 'cancelled', 'refunded'])):
                                     ?>
                                     <div
                                         class="mt-1 text-[10px] font-bold text-red-600 flex items-center justify-center gap-1 animate-pulse">

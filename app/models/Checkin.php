@@ -82,7 +82,7 @@ class Checkin
         if (!$stmt->fetch()) {
             throw new Exception("Customer ID không hợp lệ hoặc không tồn tại trong hệ thống.");
         }
-        
+
         // Check if already exists
         $existing = $this->getCustomerCheckin($booking_id, $customer_id);
 
@@ -150,7 +150,7 @@ class Checkin
                 JOIN bookings b ON bc.booking_id = b.id
                 JOIN tour_schedules ts ON (b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
                 WHERE ts.id = :schedule_id
-                AND b.approval_status = 'approved'";
+                AND b.payment_status IN ('partial', 'paid')";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['schedule_id' => $schedule_id]);

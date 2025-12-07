@@ -167,19 +167,19 @@ class Payment
         // 4. Validate amount không vượt quá remaining_amount (nếu không phải refund)
         if ($data['payment_type'] !== 'refund') {
             // Get booking info
-            $bookingSql = "SELECT final_amount, paid_amount, remaining_amount, approval_status FROM bookings WHERE id = :booking_id";
+            $bookingSql = "SELECT final_amount, paid_amount, remaining_amount, payment_status FROM bookings WHERE id = :booking_id";
             $bookingStmt = $this->pdo->prepare($bookingSql);
             $bookingStmt->execute(['booking_id' => $data['booking_id']]);
             $booking = $bookingStmt->fetch(PDO::FETCH_ASSOC);
-            
+
             if (!$booking) {
                 throw new Exception("Booking không tồn tại");
             }
-            
-            if ($booking['approval_status'] == 'cancelled') {
-                throw new Exception("Không thể thanh toán cho booking đã hủy");
+
+            if (in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])) {
+                throw new Exception("Không thể thanh toán cho booking đã hủy/từ chối");
             }
-            
+
             $remaining = (float) $booking['remaining_amount'];
             if ($data['amount'] > $remaining) {
                 throw new Exception("Số tiền thanh toán (" . number_format($data['amount']) . ") vượt quá số tiền còn lại (" . number_format($remaining) . ")");
@@ -188,7 +188,7 @@ class Payment
 
         // 5. Start transaction
         $this->pdo->beginTransaction();
-        
+
         try {
             // 6. Insert payment
             $sql = "INSERT INTO payments (
@@ -267,7 +267,7 @@ class Payment
     {
         $sql = "INSERT INTO payment_logs (payment_id, action, old_values, new_values, changed_by, created_at)
                 VALUES (:payment_id, :action, :old_values, :new_values, :changed_by, NOW())";
-        
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
             'payment_id' => $payment_id,
@@ -304,12 +304,12 @@ class Payment
 
         // Start transaction
         $this->pdo->beginTransaction();
-        
+
         try {
             // Build update SQL
             $fields = [];
             $params = ['id' => $id];
-            
+
             $allowedFields = ['amount', 'payment_method', 'payment_type', 'transaction_id', 'receipt_number', 'payment_date', 'notes', 'status'];
             foreach ($allowedFields as $field) {
                 if (isset($data[$field])) {
@@ -356,7 +356,7 @@ class Payment
 
         // Start transaction
         $this->pdo->beginTransaction();
-        
+
         try {
             // Soft delete: set status to cancelled
             $sql = "UPDATE payments SET status = 'cancelled' WHERE id = :id";
@@ -390,17 +390,17 @@ class Payment
         $bookingStmt = $this->pdo->prepare($bookingSql);
         $bookingStmt->execute(['booking_id' => $booking_id]);
         $booking = $bookingStmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if (!$booking) {
             throw new Exception("Booking không tồn tại");
         }
-        
+
         // Validate refund amount <= paid_amount
         $paidAmount = (float) $booking['paid_amount'];
         if ($amount > $paidAmount) {
             throw new Exception("Số tiền hoàn lại (" . number_format($amount) . ") không được vượt quá số tiền đã thanh toán (" . number_format($paidAmount) . ")");
         }
-        
+
         if ($amount <= 0) {
             throw new Exception("Số tiền hoàn lại phải lớn hơn 0");
         }

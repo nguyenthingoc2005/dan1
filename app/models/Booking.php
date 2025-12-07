@@ -33,15 +33,9 @@ class Booking
         }
 
         if (!empty($filters['status'])) {
-            // Filter by approval_status or payment_status
-            // For simplicity in UI tabs, we might map 'pending', 'approved', 'paid', 'cancelled'
-            if (in_array($filters['status'], ['pending', 'approved', 'rejected', 'cancelled'])) {
-                $sql .= " AND b.approval_status = :status";
-                $params['status'] = $filters['status'];
-            } elseif (in_array($filters['status'], ['unpaid', 'partial', 'paid', 'refunded'])) {
-                $sql .= " AND b.payment_status = :status";
-                $params['status'] = $filters['status'];
-            }
+            // Filter by payment_status only (approval_status đã được gộp vào payment_status)
+            $sql .= " AND b.payment_status = :status";
+            $params['status'] = $filters['status'];
         }
 
         if (!empty($filters['tour_id'])) {
@@ -103,13 +97,9 @@ class Booking
         }
 
         if (!empty($filters['status'])) {
-            if (in_array($filters['status'], ['pending', 'approved', 'rejected', 'cancelled'])) {
-                $sql .= " AND b.approval_status = :status";
-                $params['status'] = $filters['status'];
-            } elseif (in_array($filters['status'], ['unpaid', 'partial', 'paid', 'refunded'])) {
-                $sql .= " AND b.payment_status = :status";
-                $params['status'] = $filters['status'];
-            }
+            // Filter by payment_status only (approval_status đã được gộp vào payment_status)
+            $sql .= " AND b.payment_status = :status";
+            $params['status'] = $filters['status'];
         }
 
         if (!empty($filters['tour_id'])) {
@@ -211,7 +201,7 @@ class Booking
                 WHERE customer_id = :customer_id
                   AND tour_id = :tour_id
                   AND start_date = :start_date
-                  AND approval_status NOT IN ('cancelled', 'rejected')
+                  AND payment_status NOT IN ('cancelled', 'rejected', 'refunded')
                 LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
@@ -258,7 +248,6 @@ class Booking
                 'deposit_amount',
                 'remaining_amount',
                 'payment_status',
-                'approval_status',
                 'notes',
                 'created_by'
             ];
@@ -278,7 +267,6 @@ class Booking
                 ':deposit_amount',
                 ':remaining_amount',
                 ':payment_status',
-                ':approval_status',
                 ':notes',
                 ':created_by'
             ];
@@ -309,7 +297,6 @@ class Booking
                 'deposit_amount' => $data['deposit_amount'] ?? 0,
                 'remaining_amount' => $data['remaining_amount'],
                 'payment_status' => $data['payment_status'] ?? 'unpaid',
-                'approval_status' => 'pending',
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $data['created_by']
             ];
@@ -365,9 +352,10 @@ class Booking
     }
 
     /**
-     * Cập nhật trạng thái Booking
+     * Cập nhật trạng thái thanh toán Booking
+     * NOTE: Chỉ còn type = 'payment', đã bỏ type = 'approval'
      */
-    public function updateStatus($id, $status, $type = 'approval', $userId = null, $reason = null)
+    public function updateStatus($id, $status, $type = 'payment', $userId = null, $reason = null)
     {
         // Get booking info before update (to get customer_id)
         $booking = $this->getById($id);
@@ -375,41 +363,25 @@ class Booking
             throw new Exception("Booking không tồn tại");
         }
         $customer_id = $booking['customer_id'];
-        $old_status = $booking['approval_status'];
+        $old_status = $booking['payment_status'];
 
-        $sql = "";
-        $params = ['id' => $id, 'status' => $status];
-
-        if ($type == 'approval') {
-            if ($status == 'rejected') {
-                $sql = "UPDATE bookings SET 
-                        approval_status = :status, 
-                        rejection_reason = :reason,
-                        rejected_by = :user_id,
-                        rejected_at = NOW()
-                        WHERE id = :id";
-                $params['reason'] = $reason;
-                $params['user_id'] = $userId;
-            } elseif ($status == 'cancelled') {
-                $sql = "UPDATE bookings SET approval_status = :status, rejection_reason = :reason WHERE id = :id";
-                $params['reason'] = $reason;
-            } else {
-                $sql = "UPDATE bookings SET approval_status = :status, approved_by = :user_id, approved_at = NOW() WHERE id = :id";
-                $params['user_id'] = $userId;
-            }
-        } elseif ($type == 'payment') {
+        // Chỉ còn type = 'payment' (đã bỏ type = 'approval')
+        if ($type == 'payment') {
             $sql = "UPDATE bookings SET payment_status = :status WHERE id = :id";
+            $params = ['id' => $id, 'status' => $status];
+        } else {
+            throw new Exception("Type không hợp lệ. Chỉ hỗ trợ type = 'payment'");
         }
 
         $stmt = $this->pdo->prepare($sql);
         $result = $stmt->execute($params);
 
-        // Update customer stats if approval status changed
-        if ($type == 'approval' && $result && ($old_status != $status)) {
-            // Only update if status changed to/from approved/completed
+        // Update customer stats if payment status changed to/from active states
+        if ($result && ($old_status != $status)) {
+            // Update stats khi chuyển sang/từ các trạng thái active
             if (
-                in_array($status, ['approved', 'completed', 'rejected', 'cancelled']) ||
-                in_array($old_status, ['approved', 'completed'])
+                in_array($status, ['paid', 'partial']) ||
+                in_array($old_status, ['paid', 'partial'])
             ) {
                 $this->updateCustomerStats($customer_id);
             }
@@ -504,18 +476,8 @@ class Booking
             'id' => $id
         ]);
 
-        // 5. AUTO-APPROVE LOGIC
-        // If payment is made (partial or paid) AND booking is pending -> Approve it
-        if ($paidAmount > 0) {
-            $stmt = $this->pdo->prepare("SELECT approval_status FROM bookings WHERE id = :id");
-            $stmt->execute(['id' => $id]);
-            $currentStatus = $stmt->fetchColumn();
-
-            if ($currentStatus == 'pending') {
-                $this->updateStatus($id, 'approved', 'approval', null); // null user for System
-                $this->logHistory($id, 'pending', 'approved', null, "Tự động duyệt do đã thanh toán");
-            }
-        }
+        // NOTE: Đã bỏ auto-approve logic vì payment_status đã thể hiện trạng thái
+        // payment_status = 'partial' hoặc 'paid' đã coi như booking đã được "duyệt"
     }
 
     /**
@@ -532,7 +494,7 @@ class Booking
                 throw new Exception("Booking not found");
 
             // Check if already cancelled
-            if ($booking['approval_status'] === 'cancelled') {
+            if (in_array($booking['payment_status'], ['cancelled', 'refunded'])) {
                 throw new Exception("Booking đã được hủy trước đó");
             }
 
@@ -561,18 +523,15 @@ class Booking
             $feeAmount = ($booking['final_amount'] * $feePercentage) / 100;
             $refundAmount = max(0, $booking['paid_amount'] - $feeAmount);
 
-            // 4. Update Booking (bao gồm payment_status nếu có refund)
-            $paymentStatus = $booking['payment_status'];
+            // 4. Update Booking (bao gồm payment_status)
+            // Xác định payment_status: cancelled (không hoàn tiền) hoặc refunded (có hoàn tiền)
+            $paymentStatus = 'cancelled'; // Mặc định: hủy không hoàn tiền
             if ($refundAmount > 0 && $booking['paid_amount'] > 0) {
                 // Nếu có refund, update payment_status thành refunded
                 $paymentStatus = 'refunded';
-            } elseif ($booking['paid_amount'] > 0 && $feeAmount >= $booking['paid_amount']) {
-                // Nếu phí hủy >= số tiền đã trả, không có refund
-                $paymentStatus = $booking['payment_status']; // Giữ nguyên
             }
 
             $sql = "UPDATE bookings SET 
-                    approval_status = 'cancelled',
                     cancellation_date = NOW(),
                     cancellation_reason = :reason,
                     cancellation_policy_id = :policy_id,
@@ -591,7 +550,7 @@ class Booking
             ]);
 
             // 5. Log History
-            $this->logHistory($id, $booking['approval_status'], 'cancelled', $userId, $reason, "Phí hủy: " . number_format($feeAmount) . " (" . $feePercentage . "%)");
+            $this->logHistory($id, $booking['payment_status'], $paymentStatus, $userId, $reason, "Phí hủy: " . number_format($feeAmount) . " (" . $feePercentage . "%)");
 
             // 6. Return Quota to Schedule
             $totalParticipants = $booking['adult_count'] + $booking['child_count'] + $booking['infant_count'];
@@ -626,14 +585,19 @@ class Booking
             if (!$booking)
                 throw new Exception("Booking not found");
 
-            // Check current status
-            if ($booking['approval_status'] !== 'pending') {
-                throw new Exception("Chỉ có thể từ chối booking đang chờ duyệt");
+            // Check current status - chỉ có thể reject booking chưa thanh toán đủ
+            if (!in_array($booking['payment_status'], ['unpaid', 'partial'])) {
+                throw new Exception("Chỉ có thể từ chối booking chưa thanh toán đủ");
+            }
+
+            // Nếu đã thanh toán một phần, cần hoàn tiền trước khi reject
+            if ($booking['payment_status'] === 'partial' && $booking['paid_amount'] > 0) {
+                throw new Exception("Không thể từ chối booking đã thanh toán. Vui lòng hủy booking thay vì từ chối.");
             }
 
             // 2. Update Booking
             $sql = "UPDATE bookings SET 
-                    approval_status = 'rejected',
+                    payment_status = 'rejected',
                     rejection_reason = :reason,
                     rejected_by = :user_id,
                     rejected_at = NOW()
@@ -646,7 +610,7 @@ class Booking
             ]);
 
             // 3. Log History
-            $this->logHistory($id, 'pending', 'rejected', $userId, $reason);
+            $this->logHistory($id, $booking['payment_status'], 'rejected', $userId, $reason);
 
             // 4. Return Quota to Schedule (booking chưa approved nhưng quota đã bị trừ khi tạo)
             $totalParticipants = $booking['adult_count'] + $booking['child_count'] + $booking['infant_count'];
