@@ -148,9 +148,10 @@ if (empty($khachhang)) {
                     <h4 class="fw-bold text-dark mb-1">Hồ Sơ Khách Hàng</h4>
                     <p class="text-muted small mb-0">Quản lý yêu cầu phục vụ riêng biệt</p>
                 </div>
-                <a href="index.php?act=list_tour" class="btn btn-light text-primary fw-bold shadow-sm rounded-pill px-4">
+                <a href="<?= BASEURL ?>?act=xemtour" class="btn btn-light text-primary fw-bold shadow-sm rounded-pill px-4">
                     Quay lại
                 </a>
+
             </div>
 
             <div class="row">
@@ -194,11 +195,8 @@ if (empty($khachhang)) {
                 <div class="col-lg-8 mb-4">
                     <div class="card card-custom h-100">
                         <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 fw-bold text-primary text-uppercase"><i class="bi bi-list-task me-2"></i>Danh sách yêu cầu (HDV)</h6>
-                            <button class="btn btn-primary btn-sm rounded-pill shadow-sm px-3 fw-bold"
-                                data-bs-toggle="modal" data-bs-target="#modalRequest" onclick="resetModal()">
-                                <i class="bi bi-plus-lg me-1"></i> Thêm mới
-                            </button>
+                            <h6 class="mb-0 fw-bold text-primary text-uppercase"><i class="bi bi-list-task me-2"></i>Danh sách yêu cầu</h6>
+                            <a href="<?= BASEURL ?>?act=them_yeu_cau" class="btn btn-danger">Thêm mới</a>
                         </div>
 
                         <div class="card-body p-0">
@@ -245,8 +243,9 @@ if (empty($khachhang)) {
                                                     </td>
                                                     <td class="small text-secondary fst-italic"><?= htmlspecialchars($yc['ghi_chu'] ?? '') ?></td>
                                                     <td class="text-end pe-4">
-                                                        <a href="<? BASEURL ?>?act=xoa_yeu_cau&id" class="btn btn-sm" onclick="return confirm('Bạn có chắc chắn muốn xóa')">Xóa</a>
 
+                                                        <a href="<?= BASEURL ?>?act=sua_yeu_cau&id=<?= $yc['yeu_cau_id']  ?>" class="btn btn-light">Sửa</a>
+                                                        <a href="<?= BASEURL ?>?act=xoa_yeu_cau&id=<?= $yc['yeu_cau_id']  ?>" class="btn btn-light" onclick="return confirm('Bạn có chắc chắn muốn xóa')">Xóa</a>
 
                                                     </td>
                                                 </tr>

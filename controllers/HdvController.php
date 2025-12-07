@@ -120,61 +120,70 @@ class HdvController
         // echo "</pre>";
         // die();
         $listYeuCau = $this->modelGet->layyeucaukhachhang($hanh_khach_id);
+        // var_dump($listYeuCau);
 
         require_once 'views/hdv/xem_chitiet_khach_hang.php';
     }
 
-    // 2. Hiển thị form sửa yêu cầu
-    public function sua_yeu_cau()
+
+    public function themyeucau()
     {
-        // 1. Lấy ID yêu cầu cần sửa từ URL
-        $yc_id = isset($_GET['id']) ? $_GET['id'] : 0;
-
-        // 2. SỬA LỖI Ở ĐÂY:
-        // Phải gọi Model GET để lấy thông tin cũ đổ vào form
-        // (Không được gọi modelUpdate ở đây)
-        $req = $this->modelGet->getRequestById($yc_id);
-
-        // 3. Hiển thị View form sửa
-        require_once './views/hdv/edit_yeu_cau_khach_hang.php';
+        require_once './views/hdv/add_yeu_cau.php';
     }
 
-    // 3. Xử lý lưu (Thêm mới hoặc Cập nhật)
+    // ============================
+    // LƯU YÊU CẦU (INSERT)
+    // ============================
     public function luuyeucau()
     {
-        if (isset($_POST['btn_submit'])) {
-            $hanh_khach_id = $_POST['hanh_khach_id'];
-            $yeu_cau_id = $_POST['yeu_cau_id'];
-            $dat_tour_id = $_POST['dat_tour_id'];
-            $noi_dung = $_POST['noi_dung'];
-            $muc_do_uu_tien = $_POST['muc_do_uu_tien'];
-            $ghi_chu = $_POST['ghi_chu'];
 
-            // Checkbox
-            $da_chuan_bi = isset($_POST['da_chuan_bi']) ? 1 : 0;
-
-            // Gọi model lưu
-            $this->modelCreate->luu_yeu_cau($yeu_cau_id, $dat_tour_id, $hanh_khach_id, $noi_dung, $muc_do_uu_tien, $da_chuan_bi, $ghi_chu);
-
-            // Quay lại trang chi tiết đúng id khách
-            header("Location: " . BASEURL . "?act=chitiet_khach_hang&id=" . $hanh_khach_id . "&msg=saved");
-            exit;
-        }
+        $this->modelCreate->insert($_POST);
+        header("Location: " . BASEURL . "?act=dashboard_HDV");
+        exit();
     }
 
-    // 4. Xóa yêu cầu
+    // ============================
+    // FORM SỬA YÊU CẦU
+    // ============================
+    public function suayeucau()
+    {
+        $id  = $_GET['id'];
+        $row = $this->modelGet->laychitietyeucaukhachhang($id);
+
+        include './views/hdv/edit_yeu_cau.php';
+    }
+
+    public function capnhatyeucau()
+    {
+
+        $id = $_POST['yeu_cau_id'];
+        $this->modelUpdate->update($id, $_POST);
+        header("Location: " . BASEURL . "?act=dashboard_HDV");
+        exit();
+    }
+
+
+    // ============================
+    // XÓA YÊU CẦU
+    // ============================
     public function xoayeucau()
     {
-        $id = isset($_GET['id']) ? $_GET['id'] : 0;
-        $hanh_khach_id = isset($_GET['hk_id']) ? $_GET['hk_id'] : 0;
 
-        if ($id > 0) {
-            $this->modelDelete->xoa_yeu_cau($id);
-        }
+        $id = $_GET['id'];
+        $this->modelGet->xoayeucaukhachhang($id);
 
-        header("Location: " . BASEURL . "?act=chitiet_khach_hang&id=" . $hanh_khach_id . "&msg=deleted");
-        exit;
+        header("Location: " . BASEURL . "?act=dashboard_HDV");
+        exit();
     }
+
+
+
+
+
+
+
+
+
     // 5. Xử lý đăng nhập
     public function loginProcess()
     {

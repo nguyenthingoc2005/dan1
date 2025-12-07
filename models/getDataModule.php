@@ -180,50 +180,11 @@ class getDataModule
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    // --- KHU VỰC YÊU CẦU PHỤC VỤ ---
 
-    // 1. Lấy danh sách yêu cầu của 1 khách hàng
-    public function getServiceRequestsByCustomer($hanh_khach_id)
-    {
-        $sql = "SELECT * FROM yeucauphucvu WHERE hanh_khach_id = :id ORDER BY yeu_cau_id DESC";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute([':id' => $hanh_khach_id]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
 
-    // 2. Lưu Yêu Cầu (Thêm/Sửa)
-    public function luu_yeu_cau($id, $data)
-    {
-        if ($id > 0) {
-            // UPDATE
-            $sql = "UPDATE yeucauphucvu 
-                    SET noi_dung = :noi_dung, 
-                        muc_do_uu_tien = :muc_do, 
-                        da_chuan_bi = :da_chuan_bi, 
-                        ghi_chu = :ghi_chu,
-                        ngay_cap_nhat = NOW()
-                    WHERE yeu_cau_id = :id";
-            $stmt = $this->conn->prepare($sql);
-            $data['id'] = $id;
-        } else {
-            // INSERT
-            $sql = "INSERT INTO yeucauphucvu 
-                    (dat_tour_id, hanh_khach_id, noi_dung, muc_do_uu_tien, da_chuan_bi, ghi_chu, ngay_cap_nhat) 
-                    VALUES 
-                    (:dat_tour_id, :hanh_khach_id, :noi_dung, :muc_do, :da_chuan_bi, :ghi_chu, NOW())";
-            $stmt = $this->conn->prepare($sql);
-        }
-        return $stmt->execute($data);
-    }
 
-    // 3. Xóa Yêu Cầu
-    // --- XÓA YÊU CẦU ---
-    public function xoa_yeu_cau($id)
-    {
-        $sql = "DELETE FROM yeucauphucvu WHERE yeu_cau_id = :id";
-        $stmt = $this->conn->prepare($sql);
-        return $stmt->execute([':id' => $id]);
-    }
+
+
 
     // Trong Model
     public function getListKhachHangByLichId($lich_id)
@@ -1174,12 +1135,21 @@ WHERE gdv.tour_id = :tour_id
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 3. Lấy chi tiết 1 yêu cầu để sửa
-    public function getRequestById($id)
+    public function laychitietyeucaukhachhang($yeu_cau_id)
     {
-        $sql = "SELECT * FROM yeucauphucvu WHERE id = " . $id;
+        // Lưu ý: Cột nối bên bảng yêu cầu vẫn phải là yeu_cau_id
+        $sql = "SELECT * FROM yeucauphucvu WHERE yeu_cau_id = " . $yeu_cau_id;
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function xoayeucaukhachhang($yeu_cau_id)
+    {
+        // Lưu ý: Cột nối bên bảng yêu cầu vẫn phải là hanh_khach_id
+        $sql = "DELETE FROM yeucauphucvu WHERE yeu_cau_id = " . $yeu_cau_id;
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

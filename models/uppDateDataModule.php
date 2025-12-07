@@ -294,16 +294,29 @@ class uppDateDataModuleDataModule
         $stmt->bindParam(':khach_hang_id', $khach_hang_id, PDO::PARAM_INT);
         return $stmt->execute();
     }
-    public function cap_nhat_yeu_cau($id, $noi_dung, $muc_do, $da_chuan_bi, $ghi_chu)
-    {
-        $sql = "UPDATE yeucaukhachhang 
-                SET noi_dung = '$noi_dung', 
-                    muc_do_uu_tien = '$muc_do', 
-                    da_chuan_bi = '$da_chuan_bi', 
-                    ghi_chu = '$ghi_chu' 
-                WHERE id = $id";
 
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
+
+    // CẬP NHẬT YÊU CẦU
+    public function update($id, $data)
+    {
+
+        $dat_tour_id   = $data['dat_tour_id'];
+        $hanh_khach_id = $data['hanh_khach_id'];
+        $noi_dung      = $data['noi_dung'];
+        $muc_do        = $data['muc_do_uu_tien'];
+        $da_chuan_bi   = isset($data['da_chuan_bi']) ? 1 : 0;
+        $ghi_chu       = $data['ghi_chu'];
+
+        $sql = "UPDATE yeucauphucvu SET
+                    dat_tour_id = '$dat_tour_id',
+                    hanh_khach_id = '$hanh_khach_id',
+                    noi_dung = '$noi_dung',
+                    muc_do_uu_tien = '$muc_do',
+                    da_chuan_bi = '$da_chuan_bi',
+                    ngay_cap_nhat = NOW(),
+                    ghi_chu = '$ghi_chu'
+                WHERE yeu_cau_id = '$id'";
+
+        return $this->conn->query($sql);
     }
 }

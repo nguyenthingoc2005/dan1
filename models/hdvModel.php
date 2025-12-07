@@ -35,4 +35,11 @@ class hdvModel
     /**
      * Lưu thông tin điểm danh (Tự động Insert hoặc Update)
      */
+
+    // LẤY 1 YÊU CẦU
+    public function getById($id)
+    {
+        $sql = "SELECT * FROM yeucauphucvu WHERE yeu_cau_id = $id";
+        return $this->conn->query($sql)->fetch();
+    }
 }

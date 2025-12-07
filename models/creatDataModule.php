@@ -369,36 +369,22 @@ class creatDataModule
         return false;
     }
 
-    // Chỉ làm nhiệm vụ THÊM MỚI
-    public function them_moi_yeu_cau($dat_tour_id, $hanh_khach_id, $noi_dung, $muc_do, $da_chuan_bi, $ghi_chu)
-    {
-        $sql = "INSERT INTO yeucauphucvu (dat_tour_id, hanh_khach_id, noi_dung, muc_do_uu_tien, da_chuan_bi, ghi_chu) 
-                VALUES ('$dat_tour_id', '$hanh_khach_id', '$noi_dung', '$muc_do', '$da_chuan_bi', '$ghi_chu')";
-
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
-    }
-    public function luu_yeu_cau($id, $dat_tour_id, $hanh_khach_id, $noi_dung, $muc_do, $da_chuan_bi, $ghi_chu)
+    // THÊM YÊU CẦU
+    public function insert($data)
     {
 
-        if ($id > 0) {
-            // === TRƯỜNG HỢP 1: CẬP NHẬT (SỬA) ===
-            // Vì id > 0 nghĩa là yêu cầu này đã tồn tại
-            $sql = "UPDATE yeucauphucvu
-                    SET noi_dung = '$noi_dung', 
-                        muc_do_uu_tien = '$muc_do', 
-                        da_chuan_bi = '$da_chuan_bi', 
-                        ghi_chu = '$ghi_chu' 
-                    WHERE id = $id";
-        } else {
-            // === TRƯỜNG HỢP 2: THÊM MỚI ===
-            // Vì id = 0 hoặc rỗng
-            $sql = "INSERT INTO yeucauphucvu (dat_tour_id, hanh_khach_id, noi_dung, muc_do_uu_tien, da_chuan_bi, ghi_chu) 
-                    VALUES ('$dat_tour_id', '$hanh_khach_id', '$noi_dung', '$muc_do', '$da_chuan_bi', '$ghi_chu')";
-        }
+        $dat_tour_id   = $data['dat_tour_id'];
+        $hanh_khach_id = $data['hanh_khach_id'];
+        $noi_dung      = $data['noi_dung'];
+        $muc_do        = $data['muc_do_uu_tien'];
+        $da_chuan_bi   = isset($data['da_chuan_bi']) ? 1 : 0;
+        $ghi_chu       = $data['ghi_chu'];
 
-        // Thực thi câu lệnh
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
+        $sql = "INSERT INTO yeucauphucvu 
+                (dat_tour_id, hanh_khach_id, noi_dung, muc_do_uu_tien, da_chuan_bi, ngay_cap_nhat, ghi_chu)
+                VALUES ('$dat_tour_id', '$hanh_khach_id', '$noi_dung', '$muc_do', '$da_chuan_bi', NOW(), '$ghi_chu')";
+
+
+        return $this->conn->query($sql);
     }
 }

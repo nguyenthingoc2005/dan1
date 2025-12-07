@@ -91,10 +91,11 @@ WHERE dich_vu_id = :id";
 
         return $stmt->execute();
     }
-    public function xoa_yeu_cau($id)
+
+    // XÓA YÊU CẦU
+    public function delete($id)
     {
-        $sql = "DELETE FROM yeucauphucvu WHERE id = " . $id;
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
+        $sql = "DELETE FROM yeucauphucvu WHERE yeu_cau_id = $id";
+        return $this->conn->query($sql);
     }
 }
