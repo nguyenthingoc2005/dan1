@@ -64,6 +64,14 @@ $action_url = $is_edit
         </select>
     </div>
 
+    <?php if ($is_edit && !empty($destination['id'])): ?>
+        <!-- Section: Quản lý ảnh (chỉ hiển thị khi edit) -->
+        <div class="mb-6 pt-6 border-t">
+            <h4 class="text-lg font-semibold mb-3">Quản lý ảnh</h4>
+            <?php include __DIR__ . '/destination-image-gallery.php'; ?>
+        </div>
+    <?php endif; ?>
+
     <div class="flex justify-end gap-2 pt-4 border-t">
         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?>&province_id=<?= $current_province_id ?>&tab=destinations"
             class="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">

@@ -100,6 +100,15 @@ class TourController
     {
         require_admin();
 
+        // Khởi tạo session nếu chưa có
+        $this->initTourSession();
+
+        // Load dữ liệu từ session (nếu có) để restore khi reload
+        $session_data = $this->loadTourSession();
+        
+        // Merge session data vào old_input để pre-fill form
+        $old_input = $session_data;
+
         // Load dropdown data
         $destinations = $this->destinationModel->getForDropdown();
         $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
@@ -163,7 +172,6 @@ class TourController
             'status' => 'draft',
             'parent_tour_id' => $template_id,
             'itinerary' => $template['itinerary'] ?? [],
-            'itinerary_timelines' => $template['itinerary_timelines'] ?? [],
             'itinerary_day_services' => $template['itinerary_day_services'] ?? [],
             'highlights' => $template['highlights'] ?? [],
             'includes' => $template['includes'] ?? [],
@@ -191,11 +199,23 @@ class TourController
         require_admin();
 
         try {
-            // 1. Validation
-            $errors = $this->validateTourData($_POST);
+            // 1. Lấy dữ liệu từ SESSION và merge với POST
+            $session_data = $this->loadTourSession();
+            
+            // Merge session data vào POST (POST có priority cao hơn)
+            $form_data = array_merge($session_data, $_POST);
+            
+            // Đảm bảo các field từ POST được ưu tiên
+            foreach ($_POST as $key => $value) {
+                $form_data[$key] = $value;
+            }
+
+            // 2. Validation (dùng form_data đã merge)
+            $errors = $this->validateTourData($form_data);
 
             if (!empty($errors)) {
-                $old_input = $_POST;
+                // Có lỗi: Giữ session, hiển thị lỗi + dữ liệu cũ
+                $old_input = $form_data;
                 $destinations = $this->destinationModel->getForDropdown();
                 $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
                 $service_providers = $this->serviceProviderModel->getForDropdown();
@@ -221,64 +241,127 @@ class TourController
             // Tính estimated_cost (sẽ tính lại sau khi có day_services)
             $estimated_cost_per_person = null;
 
-            // 4. Prepare Tour Data - ĐÃ XÓA category_id, price_based_on_pax
+            // 4. Prepare Tour Data - Lấy từ form_data (đã merge session + POST)
             $data = [
                 'code' => $tour_code,
-                'name' => sanitize($_POST['name']),
-                'introduction' => sanitize($_POST['introduction'] ?? ''),
-                'description' => $_POST['description'] ?? '',
-                'duration_days' => (int) $_POST['duration_days'],
-                'duration_nights' => (int) ($_POST['duration_nights'] ?? 0),
-                'departure_location' => sanitize($_POST['departure_location'] ?? ''),
+                'name' => sanitize($form_data['name'] ?? ''),
+                'introduction' => sanitize($form_data['introduction'] ?? ''),
+                'description' => $form_data['description'] ?? '',
+                'duration_days' => (int) ($form_data['duration_days'] ?? 0),
+                'duration_nights' => (int) ($form_data['duration_nights'] ?? 0),
+                'departure_location' => sanitize($form_data['departure_location'] ?? ''),
                 'min_participants' => $min_participants,
-                'max_participants' => (int) ($_POST['max_participants'] ?? 45),
-                'adult_price' => (float) $_POST['adult_price'],
-                'child_price' => (float) ($_POST['child_price'] ?? 0),
-                'infant_price' => (float) ($_POST['infant_price'] ?? 0),
+                'max_participants' => (int) ($form_data['max_participants'] ?? 45),
+                'adult_price' => (float) ($form_data['adult_price'] ?? 0),
+                'child_price' => (float) ($form_data['child_price'] ?? 0),
+                'infant_price' => (float) ($form_data['infant_price'] ?? 0),
                 'estimated_cost_per_person' => $estimated_cost_per_person,
-                'deposit_percentage' => (float) ($_POST['deposit_percentage'] ?? 30),
-                'booking_deadline_days' => (int) ($_POST['booking_deadline_days'] ?? 1),
+                'deposit_percentage' => (float) ($form_data['deposit_percentage'] ?? 30),
+                'booking_deadline_days' => (int) ($form_data['booking_deadline_days'] ?? 1),
                 'fixed_cost_guide' => $fixed_costs['guide'],
                 'fixed_cost_management' => $fixed_costs['management'],
                 'fixed_cost_marketing' => $fixed_costs['marketing'],
                 'fixed_cost_other' => $fixed_costs['other'],
-                'tour_type' => $_POST['tour_type'] ?? 'public',
-                'approval_status' => ($_POST['status'] ?? 'draft') == 'pending' ? 'pending' : null,
-                'status' => $_POST['status'] ?? 'draft',
-                'parent_tour_id' => !empty($_POST['parent_tour_id']) ? (int) $_POST['parent_tour_id'] : null
+                'tour_type' => $form_data['tour_type'] ?? 'public',
+                'approval_status' => ($form_data['status'] ?? 'draft') == 'pending' ? 'pending' : null,
+                'status' => $form_data['status'] ?? 'draft',
+                'parent_tour_id' => !empty($form_data['parent_tour_id']) ? (int) $form_data['parent_tour_id'] : null
             ];
 
-            // 5. Prepare Itinerary Data
-            $data['itinerary'] = $this->prepareItineraryData($_POST);
+            // 5. Prepare Itinerary Data - Lấy từ session hoặc POST
+            if (!empty($session_data['itinerary'])) {
+                // Ưu tiên lấy từ session (đã có TinyMCE content)
+                $data['itinerary'] = $session_data['itinerary'];
+            } else {
+                // Fallback: lấy từ POST
+                $data['itinerary'] = $this->prepareItineraryData($form_data);
+            }
 
-            // 6. Prepare Itinerary Timelines Data (MỚI)
-            $data['itinerary_timelines'] = $this->prepareItineraryTimelinesData($_POST, $data['itinerary']);
+            // 6. Prepare Itinerary Day Services Data - Lấy từ session hoặc POST
+            if (!empty($session_data['itinerary_day_services'])) {
+                // Session data đã là array format sẵn: [{day_number: 1, ...}, {day_number: 2, ...}]
+                $day_services = $session_data['itinerary_day_services'];
+                
+                // Đảm bảo là array
+                if (is_array($day_services)) {
+                    // Nếu là associative array với key là day_number, convert sang indexed array
+                    $first_key = array_key_first($day_services);
+                    if (is_numeric($first_key) && $first_key > 0 && $first_key <= 10) {
+                        // Có thể là format {1: [...], 2: [...]} - flatten
+                        $flattened = [];
+                        foreach ($day_services as $day_num => $services) {
+                            if (is_array($services)) {
+                                foreach ($services as $service) {
+                                    if (is_array($service)) {
+                                        $service['day_number'] = is_numeric($day_num) ? (int) $day_num : ($service['day_number'] ?? 1);
+                                        $flattened[] = $service;
+                                    }
+                                }
+                            } elseif (is_array($services) && isset($services['service_id'])) {
+                                // Single service object
+                                $services['day_number'] = is_numeric($day_num) ? (int) $day_num : ($services['day_number'] ?? 1);
+                                $flattened[] = $services;
+                            }
+                        }
+                        $data['itinerary_day_services'] = !empty($flattened) ? $flattened : $day_services;
+                    } else {
+                        // Đã là indexed array format
+                        $data['itinerary_day_services'] = $day_services;
+                    }
+                } else {
+                    $data['itinerary_day_services'] = [];
+                }
+            } else {
+                // Fallback: lấy từ POST
+                $data['itinerary_day_services'] = $this->prepareItineraryDayServicesData($form_data, $data['itinerary']);
+            }
 
-            // 7. Prepare Itinerary Day Services Data (MỚI)
-            $data['itinerary_day_services'] = $this->prepareItineraryDayServicesData($_POST, $data['itinerary']);
-
-            // 8. Prepare Highlights
-            if (!empty($_POST['highlights'])) {
-                $highlights = is_array($_POST['highlights'])
-                    ? $_POST['highlights']
-                    : explode("\n", $_POST['highlights']);
+            // 8. Prepare Highlights - Lấy từ session hoặc POST
+            if (!empty($session_data['highlights'])) {
+                $data['highlights'] = $session_data['highlights'];
+            } elseif (!empty($form_data['highlights'])) {
+                $highlights = is_array($form_data['highlights'])
+                    ? $form_data['highlights']
+                    : explode("\n", $form_data['highlights']);
                 $data['highlights'] = array_filter(array_map('trim', $highlights));
             }
 
-            // 9. Prepare Included/Excluded
-            if (!empty($_POST['included'])) {
-                $included = is_array($_POST['included']) ? $_POST['included'] : [$_POST['included']];
+            // 9. Prepare Included/Excluded - Lấy từ session hoặc POST
+            if (!empty($session_data['included'])) {
+                $data['included'] = $session_data['included'];
+            } elseif (!empty($form_data['included'])) {
+                $included = is_array($form_data['included']) ? $form_data['included'] : [$form_data['included']];
                 $data['included'] = array_filter(array_map('trim', $included));
             }
-            if (!empty($_POST['excluded'])) {
-                $excluded = is_array($_POST['excluded']) ? $_POST['excluded'] : [$_POST['excluded']];
+            
+            if (!empty($session_data['excluded'])) {
+                $data['excluded'] = $session_data['excluded'];
+            } elseif (!empty($form_data['excluded'])) {
+                $excluded = is_array($form_data['excluded']) ? $form_data['excluded'] : [$form_data['excluded']];
                 $data['excluded'] = array_filter(array_map('trim', $excluded));
             }
 
-            // 10. Prepare Policy IDs (MỚI)
-            if (!empty($_POST['policy_ids'])) {
-                $data['policy_ids'] = array_map('intval', $_POST['policy_ids']);
+            // 10. Prepare Policy IDs - Lấy từ session hoặc POST
+            if (!empty($session_data['policy_ids'])) {
+                $data['policy_ids'] = $session_data['policy_ids'];
+            } elseif (!empty($form_data['policy_ids'])) {
+                $data['policy_ids'] = array_map('intval', $form_data['policy_ids']);
             }
+
+            // 11. Log dữ liệu trước khi lưu
+            error_log("=== TOUR CREATE DATA ===");
+            error_log("Tour Code: " . ($data['code'] ?? 'N/A'));
+            error_log("Tour Name: " . ($data['name'] ?? 'N/A'));
+            error_log("Duration Days: " . ($data['duration_days'] ?? 'N/A'));
+            error_log("Adult Price: " . ($data['adult_price'] ?? 'N/A'));
+            error_log("Itinerary Count: " . (is_array($data['itinerary'] ?? null) ? count($data['itinerary']) : 0));
+            error_log("Day Services Count: " . (is_array($data['itinerary_day_services'] ?? null) ? count($data['itinerary_day_services']) : 0));
+            error_log("Highlights Count: " . (is_array($data['highlights'] ?? null) ? count($data['highlights']) : 0));
+            error_log("Included Count: " . (is_array($data['included'] ?? null) ? count($data['included']) : 0));
+            error_log("Excluded Count: " . (is_array($data['excluded'] ?? null) ? count($data['excluded']) : 0));
+            error_log("Policy IDs: " . (is_array($data['policy_ids'] ?? null) ? json_encode($data['policy_ids']) : 'N/A'));
+            error_log("Full Data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+            error_log("========================");
 
             // 11. Save Tour
             $tour_id = $this->tourModel->create($data);
@@ -297,6 +380,9 @@ class TourController
             if (!empty($_FILES['images']['name'][0])) {
                 $this->handleImageUploads($tour_id, $_FILES['images']);
             }
+
+            // 14. Xóa session sau khi tạo tour thành công
+            $this->clearTourSessionInternal();
 
             set_success("Tạo tour thành công!");
             redirect('?act=admin&module=tours');
@@ -360,29 +446,56 @@ class TourController
             }
         }
 
-        // Validate Timeline chi tiết - BẮT BUỘC phải có timeline cho mỗi ngày
-        if (!empty($post['itinerary_day_number'])) {
-            $timeline_day_numbers = [];
-            if (!empty($post['timeline_day_number'])) {
-                $timeline_day_numbers = array_unique($post['timeline_day_number']);
-            }
+        // Validate Itinerary Day Services
+        if (!empty($post['day_service_day_number'])) {
+            foreach ($post['day_service_day_number'] as $key => $day_number) {
+                $service_id = $post['day_service_service_id'][$key] ?? null;
+                $unit_price = $post['day_service_unit_price'][$key] ?? 0;
+                $quantity = $post['day_service_quantity'][$key] ?? 0;
 
-            $missing_timeline_days = [];
-            foreach ($post['itinerary_day_number'] as $day_num) {
-                if (!in_array($day_num, $timeline_day_numbers)) {
-                    $missing_timeline_days[] = $day_num;
+                // Validate service_id tồn tại
+                if (empty($service_id)) {
+                    $errors['day_services'] = "Dịch vụ ngày $day_number: Vui lòng chọn dịch vụ";
+                    break;
+                } else {
+                    // Kiểm tra service_id có tồn tại trong database
+                    $stmt = $this->db->prepare("SELECT id FROM services WHERE id = :id AND status = 'active'");
+                    $stmt->execute(['id' => (int) $service_id]);
+                    if (!$stmt->fetch()) {
+                        $errors['day_services'] = "Dịch vụ ngày $day_number: Dịch vụ không tồn tại hoặc đã bị vô hiệu hóa";
+                        break;
+                    }
                 }
-            }
 
-            if (!empty($missing_timeline_days)) {
-                $errors['timeline'] = "Vui lòng nhập timeline chi tiết cho các ngày: " . implode(', ', $missing_timeline_days);
-            }
+                // Validate unit_price > 0
+                $unit_price_float = (float) $unit_price;
+                if ($unit_price_float <= 0) {
+                    $errors['day_services'] = "Dịch vụ ngày $day_number: Đơn giá phải lớn hơn 0";
+                    break;
+                }
 
-            // Validate mỗi timeline item phải có giờ và hoạt động
-            if (!empty($post['timeline_time']) && !empty($post['timeline_activity_title'])) {
-                foreach ($post['timeline_time'] as $idx => $time) {
-                    if (empty($time) || empty($post['timeline_activity_title'][$idx])) {
-                        $errors['timeline'] = "Timeline chi tiết: Mỗi timeline item phải có giờ và hoạt động";
+                // Validate quantity > 0
+                $quantity_float = (float) $quantity;
+                if ($quantity_float <= 0) {
+                    $errors['day_services'] = "Dịch vụ ngày $day_number: Số lượng phải lớn hơn 0";
+                    break;
+                }
+
+                // Validate service_provider_id (nếu có) thuộc về service
+                $service_provider_id = $post['day_service_provider_id'][$key] ?? null;
+                if (!empty($service_provider_id)) {
+                    $stmt = $this->db->prepare("
+                        SELECT s.id 
+                        FROM services s 
+                        WHERE s.id = :service_id 
+                        AND s.service_provider_id = :provider_id
+                    ");
+                    $stmt->execute([
+                        'service_id' => (int) $service_id,
+                        'provider_id' => (int) $service_provider_id
+                    ]);
+                    if (!$stmt->fetch()) {
+                        $errors['day_services'] = "Dịch vụ ngày $day_number: Nhà dịch vụ không thuộc về dịch vụ đã chọn";
                         break;
                     }
                 }
@@ -435,40 +548,6 @@ class TourController
         }
 
         return $itinerary;
-    }
-
-    /**
-     * Prepare Itinerary Timelines Data từ POST (MỚI)
-     */
-    private function prepareItineraryTimelinesData($post, $itinerary)
-    {
-        $timelines = [];
-
-        if (!empty($post['timeline_day_number'])) {
-            foreach ($post['timeline_day_number'] as $key => $day_number) {
-                $timelines[] = [
-                    'day_number' => (int) $day_number,
-                    'timeline_time' => $post['timeline_time'][$key] ?? '',
-                    'activity_title' => sanitize($post['timeline_activity_title'][$key] ?? ''),
-                    'activity_description' => $post['timeline_activity_description'][$key] ?? '',
-                    'location' => sanitize($post['timeline_location'][$key] ?? ''),
-                    'destination_id' => !empty($post['timeline_destination'][$key])
-                        ? (int) $post['timeline_destination'][$key]
-                        : null,
-                    'service_provider_id' => !empty($post['timeline_service_provider'][$key])
-                        ? (int) $post['timeline_service_provider'][$key]
-                        : null,
-                    'service_id' => !empty($post['timeline_service'][$key])
-                        ? (int) $post['timeline_service'][$key]
-                        : null,
-                    'timeline_type' => $post['timeline_type'][$key] ?? 'activity',
-                    'display_order' => (int) ($post['timeline_display_order'][$key] ?? 0),
-                    'notes' => sanitize($post['timeline_notes'][$key] ?? '')
-                ];
-            }
-        }
-
-        return $timelines;
     }
 
     /**
@@ -700,6 +779,7 @@ class TourController
 
     /**
      * AJAX: Lấy thông tin service theo ID
+     * Trả về: service info, service_provider_id, và danh sách providers cho service đó
      */
     public function getServiceInfo()
     {
@@ -707,34 +787,77 @@ class TourController
         header('Content-Type: application/json');
 
         $service_id = $_GET['id'] ?? 0;
+        $date = $_GET['date'] ?? date('Y-m-d'); // Ngày để lấy giá theo mùa
+        
         if (!$service_id) {
-            echo json_encode(['success' => false]);
+            echo json_encode(['success' => false, 'message' => 'Thiếu service_id']);
             exit;
         }
 
         $service = $this->serviceModel->findById($service_id);
-        if ($service) {
-            // Get default price từ service_prices nếu có
+        if (!$service) {
+            echo json_encode(['success' => false, 'message' => 'Không tìm thấy dịch vụ']);
+            exit;
+        }
+
+        // Get price từ service_prices theo date và price_type (ưu tiên: peak > standard > low)
+        require_once MODELS_PATH . '/ServicePrice.php';
+        $servicePriceModel = new ServicePrice($this->db);
+        
+        // Lấy giá cho ngày cụ thể
+        $price = $servicePriceModel->getPriceForService($service_id, $date);
+        
+        // Nếu không có giá cho ngày đó, lấy giá mới nhất
+        if (!$price) {
             $stmt = $this->db->prepare("
-                SELECT unit_price FROM service_prices 
+                SELECT unit_price, price_type 
+                FROM service_prices 
                 WHERE service_id = :service_id AND status = 'active'
-                ORDER BY created_at DESC LIMIT 1
+                ORDER BY 
+                    CASE price_type 
+                        WHEN 'peak' THEN 1 
+                        WHEN 'standard' THEN 2 
+                        WHEN 'low' THEN 3 
+                    END,
+                    created_at DESC 
+                LIMIT 1
             ");
             $stmt->execute(['service_id' => $service_id]);
             $price = $stmt->fetch();
-
-            echo json_encode([
-                'success' => true,
-                'data' => [
-                    'id' => $service['id'],
-                    'name' => $service['name'],
-                    'unit_price' => $price ? (float) $price['unit_price'] : 0,
-                    'unit' => $service['unit'] ?? ''
-                ]
-            ]);
-        } else {
-            echo json_encode(['success' => false]);
         }
+
+        // Lấy danh sách providers cho service này
+        $service_provider_id = $service['service_provider_id'] ?? null;
+        $providers = [];
+        
+        if ($service_provider_id) {
+            // Lấy provider của service này
+            $provider = $this->serviceProviderModel->findById($service_provider_id);
+            if ($provider) {
+                $providers[] = [
+                    'id' => $provider['id'],
+                    'name' => $provider['name'],
+                    'service_code' => $provider['service_code'] ?? ''
+                ];
+            }
+        } else {
+            // Nếu service không có provider, lấy tất cả providers active
+            $providers = $this->serviceProviderModel->getForDropdown();
+        }
+
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'id' => $service['id'],
+                'name' => $service['name'],
+                'unit_price' => $price ? (float) $price['unit_price'] : 0,
+                'price_type' => $price['price_type'] ?? 'standard',
+                'unit' => $service['unit'] ?? '',
+                'service_provider_id' => $service_provider_id,
+                'service_provider_name' => $service['service_provider_name'] ?? null,
+                'providers' => $providers // Danh sách providers cho service này
+            ]
+        ]);
         exit;
     }
 
@@ -756,7 +879,8 @@ class TourController
     }
 
     /**
-     * AJAX: Lấy service providers theo destination hoặc service type
+     * AJAX: Lấy service providers theo destination, service type, hoặc service_id
+     * Nếu có service_id, chỉ trả về provider của service đó
      */
     public function getServiceProviders()
     {
@@ -764,6 +888,36 @@ class TourController
         header('Content-Type: application/json');
 
         $filters = [];
+        
+        // Nếu có service_id, lấy provider của service đó
+        if (!empty($_GET['service_id'])) {
+            $service_id = (int) $_GET['service_id'];
+            $service = $this->serviceModel->findById($service_id);
+            
+            if ($service && !empty($service['service_provider_id'])) {
+                $provider = $this->serviceProviderModel->findById($service['service_provider_id']);
+                if ($provider) {
+                    echo json_encode([
+                        'success' => true,
+                        'data' => [[
+                            'id' => $provider['id'],
+                            'name' => $provider['name'],
+                            'service_code' => $provider['service_code'] ?? ''
+                        ]]
+                    ]);
+                    exit;
+                }
+            }
+            
+            // Nếu service không có provider, trả về empty
+            echo json_encode([
+                'success' => true,
+                'data' => []
+            ]);
+            exit;
+        }
+        
+        // Filter theo destination
         if (!empty($_GET['destination_id'])) {
             // Get province_id từ destination
             $stmt = $this->db->prepare("SELECT province_id FROM destinations WHERE id = :id");
@@ -773,6 +927,8 @@ class TourController
                 $filters['province_id'] = $dest['province_id'];
             }
         }
+        
+        // Filter theo service_type_id
         if (!empty($_GET['service_type_id'])) {
             $filters['service_type_id'] = (int) $_GET['service_type_id'];
         }
@@ -906,72 +1062,6 @@ class TourController
         exit;
     }
 
-    /**
-     * Load Timeline Editor Component (URL-based)
-     * URL: ?act=admin&module=tours&action=loadTimelineEditor&day=1&tour_id=123
-     */
-    public function loadTimelineEditor()
-    {
-        require_admin();
-
-        // Set header to prevent redirect
-        header('Content-Type: text/html; charset=utf-8');
-
-        $day_number = (int) ($_GET['day'] ?? 1);
-        $tour_id = (int) ($_GET['tour_id'] ?? 0);
-        $timeline_items = [];
-
-        // If editing existing tour, load timeline items from database
-        if ($tour_id > 0) {
-            $tour = $this->tourModel->findById($tour_id);
-            if ($tour && !empty($tour['itinerary_timelines'])) {
-                // Filter timelines by day_number
-                foreach ($tour['itinerary_timelines'] as $timeline) {
-                    if (isset($timeline['itinerary_id'])) {
-                        // Get itinerary to check day_number
-                        $stmt = $this->db->prepare("SELECT day_number FROM itineraries WHERE id = :id");
-                        $stmt->execute(['id' => $timeline['itinerary_id']]);
-                        $itinerary = $stmt->fetch();
-                        if ($itinerary && $itinerary['day_number'] == $day_number) {
-                            $timeline_items[] = [
-                                'timeline_time' => $timeline['timeline_time'] ?? '',
-                                'activity_title' => $timeline['activity_title'] ?? '',
-                                'activity_description' => $timeline['activity_description'] ?? '',
-                                'location' => $timeline['location'] ?? '',
-                                'destination_id' => $timeline['destination_id'] ?? null,
-                                'service_provider_id' => $timeline['service_provider_id'] ?? null,
-                                'service_id' => $timeline['service_id'] ?? null,
-                                'timeline_type' => $timeline['timeline_type'] ?? 'activity',
-                                'display_order' => $timeline['display_order'] ?? 0,
-                                'notes' => $timeline['notes'] ?? ''
-                            ];
-                        }
-                    }
-                }
-            }
-        } else {
-            // If creating new tour, get from session or POST data
-            if (!empty($_SESSION['tour_form_data']['timeline_items'][$day_number])) {
-                $timeline_items = $_SESSION['tour_form_data']['timeline_items'][$day_number];
-            }
-        }
-
-        // Sort timeline items by time
-        usort($timeline_items, function ($a, $b) {
-            $time_a = $a['timeline_time'] ?? '00:00:00';
-            $time_b = $b['timeline_time'] ?? '00:00:00';
-            return strcmp($time_a, $time_b);
-        });
-
-        // Get data for dropdowns
-        $destinations = $this->destinationModel->getForDropdown();
-        $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
-        $service_providers = $this->serviceProviderModel->getForDropdown();
-
-        // Include component (only HTML, no layout)
-        require VIEWS_PATH . '/components/timeline-editor.php';
-        exit;
-    }
 
     /**
      * Load Itinerary Manager Component (URL-based) - Gộp Timeline và Dịch vụ
@@ -988,12 +1078,10 @@ class TourController
         $step = (int) ($_GET['step'] ?? 2);
         $tour_id = (int) ($_GET['tour_id'] ?? 0);
 
-        $timeline_items = [];
         $day_services = [];
 
         // Load from session if creating new tour
         if ($tour_id == 0 && !empty($_SESSION['tour_form_data'])) {
-            $timeline_items = $_SESSION['tour_form_data']['timeline_items'][$day_number] ?? [];
             $day_services = $_SESSION['tour_form_data']['day_services'][$day_number] ?? [];
         }
 
@@ -1001,31 +1089,6 @@ class TourController
         if ($tour_id > 0) {
             $tour = $this->tourModel->findById($tour_id);
             if ($tour) {
-                // Load timelines
-                if (!empty($tour['itinerary_timelines'])) {
-                    foreach ($tour['itinerary_timelines'] as $timeline) {
-                        if (isset($timeline['itinerary_id'])) {
-                            $stmt = $this->db->prepare("SELECT day_number FROM itineraries WHERE id = :id");
-                            $stmt->execute(['id' => $timeline['itinerary_id']]);
-                            $itinerary = $stmt->fetch();
-                            if ($itinerary && $itinerary['day_number'] == $day_number) {
-                                $timeline_items[] = [
-                                    'timeline_time' => $timeline['timeline_time'] ?? '',
-                                    'activity_title' => $timeline['activity_title'] ?? '',
-                                    'activity_description' => $timeline['activity_description'] ?? '',
-                                    'location' => $timeline['location'] ?? '',
-                                    'destination_id' => $timeline['destination_id'] ?? null,
-                                    'service_provider_id' => $timeline['service_provider_id'] ?? null,
-                                    'service_id' => $timeline['service_id'] ?? null,
-                                    'timeline_type' => $timeline['timeline_type'] ?? 'activity',
-                                    'display_order' => $timeline['display_order'] ?? 0,
-                                    'notes' => $timeline['notes'] ?? ''
-                                ];
-                            }
-                        }
-                    }
-                }
-
                 // Load day services
                 if (!empty($tour['itinerary_day_services'])) {
                     foreach ($tour['itinerary_day_services'] as $service) {
@@ -1050,32 +1113,142 @@ class TourController
     /**
      * Save Form Data to Session (AJAX)
      * URL: ?act=admin&module=tours&action=saveFormSession
+     * Lưu toàn bộ dữ liệu tour vào session
      */
     public function saveFormSession()
     {
         require_admin();
         header('Content-Type: application/json');
 
-        $data = json_decode(file_get_contents('php://input'), true);
-
-        if (!isset($_SESSION['tour_form_data'])) {
-            $_SESSION['tour_form_data'] = [];
+        // Support both JSON and form data
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+        
+        // If not JSON, try form data
+        if (!$data && !empty($_POST)) {
+            $data = $_POST;
         }
 
-        if (!empty($data['timeline_items'])) {
-            $_SESSION['tour_form_data']['timeline_items'] = $data['timeline_items'];
+        if (!$data) {
+            echo json_encode(['success' => false, 'message' => 'Invalid data']);
+            exit;
         }
 
-        if (!empty($data['day_services'])) {
-            $_SESSION['tour_form_data']['day_services'] = $data['day_services'];
+        // Khởi tạo session nếu chưa có
+        $this->initTourSession();
+
+        // Lưu từng phần dữ liệu
+        if (isset($data['form_data']) && is_array($data['form_data'])) {
+            // Thông tin cơ bản tour
+            foreach ($data['form_data'] as $key => $value) {
+                $_SESSION['tour_form_data'][$key] = $value;
+            }
         }
 
-        if (!empty($data['form_data'])) {
-            $_SESSION['tour_form_data']['form_data'] = $data['form_data'];
+        if (isset($data['itinerary']) && is_array($data['itinerary'])) {
+            // Lịch trình theo ngày (bao gồm description từ TinyMCE)
+            $_SESSION['tour_form_data']['itinerary'] = $data['itinerary'];
         }
 
-        echo json_encode(['success' => true]);
+        if (isset($data['itinerary_day_services'])) {
+            // Dịch vụ theo ngày - có thể là array hoặc object
+            if (is_array($data['itinerary_day_services'])) {
+                // Nếu là array: [ {day_number: 1, ...}, {day_number: 2, ...} ]
+                $_SESSION['tour_form_data']['itinerary_day_services'] = $data['itinerary_day_services'];
+            } elseif (is_object($data['itinerary_day_services'])) {
+                // Nếu là object: { 1: [...], 2: [...] }
+                $_SESSION['tour_form_data']['itinerary_day_services'] = (array) $data['itinerary_day_services'];
+            }
+        }
+
+        if (isset($data['highlights'])) {
+            $_SESSION['tour_form_data']['highlights'] = is_array($data['highlights']) 
+                ? $data['highlights'] 
+                : (is_string($data['highlights']) ? explode("\n", $data['highlights']) : []);
+        }
+
+        if (isset($data['included']) && is_array($data['included'])) {
+            $_SESSION['tour_form_data']['included'] = $data['included'];
+        }
+
+        if (isset($data['excluded']) && is_array($data['excluded'])) {
+            $_SESSION['tour_form_data']['excluded'] = $data['excluded'];
+        }
+
+        if (isset($data['policy_ids']) && is_array($data['policy_ids'])) {
+            $_SESSION['tour_form_data']['policy_ids'] = array_map('intval', $data['policy_ids']);
+        }
+
+        // Update last_updated
+        $_SESSION['tour_form_data']['last_updated'] = date('Y-m-d H:i:s');
+
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Data saved to session',
+            'data_count' => [
+                'itinerary' => count($_SESSION['tour_form_data']['itinerary'] ?? []),
+                'day_services' => count($_SESSION['tour_form_data']['itinerary_day_services'] ?? [])
+            ]
+        ]);
         exit;
+    }
+
+    /**
+     * Clear Tour Session (AJAX)
+     * URL: ?act=admin&module=tours&action=clearTourSession
+     */
+    public function clearTourSession()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        if (isset($_SESSION['tour_form_data'])) {
+            unset($_SESSION['tour_form_data']);
+        }
+
+        echo json_encode(['success' => true, 'message' => 'Session cleared']);
+        exit;
+    }
+    
+    /**
+     * Private method to clear session (internal use)
+     */
+    private function clearTourSessionInternal()
+    {
+        if (isset($_SESSION['tour_form_data'])) {
+            unset($_SESSION['tour_form_data']);
+        }
+    }
+
+    /**
+     * Initialize Tour Session
+     */
+    private function initTourSession()
+    {
+        if (!isset($_SESSION['tour_form_data'])) {
+            $_SESSION['tour_form_data'] = [
+                'itinerary' => [],
+                'itinerary_day_services' => [],
+                'highlights' => [],
+                'included' => [],
+                'excluded' => [],
+                'policy_ids' => [],
+                'images' => [],
+                'created_at' => date('Y-m-d H:i:s'),
+                'last_updated' => date('Y-m-d H:i:s')
+            ];
+        }
+    }
+
+    /**
+     * Load Tour Session Data
+     */
+    private function loadTourSession()
+    {
+        if (isset($_SESSION['tour_form_data'])) {
+            return $_SESSION['tour_form_data'];
+        }
+        return [];
     }
 
     /**

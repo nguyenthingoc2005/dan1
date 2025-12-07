@@ -285,7 +285,7 @@ class Province
     {
         try {
             $sql = "
-                SELECT p.id, p.name, p.code, c.name as country_name
+                SELECT p.id, p.name, p.code, p.status, c.name as country_name
                 FROM provinces p
                 LEFT JOIN countries c ON p.country_id = c.id
                 WHERE p.status = 'active'

@@ -88,7 +88,8 @@ class ServiceTypeController
             $data = [
                 'name' => $name,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
-                'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
+                'status' => isset($_POST['status']) ? $_POST['status'] : 'active',
+                'created_by' => get_user_id()
             ];
 
             if ($this->serviceTypeModel->create($data)) {

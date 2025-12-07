@@ -47,6 +47,11 @@ if (!is_admin())
             <p class="text-sm text-gray-600">
                 <strong>ID:</strong> <?= $service_type['id'] ?> |
                 <strong>Tạo lúc:</strong> <?= date('d/m/Y H:i', strtotime($service_type['created_at'])) ?>
+                <?php if (!empty($service_type['creator_name'])): ?>
+                    | <strong>Người tạo:</strong> <?= htmlspecialchars($service_type['creator_name']) ?>
+                <?php elseif (!empty($service_type['created_by'])): ?>
+                    | <strong>Người tạo:</strong> ID <?= $service_type['created_by'] ?>
+                <?php endif; ?>
             </p>
         </div>
 

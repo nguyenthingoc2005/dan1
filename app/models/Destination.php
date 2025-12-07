@@ -301,6 +301,58 @@ class Destination
     }
 
     /**
+     * Cập nhật caption cho ảnh
+     */
+    public function updateImageCaption($image_id, $caption)
+    {
+        try {
+            $stmt = $this->pdo->prepare("
+                UPDATE destination_images 
+                SET caption = :caption 
+                WHERE id = :id
+            ");
+            return $stmt->execute([
+                'id' => $image_id,
+                'caption' => $caption
+            ]);
+        } catch (PDOException $e) {
+            error_log("Destination::updateImageCaption() Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Sắp xếp lại thứ tự ảnh
+     */
+    public function reorderImages($destination_id, $image_ids)
+    {
+        try {
+            $this->pdo->beginTransaction();
+
+            foreach ($image_ids as $order => $image_id) {
+                $stmt = $this->pdo->prepare("
+                    UPDATE destination_images 
+                    SET display_order = :display_order 
+                    WHERE id = :id AND destination_id = :destination_id
+                ");
+                $stmt->execute([
+                    'id' => (int) $image_id,
+                    'destination_id' => $destination_id,
+                    'display_order' => $order
+                ]);
+            }
+
+            $this->pdo->commit();
+            return true;
+
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
+            error_log("Destination::reorderImages() Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Xóa destination (soft delete)
      */
     public function delete($id)

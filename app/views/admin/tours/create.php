@@ -35,7 +35,6 @@ $policies = is_array($policies) ? $policies : [];
 
 // Prepare old data for itinerary
 $old_itinerary = $old['itinerary'] ?? [];
-$old_timelines = $old['itinerary_timelines'] ?? [];
 $old_day_services = $old['itinerary_day_services'] ?? [];
 
 // Handle highlights - can be array or string (newline separated)
@@ -52,20 +51,7 @@ $old_includes = $old['includes'] ?? ($old['included'] ?? []);
 $old_excludes = $old['excludes'] ?? ($old['excluded'] ?? []);
 $selected_policy_ids = $old['policy_ids'] ?? [];
 
-// Group timelines and day services by day_number
-$timelines_by_day = [];
-if (is_array($old_timelines)) {
-    foreach ($old_timelines as $timeline) {
-        if (is_array($timeline)) {
-            $day = $timeline['day_number'] ?? 1;
-            if (!isset($timelines_by_day[$day])) {
-                $timelines_by_day[$day] = [];
-            }
-            $timelines_by_day[$day][] = $timeline;
-        }
-    }
-}
-
+// Group day services by day_number
 $day_services_by_day = [];
 if (is_array($old_day_services)) {
     foreach ($old_day_services as $service) {
@@ -486,8 +472,9 @@ if (is_array($old_day_services)) {
                     class="px-6 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow" onclick="changeStep(1)">
                     Tiếp theo <i class="fas fa-arrow-right ml-2"></i>
                 </button>
-                <button type="submit" id="submitBtn"
-                    class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 shadow hidden">
+                <button type="submit" id="submitBtn" form="tourForm"
+                    class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 shadow hidden"
+                    onclick="console.log('🔵 Button onclick triggered!'); return true;">
                     <i class="fas fa-save mr-2"></i>Hoàn tất & Lưu
                 </button>
             </div>
@@ -502,22 +489,23 @@ if (is_array($old_day_services)) {
     const services = <?= json_encode($services) ?>;
     const serviceProviders = <?= json_encode($service_providers) ?>;
     const oldItinerary = <?= json_encode(is_array($old_itinerary) ? $old_itinerary : []) ?>;
-    const oldTimelines = <?= json_encode(is_array($timelines_by_day) ? $timelines_by_day : []) ?>;
     const oldDayServices = <?= json_encode(is_array($day_services_by_day) ? $day_services_by_day : []) ?>;
     const oldHighlights = <?= json_encode(is_array($old_highlights) ? $old_highlights : []) ?>;
     const oldIncludes = <?= json_encode(is_array($old_includes) ? $old_includes : []) ?>;
     const oldExcludes = <?= json_encode(is_array($old_excludes) ? $old_excludes : []) ?>;
     const selectedPolicyIds = <?= json_encode(is_array($selected_policy_ids) ? $selected_policy_ids : []) ?>;
 
-    let currentStep = 1;
-    const totalSteps = 6;
-    let currentItineraryTab = 'overview';
-    let currentTimelineDay = null;
-    let currentDayServicesDay = null;
-</script>
+    // Debug: Log services và serviceProviders để kiểm tra
+    console.log('Services loaded:', services);
+    console.log('ServiceProviders loaded:', serviceProviders);
+    console.log('Services count:', Array.isArray(services) ? services.length : Object.keys(services || {}).length);
+    console.log('ServiceProviders count:', Array.isArray(serviceProviders) ? serviceProviders.length : Object.keys(serviceProviders || {}).length);
 
-<!-- Inline JavaScript for Tour Form Wizard -->
-<script>
+    // Global variables for wizard navigation - MUST be declared before functions
+    var currentStep = 1;
+    var totalSteps = 6;
+    var currentItineraryTab = 'overview';
+    var currentDayServicesDay = null;
     // ============================================================================
     // WIZARD NAVIGATION
     // ============================================================================
@@ -545,7 +533,17 @@ if (is_array($old_day_services)) {
         // Button visibility
         document.getElementById('prevBtn').classList.toggle('hidden', step === 1);
         document.getElementById('nextBtn').classList.toggle('hidden', step === totalSteps);
-        document.getElementById('submitBtn').classList.toggle('hidden', step !== totalSteps);
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            const isLastStep = step === totalSteps;
+            submitBtn.classList.toggle('hidden', !isLastStep);
+            console.log(`📊 Step ${step}/${totalSteps}, Submit button ${isLastStep ? 'visible' : 'hidden'}`);
+
+            // Đảm bảo button không bị disabled khi hiện
+            if (isLastStep) {
+                submitBtn.disabled = false;
+            }
+        }
 
         // Special handling for each step
         if (step === 2) {
@@ -556,6 +554,10 @@ if (is_array($old_day_services)) {
         }
         if (step === 3) {
             initIncludedExcluded();
+        }
+        if (step === 4) {
+            // Restore policy IDs from session when entering step 4
+            restorePolicyIdsFromSession();
         }
         if (step === 6) {
             updatePricing();
@@ -569,6 +571,11 @@ if (is_array($old_day_services)) {
 
     function changeStep(direction) {
         if (direction === 1 && !validateStep(currentStep)) return;
+
+        // Auto-save form data to session before changing step
+        if (direction === 1) {
+            saveFormDataToSession();
+        }
 
         currentStep += direction;
         if (currentStep < 1) currentStep = 1;
@@ -696,12 +703,7 @@ if (is_array($old_day_services)) {
         }
 
         // Load data for specific tabs
-        if (tab === 'timeline' && !currentTimelineDay) {
-            const days = parseInt(document.getElementById('duration_days').value) || 0;
-            if (days > 0) {
-                loadTimelineForDay(1);
-            }
-        }
+        // Timeline tab đã bị xóa - không còn sử dụng
         if (tab === 'services' && !currentDayServicesDay) {
             const days = parseInt(document.getElementById('duration_days').value) || 0;
             if (days > 0) {
@@ -784,6 +786,11 @@ if (is_array($old_day_services)) {
                 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả lịch trình</label>
+                    <?php
+                    // Use TinyMCE component for itinerary description
+                    $dayNum = '${i}';
+                    $content = '${escapeHtml(oldDay.description || \'\')}';
+                    ?>
                     <textarea name="itinerary_description[]" 
                               id="itinerary-description-day-${i}"
                               rows="6"
@@ -843,6 +850,11 @@ if (is_array($old_day_services)) {
                     initTinyMCEForItinerary(i, savedContents[i]);
                 }, i * 100);
             }
+
+            // After all TinyMCE initialized, restore day services from session
+            setTimeout(() => {
+                restoreDayServicesFromSession();
+            }, (days * 100) + 500);
         };
 
         // Start initialization after a short delay
@@ -1000,52 +1012,7 @@ if (is_array($old_day_services)) {
             });
     }
 
-    function loadTimelineForDay(dayNumber) {
-        if (!dayNumber) return;
-        currentTimelineDay = dayNumber;
-
-        const container = document.getElementById('timeline-editor-container');
-
-        // Load component via URL (direct load with AJAX)
-        let url = `?act=admin&module=tours&action=loadTimelineEditor&day=${dayNumber}`;
-        const tourId = document.querySelector('input[name="tour_id"]')?.value || '';
-        if (tourId) {
-            url += `&tour_id=${tourId}`;
-        }
-
-        // Show loading
-        container.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-blue-500"></i><p class="mt-2 text-gray-600">Đang tải timeline...</p></div>';
-
-        // Load via fetch
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-            .then(res => {
-                if (!res.ok) throw new Error('Network response was not ok');
-                return res.text();
-            })
-            .then(html => {
-                container.innerHTML = html;
-                // Re-initialize scripts
-                if (typeof sortTimelineByTime === 'function') {
-                    setTimeout(() => sortTimelineByTime(dayNumber), 100);
-                }
-            })
-            .catch(err => {
-                console.error('Error loading timeline editor:', err);
-                container.innerHTML = `
-                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p class="text-red-700">Lỗi khi tải component timeline. Vui lòng thử lại.</p>
-                    <button onclick="loadTimelineForDay(${dayNumber})" class="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-                        Thử lại
-                    </button>
-        </div>
-    `;
-            });
-    }
+    // Timeline editor đã bị xóa - không còn sử dụng
 
     function loadDayServicesForDay(dayNumber) {
         if (!dayNumber) return;
@@ -1301,16 +1268,182 @@ if (is_array($old_day_services)) {
 
         showStep(initialStep);
 
+        // Restore policy IDs from session if on step 4
+        if (initialStep === 4) {
+            setTimeout(() => {
+                restorePolicyIdsFromSession();
+            }, 500);
+        }
+
         // If step 2, generate itinerary days
         if (initialStep === 2 || (oldItinerary && oldItinerary.length > 0)) {
             // Wait a bit for page to be fully loaded
             setTimeout(() => {
                 generateItineraryDays();
+                // Restore day services from session after generating itinerary
+                restoreDayServicesFromSession();
             }, 500);
+        }
+
+        // Restore day services if already on step 2
+        if (initialStep === 2) {
+            setTimeout(() => {
+                restoreDayServicesFromSession();
+            }, 1000);
         }
 
         // Event delegation for itinerary manager
         initItineraryManagerEvents();
+
+        // Handle main form submit - Save TinyMCE content before submit
+        const tourForm = document.getElementById('tourForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (tourForm) {
+            console.log('✅ Form submit handler attached to #tourForm');
+
+            // Also attach click handler to button directly - BUT DON'T PREVENT DEFAULT
+            if (submitBtn) {
+                console.log('✅ Submit button found, attaching click handler');
+                submitBtn.addEventListener('click', function (e) {
+                    console.log('🔵 Submit button clicked!', {
+                        type: e.target.type,
+                        formId: tourForm.id,
+                        currentStep: currentStep,
+                        totalSteps: totalSteps,
+                        disabled: e.target.disabled,
+                        hidden: e.target.classList.contains('hidden')
+                    });
+
+                    // Check if button is disabled
+                    if (e.target.disabled) {
+                        console.warn('⚠️ Button is disabled!');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                    }
+
+                    // Check if button is hidden
+                    if (e.target.classList.contains('hidden')) {
+                        console.warn('⚠️ Button is hidden!');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                    }
+
+                    // Save TinyMCE content before validation
+                    if (typeof tinymce !== 'undefined') {
+                        tinymce.triggerSave();
+                        console.log('✅ TinyMCE content saved on button click');
+                    }
+
+                    // Don't use checkValidity() because it checks hidden required fields in modals
+                    // We'll validate manually in form submit handler
+                    console.log('✅ Button click passed, allowing form to submit');
+                    // DON'T preventDefault - let the form submit naturally
+                    // The form submit event handler will handle validation and submission
+                }, false);
+            } else {
+                console.error('❌ Submit button not found!');
+            }
+
+            // Use capture phase to ensure this runs first
+            tourForm.addEventListener('submit', function (e) {
+                console.log('🚀 Form submit event triggered!', {
+                    formId: e.target.id,
+                    currentStep: currentStep,
+                    totalSteps: totalSteps,
+                    submitter: e.submitter?.id || 'unknown'
+                });
+
+                // Save all TinyMCE editors before submit - CRITICAL!
+                if (typeof tinymce !== 'undefined') {
+                    // Save all editors
+                    tinymce.triggerSave();
+
+                    // Double check: manually save each itinerary editor
+                    const durationDays = parseInt(document.getElementById('duration_days')?.value || 0);
+                    for (let i = 1; i <= durationDays; i++) {
+                        const editor = tinymce.get(`itinerary-description-day-${i}`);
+                        if (editor) {
+                            editor.save(); // Save to textarea
+                            const content = editor.getContent();
+                            const textarea = document.getElementById(`itinerary-description-day-${i}`);
+                            if (textarea) {
+                                textarea.value = content;
+                                console.log(`✅ Saved TinyMCE content for day ${i}:`, content.substring(0, 50) + '...');
+                            }
+                        }
+                    }
+
+                    console.log('✅ All TinyMCE content saved to textareas');
+                } else {
+                    console.warn('⚠️ TinyMCE not available!');
+                }
+
+                // Save to session one last time before submit (synchronous if possible)
+                console.log('💾 Saving to session before submit...');
+                // Note: saveFormDataToSession is async, but we'll let it run
+                saveFormDataToSession();
+
+                // Validate required fields
+                const name = document.getElementById('name')?.value?.trim();
+                console.log('📝 Validating name:', name);
+                if (!name) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('Vui lòng nhập tên tour');
+                    showStep(1);
+                    return false;
+                }
+
+                const durationDays = parseInt(document.getElementById('duration_days')?.value || 0);
+                console.log('📝 Validating duration_days:', durationDays);
+                if (durationDays <= 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('Vui lòng nhập số ngày hợp lệ');
+                    showStep(1);
+                    return false;
+                }
+
+                const adultPrice = parseFloat(document.getElementById('adult_price')?.value || 0);
+                console.log('📝 Validating adult_price:', adultPrice);
+                if (adultPrice <= 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('Vui lòng nhập giá người lớn');
+                    showStep(6);
+                    return false;
+                }
+
+                console.log('✅ All validations passed, submitting form...');
+
+                // Show loading
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang lưu...';
+                    console.log('✅ Submit button disabled and loading state set');
+                } else {
+                    console.warn('⚠️ Submit button not found!');
+                }
+
+                // Allow form to submit normally - DON'T preventDefault
+                console.log('✅ Form will submit now - allowing default behavior');
+
+                // Mark form as submitting to prevent double submission
+                tourForm.setAttribute('data-submitting', '1');
+                tourForm.setAttribute('data-submitted', '1');
+
+                // Log that we're about to submit
+                console.log('📤 Form is submitting to:', tourForm.action);
+
+                return true; // Allow form to submit
+            }, false); // Use bubble phase (default)
+        } else {
+            console.error('❌ Form #tourForm not found!');
+        }
     });
 
     // ============================================================================
@@ -1329,12 +1462,6 @@ if (is_array($old_day_services)) {
                 case 'toggle-day-manager':
                     toggleDayManager(parseInt(dayNumber));
                     break;
-                case 'open-timeline-modal':
-                    openAddTimelineModal(parseInt(dayNumber));
-                    break;
-                case 'close-timeline-modal':
-                    closeAddTimelineModal(parseInt(dayNumber));
-                    break;
                 case 'open-service-modal':
                     openAddServiceModal(parseInt(dayNumber));
                     break;
@@ -1344,29 +1471,44 @@ if (is_array($old_day_services)) {
             }
         });
 
-        // Form submissions
+        // Form submissions - CHỈ xử lý form con (modal forms), KHÔNG chặn form chính
         document.addEventListener('submit', function (e) {
             const form = e.target;
             const action = form.getAttribute('data-action');
             const dayNumber = form.getAttribute('data-day');
+            const formId = form.id || '';
 
-            if (!action || !dayNumber) return;
+            console.log('📋 Form submit event caught:', { action, dayNumber, formId, isMainForm: formId === 'tourForm' });
+
+            // Nếu là form chính (tourForm), KHÔNG xử lý ở đây, để handler riêng xử lý
+            if (formId === 'tourForm') {
+                console.log('✅ Main form submit - letting main handler process');
+                return; // Let the main form submit handler process it
+            }
+
+            // Chỉ xử lý form con (modal forms) có data-action
+            if (!action || !dayNumber) {
+                console.log('⚠️ No action or dayNumber, allowing default submit');
+                return; // Allow default submit for other forms
+            }
 
             e.preventDefault();
+            e.stopPropagation();
+            console.log('🛑 Prevented default for modal form, calling handler for:', action);
 
             switch (action) {
-                case 'save-timeline':
-                    saveTimelineItem(e, parseInt(dayNumber));
-                    break;
                 case 'save-service':
+                    console.log('Calling saveDayService');
                     saveDayService(e, parseInt(dayNumber));
                     break;
+                default:
+                    console.warn('Unknown action:', action);
             }
         });
     }
 
     // Initialize counters
-    window.timelineCounter = window.timelineCounter || {};
+    // Timeline counter đã bị xóa - không còn sử dụng
     window.dayServiceCounter = window.dayServiceCounter || {};
 
     // Itinerary Manager Functions
@@ -1386,35 +1528,14 @@ if (is_array($old_day_services)) {
         }
     }
 
-    function openAddTimelineModal(dayNumber) {
-        const modal = document.getElementById(`add-timeline-modal-day-${dayNumber}`);
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.style.display = 'flex';
-        }
-    }
-
-    function closeAddTimelineModal(dayNumber) {
-        const modal = document.getElementById(`add-timeline-modal-day-${dayNumber}`);
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.style.display = 'none';
-            const form = document.getElementById(`add-timeline-form-day-${dayNumber}`);
-            if (form) {
-                form.reset();
-                // Hide service price info
-                const priceInfoDiv = document.getElementById(`service-price-info-day-${dayNumber}`);
-                if (priceInfoDiv) {
-                    priceInfoDiv.classList.add('hidden');
-                }
-            }
-        }
-    }
-
     function openAddServiceModal(dayNumber) {
+        console.log('openAddServiceModal called for day', dayNumber);
+        console.log('Services available:', services);
+
         // Create modal if not exists
         let modal = document.getElementById(`add-service-modal-day-${dayNumber}`);
         if (!modal) {
+            console.log('Creating new modal for day', dayNumber);
             createServiceModal(dayNumber);
             modal = document.getElementById(`add-service-modal-day-${dayNumber}`);
         }
@@ -1422,34 +1543,84 @@ if (is_array($old_day_services)) {
         if (modal) {
             modal.classList.remove('hidden');
             modal.style.display = 'flex';
+
+            // Debug: Check if service select has options
+            const serviceSelect = document.getElementById(`modal-service-id-day-${dayNumber}`);
+            if (serviceSelect) {
+                console.log('Service select found, options count:', serviceSelect.options.length);
+                if (serviceSelect.options.length <= 1) {
+                    console.warn('⚠️ Service select has no options! Rebuilding...');
+                    // Rebuild options
+                    serviceSelect.innerHTML = buildServiceOptions(dayNumber);
+                }
+            } else {
+                console.error('❌ Service select not found!');
+            }
+        } else {
+            console.error('❌ Modal not found after creation!');
         }
     }
 
     function buildServiceOptions(dayNumber) {
         // Get services from global services list
-        let options = '';
+        let options = '<option value="">-- Chọn dịch vụ --</option>';
         if (typeof services !== 'undefined' && services) {
-            Object.entries(services).forEach(([id, service]) => {
-                const name = typeof service === 'object' ? service.name : service;
-                options += `<option value="${id}" data-name="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
-            });
+            // Check if services is array or object
+            if (Array.isArray(services)) {
+                // services is array: [ {id: 1, name: '...'}, {id: 2, name: '...'} ]
+                services.forEach(service => {
+                    if (service && service.id) {
+                        const id = service.id;
+                        const name = service.name || 'N/A';
+                        options += `<option value="${id}" data-name="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+                    }
+                });
+            } else {
+                // services is object: { 1: {name: '...'}, 2: {name: '...'} }
+                Object.entries(services).forEach(([id, service]) => {
+                    const name = typeof service === 'object' ? (service.name || service) : service;
+                    options += `<option value="${id}" data-name="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+                });
+            }
         }
+        console.log('buildServiceOptions: Generated', options.split('<option').length - 1, 'options');
         return options;
     }
 
     function buildServiceProviderOptions(dayNumber) {
         // Get service providers from global list
-        let options = '';
+        let options = '<option value="">-- Chọn nhà dịch vụ --</option>';
         if (typeof serviceProviders !== 'undefined' && serviceProviders) {
-            Object.entries(serviceProviders).forEach(([id, provider]) => {
-                const name = typeof provider === 'object' ? provider.name : provider;
-                options += `<option value="${id}">${escapeHtml(name)}</option>`;
-            });
+            // Check if serviceProviders is array or object
+            if (Array.isArray(serviceProviders)) {
+                // serviceProviders is array: [ {id: 1, name: '...'}, {id: 2, name: '...'} ]
+                serviceProviders.forEach(provider => {
+                    if (provider && provider.id) {
+                        const id = provider.id;
+                        const name = provider.name || 'N/A';
+                        options += `<option value="${id}">${escapeHtml(name)}</option>`;
+                    }
+                });
+            } else {
+                // serviceProviders is object: { 1: {name: '...'}, 2: {name: '...'} }
+                Object.entries(serviceProviders).forEach(([id, provider]) => {
+                    const name = typeof provider === 'object' ? (provider.name || provider) : provider;
+                    options += `<option value="${id}">${escapeHtml(name)}</option>`;
+                });
+            }
         }
+        console.log('buildServiceProviderOptions: Generated', options.split('<option').length - 1, 'options');
         return options;
     }
 
     function createServiceModal(dayNumber) {
+        console.log('createServiceModal called for day', dayNumber);
+        const serviceOptions = buildServiceOptions(dayNumber);
+        const providerOptions = buildServiceProviderOptions(dayNumber);
+
+        console.log('Service options generated:', serviceOptions.split('<option').length - 1, 'options');
+        console.log('Provider options generated:', providerOptions.split('<option').length - 1, 'options');
+
         const modalHtml = `
             <div id="add-service-modal-day-${dayNumber}" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
                 <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -1460,25 +1631,25 @@ if (is_array($old_day_services)) {
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Chọn dịch vụ <span class="text-red-500">*</span></label>
-                                <select id="modal-service-id-day-${dayNumber}" required
+                                <select id="modal-service-id-day-${dayNumber}"
                                     class="w-full px-3 py-2 border rounded focus:border-green-500"
                                     onchange="loadServiceInfoForDay(${dayNumber})">
-                                    <option value="">-- Chọn dịch vụ --</option>
-                                    ${buildServiceOptions(dayNumber)}
+                                    ${serviceOptions}
                                 </select>
+                                <p class="text-xs text-gray-500 mt-1" id="service-select-debug-day-${dayNumber}"></p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Chọn nhà dịch vụ</label>
                                 <select id="modal-service-provider-id-day-${dayNumber}"
                                     class="w-full px-3 py-2 border rounded focus:border-green-500">
-                                    <option value="">-- Chọn nhà dịch vụ --</option>
-                                    ${buildServiceProviderOptions(dayNumber)}
+                                    ${providerOptions}
                                 </select>
+                                <p class="text-xs text-gray-500 mt-1" id="provider-select-debug-day-${dayNumber}"></p>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Đơn giá/người <span class="text-red-500">*</span></label>
-                                    <input type="number" id="modal-unit-price-day-${dayNumber}" step="1000" min="0" required
+                                    <input type="number" id="modal-unit-price-day-${dayNumber}" step="1000" min="0"
                                         class="w-full px-3 py-2 border rounded focus:border-green-500">
                                 </div>
                                 <div>
@@ -1522,55 +1693,86 @@ if (is_array($old_day_services)) {
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
-    function buildServiceOptions(dayNumber) {
-        const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
-        const data = dataEl ? JSON.parse(dataEl.textContent) : {};
-        let options = '';
-        if (data.services) {
-            data.services.forEach(service => {
-                const id = service.id || service;
-                const name = service.name || service;
-                options += `<option value="${id}" data-name="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
-            });
-        }
-        return options;
-    }
-
-    function buildServiceProviderOptions(dayNumber) {
-        const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
-        const data = dataEl ? JSON.parse(dataEl.textContent) : {};
-        let options = '';
-        if (data.service_providers) {
-            data.service_providers.forEach(provider => {
-                const id = provider.id || provider;
-                const name = provider.name || provider;
-                options += `<option value="${id}">${escapeHtml(name)}</option>`;
-            });
-        }
-        return options;
-    }
+    // Removed duplicate buildServiceOptions and buildServiceProviderOptions functions
+    // Using the ones defined earlier (lines 1501-1548)
 
     function loadServiceInfoForDay(dayNumber) {
         const select = document.getElementById(`modal-service-id-day-${dayNumber}`);
         const serviceId = select?.value;
-        if (!serviceId) return;
+        if (!serviceId) {
+            // Reset providers dropdown nếu không chọn service
+            const providerSelect = document.getElementById(`modal-service-provider-id-day-${dayNumber}`);
+            if (providerSelect) {
+                providerSelect.innerHTML = '<option value="">-- Chọn nhà dịch vụ --</option>';
+            }
+            return;
+        }
 
-        fetch(`?act=admin&module=tours&action=getServiceInfo&id=${serviceId}`)
+        // Show loading
+        const providerSelect = document.getElementById(`modal-service-provider-id-day-${dayNumber}`);
+        if (providerSelect) {
+            providerSelect.innerHTML = '<option value="">Đang tải...</option>';
+            providerSelect.disabled = true;
+        }
+
+        // Get tour start date để load giá theo mùa (nếu có)
+        const tourStartDate = document.getElementById('duration_days')?.closest('form')?.querySelector('[name="start_date"]')?.value || null;
+        let url = `?act=admin&module=tours&action=getServiceInfo&id=${serviceId}`;
+        if (tourStartDate) {
+            url += `&date=${tourStartDate}`;
+        }
+
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.data) {
                     const priceInput = document.getElementById(`modal-unit-price-day-${dayNumber}`);
                     const unitInput = document.getElementById(`modal-unit-day-${dayNumber}`);
 
+                    // Auto-fill price và unit
                     if (priceInput && data.data.unit_price > 0) {
                         priceInput.value = data.data.unit_price;
                     }
                     if (unitInput && data.data.unit) {
                         unitInput.value = data.data.unit;
                     }
+
+                    // Update providers dropdown - chỉ hiển thị providers của service này
+                    if (providerSelect && data.data.providers) {
+                        let options = '<option value="">-- Chọn nhà dịch vụ --</option>';
+                        data.data.providers.forEach(provider => {
+                            const selected = (data.data.service_provider_id && provider.id == data.data.service_provider_id) ? 'selected' : '';
+                            options += `<option value="${provider.id}" ${selected}>${escapeHtml(provider.name)}</option>`;
+                        });
+                        providerSelect.innerHTML = options;
+                        providerSelect.disabled = false;
+
+                        // Auto-select provider nếu service chỉ có 1 provider
+                        if (data.data.providers.length === 1) {
+                            providerSelect.value = data.data.providers[0].id;
+                        }
+                    } else {
+                        // Nếu không có providers, reset dropdown
+                        if (providerSelect) {
+                            providerSelect.innerHTML = '<option value="">-- Không có nhà dịch vụ --</option>';
+                            providerSelect.disabled = false;
+                        }
+                    }
+                } else {
+                    console.error('Error loading service info:', data.message || 'Unknown error');
+                    if (providerSelect) {
+                        providerSelect.innerHTML = '<option value="">-- Lỗi tải dữ liệu --</option>';
+                        providerSelect.disabled = false;
+                    }
                 }
             })
-            .catch(err => console.error('Error loading service info:', err));
+            .catch(err => {
+                console.error('Error loading service info:', err);
+                if (providerSelect) {
+                    providerSelect.innerHTML = '<option value="">-- Lỗi tải dữ liệu --</option>';
+                    providerSelect.disabled = false;
+                }
+            });
     }
 
     function closeAddServiceModal(dayNumber) {
@@ -1583,223 +1785,32 @@ if (is_array($old_day_services)) {
         }
     }
 
-    function saveTimelineItem(event, dayNumber) {
-        // Initialize counter if needed
-        if (!window.timelineCounter[dayNumber]) {
-            const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
-            if (dataEl) {
-                const data = JSON.parse(dataEl.textContent);
-                window.timelineCounter[dayNumber] = data.timeline_count || 0;
-            } else {
-                window.timelineCounter[dayNumber] = 0;
-            }
-        }
-
-        const counter = window.timelineCounter[dayNumber] = window.timelineCounter[dayNumber] + 1;
-        const container = document.getElementById(`timeline-items-day-${dayNumber}`);
-        if (!container) return;
-
-        const time = document.getElementById(`modal-timeline-time-day-${dayNumber}`)?.value || '';
-        const type = document.getElementById(`modal-timeline-type-day-${dayNumber}`)?.value || 'activity';
-        const activity = document.getElementById(`modal-timeline-activity-day-${dayNumber}`)?.value || '';
-        const description = document.getElementById(`modal-timeline-description-day-${dayNumber}`)?.value || '';
-        const location = document.getElementById(`modal-timeline-location-day-${dayNumber}`)?.value || '';
-        const providerId = document.getElementById(`modal-timeline-provider-day-${dayNumber}`)?.value || '';
-        const destinationId = document.getElementById(`modal-timeline-destination-day-${dayNumber}`)?.value || '';
-        const serviceId = document.getElementById(`modal-timeline-service-day-${dayNumber}`)?.value || '';
-        const notes = document.getElementById(`modal-timeline-notes-day-${dayNumber}`)?.value || '';
-
-        // Service price info
-        const servicePrice = document.getElementById(`modal-timeline-service-price-day-${dayNumber}`)?.value || 0;
-        const serviceQuantity = document.getElementById(`modal-timeline-service-quantity-day-${dayNumber}`)?.value || 1;
-        const serviceUnit = document.getElementById(`modal-timeline-service-unit-day-${dayNumber}`)?.value || '';
-        const serviceIncluded = document.getElementById(`modal-timeline-service-included-day-${dayNumber}`)?.checked || false;
-
-        if (!time || !activity) {
-            alert('Vui lòng nhập giờ và hoạt động');
-            return;
-        }
-
-        // Get data for dropdowns
-        const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
-        const data = dataEl ? JSON.parse(dataEl.textContent) : {};
-
-        const typeIcons = {
-            'meal': '🍽️',
-            'accommodation': '🏨',
-            'activity': '🎯',
-            'transport': '🚌'
-        };
-
-        const typeLabels = {
-            'meal': 'Bữa ăn',
-            'accommodation': 'Nơi nghỉ',
-            'activity': 'Hoạt động',
-            'transport': 'Di chuyển'
-        };
-
-        const typeColors = {
-            'meal': 'bg-orange-50 border-orange-200',
-            'accommodation': 'bg-blue-50 border-blue-200',
-            'activity': 'bg-green-50 border-green-200',
-            'transport': 'bg-purple-50 border-purple-200'
-        };
-
-        // Build options HTML
-        let providerOptions = '<option value="">-- Chọn nhà dịch vụ --</option>';
-        if (data.service_providers) {
-            data.service_providers.forEach(provider => {
-                const id = provider.id || provider;
-                const name = provider.name || provider;
-                const address = provider.address || '';
-                const selected = providerId && String(id) === String(providerId) ? 'selected' : '';
-                providerOptions += `<option value="${id}" data-address="${escapeHtml(address)}" ${selected}>${escapeHtml(name)}</option>`;
-            });
-        }
-
-        let destOptions = '<option value="">-- Chọn địa điểm --</option>';
-        if (data.destinations) {
-            if (Array.isArray(data.destinations)) {
-                data.destinations.forEach(dest => {
-                    const id = dest.id || dest;
-                    const name = dest.name || dest;
-                    const selected = destinationId && String(id) === String(destinationId) ? 'selected' : '';
-                    destOptions += `<option value="${id}" ${selected}>${escapeHtml(name)}</option>`;
-                });
-            }
-        }
-
-        let serviceOptions = '<option value="">-- Chọn dịch vụ --</option>';
-        if (data.services) {
-            data.services.forEach(service => {
-                const id = service.id || service;
-                const name = service.name || service;
-                const selected = serviceId && String(id) === String(serviceId) ? 'selected' : '';
-                serviceOptions += `<option value="${id}" ${selected}>${escapeHtml(name)}</option>`;
-            });
-        }
-
-        const itemHtml = `
-            <div class="timeline-item bg-white border-2 ${typeColors[type]} rounded-lg p-4 mb-4 relative" 
-                 data-day="${dayNumber}" data-index="${counter}" data-time="${time}">
-                <div class="flex justify-between items-start mb-3">
-                    <div class="flex items-center gap-2">
-                        <input type="time" name="timeline_time[]" value="${time}" required
-                            class="px-2 py-1 border rounded focus:border-blue-500 font-semibold text-blue-600 text-lg">
-                        <span class="text-sm font-medium text-gray-600 px-2 py-1 bg-white rounded">${typeLabels[type]}</span>
-                    </div>
-                    <button type="button" onclick="this.closest('.timeline-item').remove()" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Hoạt động <span class="text-red-500">*</span></label>
-                        <input type="text" name="timeline_activity_title[]" value="${escapeHtml(activity)}" required
-                            class="w-full px-3 py-2 border rounded focus:border-blue-500">
-                        <input type="hidden" name="timeline_day_number[]" value="${dayNumber}">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-                        <textarea name="timeline_activity_description[]" rows="2"
-                            class="w-full px-3 py-2 border rounded focus:border-blue-500">${escapeHtml(description)}</textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Loại timeline</label>
-                        <select name="timeline_type[]" class="w-full px-3 py-2 border rounded focus:border-blue-500">
-                            <option value="activity" ${type === 'activity' ? 'selected' : ''}>Hoạt động</option>
-                            <option value="meal" ${type === 'meal' ? 'selected' : ''}>Bữa ăn</option>
-                            <option value="accommodation" ${type === 'accommodation' ? 'selected' : ''}>Nơi nghỉ</option>
-                            <option value="transport" ${type === 'transport' ? 'selected' : ''}>Di chuyển</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Địa điểm</label>
-                        <input type="text" name="timeline_location[]" value="${escapeHtml(location)}"
-                            class="w-full px-3 py-2 border rounded focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nhà dịch vụ</label>
-                        <select name="timeline_service_provider[]" class="w-full px-3 py-2 border rounded focus:border-blue-500">
-                            ${providerOptions}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Địa điểm du lịch</label>
-                        <select name="timeline_destination[]" class="w-full px-3 py-2 border rounded focus:border-blue-500">
-                            ${destOptions}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Dịch vụ</label>
-                        <select name="timeline_service[]" class="w-full px-3 py-2 border rounded focus:border-blue-500">
-                            ${serviceOptions}
-                        </select>
-                    </div>
-                    ${serviceId ? `
-                        <div class="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <div class="grid grid-cols-3 gap-3 text-sm">
-                                <div>
-                                    <span class="text-gray-600">Đơn giá:</span>
-                                    <span class="font-medium ml-2">${formatCurrency(parseFloat(servicePrice))}</span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-600">Số lượng:</span>
-                                    <span class="font-medium ml-2">${formatNumber(parseFloat(serviceQuantity))} ${escapeHtml(serviceUnit)}</span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-600">Tổng:</span>
-                                    <span class="font-medium text-blue-600 ml-2">${formatCurrency(parseFloat(servicePrice) * parseFloat(serviceQuantity))}</span>
-                                </div>
-                            </div>
-                            <div class="mt-2">
-                                <span class="text-gray-600">Bao gồm trong giá:</span>
-                                <span class="font-medium ml-2 ${serviceIncluded ? 'text-green-600' : 'text-gray-400'}">
-                                    ${serviceIncluded ? 'Có' : 'Không'}
-                                </span>
-                            </div>
-                        </div>
-                    ` : ''}
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
-                        <textarea name="timeline_notes[]" rows="2"
-                            class="w-full px-3 py-2 border rounded focus:border-blue-500">${escapeHtml(notes)}</textarea>
-                    </div>
-                    <input type="hidden" name="timeline_display_order[]" value="${counter}">
-                    ${serviceId ? `
-                        <input type="hidden" name="timeline_service_price[]" value="${servicePrice}">
-                        <input type="hidden" name="timeline_service_quantity[]" value="${serviceQuantity}">
-                        <input type="hidden" name="timeline_service_unit[]" value="${escapeHtml(serviceUnit)}">
-                        <input type="hidden" name="timeline_service_included[]" value="${serviceIncluded ? 1 : 0}">
-                    ` : ''}
-                </div>
-            </div>
-        `;
-
-        if (container.innerHTML.includes('Chưa có timeline')) {
-            container.innerHTML = itemHtml;
-        } else {
-            container.insertAdjacentHTML('beforeend', itemHtml);
-        }
-
-        closeAddTimelineModal(dayNumber);
-    }
-
     function saveDayService(event, dayNumber) {
+        console.log('saveDayService called for day', dayNumber);
+
+        // Prevent default form submission
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
         // Initialize counter if needed
+        if (!window.dayServiceCounter) {
+            window.dayServiceCounter = {};
+        }
         if (!window.dayServiceCounter[dayNumber]) {
-            const dataEl = document.getElementById(`itinerary-manager-data-${dayNumber}`);
-            if (dataEl) {
-                const data = JSON.parse(dataEl.textContent);
-                window.dayServiceCounter[dayNumber] = data.services_count || 0;
-            } else {
-                window.dayServiceCounter[dayNumber] = 0;
-            }
+            window.dayServiceCounter[dayNumber] = 0;
         }
 
         const counter = window.dayServiceCounter[dayNumber] = window.dayServiceCounter[dayNumber] + 1;
         const container = document.getElementById(`day-services-list-day-${dayNumber}`);
-        if (!container) return;
+        if (!container) {
+            console.error('Container not found:', `day-services-list-day-${dayNumber}`);
+            alert('❌ Không tìm thấy container day-services-list-day-' + dayNumber);
+            return;
+        }
+
+        console.log('Container found, counter:', counter);
 
         const serviceSelect = document.getElementById(`modal-service-id-day-${dayNumber}`);
         const serviceId = serviceSelect?.value || '';
@@ -1871,7 +1882,7 @@ if (is_array($old_day_services)) {
                         <input type="hidden" name="day_service_notes[]" value="${escapeHtml(notes)}">
                     </div>
                     <div class="flex-shrink-0">
-                        <button type="button" onclick="this.closest('.day-service-item').remove()" class="text-red-500 hover:text-red-700">
+                        <button type="button" onclick="removeDayServiceItem(this, ${dayNumber})" class="text-red-500 hover:text-red-700">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -1887,6 +1898,368 @@ if (is_array($old_day_services)) {
 
         updateDayServiceTotal(dayNumber);
         closeAddServiceModal(dayNumber);
+
+        // Lưu dịch vụ vào session
+        saveDayServiceToSession(dayNumber);
+    }
+
+    /**
+     * Lưu dịch vụ theo ngày vào session
+     */
+    function saveDayServiceToSession(dayNumber) {
+        const container = document.getElementById(`day-services-list-day-${dayNumber}`);
+        if (!container) return;
+
+        const items = container.querySelectorAll('.day-service-item');
+        const dayServices = [];
+
+        items.forEach(item => {
+            const dayNum = item.querySelector('[name="day_service_day_number[]"]')?.value || dayNumber;
+            const serviceId = item.querySelector('[name="day_service_service_id[]"]')?.value;
+            const providerId = item.querySelector('[name="day_service_provider_id[]"]')?.value || '';
+            const serviceName = item.querySelector('[name="day_service_name[]"]')?.value || '';
+            const unitPrice = parseFloat(item.querySelector('[name="day_service_unit_price[]"]')?.value || 0);
+            const quantity = parseFloat(item.querySelector('[name="day_service_quantity[]"]')?.value || 1);
+            const unit = item.querySelector('[name="day_service_unit[]"]')?.value || '';
+            const notes = item.querySelector('[name="day_service_notes[]"]')?.value || '';
+            const included = item.querySelector('[name^="day_service_included"]')?.checked || false;
+
+            if (serviceId) {
+                dayServices.push({
+                    day_number: parseInt(dayNum),
+                    service_id: parseInt(serviceId),
+                    service_provider_id: providerId ? parseInt(providerId) : null,
+                    service_name: serviceName,
+                    unit_price: unitPrice,
+                    quantity: quantity,
+                    unit: unit,
+                    is_included_in_price: included ? 1 : 0,
+                    notes: notes
+                });
+            }
+        });
+
+        // Lưu vào session qua AJAX
+        saveFormDataToSession({
+            itinerary_day_services: {
+                [dayNumber]: dayServices
+            }
+        });
+    }
+
+    /**
+     * Restore policy IDs from session data
+     */
+    function restorePolicyIdsFromSession() {
+        if (!selectedPolicyIds || !Array.isArray(selectedPolicyIds) || selectedPolicyIds.length === 0) {
+            console.log('No policy IDs to restore from session');
+            return;
+        }
+
+        console.log('📋 Restoring policy IDs from session:', selectedPolicyIds);
+
+        // Wait a bit for policy selector to be ready
+        setTimeout(() => {
+            selectedPolicyIds.forEach(policyId => {
+                const checkbox = document.getElementById(`policy-${policyId}`);
+                if (checkbox && !checkbox.checked) {
+                    // Get policy name and type from the card
+                    const policyCard = checkbox.closest('.policy-card');
+                    if (policyCard) {
+                        const policyName = policyCard.querySelector('.font-medium')?.textContent?.trim() || '';
+                        const policyTypeText = policyCard.closest('.policy-type-group')?.querySelector('h5')?.textContent?.trim() || 'Khác';
+                        // Trigger toggle to add to list
+                        checkbox.checked = true;
+                        if (typeof togglePolicy === 'function') {
+                            togglePolicy(checkbox, policyId, policyName, policyTypeText);
+                        }
+                    }
+                }
+            });
+            console.log('✅ Policy IDs restored from session');
+        }, 300);
+    }
+
+    /**
+     * Restore day services from session data
+     */
+    function restoreDayServicesFromSession() {
+        if (!oldDayServices) {
+            console.log('No oldDayServices data to restore');
+            return;
+        }
+
+        console.log('Restoring day services from session:', oldDayServices);
+
+        // oldDayServices có thể là:
+        // 1. Object: { 1: [...], 2: [...] }
+        // 2. Array: [{day_number: 1, ...}, {day_number: 2, ...}]
+
+        let servicesByDay = {};
+
+        if (Array.isArray(oldDayServices)) {
+            // Format: [{day_number: 1, ...}, {day_number: 2, ...}]
+            oldDayServices.forEach(service => {
+                const dayNum = service.day_number || 1;
+                if (!servicesByDay[dayNum]) {
+                    servicesByDay[dayNum] = [];
+                }
+                servicesByDay[dayNum].push(service);
+            });
+        } else if (typeof oldDayServices === 'object' && oldDayServices !== null) {
+            // Format: { 1: [...], 2: [...] }
+            servicesByDay = oldDayServices;
+        } else {
+            console.warn('Invalid oldDayServices format:', typeof oldDayServices);
+            return;
+        }
+
+        // Restore services for each day
+        Object.keys(servicesByDay).forEach(dayNumber => {
+            const dayServices = servicesByDay[dayNumber];
+            if (Array.isArray(dayServices) && dayServices.length > 0) {
+                const container = document.getElementById(`day-services-list-day-${dayNumber}`);
+                if (!container) {
+                    console.warn('Container not found for day', dayNumber, '- will retry later');
+                    // Retry after a delay
+                    setTimeout(() => {
+                        restoreDayServicesFromSession();
+                    }, 1000);
+                    return;
+                }
+
+                // Clear container (only if it has placeholder)
+                if (container.innerHTML.includes('Chưa có dịch vụ')) {
+                    container.innerHTML = '';
+                }
+
+                // Initialize counter for this day
+                if (!window.dayServiceCounter) {
+                    window.dayServiceCounter = {};
+                }
+                window.dayServiceCounter[dayNumber] = dayServices.length;
+
+                // Add each service
+                dayServices.forEach((service, index) => {
+                    const counter = index + 1;
+                    const serviceHtml = `
+                        <div class="day-service-item bg-white border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start gap-4">
+                                <div class="flex-shrink-0 mt-1">
+                                    <input type="checkbox" name="day_service_included[${dayNumber}][${index + 1}]" value="1"
+                                        ${service.is_included_in_price ? 'checked' : ''}
+                                        onchange="updateDayServiceTotal(${dayNumber})"
+                                        class="w-5 h-5 text-blue-600 rounded">
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-800">
+                                        ${escapeHtml(service.service_name || 'N/A')}
+                                    </div>
+                                    <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                        <div>
+                                            <span class="text-gray-600">Đơn giá/người:</span>
+                                            <span class="font-medium ml-2">${formatCurrency(service.unit_price || 0)}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-600">Số lượng:</span>
+                                            <span class="font-medium ml-2">${formatNumber(service.quantity || 1)} ${service.unit || ''}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-600">Tổng:</span>
+                                            <span class="font-medium text-blue-600 ml-2">${formatCurrency((service.unit_price || 0) * (service.quantity || 1))}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-600">Bao gồm:</span>
+                                            <span class="font-medium ml-2 ${service.is_included_in_price ? 'text-green-600' : 'text-gray-400'}">
+                                                ${service.is_included_in_price ? 'Có' : 'Không'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    ${service.notes ? `
+                                        <div class="mt-2 text-sm text-gray-500">
+                                            <i class="fas fa-sticky-note mr-1"></i>
+                                            ${escapeHtml(service.notes)}
+                                        </div>
+                                    ` : ''}
+                                    <input type="hidden" name="day_service_day_number[]" value="${dayNumber}">
+                                    <input type="hidden" name="day_service_service_id[]" value="${service.service_id || ''}">
+                                    <input type="hidden" name="day_service_provider_id[]" value="${service.service_provider_id || ''}">
+                                    <input type="hidden" name="day_service_name[]" value="${escapeHtml(service.service_name || '')}">
+                                    <input type="hidden" name="day_service_unit_price[]" value="${service.unit_price || 0}">
+                                    <input type="hidden" name="day_service_quantity[]" value="${service.quantity || 1}">
+                                    <input type="hidden" name="day_service_unit[]" value="${escapeHtml(service.unit || '')}">
+                                    <input type="hidden" name="day_service_notes[]" value="${escapeHtml(service.notes || '')}">
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <button type="button" onclick="removeDayServiceItem(this, ${dayNumber})" class="text-red-500 hover:text-red-700">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', serviceHtml);
+                });
+
+                // Update total
+                updateDayServiceTotal(parseInt(dayNumber));
+            }
+        });
+    }
+
+    /**
+     * Lưu toàn bộ form data vào session
+     */
+    function saveFormDataToSession(additionalData = {}) {
+        // Collect all form data
+        const formData = {
+            // Basic info
+            name: document.getElementById('name')?.value || '',
+            introduction: document.querySelector('[name="introduction"]')?.value || '',
+            description: document.querySelector('[name="description"]')?.value || '',
+            duration_days: parseInt(document.getElementById('duration_days')?.value || 0),
+            duration_nights: parseInt(document.getElementById('duration_nights')?.value || 0),
+            departure_location: document.querySelector('[name="departure_location"]')?.value || '',
+            min_participants: parseInt(document.getElementById('min_participants')?.value || 15),
+            max_participants: parseInt(document.querySelector('[name="max_participants"]')?.value || 45),
+            adult_price: parseFloat(document.getElementById('adult_price')?.value || 0),
+            child_price: parseFloat(document.getElementById('child_price')?.value || 0),
+            infant_price: parseFloat(document.getElementById('infant_price')?.value || 0),
+            deposit_percentage: parseFloat(document.querySelector('[name="deposit_percentage"]')?.value || 30),
+            booking_deadline_days: parseInt(document.querySelector('[name="booking_deadline_days"]')?.value || 1),
+            status: document.querySelector('[name="status"]')?.value || 'draft',
+            tour_type: document.querySelector('[name="tour_type"]')?.value || 'public'
+        };
+
+        // Collect itinerary data (with TinyMCE content)
+        const itinerary = [];
+        const durationDays = formData.duration_days || 0;
+        for (let i = 1; i <= durationDays; i++) {
+            const dayNumber = i;
+            let description = '';
+
+            // Get TinyMCE content if available
+            if (typeof tinymce !== 'undefined') {
+                const editor = tinymce.get(`itinerary-description-day-${dayNumber}`);
+                if (editor) {
+                    description = editor.getContent();
+                } else {
+                    const textarea = document.getElementById(`itinerary-description-day-${dayNumber}`);
+                    if (textarea) {
+                        description = textarea.value;
+                    }
+                }
+            } else {
+                const textarea = document.getElementById(`itinerary-description-day-${dayNumber}`);
+                if (textarea) {
+                    description = textarea.value;
+                }
+            }
+
+            // Get title and destination for this specific day
+            // Find the itinerary day item for this day number
+            const dayItem = document.querySelector(`.itinerary-day-item[data-day="${dayNumber}"]`);
+            let title = '';
+            let destinationId = '';
+
+            if (dayItem) {
+                const titleInput = dayItem.querySelector(`input[name="itinerary_title[]"]`);
+                const destSelect = dayItem.querySelector(`select[name="itinerary_destination[]"]`);
+                title = titleInput?.value || '';
+                destinationId = destSelect?.value || '';
+            }
+
+            itinerary.push({
+                day_number: dayNumber,
+                title: title,
+                description: description,
+                destination_id: destinationId ? parseInt(destinationId) : null
+            });
+        }
+
+        // Collect day services for all days
+        const itineraryDayServices = [];
+        const durationDaysForServices = formData.duration_days || 0;
+        for (let i = 1; i <= durationDaysForServices; i++) {
+            const container = document.getElementById(`day-services-list-day-${i}`);
+            if (!container) continue;
+
+            const items = container.querySelectorAll('.day-service-item');
+            items.forEach(item => {
+                const dayNum = item.querySelector('[name="day_service_day_number[]"]')?.value || i;
+                const serviceId = item.querySelector('[name="day_service_service_id[]"]')?.value;
+                const providerId = item.querySelector('[name="day_service_provider_id[]"]')?.value || '';
+                const serviceName = item.querySelector('[name="day_service_name[]"]')?.value || '';
+                const unitPrice = parseFloat(item.querySelector('[name="day_service_unit_price[]"]')?.value || 0);
+                const quantity = parseFloat(item.querySelector('[name="day_service_quantity[]"]')?.value || 1);
+                const unit = item.querySelector('[name="day_service_unit[]"]')?.value || '';
+                const notes = item.querySelector('[name="day_service_notes[]"]')?.value || '';
+                const included = item.querySelector('[name^="day_service_included"]')?.checked || false;
+
+                if (serviceId) {
+                    itineraryDayServices.push({
+                        day_number: parseInt(dayNum),
+                        service_id: parseInt(serviceId),
+                        service_provider_id: providerId ? parseInt(providerId) : null,
+                        service_name: serviceName,
+                        unit_price: unitPrice,
+                        quantity: quantity,
+                        unit: unit,
+                        is_included_in_price: included ? 1 : 0,
+                        notes: notes
+                    });
+                }
+            });
+        }
+
+        // Collect highlights, included, excluded
+        const highlights = document.getElementById('highlights')?.value || '';
+        const included = Array.from(document.querySelectorAll('[name="included[]"]')).map(input => input.value).filter(v => v);
+        const excluded = Array.from(document.querySelectorAll('[name="excluded[]"]')).map(input => input.value).filter(v => v);
+
+        // Collect policy IDs
+        const policyIds = Array.from(document.querySelectorAll('[name="policy_ids[]"]:checked')).map(cb => parseInt(cb.value));
+
+        // Prepare data to send
+        const dataToSave = {
+            form_data: formData,
+            itinerary: itinerary,
+            itinerary_day_services: itineraryDayServices, // ✅ Lưu tất cả day services
+            highlights: highlights ? highlights.split('\n').filter(h => h.trim()) : [],
+            included: included,
+            excluded: excluded,
+            policy_ids: policyIds,
+            ...additionalData // Merge additional data (override nếu có)
+        };
+
+        // Save to session via AJAX
+        fetch('?act=admin&module=tours&action=saveFormSession', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSave)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Form data saved to session');
+                } else {
+                    console.error('❌ Failed to save to session:', data.message);
+                }
+            })
+            .catch(err => {
+                console.error('❌ Error saving to session:', err);
+            });
+    }
+
+    function removeDayServiceItem(button, dayNumber) {
+        if (confirm('Bạn có chắc muốn xóa dịch vụ này?')) {
+            button.closest('.day-service-item').remove();
+            updateDayServiceTotal(dayNumber);
+            // Lưu lại vào session sau khi xóa
+            saveDayServiceToSession(dayNumber);
+        }
     }
 
     function updateDayServiceTotal(dayNumber) {
@@ -1923,61 +2296,5 @@ if (is_array($old_day_services)) {
 
     function formatNumber(num) {
         return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num);
-    }
-
-    // Load service info for timeline modal
-    function loadServiceInfoForTimeline(select, dayNumber) {
-        const serviceId = select.value;
-        const priceInfoDiv = document.getElementById(`service-price-info-day-${dayNumber}`);
-
-        if (!serviceId) {
-            if (priceInfoDiv) {
-                priceInfoDiv.classList.add('hidden');
-            }
-            return;
-        }
-
-        // Show price info section
-        if (priceInfoDiv) {
-            priceInfoDiv.classList.remove('hidden');
-        }
-
-        // Load service info from API
-        fetch(`?act=admin&module=tours&action=getServiceInfo&id=${serviceId}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.data) {
-                    const priceInput = document.getElementById(`modal-timeline-service-price-day-${dayNumber}`);
-                    const unitInput = document.getElementById(`modal-timeline-service-unit-day-${dayNumber}`);
-
-                    if (priceInput && data.data.unit_price > 0) {
-                        priceInput.value = data.data.unit_price;
-                    }
-                    if (unitInput && data.data.unit) {
-                        unitInput.value = data.data.unit;
-                    }
-
-                    // Calculate total
-                    calculateTimelineServiceTotal(dayNumber);
-                }
-            })
-            .catch(err => {
-                console.error('Error loading service info:', err);
-            });
-    }
-
-    // Calculate timeline service total
-    function calculateTimelineServiceTotal(dayNumber) {
-        const priceInput = document.getElementById(`modal-timeline-service-price-day-${dayNumber}`);
-        const quantityInput = document.getElementById(`modal-timeline-service-quantity-day-${dayNumber}`);
-        const totalSpan = document.getElementById(`modal-timeline-service-total-day-${dayNumber}`);
-
-        if (!priceInput || !quantityInput || !totalSpan) return;
-
-        const price = parseFloat(priceInput.value) || 0;
-        const quantity = parseFloat(quantityInput.value) || 1;
-        const total = price * quantity;
-
-        totalSpan.textContent = formatCurrency(total);
     }
 </script>

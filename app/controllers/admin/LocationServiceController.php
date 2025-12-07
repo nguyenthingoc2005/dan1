@@ -84,7 +84,9 @@ class LocationServiceController
             if ($country_id) {
                 try {
                     $current_country = $this->countryModel->findById($country_id);
-                    $provinces = $this->provinceModel->getForDropdown($country_id);
+                    // Load tất cả provinces (cả active và inactive) cho admin
+                    $provinces_result = $this->provinceModel->getAll(['country_id' => $country_id], 1, 100);
+                    $provinces = $provinces_result['data'] ?? [];
                     foreach ($provinces as &$province) {
                         try {
                             $province['providers_count'] = $this->getServiceProviderCountByProvince($province['id']);
@@ -1663,6 +1665,9 @@ class LocationServiceController
         $current_country = $country_id ? $this->countryModel->findById($country_id) : null;
         $current_province = $province_id ? $this->provinceModel->findById($province_id) : null;
 
+        // Load images for destination
+        $destination_images = $this->destinationModel->getImages($destination['id']);
+
         $page_title = 'Sửa Địa điểm du lịch';
         $content_file = VIEWS_PATH . '/admin/location-services/edit-destination.php';
         require VIEWS_PATH . '/layouts/admin_layout.php';
@@ -1842,6 +1847,808 @@ class LocationServiceController
             $redirect_url .= '&province_id=' . $province_id . '&tab=destinations';
         }
         redirect($redirect_url);
+    }
+
+    /**
+     * Form tạo country mới
+     */
+    public function createCountry()
+    {
+        require_admin();
+
+        $page_title = 'Thêm Quốc gia';
+        $content_file = VIEWS_PATH . '/admin/location-services/create-country.php';
+        require VIEWS_PATH . '/layouts/admin_layout.php';
+    }
+
+    /**
+     * Xử lý tạo country mới
+     */
+    public function storeCountry()
+    {
+        require_admin();
+
+        try {
+            require_once COMMON_PATH . '/ValidationHelper.php';
+
+            // Validate required fields
+            if (empty($_POST['code']) || empty($_POST['name'])) {
+                throw new Exception("Vui lòng điền đầy đủ thông tin bắt buộc.");
+            }
+
+            $code = strtoupper(trim($_POST['code']));
+            $name = trim($_POST['name']);
+
+            // Validate code: max 10 chars, unique
+            if (mb_strlen($code) > 10) {
+                throw new Exception("Mã quốc gia không được quá 10 ký tự.");
+            }
+            if (mb_strlen($code) < 2) {
+                throw new Exception("Mã quốc gia phải có ít nhất 2 ký tự.");
+            }
+
+            // Check duplicate code
+            $existing = $this->countryModel->findByCode($code);
+            if ($existing) {
+                throw new Exception("Mã quốc gia '{$code}' đã tồn tại. Vui lòng chọn mã khác.");
+            }
+
+            // Validate name: max 100 chars
+            if (mb_strlen($name) > 100) {
+                throw new Exception("Tên quốc gia không được quá 100 ký tự.");
+            }
+            if (mb_strlen($name) < 2) {
+                throw new Exception("Tên quốc gia phải có ít nhất 2 ký tự.");
+            }
+
+            // Validate name_en if provided
+            $name_en = !empty($_POST['name_en']) ? trim($_POST['name_en']) : null;
+            if ($name_en && mb_strlen($name_en) > 100) {
+                throw new Exception("Tên tiếng Anh không được quá 100 ký tự.");
+            }
+
+            // Validate display_order
+            $display_order = !empty($_POST['display_order']) ? (int) $_POST['display_order'] : 0;
+            if ($display_order < 0) {
+                $display_order = 0;
+            }
+
+            $data = [
+                'code' => $code,
+                'name' => sanitize($name),
+                'name_en' => $name_en ? sanitize($name_en) : null,
+                'status' => isset($_POST['status']) ? $_POST['status'] : 'active',
+                'display_order' => $display_order
+            ];
+
+            $id = $this->countryModel->create($data);
+
+            if ($id) {
+                set_success('Tạo quốc gia thành công!');
+                redirect('?act=admin&module=location-services&country_id=' . $id);
+            } else {
+                throw new Exception("Không thể tạo quốc gia.");
+            }
+
+        } catch (Exception $e) {
+            set_error($e->getMessage());
+            redirect('?act=admin&module=location-services&action=create-country');
+        }
+    }
+
+    /**
+     * Form sửa country
+     */
+    public function editCountry()
+    {
+        require_admin();
+
+        if (empty($_GET['id'])) {
+            set_error("Thiếu ID.");
+            redirect('?act=admin&module=location-services');
+            return;
+        }
+
+        $country = $this->countryModel->findById((int) $_GET['id']);
+        if (!$country) {
+            set_error("Không tìm thấy quốc gia.");
+            redirect('?act=admin&module=location-services');
+            return;
+        }
+
+        $page_title = 'Sửa Quốc gia';
+        $content_file = VIEWS_PATH . '/admin/location-services/edit-country.php';
+        require VIEWS_PATH . '/layouts/admin_layout.php';
+    }
+
+    /**
+     * Xử lý cập nhật country
+     */
+    public function updateCountry()
+    {
+        require_admin();
+
+        try {
+            if (empty($_POST['id'])) {
+                throw new Exception("Thiếu ID.");
+            }
+
+            $id = (int) $_POST['id'];
+
+            // Check country exists
+            $existing_country = $this->countryModel->findById($id);
+            if (!$existing_country) {
+                throw new Exception("Quốc gia không tồn tại.");
+            }
+
+            // Validate required fields
+            if (empty($_POST['name'])) {
+                throw new Exception("Vui lòng nhập tên quốc gia.");
+            }
+
+            $name = trim($_POST['name']);
+
+            // Validate name: max 100 chars
+            if (mb_strlen($name) > 100) {
+                throw new Exception("Tên quốc gia không được quá 100 ký tự.");
+            }
+            if (mb_strlen($name) < 2) {
+                throw new Exception("Tên quốc gia phải có ít nhất 2 ký tự.");
+            }
+
+            // Validate name_en if provided
+            $name_en = !empty($_POST['name_en']) ? trim($_POST['name_en']) : null;
+            if ($name_en && mb_strlen($name_en) > 100) {
+                throw new Exception("Tên tiếng Anh không được quá 100 ký tự.");
+            }
+
+            // Validate display_order
+            $display_order = !empty($_POST['display_order']) ? (int) $_POST['display_order'] : 0;
+            if ($display_order < 0) {
+                $display_order = 0;
+            }
+
+            $data = [
+                'name' => sanitize($name),
+                'name_en' => $name_en ? sanitize($name_en) : null,
+                'status' => isset($_POST['status']) ? $_POST['status'] : null,
+                'display_order' => $display_order
+            ];
+
+            if ($this->countryModel->update($id, $data)) {
+                set_success('Cập nhật thành công!');
+                redirect('?act=admin&module=location-services&country_id=' . $id);
+            } else {
+                throw new Exception("Không thể cập nhật.");
+            }
+
+        } catch (Exception $e) {
+            set_error($e->getMessage());
+            redirect('?act=admin&module=location-services&action=edit-country&id=' . ($_POST['id'] ?? ''));
+        }
+    }
+
+    /**
+     * Xóa country - Redirect về trang trước
+     */
+    public function deleteCountry()
+    {
+        require_admin();
+
+        try {
+            if (empty($_GET['id'])) {
+                throw new Exception("Thiếu ID.");
+            }
+
+            $id = (int) $_GET['id'];
+
+            if ($this->countryModel->delete($id)) {
+                set_success('Xóa quốc gia thành công!');
+            } else {
+                throw new Exception("Không thể xóa.");
+            }
+
+        } catch (Exception $e) {
+            set_error($e->getMessage());
+        }
+
+        redirect('?act=admin&module=location-services');
+    }
+
+    /**
+     * Toggle country status
+     */
+    public function toggleCountryStatus()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            if (empty($_GET['id'])) {
+                throw new Exception("Thiếu ID.");
+            }
+
+            $id = (int) $_GET['id'];
+
+            if ($this->countryModel->toggleStatus($id)) {
+                $country = $this->countryModel->findById($id);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Cập nhật trạng thái thành công!',
+                    'status' => $country['status']
+                ]);
+            } else {
+                throw new Exception("Không thể cập nhật trạng thái.");
+            }
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Form tạo province mới
+     */
+    public function createProvince()
+    {
+        require_admin();
+
+        $country_id = !empty($_GET['country_id']) ? (int) $_GET['country_id'] : null;
+
+        if (!$country_id) {
+            set_error("Thiếu thông tin quốc gia.");
+            redirect('?act=admin&module=location-services');
+            return;
+        }
+
+        $current_country = $this->countryModel->findById($country_id);
+        if (!$current_country) {
+            set_error("Không tìm thấy quốc gia.");
+            redirect('?act=admin&module=location-services');
+            return;
+        }
+
+        $page_title = 'Thêm Tỉnh thành';
+        $content_file = VIEWS_PATH . '/admin/location-services/create-province.php';
+        require VIEWS_PATH . '/layouts/admin_layout.php';
+    }
+
+    /**
+     * Xử lý tạo province mới
+     */
+    public function storeProvince()
+    {
+        require_admin();
+
+        try {
+            if (empty($_POST['name']) || empty($_POST['country_id'])) {
+                throw new Exception("Vui lòng điền đầy đủ thông tin bắt buộc.");
+            }
+
+            $name = trim($_POST['name']);
+            $country_id = (int) $_POST['country_id'];
+
+            // Validate country exists and active
+            $country = $this->countryModel->findById($country_id);
+            if (!$country) {
+                throw new Exception("Quốc gia không tồn tại.");
+            }
+            if ($country['status'] != 'active') {
+                throw new Exception("Quốc gia không khả dụng (đã bị vô hiệu hóa).");
+            }
+
+            // Validate name: max 100 chars
+            if (mb_strlen($name) > 100) {
+                throw new Exception("Tên tỉnh thành không được quá 100 ký tự.");
+            }
+            if (mb_strlen($name) < 2) {
+                throw new Exception("Tên tỉnh thành phải có ít nhất 2 ký tự.");
+            }
+
+            // Validate code if provided
+            $code = !empty($_POST['code']) ? trim($_POST['code']) : null;
+            if ($code && mb_strlen($code) > 20) {
+                throw new Exception("Mã tỉnh thành không được quá 20 ký tự.");
+            }
+
+            // Check duplicate code if provided
+            if ($code) {
+                $existing = $this->provinceModel->findByCode($code);
+                if ($existing) {
+                    throw new Exception("Mã tỉnh thành '{$code}' đã tồn tại. Vui lòng chọn mã khác.");
+                }
+            }
+
+            // Validate name_en if provided
+            $name_en = !empty($_POST['name_en']) ? trim($_POST['name_en']) : null;
+            if ($name_en && mb_strlen($name_en) > 100) {
+                throw new Exception("Tên tiếng Anh không được quá 100 ký tự.");
+            }
+
+            // Validate display_order
+            $display_order = !empty($_POST['display_order']) ? (int) $_POST['display_order'] : 0;
+            if ($display_order < 0) {
+                $display_order = 0;
+            }
+
+            $data = [
+                'country_id' => $country_id,
+                'code' => $code,
+                'name' => sanitize($name),
+                'name_en' => $name_en ? sanitize($name_en) : null,
+                'status' => isset($_POST['status']) ? $_POST['status'] : 'active',
+                'display_order' => $display_order
+            ];
+
+            $id = $this->provinceModel->create($data);
+
+            if ($id) {
+                set_success('Tạo tỉnh thành thành công!');
+                redirect('?act=admin&module=location-services&country_id=' . $country_id . '&province_id=' . $id);
+            } else {
+                throw new Exception("Không thể tạo tỉnh thành.");
+            }
+
+        } catch (Exception $e) {
+            set_error($e->getMessage());
+            redirect('?act=admin&module=location-services&action=create-province&country_id=' . ($_POST['country_id'] ?? ''));
+        }
+    }
+
+    /**
+     * Form sửa province
+     */
+    public function editProvince()
+    {
+        require_admin();
+
+        if (empty($_GET['id'])) {
+            set_error("Thiếu ID.");
+            redirect('?act=admin&module=location-services');
+            return;
+        }
+
+        $province = $this->provinceModel->findById((int) $_GET['id']);
+        if (!$province) {
+            set_error("Không tìm thấy tỉnh thành.");
+            redirect('?act=admin&module=location-services');
+            return;
+        }
+
+        $country_id = $province['country_id'] ?? (!empty($_GET['country_id']) ? (int) $_GET['country_id'] : null);
+        $current_country = $country_id ? $this->countryModel->findById($country_id) : null;
+
+        $page_title = 'Sửa Tỉnh thành';
+        $content_file = VIEWS_PATH . '/admin/location-services/edit-province.php';
+        require VIEWS_PATH . '/layouts/admin_layout.php';
+    }
+
+    /**
+     * Xử lý cập nhật province
+     */
+    public function updateProvince()
+    {
+        require_admin();
+
+        try {
+            if (empty($_POST['id'])) {
+                throw new Exception("Thiếu ID.");
+            }
+
+            $id = (int) $_POST['id'];
+
+            // Check province exists
+            $existing_province = $this->provinceModel->findById($id);
+            if (!$existing_province) {
+                throw new Exception("Tỉnh thành không tồn tại.");
+            }
+
+            // Validate required fields
+            if (empty($_POST['name'])) {
+                throw new Exception("Vui lòng nhập tên tỉnh thành.");
+            }
+
+            $name = trim($_POST['name']);
+
+            // Validate name: max 100 chars
+            if (mb_strlen($name) > 100) {
+                throw new Exception("Tên tỉnh thành không được quá 100 ký tự.");
+            }
+            if (mb_strlen($name) < 2) {
+                throw new Exception("Tên tỉnh thành phải có ít nhất 2 ký tự.");
+            }
+
+            // Validate name_en if provided
+            $name_en = !empty($_POST['name_en']) ? trim($_POST['name_en']) : null;
+            if ($name_en && mb_strlen($name_en) > 100) {
+                throw new Exception("Tên tiếng Anh không được quá 100 ký tự.");
+            }
+
+            // Validate display_order
+            $display_order = !empty($_POST['display_order']) ? (int) $_POST['display_order'] : 0;
+            if ($display_order < 0) {
+                $display_order = 0;
+            }
+
+            $data = [
+                'name' => sanitize($name),
+                'name_en' => $name_en ? sanitize($name_en) : null,
+                'status' => isset($_POST['status']) ? $_POST['status'] : null,
+                'display_order' => $display_order
+            ];
+
+            if ($this->provinceModel->update($id, $data)) {
+                set_success('Cập nhật thành công!');
+                $province = $this->provinceModel->findById($id);
+                redirect('?act=admin&module=location-services&country_id=' . $province['country_id'] . '&province_id=' . $id);
+            } else {
+                throw new Exception("Không thể cập nhật.");
+            }
+
+        } catch (Exception $e) {
+            set_error($e->getMessage());
+            redirect('?act=admin&module=location-services&action=edit-province&id=' . ($_POST['id'] ?? '') . '&country_id=' . ($_POST['country_id'] ?? ''));
+        }
+    }
+
+    /**
+     * Xóa province - Redirect về trang trước
+     */
+    public function deleteProvince()
+    {
+        require_admin();
+
+        try {
+            if (empty($_GET['id'])) {
+                throw new Exception("Thiếu ID.");
+            }
+
+            $id = (int) $_GET['id'];
+            $province = $this->provinceModel->findById($id);
+            $country_id = $province['country_id'] ?? (!empty($_GET['country_id']) ? (int) $_GET['country_id'] : null);
+
+            if ($this->provinceModel->delete($id)) {
+                set_success('Xóa tỉnh thành thành công!');
+            } else {
+                throw new Exception("Không thể xóa.");
+            }
+
+        } catch (Exception $e) {
+            set_error($e->getMessage());
+        }
+
+        // Redirect về trang trước
+        $redirect_url = '?act=admin&module=location-services';
+        if ($country_id) {
+            $redirect_url .= '&country_id=' . $country_id;
+        }
+        redirect($redirect_url);
+    }
+
+    /**
+     * Toggle province status
+     */
+    public function toggleProvinceStatus()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            if (empty($_GET['id'])) {
+                throw new Exception("Thiếu ID.");
+            }
+
+            $id = (int) $_GET['id'];
+
+            if ($this->provinceModel->toggleStatus($id)) {
+                $province = $this->provinceModel->findById($id);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Cập nhật trạng thái thành công!',
+                    'status' => $province['status']
+                ]);
+            } else {
+                throw new Exception("Không thể cập nhật trạng thái.");
+            }
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Upload ảnh cho destination
+     */
+    public function uploadDestinationImage()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            if (empty($_POST['destination_id'])) {
+                throw new Exception("Thiếu destination_id.");
+            }
+
+            $destination_id = (int) $_POST['destination_id'];
+
+            // Check destination exists
+            $destination = $this->destinationModel->findById($destination_id);
+            if (!$destination) {
+                throw new Exception("Địa điểm không tồn tại.");
+            }
+
+            if (empty($_FILES['images']) || $_FILES['images']['error'][0] === UPLOAD_ERR_NO_FILE) {
+                throw new Exception("Vui lòng chọn ít nhất một ảnh.");
+            }
+
+            $uploaded_count = $this->handleDestinationImageUploads($destination_id, $_FILES['images']);
+
+            if ($uploaded_count > 0) {
+                // Reload images
+                $images = $this->destinationModel->getImages($destination_id);
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Đã upload {$uploaded_count} ảnh thành công!",
+                    'images' => $images
+                ]);
+            } else {
+                throw new Exception("Không có ảnh nào được upload. Vui lòng kiểm tra định dạng và kích thước file.");
+            }
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Xóa ảnh destination
+     */
+    public function deleteDestinationImage()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            if (empty($_POST['image_id'])) {
+                throw new Exception("Thiếu image_id.");
+            }
+
+            $image_id = (int) $_POST['image_id'];
+
+            // Get image info before delete (to get file path)
+            $stmt = $this->db->prepare("SELECT image_url, destination_id FROM destination_images WHERE id = :id");
+            $stmt->execute(['id' => $image_id]);
+            $image = $stmt->fetch();
+
+            if (!$image) {
+                throw new Exception("Ảnh không tồn tại.");
+            }
+
+            // Delete from database
+            if ($this->destinationModel->deleteImage($image_id)) {
+                // Delete physical file
+                $file_path = $image['image_url'];
+                if (file_exists($file_path)) {
+                    @unlink($file_path);
+                }
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Đã xóa ảnh thành công!'
+                ]);
+            } else {
+                throw new Exception("Không thể xóa ảnh.");
+            }
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Set primary image
+     */
+    public function setPrimaryDestinationImage()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            if (empty($_POST['image_id']) || empty($_POST['destination_id'])) {
+                throw new Exception("Thiếu thông tin.");
+            }
+
+            $image_id = (int) $_POST['image_id'];
+            $destination_id = (int) $_POST['destination_id'];
+
+            if ($this->destinationModel->setPrimaryImage($image_id, $destination_id)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Đã đặt làm ảnh chính!'
+                ]);
+            } else {
+                throw new Exception("Không thể đặt làm ảnh chính.");
+            }
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Cập nhật caption cho ảnh
+     */
+    public function updateDestinationImageCaption()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            if (empty($_POST['image_id'])) {
+                throw new Exception("Thiếu image_id.");
+            }
+
+            $image_id = (int) $_POST['image_id'];
+            $caption = !empty($_POST['caption']) ? sanitize($_POST['caption']) : null;
+
+            // Validate caption length
+            if ($caption && mb_strlen($caption) > 255) {
+                throw new Exception("Caption không được quá 255 ký tự.");
+            }
+
+            if ($this->destinationModel->updateImageCaption($image_id, $caption)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Cập nhật caption thành công!'
+                ]);
+            } else {
+                throw new Exception("Không thể cập nhật caption.");
+            }
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Sắp xếp lại thứ tự ảnh
+     */
+    public function reorderDestinationImages()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        try {
+            if (empty($_POST['destination_id']) || empty($_POST['image_ids'])) {
+                throw new Exception("Thiếu thông tin.");
+            }
+
+            $destination_id = (int) $_POST['destination_id'];
+            $image_ids = $_POST['image_ids'];
+
+            if (!is_array($image_ids) || empty($image_ids)) {
+                throw new Exception("Danh sách ảnh không hợp lệ.");
+            }
+
+            // Validate all image_ids belong to destination
+            $placeholders = implode(',', array_fill(0, count($image_ids), '?'));
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as count 
+                FROM destination_images 
+                WHERE id IN ({$placeholders}) AND destination_id = ?
+            ");
+            $params = array_merge($image_ids, [$destination_id]);
+            $stmt->execute($params);
+            $result = $stmt->fetch();
+
+            if ($result['count'] != count($image_ids)) {
+                throw new Exception("Một số ảnh không thuộc về địa điểm này.");
+            }
+
+            if ($this->destinationModel->reorderImages($destination_id, $image_ids)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Sắp xếp lại thứ tự thành công!'
+                ]);
+            } else {
+                throw new Exception("Không thể sắp xếp lại thứ tự.");
+            }
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Helper: Xử lý upload ảnh cho destination
+     */
+    private function handleDestinationImageUploads($destination_id, $files)
+    {
+        require_once COMMON_PATH . '/ValidationHelper.php';
+
+        $upload_dir = 'public/uploads/destinations/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+
+        $count = count($files['name']);
+        $uploaded_count = 0;
+
+        // Check if destination already has images to determine primary
+        $existing_images = $this->destinationModel->getImages($destination_id);
+        $has_primary = false;
+        foreach ($existing_images as $img) {
+            if ($img['is_primary']) {
+                $has_primary = true;
+                break;
+            }
+        }
+
+        for ($i = 0; $i < $count; $i++) {
+            if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                $tmp_name = $files['tmp_name'][$i];
+                $name = basename($files['name'][$i]);
+                $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+                // Basic extension check
+                if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    continue;
+                }
+
+                // Size check (5MB limit)
+                if ($files['size'][$i] > 5 * 1024 * 1024) {
+                    continue;
+                }
+
+                // Validate image file (MIME type + dimensions)
+                $validation = ValidationHelper::validateImageFile($tmp_name);
+                if (!$validation['valid']) {
+                    error_log("Image upload validation failed: " . $validation['error']);
+                    continue;
+                }
+
+                // Generate unique name
+                $new_name = 'dest_' . $destination_id . '_' . uniqid() . '.' . $ext;
+                $destination_path = $upload_dir . $new_name;
+
+                if (move_uploaded_file($tmp_name, $destination_path)) {
+                    $is_primary = (!$has_primary && $uploaded_count === 0);
+
+                    $this->destinationModel->addImage($destination_id, $destination_path, $is_primary);
+                    $uploaded_count++;
+                }
+            }
+        }
+
+        return $uploaded_count;
     }
 
     /**

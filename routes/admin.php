@@ -250,6 +250,9 @@ switch ($module) {
             case 'delete':
                 $tourController->delete();
                 break;
+            case 'store':
+                $tourController->store();
+                break;
             // NEW: Custom Tour from Template
             case 'selectTemplate':
                 $tourController->selectTemplate();
@@ -277,9 +280,6 @@ switch ($module) {
                 $tourController->getPolicy();
                 break;
             // Component Loaders (URL-based)
-            case 'loadTimelineEditor':
-                $tourController->loadTimelineEditor();
-                break;
             case 'loadDayServicesEditor':
                 $tourController->loadDayServicesEditor();
                 break;
@@ -288,6 +288,9 @@ switch ($module) {
                 break;
             case 'saveFormSession':
                 $tourController->saveFormSession();
+                break;
+            case 'clearTourSession':
+                $tourController->clearTourSession();
                 break;
             case 'uploadImage':
                 $tourController->uploadImage();
@@ -696,6 +699,60 @@ switch ($module) {
                 break;
             case 'delete-price':
                 $locationServiceController->deletePrice();
+                break;
+            // Country CRUD
+            case 'create-country':
+                $locationServiceController->createCountry();
+                break;
+            case 'store-country':
+                $locationServiceController->storeCountry();
+                break;
+            case 'edit-country':
+                $locationServiceController->editCountry();
+                break;
+            case 'update-country':
+                $locationServiceController->updateCountry();
+                break;
+            case 'delete-country':
+                $locationServiceController->deleteCountry();
+                break;
+            case 'toggle-country-status':
+                $locationServiceController->toggleCountryStatus();
+                break;
+            // Province CRUD
+            case 'create-province':
+                $locationServiceController->createProvince();
+                break;
+            case 'store-province':
+                $locationServiceController->storeProvince();
+                break;
+            case 'edit-province':
+                $locationServiceController->editProvince();
+                break;
+            case 'update-province':
+                $locationServiceController->updateProvince();
+                break;
+            case 'delete-province':
+                $locationServiceController->deleteProvince();
+                break;
+            case 'toggle-province-status':
+                $locationServiceController->toggleProvinceStatus();
+                break;
+            // Destination Images
+            case 'upload-destination-image':
+                $locationServiceController->uploadDestinationImage();
+                break;
+            case 'delete-destination-image':
+                $locationServiceController->deleteDestinationImage();
+                break;
+            case 'set-primary-destination-image':
+                $locationServiceController->setPrimaryDestinationImage();
+                break;
+            case 'update-destination-image-caption':
+                $locationServiceController->updateDestinationImageCaption();
+                break;
+            case 'reorder-destination-images':
+                $locationServiceController->reorderDestinationImages();
                 break;
             default:
                 $locationServiceController->index();

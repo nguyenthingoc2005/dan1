@@ -149,7 +149,7 @@ class ServicePrice
             // Validate: end_date phải >= start_date
             $start_date = $data['start_date'] ?? $data['valid_from'] ?? null;
             $end_date = $data['end_date'] ?? $data['valid_to'] ?? null;
-            
+
             if (!empty($start_date) && !empty($end_date)) {
                 if (strtotime($end_date) < strtotime($start_date)) {
                     throw new Exception("Ngày kết thúc phải sau ngày bắt đầu.");
@@ -248,8 +248,12 @@ class ServicePrice
     {
         try {
             $allowed_fields = [
-                'unit_price', 'start_date', 'end_date',
-                'price_type', 'notes', 'status', 'min_quantity', 'max_quantity'
+                'unit_price',
+                'start_date',
+                'end_date',
+                'price_type',
+                'notes',
+                'status'
             ];
 
             $set_parts = [];
@@ -261,7 +265,7 @@ class ServicePrice
                     $params[$field] = $data[$field];
                 }
             }
-            
+
             // Support both valid_from/valid_to and start_date/end_date
             if (isset($data['valid_from']) && !isset($data['start_date'])) {
                 $set_parts[] = "start_date = :start_date";

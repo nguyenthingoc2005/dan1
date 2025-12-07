@@ -7,7 +7,6 @@
  * Quản lý toàn bộ dữ liệu về Tour theo flow mới:
  * - Thông tin cơ bản (tours table) - KHÔNG có category_id, price_based_on_pax
  * - Lịch trình (itineraries)
- * - Timeline chi tiết (itinerary_timelines) - MỚI
  * - Dịch vụ theo ngày (itinerary_day_services) - MỚI (thay thế tour_services)
  * - Chính sách (tour_policies) - MỚI
  * - Hình ảnh (tour_images)
@@ -145,10 +144,7 @@ class Tour
             // 3. Itinerary
             $tour['itinerary'] = $this->getItinerary($id);
 
-            // 4. Itinerary Timelines (MỚI)
-            $tour['itinerary_timelines'] = $this->getItineraryTimelines($id);
-
-            // 5. Itinerary Day Services (MỚI)
+            // 4. Itinerary Day Services (MỚI)
             $tour['itinerary_day_services'] = $this->getItineraryDayServices($id);
 
             // 6. Highlights
@@ -209,7 +205,13 @@ class Tour
     public function create($data)
     {
         try {
+            // Check if already in transaction
+            if ($this->pdo->inTransaction()) {
+                error_log("WARNING: Already in transaction before beginTransaction()");
+            }
+            
             $this->pdo->beginTransaction();
+            error_log("Transaction started in Tour::create()");
 
             // 1. Insert Tours Table - ĐÃ XÓA category_id, price_based_on_pax
             $sql = "INSERT INTO tours (
@@ -260,43 +262,56 @@ class Tour
 
             // 2. Insert Itinerary
             if (!empty($data['itinerary'])) {
+                error_log("Saving itinerary: " . count($data['itinerary']) . " items");
                 $this->saveItinerary($tour_id, $data['itinerary']);
             }
 
-            // 3. Insert Itinerary Timelines (MỚI)
-            if (!empty($data['itinerary_timelines'])) {
-                $this->saveItineraryTimelines($tour_id, $data['itinerary_timelines']);
-            }
-
-            // 4. Insert Itinerary Day Services (MỚI)
+            // 3. Insert Itinerary Day Services (MỚI)
             if (!empty($data['itinerary_day_services'])) {
+                error_log("Saving day services: " . count($data['itinerary_day_services']) . " items");
                 $this->saveItineraryDayServices($tour_id, $data['itinerary_day_services']);
             }
 
             // 5. Insert Highlights
             if (!empty($data['highlights'])) {
+                error_log("Saving highlights: " . count($data['highlights']) . " items");
                 $this->saveHighlights($tour_id, $data['highlights']);
             }
 
             // 6. Insert Included/Excluded
             if (!empty($data['included'])) {
+                error_log("Saving included: " . count($data['included']) . " items");
                 $this->saveIncludedExcluded($tour_id, 'included', $data['included']);
             }
             if (!empty($data['excluded'])) {
+                error_log("Saving excluded: " . count($data['excluded']) . " items");
                 $this->saveIncludedExcluded($tour_id, 'excluded', $data['excluded']);
             }
 
             // 7. Insert Tour Policies (MỚI)
             if (!empty($data['policy_ids'])) {
+                error_log("Saving policies: " . count($data['policy_ids']) . " items");
                 $this->saveTourPolicies($tour_id, $data['policy_ids']);
             }
 
+            if (!$this->pdo->inTransaction()) {
+                error_log("ERROR: No active transaction before commit!");
+                throw new Exception("No active transaction before commit");
+            }
+            
             $this->pdo->commit();
+            error_log("Transaction committed successfully in Tour::create(), tour_id: $tour_id");
             return $tour_id;
 
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+                error_log("Transaction rolled back in Tour::create()");
+            } else {
+                error_log("WARNING: No active transaction to rollback in Tour::create()");
+            }
             error_log("Tour::create() Error: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
             throw $e;
         }
     }
@@ -369,17 +384,7 @@ class Tour
                 }
             }
 
-            // 3. Update Itinerary Timelines (MỚI)
-            if (isset($data['itinerary_timelines'])) {
-                require_once MODELS_PATH . '/ItineraryTimeline.php';
-                $timelineModel = new ItineraryTimeline($this->pdo);
-                $timelineModel->deleteByTourId($id);
-                if (!empty($data['itinerary_timelines'])) {
-                    $this->saveItineraryTimelines($id, $data['itinerary_timelines']);
-                }
-            }
-
-            // 4. Update Itinerary Day Services (MỚI)
+            // 3. Update Itinerary Day Services (MỚI)
             if (isset($data['itinerary_day_services'])) {
                 require_once MODELS_PATH . '/ItineraryDayService.php';
                 $dayServiceModel = new ItineraryDayService($this->pdo);
@@ -471,43 +476,6 @@ class Tour
     }
 
     /**
-     * Lưu Itinerary Timelines (MỚI)
-     */
-    private function saveItineraryTimelines($tour_id, $timelines_data)
-    {
-        require_once MODELS_PATH . '/ItineraryTimeline.php';
-        $timelineModel = new ItineraryTimeline($this->pdo);
-
-        // Lấy itinerary_id từ day_number
-        $itinerary_map = [];
-        $stmt = $this->pdo->prepare("SELECT id, day_number FROM itineraries WHERE tour_id = :tour_id");
-        $stmt->execute(['tour_id' => $tour_id]);
-        foreach ($stmt->fetchAll() as $it) {
-            $itinerary_map[$it['day_number']] = $it['id'];
-        }
-
-        foreach ($timelines_data as $timeline) {
-            $day_number = $timeline['day_number'] ?? $timeline['day'];
-            if (!isset($itinerary_map[$day_number]))
-                continue;
-
-            $timelineModel->create([
-                'itinerary_id' => $itinerary_map[$day_number],
-                'timeline_time' => $timeline['timeline_time'],
-                'activity_title' => $timeline['activity_title'],
-                'activity_description' => $timeline['activity_description'] ?? null,
-                'location' => $timeline['location'] ?? null,
-                'destination_id' => $timeline['destination_id'] ?? null,
-                'service_provider_id' => $timeline['service_provider_id'] ?? null,
-                'service_id' => $timeline['service_id'] ?? null,
-                'timeline_type' => $timeline['timeline_type'] ?? 'activity',
-                'display_order' => $timeline['display_order'] ?? 0,
-                'notes' => $timeline['notes'] ?? null
-            ]);
-        }
-    }
-
-    /**
      * Lưu Itinerary Day Services (MỚI)
      */
     private function saveItineraryDayServices($tour_id, $services_data)
@@ -525,16 +493,61 @@ class Tour
 
         foreach ($services_data as $service) {
             $day_number = $service['day_number'] ?? $service['day'];
-            if (!isset($itinerary_map[$day_number]))
+            if (!isset($itinerary_map[$day_number])) {
+                error_log("Tour::saveItineraryDayServices() - Itinerary not found for day_number: $day_number, tour_id: $tour_id");
                 continue;
+            }
+
+            // Validation: service_id phải tồn tại
+            $service_id = (int) ($service['service_id'] ?? 0);
+            if ($service_id <= 0) {
+                throw new Exception("Service ID không hợp lệ cho ngày $day_number");
+            }
+
+            // Kiểm tra service_id có tồn tại trong database
+            $stmt = $this->pdo->prepare("SELECT id FROM services WHERE id = :id AND status = 'active'");
+            $stmt->execute(['id' => $service_id]);
+            if (!$stmt->fetch()) {
+                throw new Exception("Service ID $service_id không tồn tại hoặc đã bị vô hiệu hóa (ngày $day_number)");
+            }
+
+            // Validation: unit_price > 0
+            $unit_price = (float) ($service['unit_price'] ?? 0);
+            if ($unit_price <= 0) {
+                throw new Exception("Đơn giá phải lớn hơn 0 cho ngày $day_number");
+            }
+
+            // Validation: quantity > 0
+            $quantity = (float) ($service['quantity'] ?? 0);
+            if ($quantity <= 0) {
+                throw new Exception("Số lượng phải lớn hơn 0 cho ngày $day_number");
+            }
+
+            // Validation: service_provider_id (nếu có) phải thuộc về service
+            $service_provider_id = !empty($service['service_provider_id']) ? (int) $service['service_provider_id'] : null;
+            if ($service_provider_id) {
+                $stmt = $this->pdo->prepare("
+                    SELECT s.id 
+                    FROM services s 
+                    WHERE s.id = :service_id 
+                    AND s.service_provider_id = :provider_id
+                ");
+                $stmt->execute([
+                    'service_id' => $service_id,
+                    'provider_id' => $service_provider_id
+                ]);
+                if (!$stmt->fetch()) {
+                    throw new Exception("Nhà dịch vụ không thuộc về dịch vụ đã chọn (ngày $day_number)");
+                }
+            }
 
             $dayServiceModel->create([
                 'itinerary_id' => $itinerary_map[$day_number],
-                'service_id' => $service['service_id'],
-                'service_provider_id' => $service['service_provider_id'] ?? null,
+                'service_id' => $service_id,
+                'service_provider_id' => $service_provider_id,
                 'service_name' => $service['service_name'] ?? null,
-                'unit_price' => $service['unit_price'],
-                'quantity' => $service['quantity'] ?? 1.00,
+                'unit_price' => $unit_price,
+                'quantity' => $quantity,
                 'unit' => $service['unit'] ?? null,
                 'is_included_in_price' => $service['is_included_in_price'] ?? 1,
                 'notes' => $service['notes'] ?? null
@@ -584,7 +597,27 @@ class Tour
     {
         require_once MODELS_PATH . '/Policy.php';
         $policyModel = new Policy($this->pdo);
-        return $policyModel->assignMultipleToTour($tour_id, $policy_ids);
+        
+        // Check if we're in a transaction - if so, don't let Policy model start its own
+        $in_transaction = $this->pdo->inTransaction();
+        error_log("saveTourPolicies: inTransaction = " . ($in_transaction ? 'true' : 'false'));
+        
+        if ($in_transaction) {
+            // We're already in a transaction, so we need to manually insert
+            // instead of calling assignMultipleToTour which has its own transaction
+            $sql = "INSERT INTO tour_policies (tour_id, policy_id) VALUES (:tour_id, :policy_id)";
+            $stmt = $this->pdo->prepare($sql);
+            foreach ($policy_ids as $policy_id) {
+                $stmt->execute([
+                    'tour_id' => $tour_id,
+                    'policy_id' => (int) $policy_id
+                ]);
+            }
+            return true;
+        } else {
+            // Not in transaction, safe to call assignMultipleToTour
+            return $policyModel->assignMultipleToTour($tour_id, $policy_ids);
+        }
     }
 
     // ========================================================================
@@ -609,16 +642,6 @@ class Tour
         ");
         $stmt->execute(['id' => $tour_id]);
         return $stmt->fetchAll();
-    }
-
-    /**
-     * Lấy Itinerary Timelines (MỚI)
-     */
-    public function getItineraryTimelines($tour_id)
-    {
-        require_once MODELS_PATH . '/ItineraryTimeline.php';
-        $timelineModel = new ItineraryTimeline($this->pdo);
-        return $timelineModel->getByTourId($tour_id);
     }
 
     /**

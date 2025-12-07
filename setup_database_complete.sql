@@ -249,8 +249,6 @@ CREATE TABLE IF NOT EXISTS `service_prices` (
   `unit_price` decimal(15,2) NOT NULL,
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL,
-  `min_quantity` int DEFAULT '1',
-  `max_quantity` int DEFAULT NULL,
   `notes` text COLLATE utf8mb4_unicode_ci,
   `status` enum('active','inactive') COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   `created_by` int DEFAULT NULL,

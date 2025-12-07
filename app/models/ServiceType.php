@@ -82,12 +82,29 @@ class ServiceType
     public function findById($id)
     {
         try {
-            $stmt = $this->pdo->prepare("
-                SELECT id, name, description, status, created_at
-                FROM service_types
-                WHERE id = :id
-                LIMIT 1
-            ");
+            // Check if created_by column exists
+            $check_stmt = $this->pdo->query("SHOW COLUMNS FROM service_types LIKE 'created_by'");
+            $has_created_by = $check_stmt->rowCount() > 0;
+
+            if ($has_created_by) {
+                // Query with user join
+                $stmt = $this->pdo->prepare("
+                    SELECT st.id, st.name, st.description, st.status, st.created_at, st.created_by,
+                           u.full_name as creator_name, u.email as creator_email
+                    FROM service_types st
+                    LEFT JOIN users u ON st.created_by = u.id
+                    WHERE st.id = :id
+                    LIMIT 1
+                ");
+            } else {
+                // Fallback query without created_by
+                $stmt = $this->pdo->prepare("
+                    SELECT id, name, description, status, created_at
+                    FROM service_types
+                    WHERE id = :id
+                    LIMIT 1
+                ");
+            }
 
             $stmt->execute(['id' => $id]);
             return $stmt->fetch() ?: null;
@@ -122,16 +139,35 @@ class ServiceType
     public function create($data)
     {
         try {
-            $stmt = $this->pdo->prepare("
-                INSERT INTO service_types (name, description, status)
-                VALUES (:name, :description, :status)
-            ");
+            // Check if created_by field exists in table
+            $check_stmt = $this->pdo->query("SHOW COLUMNS FROM service_types LIKE 'created_by'");
+            $has_created_by = $check_stmt->rowCount() > 0;
 
-            $success = $stmt->execute([
-                'name' => $data['name'],
-                'description' => $data['description'] ?? null,
-                'status' => $data['status'] ?? 'active'
-            ]);
+            if ($has_created_by) {
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO service_types (name, description, status, created_by)
+                    VALUES (:name, :description, :status, :created_by)
+                ");
+
+                $success = $stmt->execute([
+                    'name' => $data['name'],
+                    'description' => $data['description'] ?? null,
+                    'status' => $data['status'] ?? 'active',
+                    'created_by' => $data['created_by'] ?? null
+                ]);
+            } else {
+                // Fallback if created_by column doesn't exist
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO service_types (name, description, status)
+                    VALUES (:name, :description, :status)
+                ");
+
+                $success = $stmt->execute([
+                    'name' => $data['name'],
+                    'description' => $data['description'] ?? null,
+                    'status' => $data['status'] ?? 'active'
+                ]);
+            }
 
             return $success ? $this->pdo->lastInsertId() : false;
 

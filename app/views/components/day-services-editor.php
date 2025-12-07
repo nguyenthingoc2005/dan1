@@ -244,21 +244,94 @@ foreach ($day_services as $service) {
 
     function loadServiceInfo(select, dayNumber) {
         const serviceId = select.value;
-        if (!serviceId) return;
+        const providerSelect = document.getElementById(`modal-service-provider-id-day-${dayNumber}`);
+        
+        if (!serviceId) {
+            // Reset providers dropdown nếu không chọn service
+            if (providerSelect) {
+                providerSelect.innerHTML = '<option value="">-- Chọn nhà dịch vụ --</option>';
+                // Reload all providers
+                if (typeof serviceProviders !== 'undefined' && serviceProviders) {
+                    let options = '<option value="">-- Chọn nhà dịch vụ --</option>';
+                    if (Array.isArray(serviceProviders)) {
+                        serviceProviders.forEach(provider => {
+                            options += `<option value="${provider.id}">${escapeHtml(provider.name)}</option>`;
+                        });
+                    } else {
+                        Object.entries(serviceProviders).forEach(([id, provider]) => {
+                            const name = typeof provider === 'object' ? provider.name : provider;
+                            options += `<option value="${id}">${escapeHtml(name)}</option>`;
+                        });
+                    }
+                    providerSelect.innerHTML = options;
+                }
+            }
+            return;
+        }
 
-        // AJAX load service info để auto-fill giá
-        fetch(`?act=admin&module=tours&action=getServiceInfo&id=${serviceId}`)
+        // Show loading
+        if (providerSelect) {
+            providerSelect.innerHTML = '<option value="">Đang tải...</option>';
+            providerSelect.disabled = true;
+        }
+
+        // Get tour start date để load giá theo mùa (nếu có)
+        const tourStartDate = document.querySelector('[name="start_date"]')?.value || null;
+        let url = `?act=admin&module=tours&action=getServiceInfo&id=${serviceId}`;
+        if (tourStartDate) {
+            url += `&date=${tourStartDate}`;
+        }
+
+        // AJAX load service info để auto-fill giá và filter providers
+        fetch(url)
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
+                if (data.success && data.data) {
                     const priceInput = document.getElementById(`modal-unit-price-day-${dayNumber}`);
                     const unitInput = document.getElementById(`modal-unit-day-${dayNumber}`);
-                    if (data.data.unit_price > 0) {
+                    
+                    // Auto-fill price và unit
+                    if (priceInput && data.data.unit_price > 0) {
                         priceInput.value = data.data.unit_price;
                     }
-                    if (data.data.unit) {
+                    if (unitInput && data.data.unit) {
                         unitInput.value = data.data.unit;
                     }
+
+                    // Update providers dropdown - chỉ hiển thị providers của service này
+                    if (providerSelect && data.data.providers) {
+                        let options = '<option value="">-- Chọn nhà dịch vụ --</option>';
+                        data.data.providers.forEach(provider => {
+                            const selected = (data.data.service_provider_id && provider.id == data.data.service_provider_id) ? 'selected' : '';
+                            options += `<option value="${provider.id}" ${selected}>${escapeHtml(provider.name)}</option>`;
+                        });
+                        providerSelect.innerHTML = options;
+                        providerSelect.disabled = false;
+                        
+                        // Auto-select provider nếu service chỉ có 1 provider
+                        if (data.data.providers.length === 1) {
+                            providerSelect.value = data.data.providers[0].id;
+                        }
+                    } else {
+                        // Nếu không có providers, reset dropdown
+                        if (providerSelect) {
+                            providerSelect.innerHTML = '<option value="">-- Không có nhà dịch vụ --</option>';
+                            providerSelect.disabled = false;
+                        }
+                    }
+                } else {
+                    console.error('Error loading service info:', data.message || 'Unknown error');
+                    if (providerSelect) {
+                        providerSelect.innerHTML = '<option value="">-- Lỗi tải dữ liệu --</option>';
+                        providerSelect.disabled = false;
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Error loading service info:', err);
+                if (providerSelect) {
+                    providerSelect.innerHTML = '<option value="">-- Lỗi tải dữ liệu --</option>';
+                    providerSelect.disabled = false;
                 }
             });
     }
