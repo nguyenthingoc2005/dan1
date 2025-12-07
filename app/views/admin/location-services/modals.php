@@ -6,17 +6,17 @@
 ?>
 
 <!-- Modal: Create/Edit Service Provider -->
-<div id="providerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+<div id="providerModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border-l-4 border-accent">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-xl font-bold" id="providerModalTitle">Thêm Nhà dịch vụ</h3>
             <button onclick="closeProviderModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
 
         <!-- Context Breadcrumb -->
-        <div id="providerModalContext" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-            <span class="font-medium text-blue-800">📍 Địa điểm: </span>
-            <span id="providerContextText" class="text-blue-700"></span>
+        <div id="providerModalContext" class="mb-4 p-3 bg-blue-50 border-l-4 border-accent text-sm">
+            <span class="font-medium text-primary">📍 Địa điểm: </span>
+            <span id="providerContextText" class="text-gray-700"></span>
         </div>
 
         <form id="providerForm">
@@ -139,12 +139,12 @@
                 </div>
             </div>
 
-            <div class="flex justify-end gap-2 pt-4 border-t">
+            <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
                 <button type="button" onclick="closeProviderModal()"
-                    class="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                    class="px-6 py-2 bg-gray-300 text-gray-700 font-medium hover:bg-gray-400 transition-colors">
                     Hủy
                 </button>
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                <button type="submit" class="px-6 py-2 bg-accent text-white font-medium hover:bg-blue-600 transition-colors">
                     Lưu
                 </button>
             </div>
@@ -154,8 +154,8 @@
 
 <!-- Modal: Create/Edit Destination -->
 <div id="destinationModal"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border-l-4 border-accent">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-xl font-bold" id="destinationModalTitle">Thêm Địa điểm du lịch</h3>
             <button onclick="closeDestinationModal()"
@@ -163,9 +163,9 @@
         </div>
 
         <!-- Context Breadcrumb -->
-        <div id="destinationModalContext" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-            <span class="font-medium text-blue-800">📍 Địa điểm: </span>
-            <span id="destinationContextText" class="text-blue-700"></span>
+        <div id="destinationModalContext" class="mb-4 p-3 bg-blue-50 border-l-4 border-accent text-sm">
+            <span class="font-medium text-primary">📍 Địa điểm: </span>
+            <span id="destinationContextText" class="text-gray-700"></span>
         </div>
 
         <form id="destinationForm">
@@ -216,12 +216,12 @@
                 </select>
             </div>
 
-            <div class="flex justify-end gap-2 pt-4 border-t">
+            <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
                 <button type="button" onclick="closeDestinationModal()"
-                    class="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                    class="px-6 py-2 bg-gray-300 text-gray-700 font-medium hover:bg-gray-400 transition-colors">
                     Hủy
                 </button>
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                <button type="submit" class="px-6 py-2 bg-accent text-white font-medium hover:bg-blue-600 transition-colors">
                     Lưu
                 </button>
             </div>
@@ -230,11 +230,11 @@
 </div>
 
 <!-- Modal: Create/Edit Service -->
-<div id="serviceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+<div id="serviceModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white p-6 w-full max-w-md max-h-[90vh] overflow-y-auto border-l-4 border-accent">
         <h3 class="text-xl font-bold mb-2" id="serviceModalTitle">Thêm dịch vụ</h3>
         <!-- Context Breadcrumb -->
-        <div id="serviceModalContext" class="mb-4 p-2 bg-gray-100 rounded text-sm text-gray-600">
+        <div id="serviceModalContext" class="mb-4 p-3 bg-gray-50 border-l-4 border-accent text-sm text-gray-700">
             <span id="serviceContextText"></span>
         </div>
         <form id="serviceForm">
@@ -276,24 +276,24 @@
                 <textarea id="serviceNotes" name="notes" class="w-full px-3 py-2 border rounded" rows="2"></textarea>
             </div>
 
-            <div class="flex justify-end gap-2">
-                <button type="button" onclick="closeServiceModal()" class="px-4 py-2 bg-gray-300 rounded">Hủy</button>
-                <button type="submit" class="px-4 py-2 bg-accent text-white rounded">Lưu</button>
+            <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
+                <button type="button" onclick="closeServiceModal()" class="px-4 py-2 bg-gray-300 text-gray-700 font-medium hover:bg-gray-400 transition-colors">Hủy</button>
+                <button type="submit" class="px-4 py-2 bg-accent text-white font-medium hover:bg-blue-600 transition-colors">Lưu</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Modal: Create/Edit Price -->
-<div id="priceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+<div id="priceModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white p-6 w-full max-w-md max-h-[90vh] overflow-y-auto border-l-4 border-accent">
         <h3 class="text-xl font-bold mb-4" id="priceModalTitle">Thêm giá dịch vụ</h3>
         
         <!-- Context Info -->
-        <div id="priceModalContext" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+        <div id="priceModalContext" class="mb-4 p-3 bg-blue-50 border-l-4 border-accent text-sm">
             <div class="mb-2">
-                <span class="font-medium text-blue-800">📍 Nhà dịch vụ: </span>
-                <span id="priceContextText" class="text-blue-700"></span>
+                <span class="font-medium text-primary">📍 Nhà dịch vụ: </span>
+                <span id="priceContextText" class="text-gray-700"></span>
             </div>
             <div class="text-xs text-gray-600 mt-2">
                 <strong>💡 Lưu ý:</strong> Giá này áp dụng cho dịch vụ của nhà cung cấp. Bạn có thể thêm nhiều giá khác nhau cho cùng dịch vụ (khác loại giá hoặc khác thời gian).
@@ -340,9 +340,9 @@
                 <textarea id="priceNotes" name="notes" class="w-full px-3 py-2 border rounded" rows="2"></textarea>
             </div>
 
-            <div class="flex justify-end gap-2">
-                <button type="button" onclick="closePriceModal()" class="px-4 py-2 bg-gray-300 rounded">Hủy</button>
-                <button type="submit" class="px-4 py-2 bg-accent text-white rounded">Lưu</button>
+            <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
+                <button type="button" onclick="closePriceModal()" class="px-4 py-2 bg-gray-300 text-gray-700 font-medium hover:bg-gray-400 transition-colors">Hủy</button>
+                <button type="submit" class="px-4 py-2 bg-accent text-white font-medium hover:bg-blue-600 transition-colors">Lưu</button>
             </div>
         </form>
     </div>
@@ -850,7 +850,7 @@
         }[type] || 'bg-blue-500';
 
         const toast = $(`
-        <div class="fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded shadow-lg z-50 animate-slide-in">
+        <div class="fixed top-4 right-4 ${bgColor} text-white px-6 py-3 border-l-4 border-white border-opacity-30 z-50 animate-slide-in font-medium">
             ${message}
         </div>
     `);

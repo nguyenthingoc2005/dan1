@@ -39,7 +39,7 @@ class Country
             }
 
             if (!empty($filters['search'])) {
-                $where_conditions[] = "(name LIKE :search OR name_en LIKE :search OR code LIKE :search)";
+                $where_conditions[] = "(name LIKE :search OR code LIKE :search)";
                 $params['search'] = '%' . $filters['search'] . '%';
             }
 
@@ -54,15 +54,14 @@ class Country
 
             // Get data
             $offset = ($page - 1) * $per_page;
-            $params['offset'] = $offset;
-            $params['limit'] = $per_page;
 
+            // Fix PDO parameter binding for LIMIT/OFFSET
             $data_sql = "
-                SELECT id, code, name, name_en, status, display_order, created_at, updated_at
+                SELECT DISTINCT id, code, name, status, created_at, updated_at
                 FROM countries
                 {$where_clause}
-                ORDER BY display_order ASC, name ASC
-                LIMIT :limit OFFSET :offset
+                ORDER BY name ASC
+                LIMIT " . (int) $per_page . " OFFSET " . (int) $offset . "
             ";
             $data_stmt = $this->pdo->prepare($data_sql);
             $data_stmt->execute($params);
@@ -88,7 +87,7 @@ class Country
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT id, code, name, name_en, status, display_order, created_at, updated_at
+                SELECT id, code, name, status, created_at, updated_at
                 FROM countries
                 WHERE id = :id
                 LIMIT 1
@@ -128,16 +127,14 @@ class Country
     {
         try {
             $stmt = $this->pdo->prepare("
-                INSERT INTO countries (code, name, name_en, status, display_order)
-                VALUES (:code, :name, :name_en, :status, :display_order)
+                INSERT INTO countries (code, name, status)
+                VALUES (:code, :name, :status)
             ");
 
             $success = $stmt->execute([
                 'code' => strtoupper($data['code']),
                 'name' => $data['name'],
-                'name_en' => $data['name_en'] ?? null,
-                'status' => $data['status'] ?? 'active',
-                'display_order' => $data['display_order'] ?? 0
+                'status' => $data['status'] ?? 'active'
             ]);
 
             return $success ? $this->pdo->lastInsertId() : false;
@@ -154,7 +151,7 @@ class Country
     public function update($id, $data)
     {
         try {
-            $allowed_fields = ['name', 'name_en', 'status', 'display_order'];
+            $allowed_fields = ['name', 'status'];
             $set_parts = [];
             $params = ['id' => $id];
 
@@ -247,7 +244,7 @@ class Country
             $sql = "SELECT id, name, code FROM countries WHERE status = 'active'";
             $params = [];
 
-            $sql .= " ORDER BY display_order ASC, name ASC";
+            $sql .= " ORDER BY name ASC";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);

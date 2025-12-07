@@ -8,20 +8,25 @@ if (!is_admin())
 ?>
 
 <style>
+    /* Flat Design - Improved spacing and colors */
     .tree-item {
         cursor: pointer;
-        padding: 8px 12px;
-        border-radius: 4px;
-        transition: background-color 0.2s;
+        padding: 12px 16px;
+        margin-bottom: 4px;
+        transition: all 0.15s;
+        border-left: 4px solid transparent;
+        border-radius: 0;
     }
 
     .tree-item:hover {
-        background-color: #f3f4f6;
+        background-color: #f8fafc;
+        border-left-color: #cbd5e1;
     }
 
     .tree-item.active {
         background-color: #3b82f6;
         color: white;
+        border-left-color: #1e293b;
     }
 
     .tree-item.active:hover {
@@ -29,7 +34,10 @@ if (!is_admin())
     }
 
     .tree-children {
-        margin-left: 20px;
+        margin-left: 32px;
+        margin-top: 4px;
+        border-left: 2px solid #e2e8f0;
+        padding-left: 12px;
     }
 
     .tree-children.hidden {
@@ -41,49 +49,93 @@ if (!is_admin())
     }
 
     .tree-toggle {
-        float: right;
         font-size: 12px;
+        opacity: 0.8;
+        margin-left: 8px;
+    }
+
+    .tree-icon {
+        margin-right: 10px;
+        font-size: 16px;
+        width: 20px;
+        text-align: center;
+    }
+
+    .tree-label {
+        flex: 1;
+        font-weight: 500;
+        font-size: 14px;
     }
 
     .tree-badge {
-        float: right;
-        background-color: #e5e7eb;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 12px;
+        background-color: #e2e8f0;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #475569;
+        margin-left: 8px;
         margin-right: 8px;
     }
 
     .tree-item.active .tree-badge {
         background-color: rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+
+    .tree-actions {
+        display: flex;
+        gap: 6px;
+        margin-left: 12px;
+    }
+
+    .tree-action-btn {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        transition: all 0.15s;
     }
 
     .service-card {
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 16px;
+        background-color: #ffffff;
+        border-left: 4px solid #3b82f6;
+        padding: 20px;
         margin-bottom: 16px;
-        transition: box-shadow 0.2s;
+        transition: background-color 0.15s;
     }
 
     .service-card:hover {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background-color: #f8fafc;
     }
 
-    .price-badge {
-        display: inline-block;
-        padding: 4px 8px;
-        background-color: #f0f9ff;
-        border: 1px solid #3b82f6;
-        border-radius: 4px;
-        font-size: 12px;
-        margin: 4px;
+    /* Cải thiện spacing cho main content */
+    #mainContent {
+        min-height: 600px;
+    }
+
+    /* Cải thiện spacing cho province grid */
+    .province-grid {
+        gap: 12px;
+    }
+
+    .price-item {
+        background-color: #ffffff;
+        border-left: 3px solid #e5e7eb;
+        padding: 12px 16px;
+        transition: background-color 0.15s;
+    }
+
+    .price-item:hover {
+        background-color: #f8fafc;
+        border-left-color: #3b82f6;
     }
 
     .loading {
         text-align: center;
-        padding: 40px;
-        color: #6b7280;
+        padding: 60px 20px;
+        color: #64748b;
     }
 </style>
 
@@ -96,14 +148,20 @@ if (!is_admin())
     <!-- Main Container -->
     <div class="flex gap-4" style="min-height: 600px;">
         <!-- Sidebar - Tree View -->
-        <div class="w-80 bg-white rounded shadow-sm p-4" style="max-height: 80vh; overflow-y: auto;">
-            <div class="mb-4">
+        <div class="w-96 bg-white border-r border-gray-200 p-5"
+            style="max-height: 80vh; overflow-y: auto; min-width: 384px;">
+            <div class="mb-6">
                 <a href="?act=admin&module=location-services&action=create-country"
-                    class="w-full mb-2 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm text-center inline-block">
-                    + Thêm Quốc gia
+                    class="w-full mb-4 px-4 py-3 bg-accent text-white hover:bg-blue-600 text-sm font-semibold text-center inline-block transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Thêm Quốc gia</span>
                 </a>
-                <input type="text" id="searchBox" placeholder="🔍 Tìm kiếm..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-accent">
+                <div class="relative">
+                    <i
+                        class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="searchBox" placeholder="Tìm kiếm..."
+                        class="w-full pl-10 pr-3 py-2.5 border border-gray-300 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-sm">
+                </div>
             </div>
 
             <div id="treeView" class="tree-view">
@@ -116,38 +174,87 @@ if (!is_admin())
                     $countries['data'] = [];
                 }
 
-                // Get current country_id from controller variable
-                $current_country_id = $current_country_id ?? (!empty($_GET['country_id']) ? (int) $_GET['country_id'] : null);
+                // Get current country_id from controller variable (ưu tiên từ controller, sau đó từ URL)
+                // Đảm bảo luôn cast về int hoặc null để so sánh đúng
+                if (isset($current_country_id) && $current_country_id !== null && $current_country_id !== '') {
+                    $current_country_id = (int) $current_country_id;
+                } elseif (!empty($_GET['country_id'])) {
+                    $current_country_id = (int) $_GET['country_id'];
+                } else {
+                    $current_country_id = null;
+                }
+
+                if (isset($current_province_id) && $current_province_id !== null && $current_province_id !== '') {
+                    $current_province_id = (int) $current_province_id;
+                } elseif (!empty($_GET['province_id'])) {
+                    $current_province_id = (int) $_GET['province_id'];
+                } else {
+                    $current_province_id = null;
+                }
+
+                // Nếu có province_id nhưng chưa có country_id, lấy từ province
+                if ($current_province_id && !$current_country_id && !empty($provinces)) {
+                    foreach ($provinces as $prov) {
+                        if ((int) $prov['id'] === $current_province_id) {
+                            $current_country_id = (int) $prov['country_id'];
+                            break;
+                        }
+                    }
+                }
+
+                // Nếu có service_provider_id nhưng chưa có province_id/country_id, cố gắng lấy từ provider
+                if (empty($current_province_id) && !empty($current_service_provider_id) && !empty($current_provider)) {
+                    if (!empty($current_provider['province_id'])) {
+                        $current_province_id = (int) $current_provider['province_id'];
+                    }
+                    if (!empty($current_provider['country_id'])) {
+                        $current_country_id = (int) $current_provider['country_id'];
+                    }
+                }
                 ?>
-                <?php foreach ($countries['data'] as $country): ?>
-                    <?php
-                    $is_expanded = ($current_country_id == $country['id']);
+                <?php
+                // Loại bỏ trùng lặp trong view (double check - đảm bảo an toàn)
+                $displayed_country_ids = [];
+                foreach ($countries['data'] as $country):
+                    if (empty($country) || !isset($country['id'])) {
+                        continue; // Bỏ qua nếu không có ID
+                    }
+                    $country_id = (int) $country['id'];
+                    if (in_array($country_id, $displayed_country_ids)) {
+                        continue; // Bỏ qua nếu đã hiển thị
+                    }
+                    $displayed_country_ids[] = $country_id;
+
+                    // Check nếu country này đang active
+                    // Đảm bảo so sánh đúng với type casting
+                    $is_expanded = false;
+                    if ($current_country_id !== null && $current_country_id !== '') {
+                        $is_expanded = ((int) $current_country_id === (int) $country_id);
+                    }
                     ?>
                     <div class="tree-item country <?= $is_expanded ? 'expanded active' : '' ?>"
-                        data-country-id="<?= $country['id'] ?>">
+                        data-country-id="<?= $country_id ?>">
                         <div class="flex items-center justify-between w-full">
                             <div class="flex items-center flex-1" style="cursor: pointer;">
-                                <span class="tree-icon">🌍</span>
+                                <i class="fas fa-globe tree-icon"></i>
                                 <span class="tree-label"><?= htmlspecialchars($country['name']) ?></span>
                                 <span class="tree-badge"><?= $country['provinces_count'] ?? 0 ?></span>
-                                <span class="tree-toggle ml-2"
-                                    style="cursor: pointer;"><?= $is_expanded ? '▼' : '▶' ?></span>
+                                <i class="fas fa-chevron-<?= $is_expanded ? 'down' : 'right' ?> tree-toggle"
+                                    style="cursor: pointer;"></i>
                             </div>
-                            <div class="flex items-center gap-1 ml-2" onclick="event.stopPropagation();">
+                            <div class="tree-actions" onclick="event.stopPropagation();">
                                 <a href="?act=admin&module=location-services&action=edit-country&id=<?= $country['id'] ?>"
-                                    class="px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                                    title="Sửa">
-                                    ✏️
+                                    class="tree-action-btn bg-blue-500 text-white hover:bg-blue-600" title="Sửa">
+                                    <i class="fas fa-edit"></i>
                                 </a>
                                 <button onclick="toggleCountryStatus(<?= $country['id'] ?>, '<?= $country['status'] ?>')"
-                                    class="px-1.5 py-0.5 text-xs rounded <?= $country['status'] == 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500' ?> text-white"
+                                    class="tree-action-btn <?= $country['status'] == 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500' ?> text-white"
                                     title="<?= $country['status'] == 'active' ? 'Vô hiệu hóa' : 'Kích hoạt' ?>">
-                                    <?= $country['status'] == 'active' ? '✓' : '✗' ?>
+                                    <i class="fas fa-<?= $country['status'] == 'active' ? 'check' : 'times' ?>"></i>
                                 </button>
                                 <button onclick="deleteCountry(<?= $country['id'] ?>)"
-                                    class="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                                    title="Xóa">
-                                    🗑️
+                                    class="tree-action-btn bg-red-500 text-white hover:bg-red-600" title="Xóa">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </div>
                         </div>
@@ -155,41 +262,54 @@ if (!is_admin())
                     <div class="tree-children <?= $is_expanded ? '' : 'hidden' ?>"
                         id="country-<?= $country['id'] ?>-children">
                         <?php if ($is_expanded && !empty($provinces)): ?>
-                            <?php foreach ($provinces as $province): ?>
-                                <?php
-                                $is_province_active = (!empty($current_province_id) && $current_province_id == $province['id']);
+                            <?php
+                            // Loại bỏ trùng lặp trong tree view (double check)
+                            $displayed_tree_province_ids = [];
+                            foreach ($provinces as $province):
+                                $province_id = (int) $province['id'];
+                                // Chỉ hiển thị provinces thuộc country hiện tại
+                                if ((int) $province['country_id'] !== (int) $country['id']) {
+                                    continue;
+                                }
+                                if (in_array($province_id, $displayed_tree_province_ids)) {
+                                    continue; // Bỏ qua nếu đã hiển thị
+                                }
+                                $displayed_tree_province_ids[] = $province_id;
+
+                                $is_province_active = (!empty($current_province_id) && $current_province_id == $province_id);
                                 ?>
                                 <div class="tree-item province <?= $is_province_active ? 'active' : '' ?>"
                                     data-province-id="<?= $province['id'] ?>">
                                     <div class="flex items-center justify-between w-full">
                                         <div class="flex items-center flex-1" style="cursor: pointer;">
-                                            <span class="tree-icon">📍</span>
+                                            <i class="fas fa-map-marker-alt tree-icon"></i>
                                             <span class="tree-label"><?= htmlspecialchars($province['name']) ?></span>
                                             <span class="tree-badge"><?= $province['providers_count'] ?? 0 ?></span>
                                         </div>
-                                        <div class="flex items-center gap-1 ml-2" onclick="event.stopPropagation();">
+                                        <div class="tree-actions" onclick="event.stopPropagation();">
                                             <a href="?act=admin&module=location-services&action=edit-province&id=<?= $province['id'] ?>&country_id=<?= $current_country_id ?>"
-                                                class="px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                                                title="Sửa">
-                                                ✏️
+                                                class="tree-action-btn bg-blue-500 text-white hover:bg-blue-600" title="Sửa">
+                                                <i class="fas fa-edit"></i>
                                             </a>
                                             <button
                                                 onclick="toggleProvinceStatus(<?= $province['id'] ?>, '<?= $province['status'] ?? 'active' ?>')"
-                                                class="px-1.5 py-0.5 text-xs rounded <?= ($province['status'] ?? 'active') == 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500' ?> text-white"
+                                                class="tree-action-btn <?= ($province['status'] ?? 'active') == 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500' ?> text-white"
                                                 title="<?= ($province['status'] ?? 'active') == 'active' ? 'Vô hiệu hóa' : 'Kích hoạt' ?>">
-                                                <?= ($province['status'] ?? 'active') == 'active' ? '✓' : '✗' ?>
+                                                <i
+                                                    class="fas fa-<?= ($province['status'] ?? 'active') == 'active' ? 'check' : 'times' ?>"></i>
                                             </button>
                                             <button onclick="deleteProvince(<?= $province['id'] ?>, <?= $current_country_id ?>)"
-                                                class="px-1.5 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                                                title="Xóa">
-                                                🗑️
+                                                class="tree-action-btn bg-red-500 text-white hover:bg-red-600" title="Xóa">
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
-                            <?php if (empty($provinces)): ?>
-                                <div class="tree-item" style="padding-left: 20px; color: #6b7280;">Chưa có tỉnh thành</div>
+                            <?php if (empty($provinces) || count($displayed_tree_province_ids) == 0): ?>
+                                <div class="tree-item" style="padding-left: 20px; color: #94a3b8; font-size: 13px;">
+                                    <i class="fas fa-info-circle mr-2"></i>Chưa có tỉnh thành
+                                </div>
                             <?php endif; ?>
                         <?php endif; ?>
                     </div>
@@ -198,7 +318,7 @@ if (!is_admin())
         </div>
 
         <!-- Main Content Area -->
-        <div class="flex-1 bg-white rounded shadow-sm p-6" id="mainContent">
+        <div class="flex-1 bg-white p-6" id="mainContent" style="min-height: 600px;">
             <?php if (!empty($current_service_provider_id) && !empty($current_provider)): ?>
                 <!-- Services List for Provider - Kiểm tra service_provider_id TRƯỚC province_id -->
                 <div class="mb-4">
@@ -207,93 +327,108 @@ if (!is_admin())
                     <h2 class="text-xl font-bold mb-2">Dịch vụ của: <?= htmlspecialchars($current_provider['name'] ?? '') ?>
                     </h2>
                     <a href="?act=admin&module=location-services&action=create-service&service_provider_id=<?= $current_service_provider_id ?>"
-                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 inline-block">
-                        + Thêm dịch vụ
+                        class="px-4 py-2.5 bg-green-500 text-white font-medium hover:bg-green-600 transition-colors inline-flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Thêm dịch vụ</span>
                     </a>
                 </div>
 
                 <?php if (empty($services['data'])): ?>
-                    <div class="text-center py-10 text-gray-500">Chưa có dịch vụ nào. Hãy thêm mới!</div>
+                    <div class="text-center py-12 text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
+                        <p class="text-sm">Chưa có dịch vụ nào. Hãy thêm mới!</p>
+                    </div>
                 <?php else: ?>
                     <?php foreach ($services['data'] as $service): ?>
-                        <div class="border-l-4 border-blue-500 pl-4 mb-4 bg-gray-50 rounded-r-lg p-4">
-                            <div class="flex justify-between items-start mb-3">
+                        <div class="service-card mb-4">
+                            <div class="flex justify-between items-start mb-4">
                                 <div class="flex-1">
-                                    <h5 class="font-semibold text-lg"><?= htmlspecialchars($service['service_type_name'] ?? '') ?> -
-                                        <?= htmlspecialchars($service['name']) ?></h5>
+                                    <h5 class="font-semibold text-lg text-primary mb-1">
+                                        <?= htmlspecialchars($service['service_type_name'] ?? '') ?> -
+                                        <?= htmlspecialchars($service['name']) ?>
+                                    </h5>
                                     <?php if (!empty($service['description'])): ?>
-                                        <p class="text-sm text-gray-600 mt-1"><?= htmlspecialchars($service['description']) ?></p>
+                                        <p class="text-sm text-gray-600 mt-2"><?= htmlspecialchars($service['description']) ?></p>
                                     <?php endif; ?>
                                     <?php if (!empty($service['unit'])): ?>
-                                        <p class="text-xs text-gray-500 mt-1">Đơn vị: <?= htmlspecialchars($service['unit']) ?></p>
+                                        <p class="text-xs text-gray-500 mt-2">Đơn vị: <?= htmlspecialchars($service['unit']) ?></p>
                                     <?php endif; ?>
                                 </div>
-                                <div class="flex gap-1 ml-4">
-                                    <button class="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+                                <div class="flex gap-2 ml-4">
+                                    <button
+                                        class="px-3 py-1.5 bg-accent text-white text-xs font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-1.5"
                                         onclick="openCreatePriceModal(<?= $service['id'] ?>)">
-                                        + Thêm giá
+                                        <i class="fas fa-plus text-xs"></i>
+                                        <span>Thêm giá</span>
                                     </button>
                                     <a href="?act=admin&module=location-services&action=edit-service&id=<?= $service['id'] ?>"
-                                        class="px-3 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600 inline-block">
-                                        Sửa
+                                        class="px-3 py-1.5 bg-yellow-500 text-white text-xs font-medium hover:bg-yellow-600 inline-flex items-center gap-1.5 transition-colors">
+                                        <i class="fas fa-edit text-xs"></i>
+                                        <span>Sửa</span>
                                     </a>
-                                    <button class="px-3 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                                    <button
+                                        class="px-3 py-1.5 bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors inline-flex items-center gap-1.5"
                                         onclick="deleteService(<?= $service['id'] ?>)">
-                                        Xóa
+                                        <i class="fas fa-trash text-xs"></i>
+                                        <span>Xóa</span>
                                     </button>
                                 </div>
                             </div>
 
                             <!-- Danh sách giá -->
-                            <div class="mt-4 border-t pt-3">
-                                <h6 class="font-semibold text-sm mb-2 text-gray-700">
-                                    💰 Bảng giá (<?= count($service['prices'] ?? []) ?>)
+                            <div class="mt-5 pt-4 border-t border-gray-200">
+                                <h6 class="font-semibold text-sm mb-3 text-primary">
+                                    Bảng giá (<?= count($service['prices'] ?? []) ?>)
                                 </h6>
                                 <?php if (empty($service['prices'])): ?>
-                                    <p class="text-xs text-gray-500 italic">Chưa có giá nào. Nhấn "+ Thêm giá" để thêm giá mới.</p>
+                                    <p class="text-xs text-gray-500">Chưa có giá nào. Nhấn "+ Thêm giá" để thêm giá mới.</p>
                                 <?php else: ?>
                                     <div class="space-y-2">
                                         <?php foreach ($service['prices'] as $price): ?>
-                                            <div
-                                                class="bg-white border border-gray-200 rounded p-3 flex justify-between items-center hover:shadow-sm transition">
+                                            <div class="price-item flex justify-between items-center">
                                                 <div class="flex-1">
-                                                    <div class="flex items-center gap-3">
-                                                        <span class="font-semibold text-blue-600">
+                                                    <div class="flex items-center gap-3 mb-1">
+                                                        <span class="font-semibold text-accent text-base">
                                                             <?= number_format($price['unit_price'], 0, ',', '.') ?> VND
                                                         </span>
                                                         <span
-                                                            class="px-2 py-0.5 text-xs rounded 
+                                                            class="px-2 py-0.5 text-xs font-medium
                                                             <?= $price['price_type'] == 'peak' ? 'bg-red-100 text-red-700' :
                                                                 ($price['price_type'] == 'low' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700') ?>">
                                                             <?= $price['price_type'] == 'peak' ? 'Cao điểm' :
                                                                 ($price['price_type'] == 'low' ? 'Thấp điểm' : 'Tiêu chuẩn') ?>
                                                         </span>
                                                     </div>
-                                                    <div class="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                                                    <div class="flex items-center gap-4 text-xs text-gray-500">
                                                         <?php if (!empty($price['start_date']) || !empty($price['end_date'])): ?>
                                                             <span>
-                                                                📅
                                                                 <?= !empty($price['start_date']) ? date('d/m/Y', strtotime($price['start_date'])) : '...' ?>
                                                                 -
                                                                 <?= !empty($price['end_date']) ? date('d/m/Y', strtotime($price['end_date'])) : '...' ?>
                                                             </span>
                                                         <?php else: ?>
-                                                            <span class="text-gray-400">📅 Vô thời hạn</span>
+                                                            <span>Vô thời hạn</span>
                                                         <?php endif; ?>
                                                         <?php if (!empty($price['notes'])): ?>
-                                                            <span class="italic">💬
-                                                                <?= htmlspecialchars(substr($price['notes'], 0, 50)) ?>                        <?= strlen($price['notes']) > 50 ? '...' : '' ?></span>
+                                                            <span class="text-gray-400">
+                                                                <?= htmlspecialchars(substr($price['notes'], 0, 50)) ?>
+                                                                <?= strlen($price['notes']) > 50 ? '...' : '' ?>
+                                                            </span>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
-                                                <div class="flex gap-1 ml-4">
-                                                    <button class="px-2 py-1 bg-yellow-400 text-white rounded text-xs hover:bg-yellow-500"
+                                                <div class="flex gap-2 ml-4">
+                                                    <button
+                                                        class="px-2.5 py-1 bg-yellow-500 text-white text-xs font-medium hover:bg-yellow-600 transition-colors inline-flex items-center gap-1"
                                                         onclick="openEditPriceModal(<?= $price['id'] ?>)">
-                                                        Sửa
+                                                        <i class="fas fa-edit text-xs"></i>
+                                                        <span>Sửa</span>
                                                     </button>
-                                                    <button class="px-2 py-1 bg-red-400 text-white rounded text-xs hover:bg-red-500"
+                                                    <button
+                                                        class="px-2.5 py-1 bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors inline-flex items-center gap-1"
                                                         onclick="deletePrice(<?= $price['id'] ?>)">
-                                                        Xóa
+                                                        <i class="fas fa-trash text-xs"></i>
+                                                        <span>Xóa</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -308,14 +443,14 @@ if (!is_admin())
             <?php elseif (!empty($current_province_id)): ?>
                 <!-- Có province_id - Hiển thị tabs và nội dung -->
                 <!-- Tab Navigation -->
-                <div class="mb-4 border-b">
-                    <nav class="flex space-x-4">
+                <div class="mb-6 border-b border-gray-200">
+                    <nav class="flex gap-1">
                         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>&tab=providers"
-                            class="px-4 py-2 <?= ($current_tab ?? 'providers') == 'providers' ? 'border-b-2 border-blue-500 text-blue-600 font-medium' : 'text-gray-600 hover:text-gray-800' ?>">
+                            class="px-4 py-3 font-medium text-sm transition-colors <?= ($current_tab ?? 'providers') == 'providers' ? 'border-b-2 border-accent text-accent' : 'text-gray-600 hover:text-primary' ?>">
                             Nhà cung cấp dịch vụ (<?= count($service_providers['data'] ?? []) ?>)
                         </a>
                         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>&tab=destinations"
-                            class="px-4 py-2 <?= ($current_tab ?? 'providers') == 'destinations' ? 'border-b-2 border-blue-500 text-blue-600 font-medium' : 'text-gray-600 hover:text-gray-800' ?>">
+                            class="px-4 py-3 font-medium text-sm transition-colors <?= ($current_tab ?? 'providers') == 'destinations' ? 'border-b-2 border-accent text-accent' : 'text-gray-600 hover:text-primary' ?>">
                             Địa điểm du lịch (<?= count($destinations['data'] ?? []) ?>)
                         </a>
                     </nav>
@@ -327,50 +462,57 @@ if (!is_admin())
                         <h2 class="text-xl font-bold mb-2">📍 <?= htmlspecialchars($current_province['name'] ?? 'Tỉnh thành') ?>
                         </h2>
                         <a href="?act=admin&module=location-services&action=create-provider&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
-                            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-block">
-                            + Thêm nhà cung cấp
+                            class="px-4 py-2.5 bg-accent text-white font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Thêm nhà cung cấp</span>
                         </a>
                     </div>
 
                     <?php if (empty($service_providers['data'])): ?>
-                        <div class="text-center py-10 text-gray-500">Chưa có nhà cung cấp nào. Hãy thêm mới!</div>
+                        <div class="text-center py-12 text-gray-500">
+                            <i class="fas fa-building text-4xl mb-3 text-gray-300"></i>
+                            <p class="text-sm">Chưa có nhà cung cấp nào. Hãy thêm mới!</p>
+                        </div>
                     <?php else: ?>
                         <?php foreach ($service_providers['data'] as $provider): ?>
                             <div class="service-card mb-4">
-                                <div class="flex justify-between items-start mb-3">
-                                    <div>
-                                        <h3 class="font-bold text-lg">🏢 <?= htmlspecialchars($provider['name']) ?></h3>
-                                        <?php if (!empty($provider['service_code'])): ?>
-                                            <p class="text-sm text-gray-500">Mã: <?= htmlspecialchars($provider['service_code']) ?></p>
-                                        <?php endif; ?>
-                                        <?php if (!empty($provider['service_type_name'])): ?>
-                                            <p class="text-sm text-gray-600">Loại: <?= htmlspecialchars($provider['service_type_name']) ?>
-                                            </p>
-                                        <?php endif; ?>
-                                        <?php if (!empty($provider['phone'])): ?>
-                                            <p class="text-sm text-gray-600">📞 <?= htmlspecialchars($provider['phone']) ?></p>
-                                        <?php endif; ?>
-                                        <?php if (!empty($provider['email'])): ?>
-                                            <p class="text-sm text-gray-600">✉️ <?= htmlspecialchars($provider['email']) ?></p>
-                                        <?php endif; ?>
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="flex-1">
+                                        <h3 class="font-bold text-lg text-primary mb-2"><?= htmlspecialchars($provider['name']) ?></h3>
+                                        <div class="space-y-1 text-sm text-gray-600">
+                                            <?php if (!empty($provider['service_code'])): ?>
+                                                <p>Mã: <span class="font-medium"><?= htmlspecialchars($provider['service_code']) ?></span>
+                                                </p>
+                                            <?php endif; ?>
+                                            <?php if (!empty($provider['phone'])): ?>
+                                                <p>📞 <?= htmlspecialchars($provider['phone']) ?></p>
+                                            <?php endif; ?>
+                                            <?php if (!empty($provider['email'])): ?>
+                                                <p>✉️ <?= htmlspecialchars($provider['email']) ?></p>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
-                                    <div>
+                                    <div class="flex gap-2 ml-4">
                                         <a href="?act=admin&module=location-services&action=edit-provider&id=<?= $provider['id'] ?>&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
-                                            class="px-3 py-1 bg-blue-500 text-white rounded text-sm mr-2 inline-block">
-                                            Sửa
+                                            class="px-3 py-1.5 bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-1.5">
+                                            <i class="fas fa-edit text-xs"></i>
+                                            <span>Sửa</span>
                                         </a>
-                                        <button class="px-3 py-1 bg-red-500 text-white rounded text-sm"
+                                        <button
+                                            class="px-3 py-1.5 bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors inline-flex items-center gap-1.5"
                                             onclick="deleteServiceProvider(<?= $provider['id'] ?>)">
-                                            Xóa
+                                            <i class="fas fa-trash text-xs"></i>
+                                            <span>Xóa</span>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="mt-4">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <h4 class="font-semibold">Dịch vụ (<?= $provider['services_count'] ?? 0 ?>)</h4>
+                                <div class="pt-4 border-t border-gray-200">
+                                    <div class="flex justify-between items-center">
+                                        <h4 class="font-semibold text-primary">Dịch vụ (<?= $provider['services_count'] ?? 0 ?>)</h4>
                                         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>&service_provider_id=<?= $provider['id'] ?>"
-                                            class="px-3 py-1 bg-green-500 text-white rounded text-sm">
-                                            Xem dịch vụ
+                                            class="px-3 py-1.5 bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition-colors inline-flex items-center gap-1.5">
+                                            <i class="fas fa-list text-xs"></i>
+                                            <span>Xem dịch vụ</span>
                                         </a>
                                     </div>
                                 </div>
@@ -384,36 +526,71 @@ if (!is_admin())
                         <h2 class="text-xl font-bold mb-2">📍 <?= htmlspecialchars($current_province['name'] ?? 'Tỉnh thành') ?>
                         </h2>
                         <a href="?act=admin&module=location-services&action=create-destination&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
-                            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-block">
-                            + Thêm địa điểm du lịch
+                            class="px-4 py-2.5 bg-accent text-white font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Thêm địa điểm du lịch</span>
                         </a>
                     </div>
 
                     <?php if (empty($destinations['data'])): ?>
-                        <div class="text-center py-10 text-gray-500">Chưa có địa điểm nào. Hãy thêm mới!</div>
+                        <div class="text-center py-12 text-gray-500">
+                            <i class="fas fa-map-marked-alt text-4xl mb-3 text-gray-300"></i>
+                            <p class="text-sm">Chưa có địa điểm nào. Hãy thêm mới!</p>
+                        </div>
                     <?php else: ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <?php foreach ($destinations['data'] as $destination): ?>
-                                <div class="border rounded-lg p-4 hover:shadow-md transition">
-                                    <h3 class="font-bold text-lg mb-2"><?= htmlspecialchars($destination['name']) ?></h3>
-                                    <?php if (!empty($destination['description'])): ?>
-                                        <p class="text-sm text-gray-600 mb-2">
-                                            <?= htmlspecialchars(substr($destination['description'], 0, 100)) ?>...</p>
-                                    <?php endif; ?>
-                                    <?php if (!empty($destination['thumbnail'])): ?>
-                                        <img src="<?= htmlspecialchars($destination['thumbnail']) ?>"
-                                            alt="<?= htmlspecialchars($destination['name']) ?>"
-                                            class="w-full h-32 object-cover rounded mb-2">
-                                    <?php endif; ?>
-                                    <div class="flex gap-2 mt-3">
-                                        <a href="?act=admin&module=location-services&action=edit-destination&id=<?= $destination['id'] ?>&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
-                                            class="px-3 py-1 bg-blue-500 text-white rounded text-sm inline-block">
-                                            Sửa
-                                        </a>
-                                        <button class="px-3 py-1 bg-red-500 text-white rounded text-sm"
-                                            onclick="deleteDestination(<?= $destination['id'] ?>)">
-                                            Xóa
-                                        </button>
+                                <div
+                                    class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-accent">
+                                    <!-- Image Section -->
+                                    <div class="relative w-full h-48 bg-gray-100 overflow-hidden">
+                                        <?php if (!empty($destination['thumbnail'])): ?>
+                                            <img src="<?= htmlspecialchars($destination['thumbnail']) ?>"
+                                                alt="<?= htmlspecialchars($destination['name']) ?>" class="w-full h-full object-cover">
+                                        <?php else: ?>
+                                            <div
+                                                class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                                                <div class="text-center">
+                                                    <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                                                    <p class="text-xs text-gray-500">Chưa có ảnh</p>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                        <!-- Status Badge -->
+                                        <div class="absolute top-2 right-2">
+                                            <span
+                                                class="px-2 py-1 text-xs font-medium rounded <?= ($destination['status'] ?? 'active') == 'active' ? 'bg-green-500 text-white' : 'bg-gray-400 text-white' ?>">
+                                                <?= ($destination['status'] ?? 'active') == 'active' ? 'Hoạt động' : 'Ngừng hoạt động' ?>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Content Section -->
+                                    <div class="p-4">
+                                        <h3 class="font-bold text-lg text-primary mb-2 line-clamp-1">
+                                            <?= htmlspecialchars($destination['name']) ?>
+                                        </h3>
+                                        <?php if (!empty($destination['description'])): ?>
+                                            <p class="text-sm text-gray-600 mb-3 line-clamp-2">
+                                                <?= htmlspecialchars(substr($destination['description'], 0, 100)) ?>
+                                                <?= mb_strlen($destination['description']) > 100 ? '...' : '' ?>
+                                            </p>
+                                        <?php endif; ?>
+
+                                        <!-- Actions -->
+                                        <div class="flex gap-2 pt-3 border-t border-gray-200">
+                                            <a href="?act=admin&module=location-services&action=edit-destination&id=<?= $destination['id'] ?>&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
+                                                class="flex-1 px-3 py-1.5 bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-colors inline-flex items-center justify-center gap-1.5">
+                                                <i class="fas fa-edit text-xs"></i>
+                                                <span>Sửa</span>
+                                            </a>
+                                            <button
+                                                class="flex-1 px-3 py-1.5 bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors inline-flex items-center justify-center gap-1.5"
+                                                onclick="deleteDestination(<?= $destination['id'] ?>)">
+                                                <i class="fas fa-trash text-xs"></i>
+                                                <span>Xóa</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -427,33 +604,49 @@ if (!is_admin())
                     <div class="mb-4">
                         <h2 class="text-xl font-bold mb-2">📍 <?= htmlspecialchars($current_country['name']) ?></h2>
                         <a href="?act=admin&module=location-services&action=create-province&country_id=<?= $current_country_id ?>"
-                            class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 inline-block">
-                            + Thêm Tỉnh thành
+                            class="px-4 py-2.5 bg-green-500 text-white font-medium hover:bg-green-600 transition-colors inline-flex items-center gap-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Thêm Tỉnh thành</span>
                         </a>
                     </div>
                     <p class="text-gray-600 mb-4">Vui lòng chọn một tỉnh thành từ danh sách bên trái hoặc từ danh sách dưới
                         đây để xem nhà cung cấp và địa điểm du lịch.</p>
                     <?php if (!empty($provinces)): ?>
                         <div class="mt-6">
-                            <p class="text-sm text-gray-500 mb-2">Danh sách tỉnh thành:</p>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                <?php foreach ($provinces as $province): ?>
+                            <p class="text-sm font-medium text-gray-700 mb-3">Danh sách tỉnh thành:</p>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <?php
+                                // Loại bỏ trùng lặp trong view (double check)
+                                $displayed_province_ids = [];
+                                foreach ($provinces as $province):
+                                    $province_id = (int) $province['id'];
+                                    if (in_array($province_id, $displayed_province_ids)) {
+                                        continue; // Bỏ qua nếu đã hiển thị
+                                    }
+                                    $displayed_province_ids[] = $province_id;
+                                    ?>
                                     <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?>&province_id=<?= $province['id'] ?>&tab=providers"
-                                        class="px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded text-sm text-center border border-blue-200">
-                                        <?= htmlspecialchars($province['name']) ?>
-                                        <span class="text-xs text-gray-500">(<?= $province['providers_count'] ?? 0 ?>)</span>
+                                        class="px-4 py-3 bg-blue-50 hover:bg-blue-100 text-sm text-center border-l-4 border-accent transition-colors block">
+                                        <span
+                                            class="font-medium text-primary block"><?= htmlspecialchars($province['name']) ?></span>
+                                        <span class="text-xs text-gray-500 mt-1 block"><?= $province['providers_count'] ?? 0 ?> nhà
+                                            cung cấp</span>
                                     </a>
                                 <?php endforeach; ?>
                             </div>
                         </div>
                     <?php else: ?>
-                        <p class="text-gray-500">Chưa có tỉnh thành nào trong quốc gia này.</p>
+                        <div class="text-center py-8">
+                            <i class="fas fa-map text-4xl mb-3 text-gray-300"></i>
+                            <p class="text-gray-500">Chưa có tỉnh thành nào trong quốc gia này.</p>
+                        </div>
                     <?php endif; ?>
                 </div>
             <?php else: ?>
                 <!-- Chưa chọn gì - Hiển thị hướng dẫn -->
                 <div class="loading">
-                    <p>Vui lòng chọn một quốc gia từ danh sách bên trái để bắt đầu</p>
+                    <i class="fas fa-hand-pointer text-5xl mb-4 text-gray-300"></i>
+                    <p class="text-base font-medium">Vui lòng chọn một quốc gia từ danh sách bên trái để bắt đầu</p>
                 </div>
             <?php endif; ?>
         </div>
@@ -509,7 +702,7 @@ if (!is_admin())
                 // Collapse - chỉ ẩn children
                 $children.addClass('hidden');
                 $item.removeClass('expanded');
-                $(this).text('▶');
+                $(this).removeClass('fa-chevron-down').addClass('fa-chevron-right');
             }
         });
 

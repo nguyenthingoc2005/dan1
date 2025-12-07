@@ -45,7 +45,7 @@ class Province
             }
 
             if (!empty($filters['search'])) {
-                $where_conditions[] = "(p.name LIKE :search OR p.name_en LIKE :search OR p.code LIKE :search)";
+                $where_conditions[] = "(p.name LIKE :search OR p.code LIKE :search)";
                 $params['search'] = '%' . $filters['search'] . '%';
             }
 
@@ -70,7 +70,7 @@ class Province
                 FROM provinces p
                 LEFT JOIN countries c ON p.country_id = c.id
                 {$where_clause}
-                ORDER BY p.display_order ASC, p.name ASC
+                ORDER BY p.name ASC
                 LIMIT :limit OFFSET :offset
             ";
             $data_stmt = $this->pdo->prepare($data_sql);
@@ -148,17 +148,15 @@ class Province
             }
 
             $stmt = $this->pdo->prepare("
-                INSERT INTO provinces (country_id, code, name, name_en, status, display_order)
-                VALUES (:country_id, :code, :name, :name_en, :status, :display_order)
+                INSERT INTO provinces (country_id, code, name, status)
+                VALUES (:country_id, :code, :name, :status)
             ");
 
             $success = $stmt->execute([
                 'country_id' => $data['country_id'],
                 'code' => $data['code'] ?? null,
                 'name' => $data['name'],
-                'name_en' => $data['name_en'] ?? null,
-                'status' => $data['status'] ?? 'active',
-                'display_order' => $data['display_order'] ?? 0
+                'status' => $data['status'] ?? 'active'
             ]);
 
             return $success ? $this->pdo->lastInsertId() : false;
@@ -178,7 +176,7 @@ class Province
     public function update($id, $data)
     {
         try {
-            $allowed_fields = ['name', 'name_en', 'status', 'display_order'];
+            $allowed_fields = ['name', 'status'];
             $set_parts = [];
             $params = ['id' => $id];
 
@@ -297,7 +295,7 @@ class Province
                 $params['country_id'] = $country_id;
             }
 
-            $sql .= " ORDER BY p.display_order ASC, p.name ASC";
+            $sql .= " ORDER BY p.name ASC";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);

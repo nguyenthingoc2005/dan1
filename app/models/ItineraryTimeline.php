@@ -1,14 +1,17 @@
 <?php
 /**
  * ==============================================================================
- * ITINERARY TIMELINE MODEL
+ * ITINERARY TIMELINE MODEL - DEPRECATED
  * ==============================================================================
  * 
- * Quản lý timeline chi tiết cho từng ngày của tour
- * Bảng: itinerary_timelines
+ * ⚠️ DEPRECATED: Model này KHÔNG được sử dụng nữa
+ * Bảng itinerary_timelines đã bị xóa khỏi database schema
+ * Timeline chi tiết đã được thay thế bằng TinyMCE editor trong phần mô tả lịch trình
  * 
+ * Model này được giữ lại chỉ để tham khảo, không nên sử dụng trong code mới
+ * 
+ * @deprecated 2024-12-06 - Bảng itinerary_timelines không còn tồn tại
  * @version 1.0
- * @date 2024-12-06
  * ==============================================================================
  */
 

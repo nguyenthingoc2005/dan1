@@ -205,13 +205,12 @@ class Tour
     public function create($data)
     {
         try {
-            // Check if already in transaction
+            // Begin transaction
             if ($this->pdo->inTransaction()) {
-                error_log("WARNING: Already in transaction before beginTransaction()");
+                throw new Exception("Already in transaction. Cannot start new transaction.");
             }
             
             $this->pdo->beginTransaction();
-            error_log("Transaction started in Tour::create()");
 
             // 1. Insert Tours Table - ĐÃ XÓA category_id, price_based_on_pax
             $sql = "INSERT INTO tours (
@@ -262,53 +261,42 @@ class Tour
 
             // 2. Insert Itinerary
             if (!empty($data['itinerary'])) {
-                error_log("Saving itinerary: " . count($data['itinerary']) . " items");
                 $this->saveItinerary($tour_id, $data['itinerary']);
             }
 
-            // 3. Insert Itinerary Day Services (MỚI)
+            // 3. Insert Itinerary Day Services
             if (!empty($data['itinerary_day_services'])) {
-                error_log("Saving day services: " . count($data['itinerary_day_services']) . " items");
                 $this->saveItineraryDayServices($tour_id, $data['itinerary_day_services']);
             }
 
-            // 5. Insert Highlights
+            // 4. Insert Highlights
             if (!empty($data['highlights'])) {
-                error_log("Saving highlights: " . count($data['highlights']) . " items");
                 $this->saveHighlights($tour_id, $data['highlights']);
             }
 
-            // 6. Insert Included/Excluded
+            // 5. Insert Included/Excluded
             if (!empty($data['included'])) {
-                error_log("Saving included: " . count($data['included']) . " items");
                 $this->saveIncludedExcluded($tour_id, 'included', $data['included']);
             }
             if (!empty($data['excluded'])) {
-                error_log("Saving excluded: " . count($data['excluded']) . " items");
                 $this->saveIncludedExcluded($tour_id, 'excluded', $data['excluded']);
             }
 
-            // 7. Insert Tour Policies (MỚI)
+            // 6. Insert Tour Policies
             if (!empty($data['policy_ids'])) {
-                error_log("Saving policies: " . count($data['policy_ids']) . " items");
                 $this->saveTourPolicies($tour_id, $data['policy_ids']);
             }
 
             if (!$this->pdo->inTransaction()) {
-                error_log("ERROR: No active transaction before commit!");
                 throw new Exception("No active transaction before commit");
             }
             
             $this->pdo->commit();
-            error_log("Transaction committed successfully in Tour::create(), tour_id: $tour_id");
             return $tour_id;
 
         } catch (Exception $e) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
-                error_log("Transaction rolled back in Tour::create()");
-            } else {
-                error_log("WARNING: No active transaction to rollback in Tour::create()");
             }
             error_log("Tour::create() Error: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
@@ -494,7 +482,7 @@ class Tour
         foreach ($services_data as $service) {
             $day_number = $service['day_number'] ?? $service['day'];
             if (!isset($itinerary_map[$day_number])) {
-                error_log("Tour::saveItineraryDayServices() - Itinerary not found for day_number: $day_number, tour_id: $tour_id");
+                // Itinerary not found for this day_number - skip this service
                 continue;
             }
 
@@ -600,7 +588,6 @@ class Tour
         
         // Check if we're in a transaction - if so, don't let Policy model start its own
         $in_transaction = $this->pdo->inTransaction();
-        error_log("saveTourPolicies: inTransaction = " . ($in_transaction ? 'true' : 'false'));
         
         if ($in_transaction) {
             // We're already in a transaction, so we need to manually insert

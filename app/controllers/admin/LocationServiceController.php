@@ -62,10 +62,31 @@ class LocationServiceController
             $tab = !empty($_GET['tab']) ? $_GET['tab'] : 'providers'; // providers or destinations
 
             // Get countries (always needed for sidebar)
-            $countries = $this->countryModel->getAll(['status' => 'active'], 1, 100);
+            // Admin cần thấy TẤT CẢ countries (cả active và inactive) để quản lý
+            // Tăng per_page lên 200 để đảm bảo lấy đủ
+            $countries = $this->countryModel->getAll([], 1, 200);
             if (!isset($countries['data'])) {
                 $countries['data'] = [];
             }
+
+            // Loại bỏ trùng lặp dựa trên ID (đảm bảo không mất dữ liệu)
+            $unique_countries = [];
+            $seen_ids = [];
+            foreach ($countries['data'] as $country) {
+                if (empty($country) || !isset($country['id'])) {
+                    continue; // Bỏ qua nếu không có ID
+                }
+                $id = (int) $country['id'];
+                if (!in_array($id, $seen_ids)) {
+                    $seen_ids[] = $id;
+                    $unique_countries[] = $country;
+                }
+            }
+            $countries['data'] = $unique_countries;
+
+            // Debug log để kiểm tra
+            error_log("LocationServiceController::index() - Total countries loaded: " . count($countries['data']));
+            error_log("LocationServiceController::index() - Country IDs: " . implode(', ', $seen_ids));
 
             // Add provinces count for each country
             foreach ($countries['data'] as &$country) {
@@ -77,16 +98,54 @@ class LocationServiceController
                 }
             }
 
-            // Load provinces if country_id is set
+            // Load service providers and destinations if province_id is set
+            // QUAN TRỌNG: Nếu có province_id nhưng không có country_id, cần lấy country_id từ province
+            $service_providers = ['data' => []];
+            $destinations = ['data' => []];
+            $current_province = null;
+            $current_province_id = $province_id;
+            // Initialize current_country_id từ URL parameter (có thể null)
+            $current_country_id = $country_id;
+
+            if ($province_id && !$country_id) {
+                // Nếu có province_id nhưng không có country_id trong URL, lấy từ province
+                try {
+                    $current_province = $this->provinceModel->findById($province_id);
+                    if ($current_province && !empty($current_province['country_id'])) {
+                        $country_id = (int) $current_province['country_id'];
+                        $current_country_id = $country_id; // Update từ province
+                    }
+                } catch (Exception $e) {
+                    error_log("Error loading province {$province_id} to get country_id: " . $e->getMessage());
+                }
+            }
+
+            // Load provinces if country_id is set (sau khi đã xác định từ province nếu cần)
             $provinces = [];
             $current_country = null;
-            $current_country_id = $country_id;
+            // Đảm bảo current_country_id được set đúng từ country_id (nếu có)
+            if ($country_id) {
+                $current_country_id = $country_id; // Giữ nguyên type (int hoặc null)
+            }
             if ($country_id) {
                 try {
                     $current_country = $this->countryModel->findById($country_id);
                     // Load tất cả provinces (cả active và inactive) cho admin
                     $provinces_result = $this->provinceModel->getAll(['country_id' => $country_id], 1, 100);
-                    $provinces = $provinces_result['data'] ?? [];
+                    $provinces_raw = $provinces_result['data'] ?? [];
+
+                    // Loại bỏ trùng lặp dựa trên ID
+                    $unique_provinces = [];
+                    $seen_province_ids = [];
+                    foreach ($provinces_raw as $province) {
+                        $id = (int) $province['id'];
+                        if (!in_array($id, $seen_province_ids)) {
+                            $seen_province_ids[] = $id;
+                            $unique_provinces[] = $province;
+                        }
+                    }
+                    $provinces = $unique_provinces;
+
                     foreach ($provinces as &$province) {
                         try {
                             $province['providers_count'] = $this->getServiceProviderCountByProvince($province['id']);
@@ -95,6 +154,7 @@ class LocationServiceController
                             $province['providers_count'] = 0;
                         }
                     }
+                    unset($province); // Unset reference
                 } catch (Exception $e) {
                     error_log("Error loading provinces for country {$country_id}: " . $e->getMessage());
                     $provinces = [];
@@ -102,15 +162,32 @@ class LocationServiceController
             }
 
             // Load service providers and destinations if province_id is set
-            $service_providers = ['data' => []];
-            $destinations = ['data' => []];
-            $current_province = null;
-            $current_province_id = $province_id;
             if ($province_id) {
                 try {
-                    $current_province = $this->provinceModel->findById($province_id);
-                    if (!$current_province && $country_id) {
-                        $current_country = $this->countryModel->findById($country_id);
+                    // Nếu chưa load province ở trên, load lại
+                    if (!$current_province) {
+                        $current_province = $this->provinceModel->findById($province_id);
+                    }
+
+                    // Đảm bảo current_country được set nếu chưa có
+                    if (!$current_country && $current_province && !empty($current_province['country_id'])) {
+                        $province_country_id = (int) $current_province['country_id'];
+                        $current_country = $this->countryModel->findById($province_country_id);
+                        if ($current_country) {
+                            $current_country_id = (int) $current_country['id'];
+                            // Đảm bảo country_id cũng được set đúng
+                            if (!$country_id) {
+                                $country_id = $province_country_id;
+                            }
+                        }
+                    }
+                    // Đảm bảo current_country_id luôn được set đúng từ country_id nếu có
+                    if ($country_id && !$current_country_id) {
+                        $current_country_id = (int) $country_id;
+                    }
+                    // Đảm bảo current_country_id được set đúng từ province nếu chưa có
+                    if (!$current_country_id && $current_province && !empty($current_province['country_id'])) {
+                        $current_country_id = (int) $current_province['country_id'];
                     }
 
                     // Load service providers
@@ -127,11 +204,23 @@ class LocationServiceController
                         }
                     }
 
-                    // Load destinations
-                    $destinations = $this->destinationModel->getAll(['province_id' => $province_id, 'status' => 'active'], 1, 100);
+                    // Load destinations - Admin cần thấy TẤT CẢ (cả active và inactive)
+                    $destinations = $this->destinationModel->getAll(['province_id' => $province_id], 1, 100);
                     if (!isset($destinations['data'])) {
                         $destinations['data'] = [];
                     }
+
+                    // Loại bỏ trùng lặp dựa trên ID
+                    $unique_destinations = [];
+                    $seen_destination_ids = [];
+                    foreach ($destinations['data'] as $destination) {
+                        $id = (int) $destination['id'];
+                        if (!in_array($id, $seen_destination_ids)) {
+                            $seen_destination_ids[] = $id;
+                            $unique_destinations[] = $destination;
+                        }
+                    }
+                    $destinations['data'] = $unique_destinations;
                 } catch (Exception $e) {
                     error_log("Error loading providers/destinations for province {$province_id}: " . $e->getMessage());
                     $service_providers = ['data' => []];
@@ -199,18 +288,19 @@ class LocationServiceController
                             $current_provider = $current_provider_obj;
                             // Lấy province_id và country_id từ provider để load đúng context
                             if (!$province_id && !empty($current_provider_obj['province_id'])) {
-                                $province_id = $current_provider_obj['province_id'];
+                                $province_id = (int) $current_provider_obj['province_id'];
                                 $current_province_id = $province_id;
                             }
                             if (!$country_id && !empty($current_provider_obj['country_id'])) {
-                                $country_id = $current_provider_obj['country_id'];
+                                $country_id = (int) $current_provider_obj['country_id'];
                                 $current_country_id = $country_id;
                             }
 
-                            // Reload provinces và providers nếu có province_id và chưa load
-                            if ($province_id && empty($service_providers['data'])) {
+                            // QUAN TRỌNG: Luôn reload provinces và providers khi có service_provider_id
+                            // để đảm bảo sidebar hiển thị đúng
+                            if ($province_id) {
                                 if (!$country_id && !empty($current_provider_obj['country_id'])) {
-                                    $country_id = $current_provider_obj['country_id'];
+                                    $country_id = (int) $current_provider_obj['country_id'];
                                     $current_country_id = $country_id;
                                 }
                                 if ($country_id) {
@@ -218,16 +308,30 @@ class LocationServiceController
                                         if (empty($current_country)) {
                                             $current_country = $this->countryModel->findById($country_id);
                                         }
-                                        if (empty($provinces)) {
-                                            $provinces = $this->provinceModel->getForDropdown($country_id);
-                                            foreach ($provinces as &$province) {
-                                                try {
-                                                    $province['providers_count'] = $this->getServiceProviderCountByProvince($province['id']);
-                                                } catch (Exception $e) {
-                                                    $province['providers_count'] = 0;
-                                                }
+                                        // Luôn reload provinces để đảm bảo có đầy đủ dữ liệu cho sidebar
+                                        $provinces_result = $this->provinceModel->getAll(['country_id' => $country_id], 1, 100);
+                                        $provinces_raw = $provinces_result['data'] ?? [];
+
+                                        // Loại bỏ trùng lặp dựa trên ID
+                                        $unique_provinces = [];
+                                        $seen_province_ids = [];
+                                        foreach ($provinces_raw as $province) {
+                                            $id = (int) $province['id'];
+                                            if (!in_array($id, $seen_province_ids)) {
+                                                $seen_province_ids[] = $id;
+                                                $unique_provinces[] = $province;
                                             }
                                         }
+                                        $provinces = $unique_provinces;
+
+                                        foreach ($provinces as &$province) {
+                                            try {
+                                                $province['providers_count'] = $this->getServiceProviderCountByProvince($province['id']);
+                                            } catch (Exception $e) {
+                                                $province['providers_count'] = 0;
+                                            }
+                                        }
+                                        unset($province); // Unset reference
                                     } catch (Exception $e) {
                                         error_log("Error reloading provinces: " . $e->getMessage());
                                     }
@@ -236,19 +340,19 @@ class LocationServiceController
                                     if (empty($current_province)) {
                                         $current_province = $this->provinceModel->findById($province_id);
                                     }
-                                    if (empty($service_providers['data'])) {
-                                        $service_providers = $this->serviceProviderModel->getAll(['province_id' => $province_id], 1, 100);
-                                        if (!isset($service_providers['data'])) {
-                                            $service_providers['data'] = [];
-                                        }
-                                        foreach ($service_providers['data'] as &$provider) {
-                                            try {
-                                                $provider['services_count'] = $this->serviceProviderModel->getServiceCount($provider['id']);
-                                            } catch (Exception $e) {
-                                                $provider['services_count'] = 0;
-                                            }
+                                    // Luôn reload service providers để đảm bảo có đầy đủ dữ liệu
+                                    $service_providers = $this->serviceProviderModel->getAll(['province_id' => $province_id], 1, 100);
+                                    if (!isset($service_providers['data'])) {
+                                        $service_providers['data'] = [];
+                                    }
+                                    foreach ($service_providers['data'] as &$provider) {
+                                        try {
+                                            $provider['services_count'] = $this->serviceProviderModel->getServiceCount($provider['id']);
+                                        } catch (Exception $e) {
+                                            $provider['services_count'] = 0;
                                         }
                                     }
+                                    unset($provider); // Unset reference
                                 } catch (Exception $e) {
                                     error_log("Error reloading providers: " . $e->getMessage());
                                 }
@@ -478,6 +582,10 @@ class LocationServiceController
             return;
         }
 
+        // Truyền thêm các biến ID để form component sử dụng
+        $current_country_id = $country_id;
+        $current_province_id = $province_id;
+
         $service_types = $this->serviceTypeModel->getForDropdown();
 
         $page_title = 'Thêm Nhà dịch vụ';
@@ -572,7 +680,6 @@ class LocationServiceController
 
             $data = [
                 'name' => sanitize($name),
-                'service_type_id' => !empty($_POST['service_type_id']) ? (int) $_POST['service_type_id'] : null,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
                 'province_id' => $province_id,
                 'country_id' => $country_id,
@@ -624,6 +731,10 @@ class LocationServiceController
 
         $current_country = $country_id ? $this->countryModel->findById($country_id) : null;
         $current_province = $province_id ? $this->provinceModel->findById($province_id) : null;
+
+        // Truyền thêm các biến ID để form component sử dụng
+        $current_country_id = $country_id;
+        $current_province_id = $province_id;
 
         $service_types = $this->serviceTypeModel->getForDropdown();
 
@@ -682,18 +793,6 @@ class LocationServiceController
                 }
             }
 
-            // Validate service_type_id if provided
-            if (!empty($_POST['service_type_id'])) {
-                $service_type_id = (int) $_POST['service_type_id'];
-                $service_type = $this->serviceTypeModel->findById($service_type_id);
-                if (!$service_type) {
-                    throw new Exception("Loại dịch vụ không tồn tại.");
-                }
-                if ($service_type['status'] != 'active') {
-                    throw new Exception("Loại dịch vụ không khả dụng (đã bị vô hiệu hóa).");
-                }
-            }
-
             // Validate email format if provided
             if (!empty($_POST['email'])) {
                 if (!ValidationHelper::validateEmail($_POST['email'], false)) {
@@ -710,7 +809,6 @@ class LocationServiceController
 
             $data = [
                 'name' => sanitize($name),
-                'service_type_id' => !empty($_POST['service_type_id']) ? (int) $_POST['service_type_id'] : null,
                 'description' => isset($_POST['description']) ? sanitize($_POST['description']) : null,
                 'contact_person' => isset($_POST['contact_person']) ? sanitize($_POST['contact_person']) : null,
                 'email' => isset($_POST['email']) ? sanitize($_POST['email']) : null,
@@ -1563,6 +1661,10 @@ class LocationServiceController
             return;
         }
 
+        // Truyền thêm các biến ID để form component sử dụng
+        $current_country_id = $country_id;
+        $current_province_id = $province_id;
+
         $page_title = 'Thêm Địa điểm du lịch';
         $content_file = VIEWS_PATH . '/admin/location-services/create-destination.php';
         require VIEWS_PATH . '/layouts/admin_layout.php';
@@ -1601,6 +1703,12 @@ class LocationServiceController
                 throw new Exception("Tỉnh thành không khả dụng (đã bị vô hiệu hóa).");
             }
 
+            // Lấy country_id từ province (ưu tiên) để đảm bảo đúng
+            $province_country_id = !empty($province['country_id']) ? (int) $province['country_id'] : null;
+            if ($province_country_id) {
+                $country_id = $province_country_id; // Sử dụng country_id từ province
+            }
+
             // Validate country exists and active
             $country = $this->countryModel->findById($country_id);
             if (!$country) {
@@ -1610,8 +1718,8 @@ class LocationServiceController
                 throw new Exception("Quốc gia không khả dụng (đã bị vô hiệu hóa).");
             }
 
-            // Validate province belongs to country
-            if ($province['country_id'] != $country_id) {
+            // Validate province belongs to country (với type casting để tránh lỗi so sánh)
+            if ((int) $province['country_id'] !== (int) $country_id) {
                 throw new Exception("Tỉnh thành không thuộc quốc gia đã chọn.");
             }
 
@@ -1627,7 +1735,17 @@ class LocationServiceController
             $id = $this->destinationModel->create($data);
 
             if ($id) {
-                set_success('Tạo địa điểm thành công!');
+                // Handle image uploads if any
+                if (!empty($_FILES['images']['name'][0])) {
+                    $uploaded_count = $this->handleDestinationImageUploads($id, $_FILES['images']);
+                    if ($uploaded_count > 0) {
+                        set_success("Tạo địa điểm thành công! Đã upload {$uploaded_count} ảnh.");
+                    } else {
+                        set_success('Tạo địa điểm thành công!');
+                    }
+                } else {
+                    set_success('Tạo địa điểm thành công!');
+                }
                 redirect('?act=admin&module=location-services&country_id=' . $data['country_id'] . '&province_id=' . $data['province_id'] . '&tab=destinations');
             } else {
                 throw new Exception("Không thể tạo địa điểm.");
@@ -1664,6 +1782,10 @@ class LocationServiceController
 
         $current_country = $country_id ? $this->countryModel->findById($country_id) : null;
         $current_province = $province_id ? $this->provinceModel->findById($province_id) : null;
+
+        // Truyền thêm các biến ID để form component sử dụng
+        $current_country_id = $country_id;
+        $current_province_id = $province_id;
 
         // Load images for destination
         $destination_images = $this->destinationModel->getImages($destination['id']);
@@ -1716,9 +1838,40 @@ class LocationServiceController
             ];
 
             if ($this->destinationModel->update($id, $data)) {
-                set_success('Cập nhật thành công!');
+                // Xóa ảnh cũ nếu có
+                if (!empty($_POST['delete_images']) && is_array($_POST['delete_images'])) {
+                    foreach ($_POST['delete_images'] as $image_id) {
+                        $image_id = (int) $image_id;
+                        // Lấy thông tin ảnh trước khi xóa
+                        $stmt = $this->db->prepare("SELECT image_url FROM destination_images WHERE id = :id AND destination_id = :destination_id");
+                        $stmt->execute(['id' => $image_id, 'destination_id' => $id]);
+                        $image = $stmt->fetch();
+
+                        if ($image) {
+                            // Xóa từ database
+                            $this->destinationModel->deleteImage($image_id);
+                            // Xóa file vật lý
+                            if (file_exists($image['image_url'])) {
+                                @unlink($image['image_url']);
+                            }
+                        }
+                    }
+                }
+
+                // Upload ảnh mới nếu có
+                $uploaded_count = 0;
+                if (!empty($_FILES['images']['name'][0])) {
+                    $uploaded_count = $this->handleDestinationImageUploads($id, $_FILES['images']);
+                }
+
+                if ($uploaded_count > 0) {
+                    set_success("Cập nhật thành công! Đã upload {$uploaded_count} ảnh mới.");
+                } else {
+                    set_success('Cập nhật thành công!');
+                }
+
                 $destination = $this->destinationModel->findById($id);
-                redirect('?act=admin&module=location-services&country_id=' . $destination['country_id'] . '&province_id=' . $destination['province_id'] . '&tab=destinations');
+                redirect('?act=admin&module=location-services&action=edit-destination&id=' . $id . '&country_id=' . $destination['country_id'] . '&province_id=' . $destination['province_id']);
             } else {
                 throw new Exception("Không thể cập nhật.");
             }
@@ -1901,24 +2054,10 @@ class LocationServiceController
                 throw new Exception("Tên quốc gia phải có ít nhất 2 ký tự.");
             }
 
-            // Validate name_en if provided
-            $name_en = !empty($_POST['name_en']) ? trim($_POST['name_en']) : null;
-            if ($name_en && mb_strlen($name_en) > 100) {
-                throw new Exception("Tên tiếng Anh không được quá 100 ký tự.");
-            }
-
-            // Validate display_order
-            $display_order = !empty($_POST['display_order']) ? (int) $_POST['display_order'] : 0;
-            if ($display_order < 0) {
-                $display_order = 0;
-            }
-
             $data = [
                 'code' => $code,
                 'name' => sanitize($name),
-                'name_en' => $name_en ? sanitize($name_en) : null,
-                'status' => isset($_POST['status']) ? $_POST['status'] : 'active',
-                'display_order' => $display_order
+                'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
             ];
 
             $id = $this->countryModel->create($data);
@@ -1996,23 +2135,9 @@ class LocationServiceController
                 throw new Exception("Tên quốc gia phải có ít nhất 2 ký tự.");
             }
 
-            // Validate name_en if provided
-            $name_en = !empty($_POST['name_en']) ? trim($_POST['name_en']) : null;
-            if ($name_en && mb_strlen($name_en) > 100) {
-                throw new Exception("Tên tiếng Anh không được quá 100 ký tự.");
-            }
-
-            // Validate display_order
-            $display_order = !empty($_POST['display_order']) ? (int) $_POST['display_order'] : 0;
-            if ($display_order < 0) {
-                $display_order = 0;
-            }
-
             $data = [
                 'name' => sanitize($name),
-                'name_en' => $name_en ? sanitize($name_en) : null,
-                'status' => isset($_POST['status']) ? $_POST['status'] : null,
-                'display_order' => $display_order
+                'status' => isset($_POST['status']) ? $_POST['status'] : null
             ];
 
             if ($this->countryModel->update($id, $data)) {
@@ -2163,25 +2288,11 @@ class LocationServiceController
                 }
             }
 
-            // Validate name_en if provided
-            $name_en = !empty($_POST['name_en']) ? trim($_POST['name_en']) : null;
-            if ($name_en && mb_strlen($name_en) > 100) {
-                throw new Exception("Tên tiếng Anh không được quá 100 ký tự.");
-            }
-
-            // Validate display_order
-            $display_order = !empty($_POST['display_order']) ? (int) $_POST['display_order'] : 0;
-            if ($display_order < 0) {
-                $display_order = 0;
-            }
-
             $data = [
                 'country_id' => $country_id,
                 'code' => $code,
                 'name' => sanitize($name),
-                'name_en' => $name_en ? sanitize($name_en) : null,
-                'status' => isset($_POST['status']) ? $_POST['status'] : 'active',
-                'display_order' => $display_order
+                'status' => isset($_POST['status']) ? $_POST['status'] : 'active'
             ];
 
             $id = $this->provinceModel->create($data);
@@ -2262,23 +2373,9 @@ class LocationServiceController
                 throw new Exception("Tên tỉnh thành phải có ít nhất 2 ký tự.");
             }
 
-            // Validate name_en if provided
-            $name_en = !empty($_POST['name_en']) ? trim($_POST['name_en']) : null;
-            if ($name_en && mb_strlen($name_en) > 100) {
-                throw new Exception("Tên tiếng Anh không được quá 100 ký tự.");
-            }
-
-            // Validate display_order
-            $display_order = !empty($_POST['display_order']) ? (int) $_POST['display_order'] : 0;
-            if ($display_order < 0) {
-                $display_order = 0;
-            }
-
             $data = [
                 'name' => sanitize($name),
-                'name_en' => $name_en ? sanitize($name_en) : null,
-                'status' => isset($_POST['status']) ? $_POST['status'] : null,
-                'display_order' => $display_order
+                'status' => isset($_POST['status']) ? $_POST['status'] : null
             ];
 
             if ($this->provinceModel->update($id, $data)) {

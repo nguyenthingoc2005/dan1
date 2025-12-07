@@ -9,10 +9,10 @@
  * 
  * Features:
  * - CRUD Tours (6-step Wizard Form)
- * - Manage Itinerary với Timeline chi tiết
- * - Manage Day Services (thay thế tour_services)
+ * - Manage Itinerary với TinyMCE editor
+ * - Manage Day Services (dịch vụ theo ngày)
  * - Manage Policies
- * - Pricing Calculation mới (không markup)
+ * - Pricing Calculation (tự động tính giá)
  * 
  * @version 2.0
  * @date 2024-12-06
@@ -105,7 +105,7 @@ class TourController
 
         // Load dữ liệu từ session (nếu có) để restore khi reload
         $session_data = $this->loadTourSession();
-        
+
         // Merge session data vào old_input để pre-fill form
         $old_input = $session_data;
 
@@ -179,6 +179,10 @@ class TourController
             'policy_ids' => array_column($template['policies'] ?? [], 'id')
         ];
 
+        // Lưu template data vào session để validation có thể check
+        $this->initTourSession();
+        $_SESSION['tour_form_data'] = array_merge($_SESSION['tour_form_data'] ?? [], $old_input);
+
         $is_from_template = true;
         $template_info = [
             'id' => $template['id'],
@@ -201,17 +205,17 @@ class TourController
         try {
             // 1. Lấy dữ liệu từ SESSION và merge với POST
             $session_data = $this->loadTourSession();
-            
+
             // Merge session data vào POST (POST có priority cao hơn)
             $form_data = array_merge($session_data, $_POST);
-            
+
             // Đảm bảo các field từ POST được ưu tiên
             foreach ($_POST as $key => $value) {
                 $form_data[$key] = $value;
             }
 
-            // 2. Validation (dùng form_data đã merge)
-            $errors = $this->validateTourData($form_data);
+            // 2. Validation (dùng form_data đã merge, và cần có session_data để validate day services)
+            $errors = $this->validateTourData($form_data, $session_data);
 
             if (!empty($errors)) {
                 // Có lỗi: Giữ session, hiển thị lỗi + dữ liệu cũ
@@ -230,13 +234,14 @@ class TourController
             $tour_code = $this->generateTourCodeUnique();
 
             // 3. Calculate pricing từ PricingHelper
+            // Lấy fixed costs từ form_data (đã merge session + POST)
             $fixed_costs = [
-                'guide' => (float) ($_POST['fixed_cost_guide'] ?? 0),
-                'management' => (float) ($_POST['fixed_cost_management'] ?? 0),
-                'marketing' => (float) ($_POST['fixed_cost_marketing'] ?? 0),
-                'other' => (float) ($_POST['fixed_cost_other'] ?? 0)
+                'guide' => (float) ($form_data['fixed_cost_guide'] ?? 0),
+                'management' => (float) ($form_data['fixed_cost_management'] ?? 0),
+                'marketing' => (float) ($form_data['fixed_cost_marketing'] ?? 0),
+                'other' => (float) ($form_data['fixed_cost_other'] ?? 0)
             ];
-            $min_participants = (int) ($_POST['min_participants'] ?? 15);
+            $min_participants = (int) ($form_data['min_participants'] ?? 15);
 
             // Tính estimated_cost (sẽ tính lại sau khi có day_services)
             $estimated_cost_per_person = null;
@@ -279,40 +284,8 @@ class TourController
 
             // 6. Prepare Itinerary Day Services Data - Lấy từ session hoặc POST
             if (!empty($session_data['itinerary_day_services'])) {
-                // Session data đã là array format sẵn: [{day_number: 1, ...}, {day_number: 2, ...}]
-                $day_services = $session_data['itinerary_day_services'];
-                
-                // Đảm bảo là array
-                if (is_array($day_services)) {
-                    // Nếu là associative array với key là day_number, convert sang indexed array
-                    $first_key = array_key_first($day_services);
-                    if (is_numeric($first_key) && $first_key > 0 && $first_key <= 10) {
-                        // Có thể là format {1: [...], 2: [...]} - flatten
-                        $flattened = [];
-                        foreach ($day_services as $day_num => $services) {
-                            if (is_array($services)) {
-                                foreach ($services as $service) {
-                                    if (is_array($service)) {
-                                        $service['day_number'] = is_numeric($day_num) ? (int) $day_num : ($service['day_number'] ?? 1);
-                                        $flattened[] = $service;
-                                    }
-                                }
-                            } elseif (is_array($services) && isset($services['service_id'])) {
-                                // Single service object
-                                $services['day_number'] = is_numeric($day_num) ? (int) $day_num : ($services['day_number'] ?? 1);
-                                $flattened[] = $services;
-                            }
-                        }
-                        $data['itinerary_day_services'] = !empty($flattened) ? $flattened : $day_services;
-                    } else {
-                        // Đã là indexed array format
-                        $data['itinerary_day_services'] = $day_services;
-                    }
-                } else {
-                    $data['itinerary_day_services'] = [];
-                }
+                $data['itinerary_day_services'] = $this->normalizeDayServicesFormat($session_data['itinerary_day_services']);
             } else {
-                // Fallback: lấy từ POST
                 $data['itinerary_day_services'] = $this->prepareItineraryDayServicesData($form_data, $data['itinerary']);
             }
 
@@ -333,7 +306,7 @@ class TourController
                 $included = is_array($form_data['included']) ? $form_data['included'] : [$form_data['included']];
                 $data['included'] = array_filter(array_map('trim', $included));
             }
-            
+
             if (!empty($session_data['excluded'])) {
                 $data['excluded'] = $session_data['excluded'];
             } elseif (!empty($form_data['excluded'])) {
@@ -347,21 +320,6 @@ class TourController
             } elseif (!empty($form_data['policy_ids'])) {
                 $data['policy_ids'] = array_map('intval', $form_data['policy_ids']);
             }
-
-            // 11. Log dữ liệu trước khi lưu
-            error_log("=== TOUR CREATE DATA ===");
-            error_log("Tour Code: " . ($data['code'] ?? 'N/A'));
-            error_log("Tour Name: " . ($data['name'] ?? 'N/A'));
-            error_log("Duration Days: " . ($data['duration_days'] ?? 'N/A'));
-            error_log("Adult Price: " . ($data['adult_price'] ?? 'N/A'));
-            error_log("Itinerary Count: " . (is_array($data['itinerary'] ?? null) ? count($data['itinerary']) : 0));
-            error_log("Day Services Count: " . (is_array($data['itinerary_day_services'] ?? null) ? count($data['itinerary_day_services']) : 0));
-            error_log("Highlights Count: " . (is_array($data['highlights'] ?? null) ? count($data['highlights']) : 0));
-            error_log("Included Count: " . (is_array($data['included'] ?? null) ? count($data['included']) : 0));
-            error_log("Excluded Count: " . (is_array($data['excluded'] ?? null) ? count($data['excluded']) : 0));
-            error_log("Policy IDs: " . (is_array($data['policy_ids'] ?? null) ? json_encode($data['policy_ids']) : 'N/A'));
-            error_log("Full Data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-            error_log("========================");
 
             // 11. Save Tour
             $tour_id = $this->tourModel->create($data);
@@ -403,8 +361,10 @@ class TourController
 
     /**
      * Validate Tour Data
+     * @param array $post - POST data
+     * @param array $session_data - Session data (optional, để validate day services từ session)
      */
-    private function validateTourData($post)
+    private function validateTourData($post, $session_data = [])
     {
         $errors = [];
 
@@ -447,11 +407,46 @@ class TourController
         }
 
         // Validate Itinerary Day Services
+        // Có thể có từ POST hoặc từ session (khi tạo từ template)
+        $day_services_to_validate = [];
+
+        // Lấy từ POST nếu có
         if (!empty($post['day_service_day_number'])) {
             foreach ($post['day_service_day_number'] as $key => $day_number) {
-                $service_id = $post['day_service_service_id'][$key] ?? null;
-                $unit_price = $post['day_service_unit_price'][$key] ?? 0;
-                $quantity = $post['day_service_quantity'][$key] ?? 0;
+                $day_services_to_validate[] = [
+                    'day_number' => (int) $day_number,
+                    'service_id' => $post['day_service_service_id'][$key] ?? null,
+                    'service_provider_id' => $post['day_service_provider_id'][$key] ?? null,
+                    'unit_price' => $post['day_service_unit_price'][$key] ?? 0,
+                    'quantity' => $post['day_service_quantity'][$key] ?? 0,
+                ];
+            }
+        }
+
+        // Nếu không có trong POST, lấy từ session (khi tạo từ template)
+        if (empty($day_services_to_validate) && !empty($session_data['itinerary_day_services'])) {
+            $session_services = $this->normalizeDayServicesFormat($session_data['itinerary_day_services']);
+            if (!empty($session_services)) {
+                foreach ($session_services as $service) {
+                    $day_services_to_validate[] = [
+                        'day_number' => (int) ($service['day_number'] ?? $service['day'] ?? 1),
+                        'service_id' => $service['service_id'] ?? null,
+                        'service_provider_id' => $service['service_provider_id'] ?? null,
+                        'unit_price' => (float) ($service['unit_price'] ?? 0),
+                        'quantity' => (float) ($service['quantity'] ?? 0),
+                    ];
+                }
+            }
+        }
+
+        // Validate các dịch vụ
+        if (!empty($day_services_to_validate)) {
+            foreach ($day_services_to_validate as $service) {
+                $day_number = $service['day_number'];
+                $service_id = $service['service_id'];
+                $unit_price = (float) $service['unit_price'];
+                $quantity = (float) $service['quantity'];
+                $service_provider_id = $service['service_provider_id'];
 
                 // Validate service_id tồn tại
                 if (empty($service_id)) {
@@ -468,21 +463,18 @@ class TourController
                 }
 
                 // Validate unit_price > 0
-                $unit_price_float = (float) $unit_price;
-                if ($unit_price_float <= 0) {
+                if ($unit_price <= 0) {
                     $errors['day_services'] = "Dịch vụ ngày $day_number: Đơn giá phải lớn hơn 0";
                     break;
                 }
 
                 // Validate quantity > 0
-                $quantity_float = (float) $quantity;
-                if ($quantity_float <= 0) {
+                if ($quantity <= 0) {
                     $errors['day_services'] = "Dịch vụ ngày $day_number: Số lượng phải lớn hơn 0";
                     break;
                 }
 
                 // Validate service_provider_id (nếu có) thuộc về service
-                $service_provider_id = $post['day_service_provider_id'][$key] ?? null;
                 if (!empty($service_provider_id)) {
                     $stmt = $this->db->prepare("
                         SELECT s.id 
@@ -551,7 +543,7 @@ class TourController
     }
 
     /**
-     * Prepare Itinerary Day Services Data từ POST (MỚI)
+     * Prepare Itinerary Day Services Data từ POST
      */
     private function prepareItineraryDayServicesData($post, $itinerary)
     {
@@ -576,6 +568,43 @@ class TourController
         }
 
         return $services;
+    }
+
+    /**
+     * Normalize day services format từ session data
+     * Chuyển đổi từ associative array {1: [...], 2: [...]} sang indexed array
+     */
+    private function normalizeDayServicesFormat($day_services)
+    {
+        if (!is_array($day_services)) {
+            return [];
+        }
+
+        // Nếu đã là indexed array format: [{day_number: 1, ...}, {day_number: 2, ...}]
+        $first_key = array_key_first($day_services);
+        if (!is_numeric($first_key) || $first_key <= 0 || $first_key > 10) {
+            return $day_services;
+        }
+
+        // Nếu là associative array với key là day_number: {1: [...], 2: [...]}
+        $flattened = [];
+        foreach ($day_services as $day_num => $services) {
+            if (is_array($services)) {
+                // Nếu là array of services
+                foreach ($services as $service) {
+                    if (is_array($service) && isset($service['service_id'])) {
+                        $service['day_number'] = is_numeric($day_num) ? (int) $day_num : ($service['day_number'] ?? 1);
+                        $flattened[] = $service;
+                    }
+                }
+            } elseif (is_array($services) && isset($services['service_id'])) {
+                // Single service object
+                $services['day_number'] = is_numeric($day_num) ? (int) $day_num : ($services['day_number'] ?? 1);
+                $flattened[] = $services;
+            }
+        }
+
+        return !empty($flattened) ? $flattened : $day_services;
     }
 
     /**
@@ -788,7 +817,7 @@ class TourController
 
         $service_id = $_GET['id'] ?? 0;
         $date = $_GET['date'] ?? date('Y-m-d'); // Ngày để lấy giá theo mùa
-        
+
         if (!$service_id) {
             echo json_encode(['success' => false, 'message' => 'Thiếu service_id']);
             exit;
@@ -803,10 +832,10 @@ class TourController
         // Get price từ service_prices theo date và price_type (ưu tiên: peak > standard > low)
         require_once MODELS_PATH . '/ServicePrice.php';
         $servicePriceModel = new ServicePrice($this->db);
-        
+
         // Lấy giá cho ngày cụ thể
         $price = $servicePriceModel->getPriceForService($service_id, $date);
-        
+
         // Nếu không có giá cho ngày đó, lấy giá mới nhất
         if (!$price) {
             $stmt = $this->db->prepare("
@@ -829,7 +858,7 @@ class TourController
         // Lấy danh sách providers cho service này
         $service_provider_id = $service['service_provider_id'] ?? null;
         $providers = [];
-        
+
         if ($service_provider_id) {
             // Lấy provider của service này
             $provider = $this->serviceProviderModel->findById($service_provider_id);
@@ -888,27 +917,29 @@ class TourController
         header('Content-Type: application/json');
 
         $filters = [];
-        
+
         // Nếu có service_id, lấy provider của service đó
         if (!empty($_GET['service_id'])) {
             $service_id = (int) $_GET['service_id'];
             $service = $this->serviceModel->findById($service_id);
-            
+
             if ($service && !empty($service['service_provider_id'])) {
                 $provider = $this->serviceProviderModel->findById($service['service_provider_id']);
                 if ($provider) {
                     echo json_encode([
                         'success' => true,
-                        'data' => [[
-                            'id' => $provider['id'],
-                            'name' => $provider['name'],
-                            'service_code' => $provider['service_code'] ?? ''
-                        ]]
+                        'data' => [
+                            [
+                                'id' => $provider['id'],
+                                'name' => $provider['name'],
+                                'service_code' => $provider['service_code'] ?? ''
+                            ]
+                        ]
                     ]);
                     exit;
                 }
             }
-            
+
             // Nếu service không có provider, trả về empty
             echo json_encode([
                 'success' => true,
@@ -916,7 +947,7 @@ class TourController
             ]);
             exit;
         }
-        
+
         // Filter theo destination
         if (!empty($_GET['destination_id'])) {
             // Get province_id từ destination
@@ -927,7 +958,7 @@ class TourController
                 $filters['province_id'] = $dest['province_id'];
             }
         }
-        
+
         // Filter theo service_type_id
         if (!empty($_GET['service_type_id'])) {
             $filters['service_type_id'] = (int) $_GET['service_type_id'];
@@ -1064,7 +1095,7 @@ class TourController
 
 
     /**
-     * Load Itinerary Manager Component (URL-based) - Gộp Timeline và Dịch vụ
+     * Load Itinerary Manager Component (URL-based) - Dịch vụ theo ngày
      * URL: ?act=admin&module=tours&action=loadItineraryManager&day=1&step=2
      */
     public function loadItineraryManager()
@@ -1123,7 +1154,7 @@ class TourController
         // Support both JSON and form data
         $input = file_get_contents('php://input');
         $data = json_decode($input, true);
-        
+
         // If not JSON, try form data
         if (!$data && !empty($_POST)) {
             $data = $_POST;
@@ -1162,8 +1193,8 @@ class TourController
         }
 
         if (isset($data['highlights'])) {
-            $_SESSION['tour_form_data']['highlights'] = is_array($data['highlights']) 
-                ? $data['highlights'] 
+            $_SESSION['tour_form_data']['highlights'] = is_array($data['highlights'])
+                ? $data['highlights']
                 : (is_string($data['highlights']) ? explode("\n", $data['highlights']) : []);
         }
 
@@ -1183,7 +1214,7 @@ class TourController
         $_SESSION['tour_form_data']['last_updated'] = date('Y-m-d H:i:s');
 
         echo json_encode([
-            'success' => true, 
+            'success' => true,
             'message' => 'Data saved to session',
             'data_count' => [
                 'itinerary' => count($_SESSION['tour_form_data']['itinerary'] ?? []),
@@ -1209,7 +1240,7 @@ class TourController
         echo json_encode(['success' => true, 'message' => 'Session cleared']);
         exit;
     }
-    
+
     /**
      * Private method to clear session (internal use)
      */

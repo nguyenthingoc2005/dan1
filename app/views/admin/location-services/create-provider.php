@@ -23,10 +23,10 @@
     <h1 class="text-2xl font-bold text-primary">Thêm Nhà dịch vụ</h1>
 </div>
 
-<div class="bg-white rounded-lg shadow-sm p-6">
-    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-        <span class="font-medium text-blue-800">📍 Địa điểm: </span>
-        <span class="text-blue-700"><?= htmlspecialchars($current_country['name']) ?> >
+<div class="bg-white p-6 border-l-4 border-accent">
+    <div class="mb-4 p-3 bg-blue-50 border-l-4 border-accent text-sm">
+        <span class="font-medium text-primary">📍 Địa điểm: </span>
+        <span class="text-gray-700"><?= htmlspecialchars($current_country['name']) ?> >
             <?= htmlspecialchars($current_province['name']) ?></span>
     </div>
 

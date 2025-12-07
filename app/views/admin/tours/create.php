@@ -211,7 +211,7 @@ if (is_array($old_day_services)) {
                             <input type="number" name="min_participants" id="min_participants" min="1"
                                 value="<?= $old['min_participants'] ?? '15' ?>"
                                 class="w-full px-3 py-2 border rounded focus:border-accent text-center"
-                                onchange="updatePricing()">
+                                onchange="updatePricing(); updateMinParticipantsDisplay();">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Số người tối đa</label>
@@ -371,6 +371,16 @@ if (is_array($old_day_services)) {
                             <!-- Day breakdown sẽ được hiển thị ở đây -->
                         </div>
 
+                        <div class="border-t border-blue-300 pt-3 mt-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Chi phí cố định/người:</span>
+                                <span id="fixed-cost-per-person" class="font-medium">0đ</span>
+                            </div>
+                            <div id="fixed-cost-breakdown" class="ml-4 text-xs text-gray-500 mt-1">
+                                <!-- Fixed cost breakdown sẽ được hiển thị ở đây -->
+                            </div>
+                        </div>
+
                         <div class="border-t-2 border-blue-400 pt-3 mt-3">
                             <div class="flex justify-between items-center">
                                 <span class="font-semibold text-blue-900">Tổng chi phí/người:</span>
@@ -384,7 +394,7 @@ if (is_array($old_day_services)) {
                                 <span id="suggested-price-per-person" class="text-xl font-bold text-blue-700">0đ</span>
                             </div>
                             <p class="text-xs text-blue-600 mt-1">
-                                (Dựa trên chi phí dịch vụ)
+                                (Dựa trên tổng chi phí dịch vụ + chi phí cố định)
                             </p>
                         </div>
                     </div>
@@ -422,6 +432,62 @@ if (is_array($old_day_services)) {
                                 class="w-full px-3 py-2 border rounded focus:border-accent">
                             <p class="text-xs text-gray-500 mt-1">Dưới 2 tuổi</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Fixed Costs Input -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+                    <h3 class="font-bold text-yellow-900 mb-4">💼 Chi phí cố định (chia đều cho số người)</h3>
+                    <p class="text-sm text-yellow-700 mb-4">
+                        Nhập các chi phí cố định cho tour (lương HDV, quản lý, marketing...).
+                        Hệ thống sẽ tự động chia đều cho số người tối thiểu để tính chi phí/người.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Lương HDV (Hướng dẫn viên)
+                            </label>
+                            <input type="number" name="fixed_cost_guide" id="fixed_cost_guide" min="0" step="10000"
+                                value="<?= $old['fixed_cost_guide'] ?? '0' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-yellow-500"
+                                onchange="updatePricing()" placeholder="VD: 2000000">
+                            <p class="text-xs text-gray-500 mt-1">Tổng lương cho HDV trong tour</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Chi phí quản lý
+                            </label>
+                            <input type="number" name="fixed_cost_management" id="fixed_cost_management" min="0"
+                                step="10000" value="<?= $old['fixed_cost_management'] ?? '0' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-yellow-500"
+                                onchange="updatePricing()" placeholder="VD: 1500000">
+                            <p class="text-xs text-gray-500 mt-1">Chi phí quản lý tour</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Chi phí marketing
+                            </label>
+                            <input type="number" name="fixed_cost_marketing" id="fixed_cost_marketing" min="0"
+                                step="10000" value="<?= $old['fixed_cost_marketing'] ?? '0' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-yellow-500"
+                                onchange="updatePricing()" placeholder="VD: 500000">
+                            <p class="text-xs text-gray-500 mt-1">Chi phí marketing, quảng cáo</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Chi phí khác
+                            </label>
+                            <input type="number" name="fixed_cost_other" id="fixed_cost_other" min="0" step="10000"
+                                value="<?= $old['fixed_cost_other'] ?? '0' ?>"
+                                class="w-full px-3 py-2 border rounded focus:border-yellow-500"
+                                onchange="updatePricing()" placeholder="VD: 0">
+                            <p class="text-xs text-gray-500 mt-1">Các chi phí khác (nếu có)</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-yellow-100 rounded text-sm text-yellow-800">
+                        <strong>💡 Lưu ý:</strong> Chi phí cố định sẽ được chia đều cho <span
+                            id="min-participants-display" class="font-bold">15</span> người (số người tối thiểu).
+                        Chi phí cố định/người = Tổng chi phí cố định ÷ Số người tối thiểu.
                     </div>
                 </div>
 
@@ -561,6 +627,7 @@ if (is_array($old_day_services)) {
         }
         if (step === 6) {
             updatePricing();
+            updateMinParticipantsDisplay();
         }
 
         // Update URL with step parameter để lưu trạng thái
@@ -1179,9 +1246,118 @@ if (is_array($old_day_services)) {
     }
 
     function updateTotalCost() {
-        const serviceCost = 0; // TODO: Calculate from day services
-        const total = serviceCost;
+        // Tính tổng chi phí từ tất cả day services
+        const durationDays = parseInt(document.getElementById('duration_days')?.value || 0);
+        let totalServiceCost = 0;
+        const dayBreakdown = [];
 
+        // Duyệt qua tất cả các ngày
+        for (let day = 1; day <= durationDays; day++) {
+            const container = document.getElementById(`day-services-list-day-${day}`);
+            if (!container) continue;
+
+            const items = container.querySelectorAll('.day-service-item');
+            let dayTotal = 0;
+            const dayServices = [];
+
+            items.forEach(item => {
+                const checkbox = item.querySelector('[name^="day_service_included"]');
+                if (checkbox && checkbox.checked) {
+                    const unitPrice = parseFloat(item.querySelector('[name="day_service_unit_price[]"]')?.value || 0);
+                    const quantity = parseFloat(item.querySelector('[name="day_service_quantity[]"]')?.value || 1);
+                    const serviceName = item.querySelector('[name="day_service_name[]"]')?.value || 'Dịch vụ';
+                    const cost = unitPrice * quantity;
+                    dayTotal += cost;
+
+                    if (cost > 0) {
+                        dayServices.push({
+                            name: serviceName,
+                            cost: cost
+                        });
+                    }
+                }
+            });
+
+            totalServiceCost += dayTotal;
+
+            if (dayTotal > 0) {
+                dayBreakdown.push({
+                    day: day,
+                    total: dayTotal,
+                    services: dayServices
+                });
+            }
+        }
+
+        // Hiển thị service cost
+        const serviceCostEl = document.getElementById('service-cost-per-person');
+        if (serviceCostEl) {
+            serviceCostEl.textContent = formatCurrency(totalServiceCost);
+        }
+
+        // Hiển thị breakdown theo ngày
+        const dayBreakdownEl = document.getElementById('day-breakdown');
+        if (dayBreakdownEl) {
+            if (dayBreakdown.length > 0) {
+                let html = '<div class="mt-2 space-y-1">';
+                dayBreakdown.forEach(item => {
+                    html += `<div class="text-gray-600">Ngày ${item.day}: ${formatCurrency(item.total)}</div>`;
+                });
+                html += '</div>';
+                dayBreakdownEl.innerHTML = html;
+            } else {
+                dayBreakdownEl.innerHTML = '<div class="text-gray-400 italic">Chưa có dịch vụ nào được thêm</div>';
+            }
+        }
+
+        // Tính chi phí cố định/người
+        const fixedCostGuide = parseFloat(document.getElementById('fixed_cost_guide')?.value || 0);
+        const fixedCostManagement = parseFloat(document.getElementById('fixed_cost_management')?.value || 0);
+        const fixedCostMarketing = parseFloat(document.getElementById('fixed_cost_marketing')?.value || 0);
+        const fixedCostOther = parseFloat(document.getElementById('fixed_cost_other')?.value || 0);
+        const minParticipants = parseInt(document.getElementById('min_participants')?.value || 15);
+
+        const totalFixedCost = fixedCostGuide + fixedCostManagement + fixedCostMarketing + fixedCostOther;
+        const fixedCostPerPerson = minParticipants > 0 ? totalFixedCost / minParticipants : 0;
+
+        // Hiển thị chi phí cố định/người
+        const fixedCostEl = document.getElementById('fixed-cost-per-person');
+        if (fixedCostEl) {
+            fixedCostEl.textContent = formatCurrency(fixedCostPerPerson);
+        }
+
+        // Hiển thị breakdown chi phí cố định
+        const fixedCostBreakdownEl = document.getElementById('fixed-cost-breakdown');
+        if (fixedCostBreakdownEl) {
+            if (totalFixedCost > 0) {
+                let html = '<div class="mt-1 space-y-1">';
+                if (fixedCostGuide > 0) {
+                    html += `<div>Lương HDV: ${formatCurrency(fixedCostGuide)} ÷ ${minParticipants} = ${formatCurrency(fixedCostGuide / minParticipants)}</div>`;
+                }
+                if (fixedCostManagement > 0) {
+                    html += `<div>Quản lý: ${formatCurrency(fixedCostManagement)} ÷ ${minParticipants} = ${formatCurrency(fixedCostManagement / minParticipants)}</div>`;
+                }
+                if (fixedCostMarketing > 0) {
+                    html += `<div>Marketing: ${formatCurrency(fixedCostMarketing)} ÷ ${minParticipants} = ${formatCurrency(fixedCostMarketing / minParticipants)}</div>`;
+                }
+                if (fixedCostOther > 0) {
+                    html += `<div>Khác: ${formatCurrency(fixedCostOther)} ÷ ${minParticipants} = ${formatCurrency(fixedCostOther / minParticipants)}</div>`;
+                }
+                html += '</div>';
+                fixedCostBreakdownEl.innerHTML = html;
+            } else {
+                fixedCostBreakdownEl.innerHTML = '<div class="text-gray-400 italic">Chưa nhập chi phí cố định</div>';
+            }
+        }
+
+        // Cập nhật min participants display
+        const minParticipantsDisplayEl = document.getElementById('min-participants-display');
+        if (minParticipantsDisplayEl) {
+            minParticipantsDisplayEl.textContent = minParticipants;
+        }
+
+        // Tổng chi phí = chi phí dịch vụ + chi phí cố định
+        const total = totalServiceCost + fixedCostPerPerson;
         const totalEl = document.getElementById('total-cost-per-person');
         const suggestedEl = document.getElementById('suggested-price-per-person');
 
@@ -1194,6 +1370,14 @@ if (is_array($old_day_services)) {
         const adultPriceEl = document.getElementById('adult_price');
         if (adultPriceEl) {
             adultPriceEl.value = suggested;
+        }
+    }
+
+    function updateMinParticipantsDisplay() {
+        const minParticipants = parseInt(document.getElementById('min_participants')?.value || 15);
+        const minParticipantsDisplayEl = document.getElementById('min-participants-display');
+        if (minParticipantsDisplayEl) {
+            minParticipantsDisplayEl.textContent = minParticipants;
         }
     }
 
@@ -2127,6 +2311,11 @@ if (is_array($old_day_services)) {
             infant_price: parseFloat(document.getElementById('infant_price')?.value || 0),
             deposit_percentage: parseFloat(document.querySelector('[name="deposit_percentage"]')?.value || 30),
             booking_deadline_days: parseInt(document.querySelector('[name="booking_deadline_days"]')?.value || 1),
+            // Fixed costs
+            fixed_cost_guide: parseFloat(document.getElementById('fixed_cost_guide')?.value || 0),
+            fixed_cost_management: parseFloat(document.getElementById('fixed_cost_management')?.value || 0),
+            fixed_cost_marketing: parseFloat(document.getElementById('fixed_cost_marketing')?.value || 0),
+            fixed_cost_other: parseFloat(document.getElementById('fixed_cost_other')?.value || 0),
             status: document.querySelector('[name="status"]')?.value || 'draft',
             tour_type: document.querySelector('[name="tour_type"]')?.value || 'public'
         };
@@ -2282,16 +2471,11 @@ if (is_array($old_day_services)) {
         if (totalEl) {
             totalEl.textContent = formatCurrency(total) + '/người';
         }
-    }
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function formatCurrency(amount) {
-        return new Intl.NumberFormat('vi-VN').format(Math.round(amount || 0)) + 'đ';
+        // Cập nhật pricing breakdown nếu đang ở tab 6
+        if (currentStep === 6) {
+            updateTotalCost();
+        }
     }
 
     function formatNumber(num) {

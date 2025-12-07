@@ -37,6 +37,6 @@
     <?php endif; ?>
 </div>
 
-<div class="bg-white rounded-lg shadow-sm p-6">
+<div class="bg-white p-6 border-l-4 border-accent">
     <?php include __DIR__ . '/components/service-form.php'; ?>
 </div>

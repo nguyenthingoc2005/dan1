@@ -73,13 +73,16 @@ class Destination
             $params['offset'] = $offset;
             $params['limit'] = $per_page;
 
-            // Subquery to get primary image
+            // Subquery to get thumbnail (primary image, or first image if no primary)
             $data_sql = "
                 SELECT 
                     d.*,
                     p.name as province_name,
                     c.name as country_name,
-                    (SELECT image_url FROM destination_images WHERE destination_id = d.id AND is_primary = 1 LIMIT 1) as thumbnail
+                    COALESCE(
+                        (SELECT image_url FROM destination_images WHERE destination_id = d.id AND is_primary = 1 LIMIT 1),
+                        (SELECT image_url FROM destination_images WHERE destination_id = d.id ORDER BY display_order ASC, id ASC LIMIT 1)
+                    ) as thumbnail
                 FROM destinations d
                 LEFT JOIN provinces p ON d.province_id = p.id
                 LEFT JOIN countries c ON d.country_id = c.id

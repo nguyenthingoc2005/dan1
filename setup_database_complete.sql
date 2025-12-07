@@ -107,14 +107,12 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
 -- MODULE 2: LOCATION SERVICES
 -- ==============================================================================
 
--- Countries (không có type)
+-- Countries (không có type, name_en, display_order)
 CREATE TABLE IF NOT EXISTS `countries` (
   `id` int NOT NULL AUTO_INCREMENT,
   `code` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name_en` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `display_order` int DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -122,15 +120,13 @@ CREATE TABLE IF NOT EXISTS `countries` (
   KEY `idx_countries_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Provinces
+-- Provinces (không có name_en, display_order)
 CREATE TABLE IF NOT EXISTS `provinces` (
   `id` int NOT NULL AUTO_INCREMENT,
   `country_id` int NOT NULL,
   `code` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name_en` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `display_order` int DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -189,14 +185,13 @@ CREATE TABLE IF NOT EXISTS `service_types` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Service Providers (không có supplier_id)
+-- Service Providers (không có supplier_id, service_type_id - một nhà cung cấp có thể cung cấp nhiều loại dịch vụ)
 CREATE TABLE IF NOT EXISTS `service_providers` (
   `id` int NOT NULL AUTO_INCREMENT,
   `province_id` int NOT NULL,
   `country_id` int NOT NULL,
   `service_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `service_type_id` int DEFAULT NULL,
   `description` text COLLATE utf8mb4_unicode_ci,
   `address` text COLLATE utf8mb4_unicode_ci,
   `phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -211,12 +206,10 @@ CREATE TABLE IF NOT EXISTS `service_providers` (
   UNIQUE KEY `service_code` (`service_code`),
   KEY `province_id` (`province_id`),
   KEY `country_id` (`country_id`),
-  KEY `service_type_id` (`service_type_id`),
   KEY `created_by` (`created_by`),
   KEY `idx_service_providers_status` (`status`),
   CONSTRAINT `service_providers_ibfk_1` FOREIGN KEY (`province_id`) REFERENCES `provinces` (`id`) ON DELETE CASCADE,
   CONSTRAINT `service_providers_ibfk_2` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `service_providers_ibfk_3` FOREIGN KEY (`service_type_id`) REFERENCES `service_types` (`id`) ON DELETE SET NULL,
   CONSTRAINT `service_providers_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

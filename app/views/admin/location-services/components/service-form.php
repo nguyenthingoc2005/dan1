@@ -71,19 +71,19 @@ $action_url = $is_edit
         </select>
     </div>
 
-    <div class="flex justify-end gap-2 pt-4 border-t">
+    <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
         <?php if ($is_edit && $current_provider): ?>
             <a href="?act=admin&module=location-services&country_id=<?= $current_country['id'] ?? '' ?>&province_id=<?= $current_province['id'] ?? '' ?>&service_provider_id=<?= $current_provider['id'] ?>"
-                class="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                class="px-6 py-2 bg-gray-300 text-gray-700 font-medium hover:bg-gray-400 transition-colors">
                 Hủy
             </a>
         <?php else: ?>
             <a href="?act=admin&module=location-services"
-                class="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                class="px-6 py-2 bg-gray-300 text-gray-700 font-medium hover:bg-gray-400 transition-colors">
                 Hủy
             </a>
         <?php endif; ?>
-        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        <button type="submit" class="px-6 py-2 bg-accent text-white font-medium hover:bg-blue-600 transition-colors">
             <?= $is_edit ? 'Cập nhật' : 'Tạo mới' ?>
         </button>
     </div>

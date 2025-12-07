@@ -9,8 +9,7 @@
  * Relationships:
  * - province_id → provinces (REQUIRED)
  * - country_id → countries (REQUIRED)
- * - service_type_id → service_types (Optional)
- * - Services (1-nhiều)
+ * - Services (1-nhiều) - mỗi service có service_type_id riêng
  * 
  * @version 2.0
  * @date 2024-12-06
@@ -79,8 +78,13 @@ class ServiceProvider
                 $params['country_id'] = $filters['country_id'];
             }
 
+            // Filter by service_type_id thông qua services (một nhà cung cấp có thể có nhiều loại dịch vụ)
             if (!empty($filters['service_type_id'])) {
-                $where_conditions[] = "sp.service_type_id = :service_type_id";
+                $where_conditions[] = "EXISTS (
+                    SELECT 1 FROM services s 
+                    WHERE s.service_provider_id = sp.id 
+                    AND s.service_type_id = :service_type_id
+                )";
                 $params['service_type_id'] = $filters['service_type_id'];
             }
 
@@ -111,12 +115,10 @@ class ServiceProvider
                 SELECT 
                     sp.*,
                     p.name as province_name,
-                    c.name as country_name,
-                    st.name as service_type_name
+                    c.name as country_name
                 FROM service_providers sp
                 LEFT JOIN provinces p ON sp.province_id = p.id
                 LEFT JOIN countries c ON sp.country_id = c.id
-                LEFT JOIN service_types st ON sp.service_type_id = st.id
                 {$where_clause}
                 ORDER BY sp.created_at DESC
                 LIMIT :limit OFFSET :offset
@@ -148,12 +150,10 @@ class ServiceProvider
                 SELECT 
                     sp.*,
                     p.name as province_name,
-                    c.name as country_name,
-                    st.name as service_type_name
+                    c.name as country_name
                 FROM service_providers sp
                 LEFT JOIN provinces p ON sp.province_id = p.id
                 LEFT JOIN countries c ON sp.country_id = c.id
-                LEFT JOIN service_types st ON sp.service_type_id = st.id
                 WHERE sp.id = :id
                 LIMIT 1
             ");
@@ -190,12 +190,12 @@ class ServiceProvider
 
             $stmt = $this->pdo->prepare("
                 INSERT INTO service_providers (
-                    service_code, name, service_type_id, description,
+                    service_code, name, description,
                     province_id, country_id,
                     contact_person, email, phone, website, address,
                     status, created_by
                 ) VALUES (
-                    :service_code, :name, :service_type_id, :description,
+                    :service_code, :name, :description,
                     :province_id, :country_id,
                     :contact_person, :email, :phone, :website, :address,
                     :status, :created_by
@@ -205,7 +205,6 @@ class ServiceProvider
             $success = $stmt->execute([
                 'service_code' => $data['service_code'],
                 'name' => $data['name'],
-                'service_type_id' => $data['service_type_id'] ?? null,
                 'description' => $data['description'] ?? null,
                 'province_id' => $data['province_id'],
                 'country_id' => $data['country_id'],
@@ -242,7 +241,6 @@ class ServiceProvider
         try {
             $allowed_fields = [
                 'name',
-                'service_type_id',
                 'description',
                 'service_code',
                 'province_id',
