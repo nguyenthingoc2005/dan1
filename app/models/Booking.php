@@ -25,8 +25,11 @@ class Booking
         $params = [];
 
         if (!empty($filters['search'])) {
-            $sql .= " AND (b.booking_code LIKE :search OR c.full_name LIKE :search OR c.phone LIKE :search)";
-            $params['search'] = "%" . $filters['search'] . "%";
+            $sql .= " AND (b.booking_code LIKE :search1 OR c.full_name LIKE :search2 OR c.phone LIKE :search3)";
+            $searchTerm = "%" . $filters['search'] . "%";
+            $params['search1'] = $searchTerm;
+            $params['search2'] = $searchTerm;
+            $params['search3'] = $searchTerm;
         }
 
         if (!empty($filters['status'])) {
@@ -86,8 +89,11 @@ class Booking
         $params = [];
 
         if (!empty($filters['search'])) {
-            $sql .= " AND (b.booking_code LIKE :search OR c.full_name LIKE :search OR c.phone LIKE :search)";
-            $params['search'] = "%" . $filters['search'] . "%";
+            $sql .= " AND (b.booking_code LIKE :search1 OR c.full_name LIKE :search2 OR c.phone LIKE :search3)";
+            $searchTerm = "%" . $filters['search'] . "%";
+            $params['search1'] = $searchTerm;
+            $params['search2'] = $searchTerm;
+            $params['search3'] = $searchTerm;
         }
 
         if (!empty($filters['status'])) {

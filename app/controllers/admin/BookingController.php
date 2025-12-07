@@ -34,7 +34,8 @@ class BookingController
         $total_pages = ceil($total_records / $limit);
 
         // Get active tours for filter
-        $tours = $this->tourModel->getAll(['status' => 'active']);
+        $toursResult = $this->tourModel->getAll(['status' => 'active']);
+        $tours = $toursResult['data'] ?? [];
 
         $page_title = 'Quản lý Đặt Tour';
         $content_file = 'app/views/admin/bookings/index.php';
