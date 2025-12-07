@@ -5,7 +5,7 @@
  */
 
 require_once COMMON_PATH . '/MenuHelper.php';
-$user = get_auth_user();
+$current_user = get_auth_user(); // Đổi tên để không conflict với $user từ controller
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -99,11 +99,11 @@ $user = get_auth_user();
                 <div class="flex items-center gap-3 mb-4">
                     <div
                         class="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold shadow-lg ring-2 ring-white/20">
-                        <?php echo strtoupper(substr($user['full_name'], 0, 1)); ?>
+                        <?php echo strtoupper(substr($current_user['full_name'], 0, 1)); ?>
                     </div>
                     <div class="flex-1 overflow-hidden">
-                        <div class="text-sm font-medium truncate text-white"><?php echo $user['full_name']; ?></div>
-                        <div class="text-xs text-slate-400 truncate"><?php echo $user['role_display']; ?></div>
+                        <div class="text-sm font-medium truncate text-white"><?php echo $current_user['full_name']; ?></div>
+                        <div class="text-xs text-slate-400 truncate"><?php echo $current_user['role_display']; ?></div>
                     </div>
                 </div>
                 <a href="<?php echo (defined('BASE_URL') ? BASE_URL : '') . '/?act=logout'; ?>"

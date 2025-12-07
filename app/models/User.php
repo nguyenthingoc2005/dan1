@@ -290,9 +290,10 @@ class User
     {
         try {
             // Build SET clause dynamically
-            $allowed_fields = ['role_id', 'full_name', 'phone', 'date_of_birth', 'gender', 'address', 'status', 'avatar'];
+            // QUAN TRỌNG: email được phép update (nhưng chỉ khi admin thay đổi)
+            $allowed_fields = ['role_id', 'email', 'full_name', 'phone', 'date_of_birth', 'gender', 'address', 'status', 'avatar'];
             $set_parts = [];
-            $params = ['id' => $id];
+            $params = ['id' => $id]; // QUAN TRỌNG: id phải là $id được truyền vào, không phải get_user_id()
 
             foreach ($allowed_fields as $field) {
                 if (isset($data[$field])) {

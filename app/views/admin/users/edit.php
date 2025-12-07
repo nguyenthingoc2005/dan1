@@ -13,7 +13,7 @@ if (!is_admin())
 
     <form method="POST" action="?act=admin&module=users&action=update" enctype="multipart/form-data"
         class="bg-white p-6 rounded">
-        <input type="hidden" name="id" value="<?= $user['id'] ?>">
+        <input type="hidden" name="id" value="<?= (int) $user['id'] ?>">
 
         <!-- Email (Read-only in edit) -->
         <div class="mb-4">
