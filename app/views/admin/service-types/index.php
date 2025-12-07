@@ -19,32 +19,34 @@ if (!is_admin())
     </div>
 
     <!-- Search & Filter -->
-    <form method="GET" class="bg-white p-4 rounded mb-4">
-        <input type="hidden" name="act" value="admin">
-        <input type="hidden" name="module" value="service-types">
+    <div class="bg-white p-4 rounded mb-4">
+        <form method="GET" id="filterForm">
+            <input type="hidden" name="act" value="admin">
+            <input type="hidden" name="module" value="service-types">
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <input type="text" name="search" value="<?= $_GET['search'] ?? '' ?>"
-                    placeholder="Tìm theo tên hoặc mô tả..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <input type="text" id="searchInput" 
+                        placeholder="Tìm theo tên loại dịch vụ..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                </div>
+                <div>
+                    <select name="status" id="statusFilter"
+                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
+                        onchange="document.getElementById('filterForm').submit();">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="active" <?= ($_GET['status'] ?? '') == 'active' ? 'selected' : '' ?>>Hoạt động</option>
+                        <option value="inactive" <?= ($_GET['status'] ?? '') == 'inactive' ? 'selected' : '' ?>>Vô hiệu</option>
+                    </select>
+                </div>
+                <div>
+                    <button type="button" onclick="clearFilters()" class="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                        Xóa bộ lọc
+                    </button>
+                </div>
             </div>
-            <div>
-                <select name="status"
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="active" <?= ($_GET['status'] ?? '') == 'active' ? 'selected' : '' ?>>Hoạt động</option>
-                    <option value="inactive" <?= ($_GET['status'] ?? '') == 'inactive' ? 'selected' : '' ?>>Vô hiệu
-                    </option>
-                </select>
-            </div>
-            <div>
-                <button type="submit" class="px-6 py-2 bg-accent text-white rounded hover:bg-blue-600">
-                    Tìm kiếm
-                </button>
-            </div>
-        </div>
-    </form>
+        </form>
+    </div>
 
     <!-- Table -->
     <div class="bg-white rounded">
@@ -58,9 +60,9 @@ if (!is_admin())
                     <th class="px-4 py-3 text-right text-sm font-medium text-slate-700">Thao tác</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200">
+            <tbody id="serviceTypesTableBody" class="divide-y divide-slate-200">
                 <?php if (empty($service_types)): ?>
-                    <tr>
+                    <tr id="noResultsRow">
                         <td colspan="5" class="px-4 py-8 text-center text-slate-500">
                             Chưa có loại dịch vụ nào.
                             <a href="?act=admin&module=service-types&action=create" class="text-accent hover:underline">Thêm
@@ -69,9 +71,11 @@ if (!is_admin())
                     </tr>
                 <?php else: ?>
                     <?php foreach ($service_types as $type): ?>
-                        <tr class="hover:bg-slate-50">
+                        <tr class="service-type-row hover:bg-slate-50" 
+                            data-name="<?= htmlspecialchars(strtolower($type['name']), ENT_QUOTES, 'UTF-8') ?>"
+                            data-id="<?= $type['id'] ?>">
                             <td class="px-4 py-3 text-sm"><?= $type['id'] ?></td>
-                            <td class="px-4 py-3 text-sm font-medium"><?= htmlspecialchars($type['name']) ?></td>
+                            <td class="px-4 py-3 text-sm font-medium service-type-name"><?= htmlspecialchars($type['name']) ?></td>
                             <td class="px-4 py-3 text-sm text-slate-600">
                                 <?= htmlspecialchars(substr($type['description'] ?? '', 0, 50)) ?>
                                 <?= strlen($type['description'] ?? '') > 50 ? '...' : '' ?>
@@ -105,7 +109,7 @@ if (!is_admin())
     <?php if ($total_pages > 1): ?>
         <div class="mt-4 flex justify-center gap-2">
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                <a href="?act=admin&module=service-types&page=<?= $i ?>&search=<?= $_GET['search'] ?? '' ?>&status=<?= $_GET['status'] ?? '' ?>"
+                <a href="?act=admin&module=service-types&page=<?= $i ?>&status=<?= $_GET['status'] ?? '' ?>"
                     class="px-3 py-1 rounded <?= $i == $current_page ? 'bg-accent text-white' : 'bg-gray-200 hover:bg-gray-300' ?>">
                     <?= $i ?>
                 </a>
@@ -120,3 +124,77 @@ if (!is_admin())
         </p>
     </div>
 </div>
+
+<script>
+    // JavaScript search - Tìm kiếm theo name trên client-side
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const tableBody = document.getElementById('serviceTypesTableBody');
+        
+        if (!searchInput || !tableBody) return;
+        
+        // Lấy tất cả rows có class service-type-row
+        const rows = tableBody.querySelectorAll('.service-type-row');
+        
+        // Function để lấy hoặc tạo noResultsRow
+        function getOrCreateNoResultsRow() {
+            let noResultsRow = document.getElementById('noResultsRow');
+            // Nếu không tìm thấy hoặc không phải là row cho search (không có class đặc biệt)
+            if (!noResultsRow || noResultsRow.classList.contains('service-type-row')) {
+                // Xóa row cũ nếu có
+                if (noResultsRow && noResultsRow.parentElement === tableBody) {
+                    noResultsRow.remove();
+                }
+                // Tạo row mới
+                noResultsRow = document.createElement('tr');
+                noResultsRow.id = 'noResultsRow';
+                noResultsRow.className = 'no-results-message';
+                noResultsRow.innerHTML = '<td colspan="5" class="px-4 py-8 text-center text-slate-500">Không tìm thấy loại dịch vụ nào phù hợp.</td>';
+            }
+            return noResultsRow;
+        }
+        
+        // Function để filter rows
+        function filterRows() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            let visibleCount = 0;
+            
+            // Filter các rows
+            rows.forEach(function(row) {
+                const name = row.getAttribute('data-name') || '';
+                const isVisible = name.includes(searchTerm);
+                
+                if (isVisible) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Xử lý noResultsRow - ẩn tất cả noResultsRow cũ trước
+            const existingNoResults = tableBody.querySelectorAll('#noResultsRow.no-results-message');
+            existingNoResults.forEach(function(row) {
+                row.remove();
+            });
+            
+            // Hiển thị "Không tìm thấy" nếu không có kết quả VÀ có search term
+            if (visibleCount === 0 && searchTerm !== '' && rows.length > 0) {
+                const noResultsRow = getOrCreateNoResultsRow();
+                tableBody.appendChild(noResultsRow);
+            }
+            // Nếu không có rows nào (từ PHP - empty service_types), giữ nguyên noResultsRow từ PHP
+        }
+        
+        // Event listener cho search input
+        searchInput.addEventListener('input', filterRows);
+        
+        // Function để xóa bộ lọc
+        window.clearFilters = function() {
+            searchInput.value = '';
+            filterRows();
+            // Reset status filter
+            window.location.href = '?act=admin&module=service-types';
+        };
+    });
+</script>

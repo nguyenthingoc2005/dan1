@@ -31,12 +31,13 @@ class ServiceTypeController
     {
         require_admin();
 
-        // Get filters
+        // Get filters - chỉ lọc theo status, search sẽ dùng JavaScript
         $filters = [];
-        if (!empty($_GET['status']))
-            $filters['status'] = sanitize($_GET['status']);
-        if (!empty($_GET['search']))
-            $filters['search'] = sanitize($_GET['search']);
+        // Status filter - chỉ add nếu có giá trị và không phải empty string
+        if (isset($_GET['status']) && trim($_GET['status']) !== '') {
+            $filters['status'] = sanitize(trim($_GET['status']));
+        }
+        // Bỏ search filter - sẽ dùng JavaScript để filter trên client-side
 
         // Pagination
         $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;

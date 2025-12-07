@@ -34,24 +34,23 @@ class ServiceType
                 $params['status'] = $filters['status'];
             }
 
-            if (!empty($filters['search'])) {
-                $where_conditions[] = "(name LIKE :search OR description LIKE :search)";
-                $params['search'] = '%' . $filters['search'] . '%';
-            }
+            // Bỏ search filter - sẽ dùng JavaScript để filter trên client-side
 
             $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
             // Count total
             $count_sql = "SELECT COUNT(*) as total FROM service_types {$where_clause}";
             $count_stmt = $this->pdo->prepare($count_sql);
-            $count_stmt->execute($params);
-            $total = $count_stmt->fetch()['total'];
+            // Bind params cho count query
+            foreach ($params as $key => $value) {
+                $count_stmt->bindValue(':' . $key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            $count_stmt->execute();
+            $total = $count_stmt->fetch()['total'] ?? 0;
 
             // Get data
             $offset = ($page - 1) * $per_page;
-            $params['offset'] = $offset;
-            $params['limit'] = $per_page;
-
+            
             $data_sql = "
                 SELECT id, name, description, status, created_at
                 FROM service_types
@@ -60,7 +59,16 @@ class ServiceType
                 LIMIT :limit OFFSET :offset
             ";
             $data_stmt = $this->pdo->prepare($data_sql);
-            $data_stmt->execute($params);
+            
+            // Bind params including limit/offset
+            foreach ($params as $key => $value) {
+                $data_stmt->bindValue(':' . $key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            // Bind limit and offset as integers
+            $data_stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+            $data_stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            
+            $data_stmt->execute();
             $data = $data_stmt->fetchAll();
 
             return [
