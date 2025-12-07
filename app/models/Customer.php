@@ -232,58 +232,77 @@ class Customer
 
     public function getAll($filters = [], $page = 1, $limit = 20)
     {
-        $sql = "SELECT * FROM customers WHERE 1=1";
-        $params = [];
+        try {
+            // Build WHERE conditions
+            $where_conditions = [];
+            $params = [];
 
-        if (!empty($filters['search'])) {
-            $sql .= " AND (full_name LIKE :search OR phone LIKE :search OR email LIKE :search)";
-            $params['search'] = '%' . $filters['search'] . '%';
+            // Search filter - tìm kiếm theo: tên, SĐT, email, mã KH, CMND/CCCD, hộ chiếu
+            // Dùng % ở cả đầu và cuối: %keyword%
+            if (!empty($filters['search'])) {
+                $where_conditions[] = "(full_name LIKE :search 
+                                        OR phone LIKE :search 
+                                        OR email LIKE :search 
+                                        OR customer_code LIKE :search 
+                                        OR id_card LIKE :search 
+                                        OR passport LIKE :search)";
+                $params['search'] = '%' . $filters['search'] . '%';
+            }
+
+            // Status filter
+            if (!empty($filters['status'])) {
+                $where_conditions[] = "status = :status";
+                $params['status'] = $filters['status'];
+            }
+
+            // Created by filter
+            if (!empty($filters['created_by'])) {
+                $where_conditions[] = "created_by = :created_by";
+                $params['created_by'] = (int) $filters['created_by'];
+            }
+
+            // Build WHERE clause
+            $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+
+            // Count total - dùng cùng WHERE clause và params
+            $count_sql = "SELECT COUNT(*) as total FROM customers {$where_clause}";
+            $count_stmt = $this->pdo->prepare($count_sql);
+            $count_stmt->execute($params);
+            $total = $count_stmt->fetch()['total'] ?? 0;
+
+            // Get paginated data
+            $offset = ($page - 1) * $limit;
+            $params['offset'] = $offset;
+            $params['limit'] = $limit;
+
+            $data_sql = "
+                SELECT * 
+                FROM customers 
+                {$where_clause}
+                ORDER BY created_at DESC
+                LIMIT :limit OFFSET :offset
+            ";
+
+            $data_stmt = $this->pdo->prepare($data_sql);
+            $data_stmt->execute($params);
+            $data = $data_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return [
+                'data' => $data,
+                'total' => $total,
+                'pages' => ceil($total / $limit),
+                'current_page' => $page
+            ];
+
+        } catch (PDOException $e) {
+            error_log("Customer::getAll() Error: " . $e->getMessage());
+            return [
+                'data' => [],
+                'total' => 0,
+                'pages' => 0,
+                'current_page' => $page
+            ];
         }
-
-        if (!empty($filters['status'])) {
-            $sql .= " AND status = :status";
-            $params['status'] = $filters['status'];
-        }
-
-        if (!empty($filters['created_by'])) {
-            $sql .= " AND created_by = :created_by";
-            $params['created_by'] = $filters['created_by'];
-        }
-
-        // Count total
-        $countSql = "SELECT COUNT(*) FROM customers WHERE 1=1";
-        if (!empty($filters['search'])) {
-            $countSql .= " AND (full_name LIKE :search OR phone LIKE :search OR email LIKE :search)";
-        }
-        if (!empty($filters['status'])) {
-            $countSql .= " AND status = :status";
-        }
-        if (!empty($filters['created_by'])) {
-            $countSql .= " AND created_by = :created_by";
-        }
-
-        $stmt = $this->pdo->prepare($countSql);
-        $stmt->execute($params);
-        $total = $stmt->fetchColumn();
-
-        // Pagination
-        $sql .= " ORDER BY created_at DESC LIMIT :offset, :limit";
-        $offset = ($page - 1) * $limit;
-
-        $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => $val) {
-            $stmt->bindValue(':' . $key, $val);
-        }
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->execute();
-
-        return [
-            'data' => $stmt->fetchAll(PDO::FETCH_ASSOC),
-            'total' => $total,
-            'pages' => ceil($total / $limit),
-            'current_page' => $page
-        ];
     }
 
     public function count($filters = [])
@@ -292,8 +311,15 @@ class Customer
         $params = [];
 
         if (!empty($filters['search'])) {
-            $sql .= " AND (full_name LIKE :search OR phone LIKE :search OR email LIKE :search)";
-            $params['search'] = '%' . $filters['search'] . '%';
+            $searchValue = '%' . $filters['search'] . '%';
+            // Tìm kiếm theo: tên, SĐT, email, mã KH, CMND/CCCD, hộ chiếu
+            $sql .= " AND (full_name LIKE :search 
+                        OR phone LIKE :search 
+                        OR email LIKE :search 
+                        OR customer_code LIKE :search 
+                        OR id_card LIKE :search 
+                        OR passport LIKE :search)";
+            $params['search'] = $searchValue;
         }
 
         if (!empty($filters['status'])) {
@@ -313,9 +339,18 @@ class Customer
 
     public function search($keyword)
     {
-        $sql = "SELECT * FROM customers WHERE full_name LIKE :kw OR phone LIKE :kw OR email LIKE :kw LIMIT 20";
+        // Dùng % ở cả đầu và cuối: %keyword%
+        $searchValue = '%' . $keyword . '%';
+        $sql = "SELECT * FROM customers 
+                WHERE full_name LIKE :kw 
+                   OR phone LIKE :kw 
+                   OR email LIKE :kw 
+                   OR customer_code LIKE :kw 
+                   OR id_card LIKE :kw 
+                   OR passport LIKE :kw 
+                LIMIT 20";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['kw' => "%$keyword%"]);
+        $stmt->execute(['kw' => $searchValue]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

@@ -1,4 +1,4 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-88xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Page Header -->
     <div class="flex justify-between items-center mb-6">
         <div>
@@ -32,42 +32,35 @@
 
     <!-- Filters -->
     <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-        <form method="GET" action="" class="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <input type="hidden" name="act" value="admin">
-            <input type="hidden" name="module" value="customers">
-
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
             <div class="md:col-span-5">
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                         <i class="fas fa-search"></i>
                     </span>
-                    <input type="text" name="search"
+                    <input type="text" id="searchInput"
                         class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
-                        placeholder="Tìm kiếm theo tên, SĐT, Email..."
-                        value="<?= htmlspecialchars($filters['search'] ?? '') ?>">
+                        placeholder="Tìm kiếm theo tên, SĐT, Email, Mã KH, CMND/CCCD, Hộ chiếu...">
                 </div>
             </div>
 
             <div class="md:col-span-3">
-                <select name="status"
+                <select id="statusSelect"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm bg-white">
                     <option value="">-- Tất cả trạng thái --</option>
-                    <option value="active" <?= ($filters['status'] ?? '') == 'active' ? 'selected' : '' ?>>Đang hoạt động
-                    </option>
-                    <option value="inactive" <?= ($filters['status'] ?? '') == 'inactive' ? 'selected' : '' ?>>Ngừng hoạt
-                        động</option>
-                    <option value="blacklist" <?= ($filters['status'] ?? '') == 'blacklist' ? 'selected' : '' ?>>Blacklist
-                    </option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="inactive">Ngừng hoạt động</option>
+                    <option value="blacklist">Blacklist</option>
                 </select>
             </div>
 
             <div class="md:col-span-2">
-                <button type="submit"
-                    class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm h-full">
-                    Lọc dữ liệu
+                <button type="button" id="clearFilters"
+                    class="w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm h-full">
+                    Xóa bộ lọc
                 </button>
             </div>
-        </form>
+        </div>
     </div>
 
     <!-- Customers Table -->
@@ -86,10 +79,12 @@
                         <th class="px-6 py-4 text-right">Hành động</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody id="customersTableBody" class="divide-y divide-gray-100">
                     <?php if (!empty($customers)): ?>
                         <?php foreach ($customers as $customer): ?>
-                            <tr class="hover:bg-gray-50 transition-colors group">
+                            <tr class="customer-row hover:bg-gray-50 transition-colors group"
+                                data-search="<?= htmlspecialchars(strtolower(($customer['full_name'] ?? '') . ' ' . ($customer['phone'] ?? '') . ' ' . ($customer['email'] ?? '') . ' ' . ($customer['customer_code'] ?? 'KH' . $customer['id']) . ' ' . ($customer['id_card'] ?? '') . ' ' . ($customer['passport'] ?? ''))) ?>"
+                                data-status="<?= htmlspecialchars($customer['status'] ?? '') ?>">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <a href="?act=admin&module=customers&action=show&id=<?= $customer['id'] ?>"
                                         class="font-mono text-blue-600 font-medium hover:underline">
@@ -104,7 +99,8 @@
                                         </div>
                                         <div>
                                             <div class="font-medium text-slate-800">
-                                                <?= htmlspecialchars($customer['full_name']) ?></div>
+                                                <?= htmlspecialchars($customer['full_name']) ?>
+                                            </div>
                                             <div class="text-xs text-gray-500">
                                                 <?= $customer['gender'] == 'male' ? 'Nam' : ($customer['gender'] == 'female' ? 'Nữ' : 'Khác') ?>
                                             </div>
@@ -170,7 +166,7 @@
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 text-right text-sm font-medium">
-                                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="flex justify-end gap-2">
                                         <a href="?act=admin&module=customers&action=show&id=<?= $customer['id'] ?>"
                                             class="text-blue-600 hover:text-blue-900 p-1" title="Chi tiết">
                                             <i class="fas fa-eye"></i>
@@ -188,39 +184,92 @@
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                                <div class="flex flex-col items-center justify-center">
-                                    <i class="fas fa-users text-4xl text-gray-300 mb-3"></i>
-                                    <p>Không tìm thấy khách hàng nào phù hợp.</p>
-                                </div>
-                            </td>
-                        </tr>
                     <?php endif; ?>
+                    <!-- Empty state (sẽ được hiển thị bằng JS khi không có kết quả) -->
+                    <tr id="emptyState" class="hidden">
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fas fa-users text-4xl text-gray-300 mb-3"></i>
+                                <p>Không tìm thấy khách hàng nào phù hợp.</p>
+                            </div>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- Pagination -->
-        <?php if ($total_pages > 1): ?>
-            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-center">
-                <nav class="flex gap-1">
-                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <a href="?act=admin&module=customers&page=<?= $i ?>&search=<?= urlencode($filters['search'] ?? '') ?>&status=<?= $filters['status'] ?? '' ?>"
-                            class="px-3 py-1 rounded-md text-sm font-medium transition-colors <?= $i == $current_page
-                                ? 'bg-blue-600 text-white shadow-sm'
-                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100' ?>">
-                            <?= $i ?>
-                        </a>
-                    <?php endfor; ?>
-                </nav>
+        <!-- Results Count -->
+        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+            <div class="text-sm text-gray-600">
+                Hiển thị <span id="visibleCount" class="font-medium"><?= count($customers) ?></span> /
+                <span class="font-medium"><?= $total ?></span> khách hàng
             </div>
-        <?php endif; ?>
+        </div>
     </div>
 </div>
 
 <script>
+    // Customer Filtering bằng JavaScript
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('searchInput');
+        const statusSelect = document.getElementById('statusSelect');
+        const clearFiltersBtn = document.getElementById('clearFilters');
+        const customerRows = document.querySelectorAll('.customer-row');
+        const emptyState = document.getElementById('emptyState');
+        const visibleCount = document.getElementById('visibleCount');
+
+        function filterCustomers() {
+            const searchTerm = (searchInput.value || '').toLowerCase().trim();
+            const statusFilter = statusSelect.value || '';
+
+            let visibleRows = 0;
+
+            customerRows.forEach(row => {
+                const rowSearch = row.getAttribute('data-search') || '';
+                const rowStatus = row.getAttribute('data-status') || '';
+
+                // Kiểm tra search
+                const matchesSearch = !searchTerm || rowSearch.includes(searchTerm);
+
+                // Kiểm tra status
+                const matchesStatus = !statusFilter || rowStatus === statusFilter;
+
+                // Hiển thị/ẩn row
+                if (matchesSearch && matchesStatus) {
+                    row.style.display = '';
+                    visibleRows++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Hiển thị empty state nếu không có kết quả
+            if (visibleRows === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            // Cập nhật số lượng hiển thị
+            if (visibleCount) {
+                visibleCount.textContent = visibleRows;
+            }
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', filterCustomers);
+        statusSelect.addEventListener('change', filterCustomers);
+
+        clearFiltersBtn.addEventListener('click', function () {
+            searchInput.value = '';
+            statusSelect.value = '';
+            filterCustomers();
+        });
+
+        // Filter ban đầu nếu có giá trị từ URL (nếu cần)
+        filterCustomers();
+    });
+
     // Import Excel/CSV
     function handleImportFile(event) {
         const file = event.target.files[0];
@@ -266,7 +315,7 @@
             })
             .then(data => {
                 console.log('📦 Response data:', data);
-                
+
                 // If redirect happened, the page will reload
                 // Otherwise show success message
                 if (data && !data.includes('<!DOCTYPE')) {

@@ -31,28 +31,11 @@ class CustomerController
     {
         require_admin();
 
-        // Get filters
-        $filters = [];
-        if (!empty($_GET['search']))
-            $filters['search'] = sanitize($_GET['search']);
-        if (!empty($_GET['status']))
-            $filters['status'] = sanitize($_GET['status']);
-
-        // Pagination
-        $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-        $limit = 20;
-
-        $result = $this->customerModel->getAll($filters, $page, $limit); // Note: Customer model might need update to return pagination array
-
-        // If model returns just array, we handle pagination manually or update model.
-        // Let's check Customer model first. Assuming it returns array for now, we might need to fix it.
-        // Actually, let's look at Customer.php model structure.
-        // For now, I will assume standard structure.
+        // Load tất cả dữ liệu để filter bằng JavaScript (không pagination)
+        $result = $this->customerModel->getAll([], 1, 999999); // Load tất cả
 
         $customers = $result['data'] ?? $result; // Fallback
         $total = $result['total'] ?? count($customers);
-        $total_pages = $result['pages'] ?? 1;
-        $current_page = $page;
 
         $page_title = 'Quản lý Khách hàng';
         $content_file = VIEWS_PATH . '/admin/customers/index.php';
@@ -80,21 +63,36 @@ class CustomerController
         require_csrf_token();
 
         try {
-            // Prepare data
+            // Validate required fields first
+            if (empty($_POST['full_name'])) {
+                throw new Exception("Vui lòng nhập họ tên khách hàng.");
+            }
+            
+            if (empty($_POST['phone'])) {
+                throw new Exception("Vui lòng nhập số điện thoại.");
+            }
+
+            // Prepare data (normalize phone, id_card, passport trước khi validate)
+            $phone = sanitize($_POST['phone'] ?? '');
+            $phone = preg_replace('/[\s\-\(\)]/', '', $phone); // Normalize phone
+            
+            $id_card = !empty($_POST['id_card']) ? preg_replace('/\s/', '', sanitize($_POST['id_card'])) : null;
+            $passport = !empty($_POST['passport']) ? strtoupper(sanitize($_POST['passport'])) : null;
+            
             $data = [
-                'full_name' => sanitize($_POST['full_name'] ?? ''),
-                'phone' => sanitize($_POST['phone'] ?? ''),
-                'email' => !empty($_POST['email']) ? sanitize($_POST['email']) : null,
-                'address' => !empty($_POST['address']) ? sanitize($_POST['address']) : null,
+                'full_name' => trim(sanitize($_POST['full_name'] ?? '')),
+                'phone' => $phone,
+                'email' => !empty($_POST['email']) ? trim(sanitize($_POST['email'])) : null,
+                'address' => !empty($_POST['address']) ? trim(sanitize($_POST['address'])) : null,
                 'date_of_birth' => !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null,
                 'gender' => $_POST['gender'] ?? null,
-                'id_card' => !empty($_POST['id_card']) ? sanitize($_POST['id_card']) : null,
-                'passport' => !empty($_POST['passport']) ? sanitize($_POST['passport']) : null,
-                'nationality' => !empty($_POST['nationality']) ? sanitize($_POST['nationality']) : 'Vietnam',
+                'id_card' => $id_card,
+                'passport' => $passport,
+                'nationality' => !empty($_POST['nationality']) ? trim(sanitize($_POST['nationality'])) : 'Vietnam',
                 'customer_type' => $_POST['customer_type'] ?? 'individual',
                 'source' => $_POST['source'] ?? 'other',
-                'special_requirements' => !empty($_POST['special_requirements']) ? sanitize($_POST['special_requirements']) : null,
-                'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
+                'special_requirements' => !empty($_POST['special_requirements']) ? trim(sanitize($_POST['special_requirements'])) : null,
+                'notes' => !empty($_POST['notes']) ? trim(sanitize($_POST['notes'])) : null,
                 'created_by' => get_user_id()
             ];
 
@@ -102,9 +100,12 @@ class CustomerController
             $validation = $this->customerModel->validate($data);
             
             if (!$validation['valid']) {
-                // Get first error message to display
-                $firstError = reset($validation['errors']);
-                throw new Exception($firstError);
+                // Hiển thị tất cả lỗi (không chỉ lỗi đầu tiên)
+                $errorMessages = [];
+                foreach ($validation['errors'] as $field => $message) {
+                    $errorMessages[] = $message;
+                }
+                throw new Exception(implode(' ', $errorMessages));
             }
 
             // Create customer
@@ -199,21 +200,37 @@ class CustomerController
                 throw new Exception("Khách hàng không tồn tại.");
             }
 
+            // Validate required fields first
+            if (empty($_POST['full_name'])) {
+                throw new Exception("Vui lòng nhập họ tên khách hàng.");
+            }
+            
+            if (empty($_POST['phone'])) {
+                throw new Exception("Vui lòng nhập số điện thoại.");
+            }
+
+            // Normalize data trước khi validate
+            $phone = sanitize($_POST['phone'] ?? '');
+            $phone = preg_replace('/[\s\-\(\)]/', '', $phone);
+            
+            $id_card = !empty($_POST['id_card']) ? preg_replace('/\s/', '', sanitize($_POST['id_card'])) : null;
+            $passport = !empty($_POST['passport']) ? strtoupper(sanitize($_POST['passport'])) : null;
+
             // Prepare data
             $data = [
-                'full_name' => sanitize($_POST['full_name'] ?? ''),
-                'phone' => sanitize($_POST['phone'] ?? ''),
-                'email' => !empty($_POST['email']) ? sanitize($_POST['email']) : null,
-                'address' => !empty($_POST['address']) ? sanitize($_POST['address']) : null,
+                'full_name' => trim(sanitize($_POST['full_name'] ?? '')),
+                'phone' => $phone,
+                'email' => !empty($_POST['email']) ? trim(sanitize($_POST['email'])) : null,
+                'address' => !empty($_POST['address']) ? trim(sanitize($_POST['address'])) : null,
                 'date_of_birth' => !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null,
                 'gender' => $_POST['gender'] ?? null,
-                'id_card' => !empty($_POST['id_card']) ? sanitize($_POST['id_card']) : null,
-                'passport' => !empty($_POST['passport']) ? sanitize($_POST['passport']) : null,
-                'nationality' => !empty($_POST['nationality']) ? sanitize($_POST['nationality']) : 'Vietnam',
+                'id_card' => $id_card,
+                'passport' => $passport,
+                'nationality' => !empty($_POST['nationality']) ? trim(sanitize($_POST['nationality'])) : 'Vietnam',
                 'customer_type' => $_POST['customer_type'] ?? 'individual',
                 'source' => $_POST['source'] ?? 'other',
-                'special_requirements' => !empty($_POST['special_requirements']) ? sanitize($_POST['special_requirements']) : null,
-                'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
+                'special_requirements' => !empty($_POST['special_requirements']) ? trim(sanitize($_POST['special_requirements'])) : null,
+                'notes' => !empty($_POST['notes']) ? trim(sanitize($_POST['notes'])) : null,
                 'status' => $_POST['status'] ?? 'active'
             ];
 
@@ -221,17 +238,12 @@ class CustomerController
             $validation = $this->customerModel->validate($data, $id);
             
             if (!$validation['valid']) {
-                $firstError = reset($validation['errors']);
-                throw new Exception($firstError);
-            }
-
-            // Normalize phone
-            $data['phone'] = preg_replace('/[\s\-\(\)]/', '', $data['phone']);
-            if (!empty($data['id_card'])) {
-                $data['id_card'] = preg_replace('/\s/', '', $data['id_card']);
-            }
-            if (!empty($data['passport'])) {
-                $data['passport'] = strtoupper($data['passport']);
+                // Hiển thị tất cả lỗi
+                $errorMessages = [];
+                foreach ($validation['errors'] as $field => $message) {
+                    $errorMessages[] = $message;
+                }
+                throw new Exception(implode(' ', $errorMessages));
             }
 
             if ($this->customerModel->update($id, $data)) {
