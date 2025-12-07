@@ -8,69 +8,62 @@ if (!is_admin())
 ?>
 
 <style>
-    /* Flat Design - Improved spacing and colors */
+    /* Flat Design - Simple & Clean */
+    :root {
+        --primary: #1e293b;
+        --accent: #3b82f6;
+        --background: #f3f4f6;
+        --panel: #ffffff;
+        --gray-200: #e5e7eb;
+        --gray-400: #9ca3af;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+    }
+
+    /* Simple Tree Item */
     .tree-item {
-        cursor: pointer;
         padding: 12px 16px;
         margin-bottom: 4px;
-        transition: all 0.15s;
-        border-left: 4px solid transparent;
-        border-radius: 0;
+        background-color: var(--panel);
+        border-left: 3px solid transparent;
+        transition: background-color 0.15s;
     }
 
     .tree-item:hover {
-        background-color: #f8fafc;
-        border-left-color: #cbd5e1;
+        background-color: var(--background);
+        border-left-color: var(--accent);
     }
 
     .tree-item.active {
-        background-color: #3b82f6;
+        background-color: var(--primary);
         color: white;
-        border-left-color: #1e293b;
+        border-left-color: var(--accent);
     }
 
-    .tree-item.active:hover {
-        background-color: #2563eb;
+    .tree-item.active * {
+        color: white;
     }
 
-    /* Style cho thẻ <a> trong tree-item */
     .tree-item a.no-underline {
         text-decoration: none;
         color: inherit;
         display: block;
     }
 
-    .tree-item a.no-underline:hover {
-        text-decoration: none;
-        color: inherit;
-    }
-
-    .tree-children {
-        margin-left: 32px;
-        margin-top: 4px;
-        border-left: 2px solid #e2e8f0;
-        padding-left: 12px;
-    }
-
-    .tree-children.hidden {
-        display: none;
-    }
-
-    .tree-item.expanded .tree-children {
-        display: block;
-    }
-
-    .tree-toggle {
-        font-size: 12px;
-        opacity: 0.8;
-        margin-left: 8px;
-    }
 
     .tree-icon {
         margin-right: 10px;
         font-size: 16px;
         width: 20px;
         text-align: center;
+    }
+
+    .tree-item.country .tree-icon {
+        color: var(--accent);
+    }
+
+    .tree-item.active .tree-icon {
+        color: white;
     }
 
     .tree-label {
@@ -80,23 +73,23 @@ if (!is_admin())
     }
 
     .tree-badge {
-        background-color: #e2e8f0;
+        background-color: var(--gray-200);
         padding: 3px 8px;
         font-size: 11px;
         font-weight: 600;
-        color: #475569;
+        color: var(--gray-700);
         margin-left: 8px;
         margin-right: 8px;
     }
 
     .tree-item.active .tree-badge {
-        background-color: rgba(255, 255, 255, 0.3);
+        background-color: rgba(255, 255, 255, 0.2);
         color: white;
     }
 
     .tree-actions {
         display: flex;
-        gap: 6px;
+        gap: 4px;
         margin-left: 12px;
     }
 
@@ -107,64 +100,210 @@ if (!is_admin())
         align-items: center;
         justify-content: center;
         font-size: 12px;
-        transition: all 0.15s;
+        border: none;
+        transition: opacity 0.15s;
     }
 
+    .tree-action-btn:hover {
+        opacity: 0.8;
+    }
+
+    /* Service Cards */
     .service-card {
-        background-color: #ffffff;
-        border-left: 4px solid #3b82f6;
+        background-color: var(--panel);
+        border-left: 3px solid var(--accent);
         padding: 20px;
         margin-bottom: 16px;
-        transition: background-color 0.15s;
     }
 
     .service-card:hover {
-        background-color: #f8fafc;
+        background-color: var(--background);
     }
 
-    /* Cải thiện spacing cho main content */
-    #mainContent {
-        min-height: 600px;
+    .service-card.inactive {
+        opacity: 0.6;
+        border-left-color: var(--gray-400);
     }
 
-    /* Cải thiện spacing cho province grid */
-    .province-grid {
-        gap: 12px;
-    }
-
+    /* Price Items */
     .price-item {
-        background-color: #ffffff;
-        border-left: 3px solid #e5e7eb;
+        background-color: var(--panel);
+        border-left: 2px solid var(--gray-200);
         padding: 12px 16px;
-        transition: background-color 0.15s;
+        margin-bottom: 8px;
     }
 
     .price-item:hover {
-        background-color: #f8fafc;
-        border-left-color: #3b82f6;
+        background-color: var(--background);
+        border-left-color: var(--accent);
     }
 
-    .loading {
+    /* Main Content */
+    #mainContent {
+        min-height: 600px;
+        background-color: var(--background);
+    }
+
+    /* Empty States */
+    .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: #64748b;
+        color: var(--gray-500);
     }
+
+    .empty-state i {
+        font-size: 48px;
+        color: var(--gray-400);
+        margin-bottom: 12px;
+    }
+
+    .empty-state p {
+        font-size: 14px;
+        color: var(--gray-600);
+    }
+
+    /* Tabs */
+    .tab-nav {
+        border-bottom: 1px solid var(--gray-200);
+        margin-bottom: 20px;
+    }
+
+    .tab-link {
+        padding: 12px 20px;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--gray-600);
+        border-bottom: 2px solid transparent;
+    }
+
+    .tab-link:hover {
+        color: var(--accent);
+        background-color: var(--background);
+    }
+
+    .tab-link.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background-color: var(--accent);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.9;
+    }
+
+    /* Province Cards */
+    .province-card {
+        padding: 16px;
+        background: var(--panel);
+        border: 1px solid var(--gray-200);
+        border-left: 3px solid var(--accent);
+        color: inherit;
+        display: block;
+    }
+
+    .province-card:hover {
+        background-color: var(--background);
+    }
+
+    /* Destination Cards */
+    .destination-card {
+        background: var(--panel);
+        border: 1px solid var(--gray-200);
+    }
+
+    .destination-card:hover {
+        background-color: var(--background);
+    }
+
+    /* Status Badges */
+    .status-badge {
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .status-badge.active {
+        background-color: #d1fae5;
+        color: var(--gray-700);
+    }
+
+    .status-badge.inactive {
+        background-color: var(--gray-200);
+        color: var(--gray-600);
+    }
+
+    /* Search Box */
+    #searchBox {
+        border: 1px solid var(--gray-200);
+    }
+
+    #searchBox:focus {
+        border-color: var(--accent);
+        outline: none;
+    }
+
+    /* Sidebar Container */
+    .sidebar-container {
+        background: var(--panel);
+        border: 1px solid var(--gray-200);
+    }
+
+    /* Empty state */
+    .tree-view-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--gray-400);
+    }
+
+    .tree-view-empty i {
+        font-size: 36px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+    }
+
+    .tree-view-empty p {
+        font-size: 13px;
+        color: var(--gray-500);
+    }
+
+    /* Header */
+    .page-header {
+        background: var(--panel);
+        padding: 20px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--primary);
+    }
+
 </style>
 
-<div class="max-w-full mx-auto">
+<div class="max-w-full mx-auto px-4 py-6">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-primary">Quản lý Địa điểm & Dịch vụ</h1>
+    <div class="page-header">
+        <h1 class="text-xl font-semibold text-primary">
+            <i class="fas fa-map-marked-alt mr-2"></i>
+            Quản lý Địa điểm & Dịch vụ
+        </h1>
     </div>
 
     <!-- Main Container -->
-    <div class="flex gap-4" style="min-height: 600px;">
+    <div class="flex gap-6" style="min-height: 600px;">
         <!-- Sidebar - Tree View -->
-        <div class="w-96 bg-white border-r border-gray-200 p-5"
-            style="max-height: 80vh; overflow-y: auto; min-width: 384px;">
+        <div class="w-96 sidebar-container p-6"
+            style="max-height: calc(100vh - 200px); overflow-y: auto; min-width: 384px; position: sticky; top: 24px;">
             <div class="mb-6">
                 <a href="?act=admin&module=location-services&action=create-country"
-                    class="w-full mb-4 px-4 py-3 bg-accent text-white hover:bg-blue-600 text-sm font-semibold text-center inline-block transition-colors flex items-center justify-center gap-2">
+                    class="w-full mb-4 px-4 py-2.5 btn-primary text-white text-sm font-medium text-center inline-block flex items-center justify-center gap-2">
                     <i class="fas fa-plus"></i>
                     <span>Thêm Quốc gia</span>
                 </a>
@@ -172,7 +311,7 @@ if (!is_admin())
                     <i
                         class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
                     <input type="text" id="searchBox" placeholder="Tìm kiếm..."
-                        class="w-full pl-10 pr-3 py-2.5 border border-gray-300 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-sm">
+                        class="w-full pl-10 pr-3 py-2.5 text-sm">
                 </div>
             </div>
 
@@ -185,7 +324,17 @@ if (!is_admin())
                 if (!isset($countries['data'])) {
                     $countries['data'] = [];
                 }
-
+                
+                // Check if empty
+                if (empty($countries['data'])):
+            ?>
+                <div class="tree-view-empty">
+                    <i class="fas fa-globe"></i>
+                    <p>Chưa có quốc gia nào</p>
+                    <p style="font-size: 12px; margin-top: 4px;">Nhấn "Thêm Quốc gia" để bắt đầu</p>
+                </div>
+            <?php else: ?>
+                <?php
                 // Get current country_id from controller variable (ưu tiên từ controller, sau đó từ URL)
                 // Đảm bảo luôn cast về int hoặc null để so sánh đúng
                 if (isset($current_country_id) && $current_country_id !== null && $current_country_id !== '') {
@@ -228,8 +377,10 @@ if (!is_admin())
                 // Loại bỏ trùng lặp trong view (double check - đảm bảo an toàn)
                 $displayed_country_ids = [];
                 foreach ($countries['data'] as $country):
-                    if (empty($country) || !isset($country['id'])) {
-                        continue; // Bỏ qua nếu không có ID
+                    // Kiểm tra kỹ: chỉ skip nếu thực sự không có id hợp lệ
+                    // Không dùng empty() vì có thể skip country hợp lệ có giá trị 0 hoặc false
+                    if (!isset($country['id']) || $country['id'] === null || $country['id'] === '') {
+                        continue; // Bỏ qua nếu không có ID hợp lệ
                     }
                     $country_id = (int) $country['id'];
                     if (in_array($country_id, $displayed_country_ids)) {
@@ -245,15 +396,14 @@ if (!is_admin())
                     }
                     ?>
                     <div class="tree-item country <?= $is_expanded ? 'expanded active' : '' ?>"
-                        data-country-id="<?= $country_id ?>">
+                        data-country-id="<?= $country_id ?>"
+                        data-search-text="<?= htmlspecialchars(strtolower($country['name'])) ?>">
                         <div class="flex items-center justify-between w-full">
                             <a href="?act=admin&module=location-services&country_id=<?= $country_id ?>" 
                                class="flex items-center flex-1 no-underline" style="cursor: pointer; text-decoration: none; color: inherit;">
                                 <i class="fas fa-globe tree-icon"></i>
                                 <span class="tree-label"><?= htmlspecialchars($country['name']) ?></span>
                                 <span class="tree-badge"><?= $country['provinces_count'] ?? 0 ?></span>
-                                <i class="fas fa-chevron-<?= $is_expanded ? 'down' : 'right' ?> tree-toggle"
-                                    style="cursor: pointer;"></i>
                             </a>
                             <div class="tree-actions" onclick="event.stopPropagation();">
                                 <a href="?act=admin&module=location-services&action=edit-country&id=<?= $country['id'] ?>"
@@ -272,68 +422,13 @@ if (!is_admin())
                             </div>
                         </div>
                     </div>
-                    <div class="tree-children <?= $is_expanded ? '' : 'hidden' ?>"
-                        id="country-<?= $country['id'] ?>-children">
-                        <?php if ($is_expanded && !empty($provinces)): ?>
-                            <?php
-                            // Loại bỏ trùng lặp trong tree view (double check)
-                            $displayed_tree_province_ids = [];
-                            foreach ($provinces as $province):
-                                $province_id = (int) $province['id'];
-                                // Chỉ hiển thị provinces thuộc country hiện tại
-                                if ((int) $province['country_id'] !== (int) $country['id']) {
-                                    continue;
-                                }
-                                if (in_array($province_id, $displayed_tree_province_ids)) {
-                                    continue; // Bỏ qua nếu đã hiển thị
-                                }
-                                $displayed_tree_province_ids[] = $province_id;
-
-                                $is_province_active = (!empty($current_province_id) && $current_province_id == $province_id);
-                                $province_url = "?act=admin&module=location-services&country_id={$province['country_id']}&province_id={$province['id']}&tab=providers";
-                                ?>
-                                <a href="<?= $province_url ?>" 
-                                   class="tree-item province <?= $is_province_active ? 'active' : '' ?> no-underline"
-                                   style="display: block; text-decoration: none; color: inherit;">
-                                    <div class="flex items-center justify-between w-full">
-                                        <div class="flex items-center flex-1">
-                                            <i class="fas fa-map-marker-alt tree-icon"></i>
-                                            <span class="tree-label"><?= htmlspecialchars($province['name']) ?></span>
-                                            <span class="tree-badge"><?= $province['providers_count'] ?? 0 ?></span>
-                                        </div>
-                                        <div class="tree-actions" onclick="event.stopPropagation(); event.preventDefault();">
-                                            <a href="?act=admin&module=location-services&action=edit-province&id=<?= $province['id'] ?>&country_id=<?= $province['country_id'] ?>"
-                                                class="tree-action-btn bg-blue-500 text-white hover:bg-blue-600" title="Sửa" onclick="event.stopPropagation();">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button
-                                                onclick="event.stopPropagation(); event.preventDefault(); toggleProvinceStatus(<?= $province['id'] ?>, '<?= $province['status'] ?? 'active' ?>')"
-                                                class="tree-action-btn <?= ($province['status'] ?? 'active') == 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500' ?> text-white"
-                                                title="<?= ($province['status'] ?? 'active') == 'active' ? 'Vô hiệu hóa' : 'Kích hoạt' ?>">
-                                                <i
-                                                    class="fas fa-<?= ($province['status'] ?? 'active') == 'active' ? 'check' : 'times' ?>"></i>
-                                            </button>
-                                            <button onclick="event.stopPropagation(); event.preventDefault(); deleteProvince(<?= $province['id'] ?>, <?= $province['country_id'] ?>)"
-                                                class="tree-action-btn bg-red-500 text-white hover:bg-red-600" title="Xóa">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </a>
-                            <?php endforeach; ?>
-                            <?php if (empty($provinces) || count($displayed_tree_province_ids) == 0): ?>
-                                <div class="tree-item" style="padding-left: 20px; color: #94a3b8; font-size: 13px;">
-                                    <i class="fas fa-info-circle mr-2"></i>Chưa có tỉnh thành
-                                </div>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    </div>
                 <?php endforeach; ?>
+            <?php endif; ?>
             </div>
         </div>
 
         <!-- Main Content Area -->
-        <div class="flex-1 bg-white p-6" id="mainContent" style="min-height: 600px;">
+        <div class="flex-1 p-5" id="mainContent" style="min-height: 600px;">
             <?php if (!empty($current_service_provider_id) && !empty($current_provider)): ?>
                 <!-- Services List for Provider - Kiểm tra service_provider_id TRƯỚC province_id -->
                 <div class="mb-4">
@@ -349,16 +444,17 @@ if (!is_admin())
                 </div>
 
                 <?php if (empty($services['data'])): ?>
-                    <div class="text-center py-12 text-gray-500">
-                        <i class="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
-                        <p class="text-sm">Chưa có dịch vụ nào. Hãy thêm mới!</p>
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p class="text-lg font-medium mb-2">Chưa có dịch vụ nào</p>
+                        <p class="text-sm text-gray-500">Hãy thêm dịch vụ mới để bắt đầu</p>
                     </div>
                 <?php else: ?>
                     <?php foreach ($services['data'] as $service): ?>
                         <?php
                         $is_inactive = ($service['status'] ?? 'active') === 'inactive';
                         ?>
-                        <div class="service-card mb-4 <?= $is_inactive ? 'opacity-60 border-2 border-gray-300 bg-gray-50' : '' ?>">
+                        <div class="service-card <?= $is_inactive ? 'inactive' : '' ?>">
                             <div class="flex justify-between items-start mb-4">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2 mb-1">
@@ -367,9 +463,9 @@ if (!is_admin())
                                             <?= htmlspecialchars($service['name']) ?>
                                         </h5>
                                         <!-- Status Badge -->
-                                        <span
-                                            class="px-2 py-1 text-xs font-medium rounded <?= $is_inactive ? 'bg-gray-400 text-white' : 'bg-green-500 text-white' ?>">
-                                            <?= $is_inactive ? '⛔ Đã vô hiệu hóa' : '✓ Hoạt động' ?>
+                                        <span class="status-badge <?= $is_inactive ? 'inactive' : 'active' ?>">
+                                            <i class="fas fa-<?= $is_inactive ? 'times-circle' : 'check-circle' ?>"></i>
+                                            <?= $is_inactive ? 'Đã vô hiệu hóa' : 'Hoạt động' ?>
                                         </span>
                                     </div>
                                     <?php if (!empty($service['description'])): ?>
@@ -471,15 +567,19 @@ if (!is_admin())
             <?php elseif (!empty($current_province_id)): ?>
                 <!-- Có province_id - Hiển thị tabs và nội dung -->
                 <!-- Tab Navigation -->
-                <div class="mb-6 border-b border-gray-200">
-                    <nav class="flex gap-1">
+                <div class="tab-nav">
+                    <nav class="flex gap-2">
                         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>&tab=providers"
-                            class="px-4 py-3 font-medium text-sm transition-colors <?= ($current_tab ?? 'providers') == 'providers' ? 'border-b-2 border-accent text-accent' : 'text-gray-600 hover:text-primary' ?>">
-                            Nhà cung cấp dịch vụ (<?= count($service_providers['data'] ?? []) ?>)
+                            class="tab-link <?= ($current_tab ?? 'providers') == 'providers' ? 'active' : '' ?>">
+                            <i class="fas fa-building mr-2"></i>
+                            Nhà cung cấp dịch vụ
+                            <span class="ml-2 px-2 py-0.5 bg-gray-100 rounded-full text-xs font-semibold"><?= count($service_providers['data'] ?? []) ?></span>
                         </a>
                         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>&tab=destinations"
-                            class="px-4 py-3 font-medium text-sm transition-colors <?= ($current_tab ?? 'providers') == 'destinations' ? 'border-b-2 border-accent text-accent' : 'text-gray-600 hover:text-primary' ?>">
-                            Địa điểm du lịch (<?= count($destinations['data'] ?? []) ?>)
+                            class="tab-link <?= ($current_tab ?? 'providers') == 'destinations' ? 'active' : '' ?>">
+                            <i class="fas fa-map-marked-alt mr-2"></i>
+                            Địa điểm du lịch
+                            <span class="ml-2 px-2 py-0.5 bg-gray-100 rounded-full text-xs font-semibold"><?= count($destinations['data'] ?? []) ?></span>
                         </a>
                     </nav>
                 </div>
@@ -497,9 +597,10 @@ if (!is_admin())
                     </div>
 
                     <?php if (empty($service_providers['data'])): ?>
-                        <div class="text-center py-12 text-gray-500">
-                            <i class="fas fa-building text-4xl mb-3 text-gray-300"></i>
-                            <p class="text-sm">Chưa có nhà cung cấp nào. Hãy thêm mới!</p>
+                        <div class="empty-state">
+                            <i class="fas fa-building"></i>
+                            <p class="text-lg font-medium mb-2">Chưa có nhà cung cấp nào</p>
+                            <p class="text-sm text-gray-500">Hãy thêm nhà cung cấp mới để bắt đầu</p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($service_providers['data'] as $provider): ?>
@@ -561,15 +662,15 @@ if (!is_admin())
                     </div>
 
                     <?php if (empty($destinations['data'])): ?>
-                        <div class="text-center py-12 text-gray-500">
-                            <i class="fas fa-map-marked-alt text-4xl mb-3 text-gray-300"></i>
-                            <p class="text-sm">Chưa có địa điểm nào. Hãy thêm mới!</p>
+                        <div class="empty-state">
+                            <i class="fas fa-map-marked-alt"></i>
+                            <p class="text-lg font-medium mb-2">Chưa có địa điểm nào</p>
+                            <p class="text-sm text-gray-500">Hãy thêm địa điểm du lịch mới</p>
                         </div>
                     <?php else: ?>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <?php foreach ($destinations['data'] as $destination): ?>
-                                <div
-                                    class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-accent">
+                                <div class="destination-card">
                                     <!-- Image Section -->
                                     <div class="relative w-full h-48 bg-gray-100 overflow-hidden">
                                         <?php if (!empty($destination['thumbnail'])): ?>
@@ -585,9 +686,9 @@ if (!is_admin())
                                             </div>
                                         <?php endif; ?>
                                         <!-- Status Badge -->
-                                        <div class="absolute top-2 right-2">
-                                            <span
-                                                class="px-2 py-1 text-xs font-medium rounded <?= ($destination['status'] ?? 'active') == 'active' ? 'bg-green-500 text-white' : 'bg-gray-400 text-white' ?>">
+                                        <div class="absolute top-3 right-3">
+                                            <span class="status-badge <?= ($destination['status'] ?? 'active') == 'active' ? 'active' : 'inactive' ?>">
+                                                <i class="fas fa-<?= ($destination['status'] ?? 'active') == 'active' ? 'check-circle' : 'times-circle' ?>"></i>
                                                 <?= ($destination['status'] ?? 'active') == 'active' ? 'Hoạt động' : 'Ngừng hoạt động' ?>
                                             </span>
                                         </div>
@@ -627,53 +728,80 @@ if (!is_admin())
                 <?php endif; ?>
 
             <?php elseif (!empty($current_country_id) && !empty($current_country)): ?>
-                <!-- Chỉ có country_id - Hiển thị danh sách provinces -->
-                <div class="text-center py-10">
-                    <div class="mb-4">
-                        <h2 class="text-xl font-bold mb-2">📍 <?= htmlspecialchars($current_country['name']) ?></h2>
+                <!-- Chỉ có country_id - Hiển thị danh sách provinces với action buttons -->
+                <div>
+                    <div class="mb-6 flex justify-between items-center">
+                        <h2 class="text-xl font-bold">📍 <?= htmlspecialchars($current_country['name']) ?></h2>
                         <a href="?act=admin&module=location-services&action=create-province&country_id=<?= $current_country_id ?>"
                             class="px-4 py-2.5 bg-green-500 text-white font-medium hover:bg-green-600 transition-colors inline-flex items-center gap-2">
                             <i class="fas fa-plus"></i>
-                            <span>Thêm Tỉnh thành</span>
+                            <span>Thêm tỉnh thành</span>
                         </a>
                     </div>
-                    <p class="text-gray-600 mb-4">Vui lòng chọn một tỉnh thành từ danh sách bên trái hoặc từ danh sách dưới
-                        đây để xem nhà cung cấp và địa điểm du lịch.</p>
                     <?php if (!empty($provinces)): ?>
-                        <div class="mt-6">
-                            <p class="text-sm font-medium text-gray-700 mb-3">Danh sách tỉnh thành:</p>
-                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                <?php
-                                // Loại bỏ trùng lặp trong view (double check)
-                                $displayed_province_ids = [];
-                                foreach ($provinces as $province):
-                                    $province_id = (int) $province['id'];
-                                    if (in_array($province_id, $displayed_province_ids)) {
-                                        continue; // Bỏ qua nếu đã hiển thị
-                                    }
-                                    $displayed_province_ids[] = $province_id;
-                                    ?>
-                                    <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?>&province_id=<?= $province['id'] ?>&tab=providers"
-                                        class="px-4 py-3 bg-blue-50 hover:bg-blue-100 text-sm text-center border-l-4 border-accent transition-colors block">
-                                        <span
-                                            class="font-medium text-primary block"><?= htmlspecialchars($province['name']) ?></span>
-                                        <span class="text-xs text-gray-500 mt-1 block"><?= $province['providers_count'] ?? 0 ?> nhà
-                                            cung cấp</span>
-                                    </a>
-                                <?php endforeach; ?>
-                            </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <?php
+                            $displayed_province_ids = [];
+                            foreach ($provinces as $province):
+                                $province_id = (int) $province['id'];
+                                // Chỉ hiển thị provinces thuộc country hiện tại
+                                if ((int) $province['country_id'] !== (int) $current_country_id) {
+                                    continue;
+                                }
+                                if (in_array($province_id, $displayed_province_ids)) {
+                                    continue;
+                                }
+                                $displayed_province_ids[] = $province_id;
+                                $province_url = "?act=admin&module=location-services&country_id={$current_country_id}&province_id={$province_id}&tab=providers";
+                                $is_province_active = (!empty($current_province_id) && $current_province_id == $province_id);
+                                ?>
+                                <div class="province-card <?= $is_province_active ? 'border-accent border-2' : '' ?>">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <a href="<?= $province_url ?>" class="flex-1">
+                                            <h3 class="font-semibold text-lg hover:text-accent"><?= htmlspecialchars($province['name']) ?></h3>
+                                        </a>
+                                        <span class="status-badge <?= ($province['status'] ?? 'active') == 'active' ? 'active' : 'inactive' ?> ml-2">
+                                            <?= ($province['status'] ?? 'active') == 'active' ? 'Hoạt động' : 'Tạm dừng' ?>
+                                        </span>
+                                    </div>
+                                    <div class="text-sm text-gray-600 mb-3">
+                                        <p>Nhà cung cấp: <span class="font-medium"><?= $province['providers_count'] ?? 0 ?></span></p>
+                                    </div>
+                                    <div class="flex gap-2 pt-3 border-t border-gray-200">
+                                        <a href="<?= $province_url ?>" 
+                                           class="flex-1 px-3 py-2 bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-colors text-center">
+                                            <i class="fas fa-eye mr-1"></i> Xem
+                                        </a>
+                                        <a href="?act=admin&module=location-services&action=edit-province&id=<?= $province['id'] ?>&country_id=<?= $current_country_id ?>"
+                                            class="px-3 py-2 bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button
+                                            onclick="toggleProvinceStatus(<?= $province['id'] ?>, '<?= $province['status'] ?? 'active' ?>')"
+                                            class="px-3 py-2 <?= ($province['status'] ?? 'active') == 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500' ?> text-white transition-colors"
+                                            title="<?= ($province['status'] ?? 'active') == 'active' ? 'Vô hiệu hóa' : 'Kích hoạt' ?>">
+                                            <i class="fas fa-<?= ($province['status'] ?? 'active') == 'active' ? 'check' : 'times' ?>"></i>
+                                        </button>
+                                        <button onclick="deleteProvince(<?= $province['id'] ?>, <?= $current_country_id ?>)"
+                                            class="px-3 py-2 bg-red-500 text-white hover:bg-red-600 transition-colors" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
                     <?php else: ?>
-                        <div class="text-center py-8">
-                            <i class="fas fa-map text-4xl mb-3 text-gray-300"></i>
-                            <p class="text-gray-500">Chưa có tỉnh thành nào trong quốc gia này.</p>
+                        <div class="empty-state">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <p class="text-lg font-medium mb-2">Chưa có tỉnh thành nào</p>
+                            <p class="text-sm text-gray-500">Hãy thêm tỉnh thành mới cho quốc gia này</p>
                         </div>
                     <?php endif; ?>
                 </div>
-            <?php else: ?>
+                <?php else: ?>
                 <!-- Chưa chọn gì - Hiển thị hướng dẫn -->
-                <div class="loading">
-                    <i class="fas fa-hand-pointer text-5xl mb-4 text-gray-300"></i>
+                <div class="empty-state">
+                    <i class="fas fa-hand-pointer"></i>
                     <p class="text-base font-medium">Vui lòng chọn một quốc gia từ danh sách bên trái để bắt đầu</p>
                 </div>
             <?php endif; ?>
@@ -699,6 +827,52 @@ if (!is_admin())
         function formatPrice(price) {
             return new Intl.NumberFormat('vi-VN').format(price);
         }
+
+        // Search functionality - Tìm kiếm real-time (chỉ tìm countries)
+        $('#searchBox').on('input', function() {
+            const searchTerm = $(this).val().toLowerCase().trim();
+            const $treeView = $('#treeView');
+            
+            if (searchTerm === '') {
+                // Reset: hiển thị tất cả
+                $treeView.find('.tree-item').show();
+                $treeView.find('.search-no-results').remove();
+                return;
+            }
+
+            let hasVisibleResults = false;
+
+            // Search countries only
+            $treeView.find('.tree-item.country').each(function() {
+                const $countryItem = $(this);
+                const countrySearchText = $countryItem.data('search-text') || '';
+                
+                if (countrySearchText.includes(searchTerm)) {
+                    $countryItem.show();
+                    hasVisibleResults = true;
+                } else {
+                    $countryItem.hide();
+                }
+            });
+
+            // Hiển thị message nếu không có kết quả
+            let $noResults = $treeView.find('.search-no-results');
+            if (!hasVisibleResults && searchTerm !== '') {
+                if ($noResults.length === 0) {
+                    $noResults = $('<div class="search-no-results" style="padding: 20px; text-align: center; color: var(--gray-500);"><i class="fas fa-search" style="font-size: 32px; margin-bottom: 8px; opacity: 0.5;"></i><p style="font-size: 14px;">Không tìm thấy kết quả</p></div>');
+                    $treeView.append($noResults);
+                }
+            } else {
+                $noResults.remove();
+            }
+        });
+
+        // Clear search on Escape key
+        $('#searchBox').on('keydown', function(e) {
+            if (e.key === 'Escape') {
+                $(this).val('').trigger('input');
+            }
+        });
 
         // Country functions
         window.deleteCountry = function (id) {
@@ -865,6 +1039,7 @@ if (!is_admin())
                 }
             });
         };
+
 
 
         // Modal functions are defined in modals.php

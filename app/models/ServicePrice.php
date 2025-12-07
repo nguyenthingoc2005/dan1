@@ -156,9 +156,22 @@ class ServicePrice
                 }
             }
 
-            // Check overlap với giá hiện có (nếu có thời gian cụ thể)
-            // Cho phép nhiều giá cùng loại nhưng khác thời gian
-            if ($start_date || $end_date) {
+            $price_type = $data['price_type'] ?? 'standard';
+
+            // Trường hợp vô thời hạn (cả start_date và end_date đều NULL)
+            // Chỉ cho phép 1 giá vô thời hạn cho mỗi (service_id + price_type)
+            if (empty($start_date) && empty($end_date)) {
+                $hasUnlimited = $this->checkUnlimitedPrice(
+                    $data['service_id'],
+                    $price_type
+                );
+
+                if ($hasUnlimited) {
+                    throw new Exception("Đã có giá vô thời hạn loại '{$price_type}' cho dịch vụ này. Mỗi loại giá chỉ được phép có 1 giá vô thời hạn.");
+                }
+            } else {
+                // Check overlap với giá hiện có (nếu có thời gian cụ thể)
+                // Cho phép nhiều giá cùng loại nhưng khác thời gian
                 $overlap = $this->checkPriceOverlap(
                     $data['service_id'],
                     $start_date,
@@ -200,9 +213,56 @@ class ServicePrice
     }
 
     /**
-     * Kiểm tra giá có bị trùng khoảng thời gian không
+     * Kiểm tra đã có giá vô thời hạn (start_date và end_date đều NULL) cho service và price_type này chưa
+     * @param int $service_id
+     * @param string $price_type
+     * @param int|null $exclude_id - ID của record cần exclude (dùng khi update)
+     * @return bool
      */
-    private function checkPriceOverlap($service_id, $start_date, $end_date)
+    private function checkUnlimitedPrice($service_id, $price_type, $exclude_id = null)
+    {
+        try {
+            $sql = "
+                SELECT COUNT(*) as count
+                FROM service_prices
+                WHERE service_id = :service_id
+                  AND price_type = :price_type
+                  AND status = 'active'
+                  AND start_date IS NULL
+                  AND end_date IS NULL
+            ";
+            $params = [
+                'service_id' => $service_id,
+                'price_type' => $price_type
+            ];
+
+            // Exclude chính record đang update
+            if ($exclude_id !== null) {
+                $sql .= " AND id != :exclude_id";
+                $params['exclude_id'] = $exclude_id;
+            }
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $result = $stmt->fetch();
+
+            return ($result['count'] ?? 0) > 0;
+
+        } catch (PDOException $e) {
+            error_log("ServicePrice::checkUnlimitedPrice() Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Kiểm tra giá có bị trùng khoảng thời gian không
+     * @param int $service_id
+     * @param string|null $start_date
+     * @param string|null $end_date
+     * @param int|null $exclude_id - ID của record cần exclude (dùng khi update)
+     * @return bool
+     */
+    private function checkPriceOverlap($service_id, $start_date, $end_date, $exclude_id = null)
     {
         try {
             $sql = "
@@ -212,6 +272,12 @@ class ServicePrice
                   AND status = 'active'
             ";
             $params = ['service_id' => $service_id];
+
+            // Exclude chính record đang update
+            if ($exclude_id !== null) {
+                $sql .= " AND id != :exclude_id";
+                $params['exclude_id'] = $exclude_id;
+            }
 
             // Check overlap
             if ($start_date && $end_date) {
@@ -247,6 +313,14 @@ class ServicePrice
     public function update($id, $data)
     {
         try {
+            // Lấy thông tin price hiện tại để lấy service_id
+            $existing_price = $this->findById($id);
+            if (!$existing_price) {
+                throw new Exception("Giá không tồn tại.");
+            }
+
+            $service_id = $existing_price['service_id'];
+
             $allowed_fields = [
                 'unit_price',
                 'start_date',
@@ -276,12 +350,48 @@ class ServicePrice
                 $params['end_date'] = $data['valid_to'];
             }
 
-            // Validate dates
-            $start_date = $data['start_date'] ?? $data['valid_from'] ?? null;
-            $end_date = $data['end_date'] ?? $data['valid_to'] ?? null;
+            // Validate dates - lấy từ data mới, nếu không có thì giữ nguyên từ existing
+            // Chỉ lấy từ existing nếu không có trong data
+            $start_date = isset($data['start_date']) || isset($data['valid_from']) 
+                ? ($data['start_date'] ?? $data['valid_from'] ?? null)
+                : ($existing_price['start_date'] ?? null);
+                
+            $end_date = isset($data['end_date']) || isset($data['valid_to'])
+                ? ($data['end_date'] ?? $data['valid_to'] ?? null)
+                : ($existing_price['end_date'] ?? null);
+            
             if ($start_date && $end_date) {
                 if (strtotime($end_date) < strtotime($start_date)) {
                     throw new Exception("Ngày kết thúc phải sau ngày bắt đầu.");
+                }
+            }
+
+            $price_type = $data['price_type'] ?? $existing_price['price_type'] ?? 'standard';
+
+            // Trường hợp vô thời hạn (cả start_date và end_date đều NULL)
+            // Chỉ cho phép 1 giá vô thời hạn cho mỗi (service_id + price_type)
+            if (empty($start_date) && empty($end_date)) {
+                $hasUnlimited = $this->checkUnlimitedPrice(
+                    $service_id,
+                    $price_type,
+                    $id // Exclude chính record đang update
+                );
+
+                if ($hasUnlimited) {
+                    throw new Exception("Đã có giá vô thời hạn loại '{$price_type}' cho dịch vụ này. Mỗi loại giá chỉ được phép có 1 giá vô thời hạn.");
+                }
+            } else {
+                // Check overlap với giá hiện có (nếu có thời gian cụ thể)
+                // Exclude chính record đang update
+                $overlap = $this->checkPriceOverlap(
+                    $service_id,
+                    $start_date,
+                    $end_date,
+                    $id // Exclude chính record đang update
+                );
+
+                if ($overlap) {
+                    throw new Exception("Đã có giá cho dịch vụ này trong khoảng thời gian này. Vui lòng kiểm tra lại.");
                 }
             }
 

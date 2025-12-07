@@ -63,8 +63,8 @@ class LocationServiceController
 
             // Get countries (always needed for sidebar)
             // Admin cần thấy TẤT CẢ countries (cả active và inactive) để quản lý
-            // Tăng per_page lên 200 để đảm bảo lấy đủ
-            $countries = $this->countryModel->getAll([], 1, 200);
+            // Tăng per_page lên 10000 để đảm bảo lấy đủ tất cả countries (không có giới hạn thực tế)
+            $countries = $this->countryModel->getAll([], 1, 10000);
             if (!isset($countries['data'])) {
                 $countries['data'] = [];
             }
@@ -73,30 +73,41 @@ class LocationServiceController
             $unique_countries = [];
             $seen_ids = [];
             foreach ($countries['data'] as $country) {
-                if (empty($country) || !isset($country['id'])) {
-                    continue; // Bỏ qua nếu không có ID
+                // Kiểm tra kỹ hơn: chỉ skip nếu thực sự không có id, không dùng empty() vì có thể skip country hợp lệ
+                if (!isset($country['id']) || $country['id'] === null || $country['id'] === '') {
+                    error_log("Warning: Skipping country without valid ID: " . json_encode($country));
+                    continue; // Bỏ qua nếu không có ID hợp lệ
                 }
                 $id = (int) $country['id'];
                 if (!in_array($id, $seen_ids)) {
                     $seen_ids[] = $id;
                     $unique_countries[] = $country;
+                } else {
+                    error_log("Warning: Duplicate country ID found: {$id}");
                 }
             }
             $countries['data'] = $unique_countries;
 
             // Debug log để kiểm tra
-            error_log("LocationServiceController::index() - Total countries loaded: " . count($countries['data']));
+            error_log("LocationServiceController::index() - Total countries from DB: " . ($countries['total'] ?? 'unknown'));
+            error_log("LocationServiceController::index() - Total countries after dedupe: " . count($countries['data']));
             error_log("LocationServiceController::index() - Country IDs: " . implode(', ', $seen_ids));
+            error_log("LocationServiceController::index() - Country names: " . implode(', ', array_map(function($c) { return $c['name'] ?? 'N/A'; }, $unique_countries)));
 
             // Add provinces count for each country
             foreach ($countries['data'] as &$country) {
                 try {
+                    if (!isset($country['id'])) {
+                        error_log("Warning: Country without ID found: " . json_encode($country));
+                        continue;
+                    }
                     $country['provinces_count'] = $this->countryModel->getProvinceCount($country['id']);
                 } catch (Exception $e) {
                     error_log("Error getting province count for country {$country['id']}: " . $e->getMessage());
                     $country['provinces_count'] = 0;
                 }
             }
+            unset($country); // Important: Unset reference after loop
 
             // Load service providers and destinations if province_id is set
             // QUAN TRỌNG: Nếu có province_id nhưng không có country_id, cần lấy country_id từ province

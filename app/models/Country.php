@@ -63,9 +63,24 @@ class Country
                 ORDER BY name ASC
                 LIMIT " . (int) $per_page . " OFFSET " . (int) $offset . "
             ";
+            
+            // Debug: Log SQL query
+            error_log("Country::getAll() - SQL: " . $data_sql);
+            error_log("Country::getAll() - Params: " . json_encode($params));
+            error_log("Country::getAll() - Total from count: " . $total);
+            
             $data_stmt = $this->pdo->prepare($data_sql);
             $data_stmt->execute($params);
             $data = $data_stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Debug: Log actual results
+            error_log("Country::getAll() - Fetched rows: " . count($data));
+            if (!empty($data)) {
+                $ids = array_column($data, 'id');
+                $names = array_column($data, 'name');
+                error_log("Country::getAll() - IDs: " . implode(', ', $ids));
+                error_log("Country::getAll() - Names: " . implode(', ', $names));
+            }
 
             return [
                 'data' => $data,
