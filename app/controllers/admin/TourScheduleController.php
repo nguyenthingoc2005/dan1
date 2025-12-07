@@ -441,11 +441,57 @@ class TourScheduleController
         // Bookings are linked to schedule by tour_id + start_date (exact match)
         require_once MODELS_PATH . '/Booking.php';
         $bookingModel = new Booking($this->pdo);
-        $bookings = $bookingModel->getAll([
+        
+        // Get all bookings for this schedule (including cancelled/rejected for admin view)
+        // Use direct SQL query to ensure we get all bookings
+        $sql = "SELECT b.*, 
+                       t.name as tour_name, t.tour_code,
+                       c.full_name as customer_name, c.phone as customer_phone, c.email as customer_email
+                FROM bookings b
+                LEFT JOIN tours t ON b.tour_id = t.id
+                LEFT JOIN customers c ON b.customer_id = c.id
+                WHERE b.tour_id = :tour_id 
+                  AND b.start_date = :start_date
+                ORDER BY b.created_at DESC
+                LIMIT 100";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
             'tour_id' => $schedule['tour_id'],
-            'start_date' => $schedule['start_date'],
-            'exact_date' => true  // Exact match for start_date
-        ], 1, 100);
+            'start_date' => $schedule['start_date']
+        ]);
+        $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Calculate actual booked count from SQL (chính xác hơn)
+        // Tính tổng số người từ bookings approved/pending/completed (không tính cancelled/rejected)
+        $countSql = "SELECT 
+                        COUNT(*) as booking_count,
+                        COALESCE(SUM(adult_count + child_count + infant_count), 0) as total_participants
+                     FROM bookings
+                     WHERE tour_id = :tour_id 
+                       AND start_date = :start_date
+                       AND approval_status IN ('approved', 'pending', 'completed')";
+        
+        $countStmt = $this->pdo->prepare($countSql);
+        $countStmt->execute([
+            'tour_id' => $schedule['tour_id'],
+            'start_date' => $schedule['start_date']
+        ]);
+        $countResult = $countStmt->fetch(PDO::FETCH_ASSOC);
+        $actualBookedCount = (int) ($countResult['total_participants'] ?? 0);
+        $approvedBookingsCount = (int) ($countResult['booking_count'] ?? 0);
+        
+        // Update schedule booked count if it's different (sync issue fix)
+        if ($schedule['booked'] != $actualBookedCount) {
+            $updateSql = "UPDATE tour_schedules SET booked = :booked WHERE id = :id";
+            $updateStmt = $this->pdo->prepare($updateSql);
+            $updateStmt->execute([
+                'booked' => $actualBookedCount,
+                'id' => $id
+            ]);
+            // Refresh schedule data
+            $schedule = $this->scheduleModel->findById($id);
+        }
 
         // Get guide change history
         $guide_history = $this->scheduleModel->getGuideHistory($id);

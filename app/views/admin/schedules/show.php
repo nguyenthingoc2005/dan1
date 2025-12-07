@@ -40,8 +40,13 @@ if (!is_admin())
             <div class="text-2xl font-bold text-blue-700"><?= $schedule['quota'] ?></div>
         </div>
         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div class="text-sm text-green-600 mb-1">Đã đặt</div>
-            <div class="text-2xl font-bold text-green-700"><?= $schedule['booked'] ?? 0 ?></div>
+            <div class="text-sm text-green-600 mb-1">Đã đặt (người)</div>
+            <div class="text-2xl font-bold text-green-700">
+                <?= isset($actualBookedCount) ? $actualBookedCount : ($schedule['booked'] ?? 0) ?>
+            </div>
+            <?php if (isset($approvedBookingsCount)): ?>
+                <div class="text-xs text-gray-500 mt-1"><?= $approvedBookingsCount ?> booking<?= $approvedBookingsCount > 1 ? 's' : '' ?></div>
+            <?php endif; ?>
         </div>
         <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <div class="text-sm text-purple-600 mb-1">Còn lại</div>
@@ -52,7 +57,10 @@ if (!is_admin())
         <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
             <div class="text-sm text-orange-600 mb-1">Tỷ lệ lấp đầy</div>
             <div class="text-2xl font-bold text-orange-700">
-                <?= $schedule['quota'] > 0 ? round((($schedule['booked'] ?? 0) / $schedule['quota']) * 100, 1) : 0 ?>%
+                <?php 
+                $bookedCount = isset($actualBookedCount) ? $actualBookedCount : ($schedule['booked'] ?? 0);
+                echo $schedule['quota'] > 0 ? round(($bookedCount / $schedule['quota']) * 100, 1) : 0;
+                ?>%
             </div>
         </div>
     </div>
@@ -207,7 +215,9 @@ if (!is_admin())
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h2 class="text-lg font-bold text-gray-800 mb-4">
             Danh sách khách hàng đã đặt tour 
-            <span class="text-blue-600">(<?= count($bookings ?? []) ?> đặt chỗ)</span>
+            <span class="text-blue-600">
+                (<?= count($bookings ?? []) ?> booking<?= count($bookings ?? []) > 1 ? 's' : '' ?><?= isset($actualBookedCount) && $actualBookedCount > 0 ? ' - ' . $actualBookedCount . ' người' : '' ?>)
+            </span>
         </h2>
         <p class="text-sm text-gray-500 mb-4">
             Danh sách tất cả khách hàng đã đặt tour cho lịch khởi hành này (ngày <?= date('d/m/Y', strtotime($schedule['start_date'])) ?>)
@@ -253,12 +263,45 @@ if (!is_admin())
                                     <?= number_format($b['total_amount'] ?? 0, 0, ',', '.') ?> đ
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <span class="px-2 py-1 text-xs rounded-full font-medium
-                                        <?= ($b['status'] ?? '') == 'confirmed' ? 'bg-green-100 text-green-800' :
-                                            (($b['status'] ?? '') == 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                            (($b['status'] ?? '') == 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')) ?>">
-                                        <?= ucfirst($b['status'] ?? 'N/A') ?>
+                                    <?php
+                                    $approvalStatus = $b['approval_status'] ?? '';
+                                    $paymentStatus = $b['payment_status'] ?? '';
+                                    $statusClass = '';
+                                    $statusText = '';
+                                    
+                                    if ($approvalStatus == 'approved') {
+                                        $statusClass = 'bg-green-100 text-green-800';
+                                        $statusText = 'Đã duyệt';
+                                    } elseif ($approvalStatus == 'pending') {
+                                        $statusClass = 'bg-yellow-100 text-yellow-800';
+                                        $statusText = 'Chờ duyệt';
+                                    } elseif ($approvalStatus == 'rejected') {
+                                        $statusClass = 'bg-red-100 text-red-800';
+                                        $statusText = 'Đã từ chối';
+                                    } elseif ($approvalStatus == 'cancelled') {
+                                        $statusClass = 'bg-red-100 text-red-800';
+                                        $statusText = 'Đã hủy';
+                                    } else {
+                                        $statusClass = 'bg-gray-100 text-gray-800';
+                                        $statusText = ucfirst($approvalStatus ?: 'N/A');
+                                    }
+                                    ?>
+                                    <span class="px-2 py-1 text-xs rounded-full font-medium <?= $statusClass ?>">
+                                        <?= $statusText ?>
                                     </span>
+                                    <?php if ($paymentStatus): ?>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            <?php
+                                            $paymentText = [
+                                                'paid' => 'Đã thanh toán',
+                                                'partial' => 'Đã đặt cọc',
+                                                'unpaid' => 'Chưa thanh toán',
+                                                'refunded' => 'Đã hoàn tiền'
+                                            ];
+                                            echo $paymentText[$paymentStatus] ?? ucfirst($paymentStatus);
+                                            ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-4 py-3 text-right">
                                     <a href="?act=admin&module=bookings&action=show&id=<?= $b['id'] ?>" 

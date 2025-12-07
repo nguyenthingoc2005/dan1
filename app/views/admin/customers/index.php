@@ -5,12 +5,30 @@
             <h1 class="text-2xl font-bold text-slate-800">Quản lý Khách hàng</h1>
             <p class="text-sm text-gray-500 mt-1">Danh sách khách hàng và lịch sử đặt tour</p>
         </div>
-        <a href="?act=admin&module=customers&action=create"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
-            <i class="fas fa-plus"></i>
-            <span>Thêm khách hàng</span>
-        </a>
+        <div class="flex gap-2">
+            <label
+                class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm cursor-pointer">
+                <i class="fas fa-file-import"></i>
+                <span>Import Excel/CSV</span>
+                <input type="file" id="importFile" accept=".csv,.xlsx,.xls" class="hidden"
+                    onchange="handleImportFile(event)">
+            </label>
+            <a href="?act=admin&module=customers&action=downloadTemplate"
+                class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                title="Tải file mẫu">
+                <i class="fas fa-download"></i>
+                <span>Template</span>
+            </a>
+            <a href="?act=admin&module=customers&action=create"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                <i class="fas fa-plus"></i>
+                <span>Thêm khách hàng</span>
+            </a>
+        </div>
     </div>
+
+    <!-- Import Status -->
+    <div id="importStatus" class="mb-4 hidden"></div>
 
     <!-- Filters -->
     <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
@@ -201,3 +219,83 @@
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+    // Import Excel/CSV
+    function handleImportFile(event) {
+        const file = event.target.files[0];
+        console.log('📥 handleImportFile() - File:', file);
+
+        if (!file) {
+            console.log('❌ No file selected');
+            return;
+        }
+
+        console.log('📄 File details:', {
+            name: file.name,
+            size: file.size,
+            type: file.type
+        });
+
+        const importStatus = document.getElementById('importStatus');
+        importStatus.classList.remove('hidden');
+        importStatus.innerHTML = '<div class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">⏳ Đang xử lý file...</div>';
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('csrf_token', '<?= get_csrf_token() ?>');
+
+        const url = '?act=admin&module=customers&action=importStore';
+        console.log('🌐 Sending request to:', url);
+
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => {
+                console.log('📡 Response status:', response.status, response.statusText);
+                // Check if response is redirect
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.text();
+            })
+            .then(data => {
+                console.log('📦 Response data:', data);
+                
+                // If redirect happened, the page will reload
+                // Otherwise show success message
+                if (data && !data.includes('<!DOCTYPE')) {
+                    try {
+                        const jsonData = JSON.parse(data);
+                        if (jsonData.success) {
+                            importStatus.innerHTML = `<div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">✅ ${jsonData.message}</div>`;
+                            // Reload page after 2 seconds
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            importStatus.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">❌ Lỗi: ${jsonData.message}</div>`;
+                        }
+                    } catch (e) {
+                        // If not JSON, might be HTML redirect
+                        window.location.reload();
+                    }
+                } else {
+                    // Page will reload due to redirect
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('❌ Fetch error:', error);
+                importStatus.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">❌ Lỗi: ${error.message}</div>`;
+            });
+
+        // Reset file input
+        event.target.value = '';
+    }
+</script>

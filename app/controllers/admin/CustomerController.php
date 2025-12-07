@@ -302,6 +302,11 @@ class CustomerController
                 throw new Exception("Chỉ chấp nhận file CSV, XLSX, XLS");
             }
 
+            // Validate file size (max 5MB)
+            if ($file['size'] > 5 * 1024 * 1024) {
+                throw new Exception("File quá lớn. Tối đa 5MB");
+            }
+
             // Upload file
             $uploadDir = 'public/uploads/imports/';
             if (!is_dir($uploadDir)) {
@@ -320,12 +325,39 @@ class CustomerController
             $importModel = new CustomerImport($this->db);
             $result = $importModel->importFromFile($filePath, $file['name'], get_user_id());
 
-            // Redirect to result page
+            // Check if AJAX request
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Import thành công: {$result['success']} khách hàng. Tổng: {$result['total']} dòng. Lỗi: " . count($result['errors']) . " dòng.",
+                    'data' => [
+                        'imported' => $result['success'],
+                        'errors' => $result['errors'],
+                        'total' => $result['total'],
+                        'log_id' => $result['log_id']
+                    ]
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            // Redirect to result page for normal form submit
+            set_success("Import thành công: {$result['success']} khách hàng");
             redirect('?act=admin&module=customers&action=importResult&log_id=' . $result['log_id']);
 
         } catch (Exception $e) {
+            // Check if AJAX request
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
             set_error($e->getMessage());
-            redirect('?act=admin&module=customers&action=import');
+            redirect('?act=admin&module=customers');
         }
     }
 

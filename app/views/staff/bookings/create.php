@@ -42,13 +42,16 @@ unset($_SESSION['old']);
                                     $childPrice = $t['child_price'] ?? 0;
                                     $infantPrice = $t['infant_price'] ?? 0;
                                     $duration = $t['duration_days'] ?? 0;
+                                    $deadlineDays = $t['booking_deadline_days'] ?? 1;
                                     $tourCode = $t['tour_code'] ?? '';
                                     $tourName = $t['name'] ?? '';
                                     ?>
                                     <option value="<?= htmlspecialchars($tourId) ?>"
                                         data-price-adult="<?= (float) $adultPrice ?>"
                                         data-price-child="<?= (float) $childPrice ?>"
-                                        data-price-infant="<?= (float) $infantPrice ?>" data-duration="<?= (int) $duration ?>"
+                                        data-price-infant="<?= (float) $infantPrice ?>" 
+                                        data-duration="<?= (int) $duration ?>"
+                                        data-booking-deadline-days="<?= (int) $deadlineDays ?>"
                                         <?= (($old['tour_id'] ?? $prefill['tour_id'] ?? '') == $tourId) ? 'selected' : '' ?>>
                                         <?= htmlspecialchars($tourCode . ' - ' . $tourName) ?>
                                     </option>
@@ -75,8 +78,8 @@ unset($_SESSION['old']);
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Lịch khởi hành <span
                                     class="text-red-500">*</span></label>
-                            <div class="bg-yellow-50 border border-yellow-200 rounded p-2 mb-2 text-sm">
-                                ⚠️ <strong>Lưu ý:</strong> Phải đặt trước 1 ngày so với ngày khởi hành
+                            <div class="bg-yellow-50 border border-yellow-200 rounded p-2 mb-2 text-sm" id="deadline_notice">
+                                ⚠️ <strong>Lưu ý:</strong> Phải đặt trước <span id="deadline_days_display">1</span> ngày so với ngày khởi hành
                             </div>
                             <select name="start_date" id="start_date"
                                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
@@ -444,18 +447,37 @@ unset($_SESSION['old']);
                 return;
             }
 
-            // Validate deadline: Phải đặt trước 1 ngày
+            // Validate deadline: Phải đặt trước booking_deadline_days ngày
             const selectedDate = selectedOption.value;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const minDate = new Date(today);
-            minDate.setDate(minDate.getDate() + 1); // Hôm nay + 1 ngày
-            const selectedDateObj = new Date(selectedDate);
-            selectedDateObj.setHours(0, 0, 0, 0);
+            const selectedTour = tourSelect.options[tourSelect.selectedIndex];
+            const deadlineDays = parseInt(selectedTour?.dataset?.bookingDeadlineDays || '1', 10);
+            
+            // Get today in local timezone (YYYY-MM-DD) - Use toLocaleDateString to get correct local date
+            const now = new Date();
+            const todayStr = now.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD format in local timezone
+            
+            // Calculate minDate string (today + deadlineDays) - Parse and add days
+            const [todayYear, todayMonth, todayDay] = todayStr.split('-').map(Number);
+            const minDateObj = new Date(todayYear, todayMonth - 1, todayDay + deadlineDays);
+            const minDateStr = minDateObj.getFullYear() + '-' + 
+                              String(minDateObj.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(minDateObj.getDate()).padStart(2, '0');
+            
+            console.log('🔍 DEBUG VALIDATION (Staff):');
+            console.log('  - now (raw):', now);
+            console.log('  - todayStr (toLocaleDateString):', todayStr);
+            console.log('  - minDateStr (today + ' + deadlineDays + ' days):', minDateStr);
+            console.log('  - selectedDate:', selectedDate);
+            console.log('  - Comparison (string): selectedDate < minDateStr?', selectedDate < minDateStr);
 
-            // Check if selected date is valid
-            if (selectedDateObj < minDate) {
-                alert('Không thể đặt booking. Phải đặt trước 1 ngày so với ngày khởi hành.');
+            // Compare as strings (YYYY-MM-DD format is sortable)
+            if (selectedDate < minDateStr) {
+                // Format dates for display
+                const [tdY, tdM, tdD] = todayStr.split('-');
+                const [mdY, mdM, mdD] = minDateStr.split('-');
+                const todayDisplay = tdD + '/' + tdM + '/' + tdY;
+                const minDateDisplay = mdD + '/' + mdM + '/' + mdY;
+                alert(`Không thể đặt booking. Phải đặt trước ${deadlineDays} ngày so với ngày khởi hành. (Hôm nay: ${todayDisplay}, Ngày khởi hành tối thiểu: ${minDateDisplay})`);
                 startDateSelect.value = "";
                 endDateInput.value = "";
                 endDateDisplay.value = "";
@@ -577,27 +599,57 @@ unset($_SESSION['old']);
             validateDeadline();
         });
 
+        // Update deadline notice when tour changes
+        function updateDeadlineNotice() {
+            const selectedTour = tourSelect.options[tourSelect.selectedIndex];
+            const deadlineDays = parseInt(selectedTour?.dataset?.bookingDeadlineDays || '1', 10);
+            const deadlineDaysDisplay = document.getElementById('deadline_days_display');
+            if (deadlineDaysDisplay) {
+                deadlineDaysDisplay.textContent = deadlineDays;
+            }
+        }
+
         // Validate deadline on form submit
         function validateDeadline() {
             const selectedDate = startDateSelect.value;
             if (!selectedDate) return true;
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const minDate = new Date(today);
-            minDate.setDate(minDate.getDate() + 1); // Hôm nay + 1 ngày
-            const selectedDateObj = new Date(selectedDate);
-            selectedDateObj.setHours(0, 0, 0, 0);
+            const selectedTour = tourSelect.options[tourSelect.selectedIndex];
+            const deadlineDays = parseInt(selectedTour?.dataset?.bookingDeadlineDays || '1', 10);
 
-            if (selectedDateObj < minDate) {
-                const todayStr = today.toISOString().split('T')[0];
-                const minDateStr = minDate.toISOString().split('T')[0];
-                alert(`Không thể đặt booking. Phải đặt trước 1 ngày so với ngày khởi hành.\n(Hôm nay: ${todayStr}, Ngày khởi hành tối thiểu: ${minDateStr})`);
+            // Get today in local timezone (YYYY-MM-DD) - Use toLocaleDateString to get correct local date
+            const now = new Date();
+            const todayStr = now.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD format in local timezone
+            
+            // Calculate minDate string (today + deadlineDays) - Parse and add days
+            const [todayYear, todayMonth, todayDay] = todayStr.split('-').map(Number);
+            const minDateObj = new Date(todayYear, todayMonth - 1, todayDay + deadlineDays);
+            const minDateStr = minDateObj.getFullYear() + '-' + 
+                              String(minDateObj.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(minDateObj.getDate()).padStart(2, '0');
+            
+            console.log('🔍 DEBUG validateDeadline (Staff):');
+            console.log('  - todayStr:', todayStr);
+            console.log('  - minDateStr:', minDateStr);
+            console.log('  - selectedDate:', selectedDate);
+            console.log('  - Comparison (string): selectedDate < minDateStr?', selectedDate < minDateStr);
+
+            // Compare as strings (YYYY-MM-DD format is sortable)
+            if (selectedDate < minDateStr) {
+                // Format dates for display
+                const [tdY, tdM, tdD] = todayStr.split('-');
+                const [mdY, mdM, mdD] = minDateStr.split('-');
+                const todayFormatted = tdD + '/' + tdM + '/' + tdY;
+                const minDateFormatted = mdD + '/' + mdM + '/' + mdY;
+                alert(`Không thể đặt booking. Phải đặt trước ${deadlineDays} ngày so với ngày khởi hành.\n(Hôm nay: ${todayFormatted}, Ngày khởi hành tối thiểu: ${minDateFormatted})`);
                 startDateSelect.focus();
                 return false;
             }
             return true;
         }
+
+        // Initialize deadline notice on page load
+        updateDeadlineNotice();
 
         // Add validation before form submit
         document.getElementById('bookingForm').addEventListener('submit', function(e) {
