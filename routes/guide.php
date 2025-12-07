@@ -98,6 +98,35 @@ switch ($module) {
         break;
 
     // ==========================================================================
+    // EXPENSES MODULE
+    // ==========================================================================
+    case 'expenses':
+        require_once CONTROLLERS_PATH . '/guide/ExpenseController.php';
+        $expenseController = new Guide\ExpenseController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $expenseController->index();
+                break;
+            case 'show':
+                $expenseController->show();
+                break;
+            case 'create':
+                $expenseController->create();
+                break;
+            case 'store':
+                $expenseController->store();
+                break;
+            case 'delete':
+                $expenseController->delete();
+                break;
+            default:
+                $expenseController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
     // DEFAULT: DASHBOARD
     // ==========================================================================
     case 'dashboard':

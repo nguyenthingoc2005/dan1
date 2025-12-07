@@ -58,39 +58,46 @@ class CustomerController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_csrf_token();
             try {
-                // Validation
-                if (empty($_POST['full_name'])) {
-                    throw new \Exception("Vui lòng nhập tên khách hàng");
-                }
-                if (empty($_POST['phone'])) {
-                    throw new \Exception("Vui lòng nhập số điện thoại");
-                }
-
-                // Check duplicate phone
-                if ($this->customerModel->findByPhone($_POST['phone'])) {
-                    throw new \Exception("Số điện thoại đã tồn tại trong hệ thống");
-                }
-
+                // Prepare data (giống admin)
                 $data = [
-                    'full_name' => sanitize($_POST['full_name']),
-                    'phone' => sanitize($_POST['phone']),
+                    'full_name' => sanitize($_POST['full_name'] ?? ''),
+                    'phone' => sanitize($_POST['phone'] ?? ''),
                     'email' => !empty($_POST['email']) ? sanitize($_POST['email']) : null,
-                    'date_of_birth' => !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null,
-                    'gender' => $_POST['gender'] ?? 'other',
                     'address' => !empty($_POST['address']) ? sanitize($_POST['address']) : null,
+                    'date_of_birth' => !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null,
+                    'gender' => $_POST['gender'] ?? null,
+                    'id_card' => !empty($_POST['id_card']) ? sanitize($_POST['id_card']) : null,
+                    'passport' => !empty($_POST['passport']) ? sanitize($_POST['passport']) : null,
+                    'nationality' => !empty($_POST['nationality']) ? sanitize($_POST['nationality']) : 'Vietnam',
+                    'customer_type' => $_POST['customer_type'] ?? 'individual',
+                    'source' => $_POST['source'] ?? 'other',
                     'special_requirements' => !empty($_POST['special_requirements']) ? sanitize($_POST['special_requirements']) : null,
                     'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
                     'created_by' => get_user_id()
                 ];
 
-                $this->customerModel->create($data);
+                // Validate using Model (giống admin)
+                $validation = $this->customerModel->validate($data);
+                
+                if (!$validation['valid']) {
+                    // Get first error message to display
+                    $firstError = reset($validation['errors']);
+                    throw new \Exception($firstError);
+                }
 
-                set_success("Thêm khách hàng thành công!");
-                redirect('?act=staff-customers');
+                // Create customer
+                $customerId = $this->customerModel->create($data);
+                
+                if ($customerId) {
+                    set_success("Thêm khách hàng thành công! Mã KH: " . $this->customerModel->getById($customerId)['customer_code']);
+                    redirect('?act=staff-customers');
+                } else {
+                    throw new \Exception("Không thể thêm khách hàng.");
+                }
 
             } catch (\Exception $e) {
                 set_error($e->getMessage());
-                $_SESSION['old'] = $_POST;
+                $_SESSION['old'] = $_POST; // Keep old input
                 redirect('?act=staff-customers&action=create');
             }
         }
@@ -140,46 +147,63 @@ class CustomerController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_csrf_token();
             try {
+                if (empty($_POST['id'])) {
+                    throw new \Exception("Thiếu ID khách hàng.");
+                }
+
                 $id = (int) $_POST['id'];
-
-                $customer = $this->customerModel->findById($id);
-                if (!$customer) {
-                    throw new \Exception("Khách hàng không tồn tại");
+                
+                // Check customer exists
+                $existing = $this->customerModel->getById($id);
+                if (!$existing) {
+                    throw new \Exception("Khách hàng không tồn tại.");
                 }
 
-                // Validation
-                if (empty($_POST['full_name'])) {
-                    throw new \Exception("Vui lòng nhập tên khách hàng");
-                }
-                if (empty($_POST['phone'])) {
-                    throw new \Exception("Vui lòng nhập số điện thoại");
-                }
-
-                // Check duplicate phone (exclude current customer)
-                $existingPhone = $this->customerModel->findByPhone($_POST['phone']);
-                if ($existingPhone && $existingPhone['id'] != $id) {
-                    throw new \Exception("Số điện thoại đã tồn tại ở khách hàng khác");
-                }
-
+                // Prepare data (giống admin)
                 $data = [
-                    'full_name' => sanitize($_POST['full_name']),
-                    'phone' => sanitize($_POST['phone']),
+                    'full_name' => sanitize($_POST['full_name'] ?? ''),
+                    'phone' => sanitize($_POST['phone'] ?? ''),
                     'email' => !empty($_POST['email']) ? sanitize($_POST['email']) : null,
-                    'date_of_birth' => !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null,
-                    'gender' => $_POST['gender'] ?? 'other',
                     'address' => !empty($_POST['address']) ? sanitize($_POST['address']) : null,
+                    'date_of_birth' => !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null,
+                    'gender' => $_POST['gender'] ?? null,
+                    'id_card' => !empty($_POST['id_card']) ? sanitize($_POST['id_card']) : null,
+                    'passport' => !empty($_POST['passport']) ? sanitize($_POST['passport']) : null,
+                    'nationality' => !empty($_POST['nationality']) ? sanitize($_POST['nationality']) : 'Vietnam',
+                    'customer_type' => $_POST['customer_type'] ?? 'individual',
+                    'source' => $_POST['source'] ?? 'other',
                     'special_requirements' => !empty($_POST['special_requirements']) ? sanitize($_POST['special_requirements']) : null,
-                    'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null
+                    'notes' => !empty($_POST['notes']) ? sanitize($_POST['notes']) : null,
+                    'status' => $_POST['status'] ?? 'active'
                 ];
 
-                $this->customerModel->update($id, $data);
+                // Validate using Model (pass excludeId to skip current customer in unique checks)
+                $validation = $this->customerModel->validate($data, $id);
+                
+                if (!$validation['valid']) {
+                    $firstError = reset($validation['errors']);
+                    throw new \Exception($firstError);
+                }
 
-                set_success("Cập nhật khách hàng thành công!");
-                redirect('?act=staff-customers');
+                // Normalize phone
+                $data['phone'] = preg_replace('/[\s\-\(\)]/', '', $data['phone']);
+                if (!empty($data['id_card'])) {
+                    $data['id_card'] = preg_replace('/\s/', '', $data['id_card']);
+                }
+                if (!empty($data['passport'])) {
+                    $data['passport'] = strtoupper($data['passport']);
+                }
+
+                if ($this->customerModel->update($id, $data)) {
+                    set_success("Cập nhật thành công!");
+                    redirect('?act=staff-customers&action=show&id=' . $id);
+                } else {
+                    throw new \Exception("Không thể cập nhật.");
+                }
 
             } catch (\Exception $e) {
                 set_error($e->getMessage());
-                redirect('?act=staff-customers&action=edit&id=' . $_POST['id']);
+                redirect('?act=staff-customers&action=edit&id=' . ($_POST['id'] ?? 0));
             }
         }
     }

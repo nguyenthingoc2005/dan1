@@ -8,7 +8,7 @@
 
 <div class="max-w-7xl mx-auto">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
+    <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-bold text-slate-800">Chi tiết Tour</h1>
             <p class="text-slate-500 text-sm mt-1">
@@ -21,8 +21,23 @@
         </a>
     </div>
 
+    <!-- Navigation Tabs -->
+    <div class="bg-panel rounded p-2 mb-6 border border-slate-200">
+        <div class="flex gap-2 overflow-x-auto">
+            <a href="#tour-info" class="px-4 py-2 rounded whitespace-nowrap bg-slate-100 text-slate-800 font-medium hover:bg-slate-200">
+                📋 Thông tin Tour
+            </a>
+            <a href="#services" class="px-4 py-2 rounded whitespace-nowrap <?= !empty($bookingServices) ? 'bg-accent text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>">
+                🛎️ Dịch vụ (<?= count($bookingServices ?? []) ?>)
+            </a>
+            <a href="#passengers" class="px-4 py-2 rounded whitespace-nowrap bg-slate-100 text-slate-800 font-medium hover:bg-slate-200">
+                👥 Hành khách (<?= count($passengers ?? []) ?>)
+            </a>
+        </div>
+    </div>
+
     <!-- TOUR DETAILS SECTION -->
-    <div class="space-y-8 mb-8">
+    <div id="tour-info" class="space-y-8 mb-8">
         <!-- Basic Info - Flat Design: Dùng gap thay border -->
         <div class="bg-panel rounded p-6">
             <h2 class="text-lg font-bold text-slate-800 mb-6">Thông tin chuyến đi</h2>
@@ -95,10 +110,45 @@
                 <h2 class="text-lg font-bold text-slate-800 mb-6">Lịch trình Tour</h2>
                 <div class="space-y-6">
                     <?php foreach ($tour['itinerary'] as $day): ?>
-                        <div class="pl-4 border-l-2 border-slate-200">
+                        <div class="pl-4 border-l-2 border-accent">
                             <div class="font-bold text-slate-800 mb-2">
                                 Ngày <?= $day['day_number'] ?? $day['day'] ?? '' ?>: <?= htmlspecialchars($day['title'] ?? '') ?>
                             </div>
+                            
+                            <!-- Destination Info -->
+                            <?php if (!empty($day['destination_name'])): ?>
+                                <div class="bg-slate-50 rounded p-3 mb-3">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-accent text-lg">📍</span>
+                                        <span class="text-slate-800 font-semibold"><?= htmlspecialchars($day['destination_name']) ?></span>
+                                    </div>
+                                    <?php if (!empty($day['province_name']) || !empty($day['country_name'])): ?>
+                                        <div class="text-xs text-slate-600 ml-6">
+                                            <?php if (!empty($day['province_name'])): ?>
+                                                <?= htmlspecialchars($day['province_name']) ?>
+                                            <?php endif; ?>
+                                            <?php if (!empty($day['province_name']) && !empty($day['country_name'])): ?>
+                                                <span class="mx-1">•</span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($day['country_name'])): ?>
+                                                <?= htmlspecialchars($day['country_name']) ?>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($day['destination_locations'])): ?>
+                                        <div class="text-xs text-slate-600 ml-6 mt-1">
+                                            <span class="font-medium">Địa chỉ:</span> <?= htmlspecialchars($day['destination_locations']) ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($day['destination_description'])): ?>
+                                        <div class="text-sm text-slate-700 mt-2 ml-6">
+                                            <?= nl2br(htmlspecialchars($day['destination_description'])) ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <!-- Day Description -->
                             <?php if (!empty($day['description'])): ?>
                                 <div class="text-slate-600 text-sm leading-relaxed"><?= nl2br(htmlspecialchars($day['description'])) ?></div>
                             <?php endif; ?>
@@ -158,6 +208,148 @@
             </div>
         <?php endif; ?>
 
+        <!-- Dịch vụ đã đặt thực tế (Booking Services) -->
+        <div id="services" class="space-y-8 mb-8">
+        <?php if (!empty($bookingServices)): ?>
+            <div class="bg-panel rounded p-6">
+                <h2 class="text-lg font-bold text-slate-800 mb-6">Dịch vụ đã đặt cho chuyến đi</h2>
+                <div class="space-y-6">
+                    <?php foreach ($bookingServicesByType as $type => $services): ?>
+                        <div class="border-l-2 border-accent pl-4">
+                            <h3 class="font-bold text-slate-800 mb-4"><?= htmlspecialchars($type) ?></h3>
+                            <div class="space-y-3">
+                                <?php foreach ($services as $service): ?>
+                                    <div class="bg-slate-50 rounded p-4 border border-slate-200">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <div class="flex-1">
+                                                <div class="font-semibold text-slate-900 mb-1">
+                                                    <?= htmlspecialchars($service['service_name'] ?? $service['service_name_original'] ?? 'Dịch vụ') ?>
+                                                </div>
+                                                <?php if (!empty($service['supplier_name'])): ?>
+                                                    <div class="text-sm text-slate-600 mb-1">
+                                                        <span class="font-medium">Nhà cung cấp:</span> 
+                                                        <?= htmlspecialchars($service['supplier_name']) ?>
+                                                        <?php if (!empty($service['supplier_phone'])): ?>
+                                                            <span class="ml-2 text-xs">
+                                                                📞 <a href="tel:<?= htmlspecialchars($service['supplier_phone']) ?>" 
+                                                                      class="text-accent hover:text-accent/80">
+                                                                    <?= htmlspecialchars($service['supplier_phone']) ?>
+                                                                </a>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <?php if (!empty($service['supplier_contact'])): ?>
+                                                        <div class="text-xs text-slate-500 mb-1">
+                                                            Người liên hệ: <?= htmlspecialchars($service['supplier_contact']) ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                <?php endif; ?>
+                                                <?php if (!empty($service['service_date'])): ?>
+                                                    <div class="text-xs text-slate-500 mb-1">
+                                                        📅 Ngày: <?= date('d/m/Y', strtotime($service['service_date'])) ?>
+                                                        <?php if (!empty($service['from_date']) && !empty($service['to_date'])): ?>
+                                                            (<?= date('d/m', strtotime($service['from_date'])) ?> - <?= date('d/m', strtotime($service['to_date'])) ?>)
+                                                        <?php endif; ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <?php if (!empty($service['booking_code'])): ?>
+                                                    <div class="text-xs text-slate-500">
+                                                        Booking: <span class="font-mono"><?= htmlspecialchars($service['booking_code']) ?></span>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="text-right">
+                                                <?php if (!empty($service['total_price'])): ?>
+                                                    <div class="font-semibold text-slate-900">
+                                                        <?= number_format($service['total_price']) ?> VNĐ
+                                                    </div>
+                                                    <?php if (!empty($service['quantity']) && $service['quantity'] > 1): ?>
+                                                        <div class="text-xs text-slate-500">
+                                                            <?= $service['quantity'] ?> <?= $service['unit'] ?? '' ?> 
+                                                            × <?= number_format($service['unit_price'] ?? 0) ?> VNĐ
+                                                        </div>
+                                                    <?php endif; ?>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <?php if (!empty($service['notes'])): ?>
+                                            <div class="text-sm text-slate-600 mt-2 pt-2 border-t border-slate-200">
+                                                <span class="font-medium">Ghi chú:</span> <?= nl2br(htmlspecialchars($service['notes'])) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="bg-panel rounded p-6 border border-slate-200">
+                <div class="text-center py-8 text-slate-400">
+                    <p class="text-lg mb-2">Chưa có dịch vụ nào được đặt cho chuyến đi này.</p>
+                    <p class="text-sm">Dịch vụ sẽ được hiển thị khi có booking được xác nhận.</p>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Lịch trình dịch vụ theo ngày (Template) -->
+        <?php if (!empty($servicesByDay)): ?>
+            <div class="bg-panel rounded p-6">
+                <h2 class="text-lg font-bold text-slate-800 mb-6">Lịch trình dịch vụ theo ngày (Template)</h2>
+                <div class="space-y-6">
+                    <?php foreach ($servicesByDay as $day => $services): ?>
+                        <div class="border-l-2 border-slate-300 pl-4">
+                            <h3 class="font-bold text-slate-800 mb-4">Ngày <?= $day ?></h3>
+                            <div class="space-y-3">
+                                <?php foreach ($services as $service): ?>
+                                    <div class="bg-slate-50 rounded p-4 border border-slate-200">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <div class="flex-1">
+                                                <div class="font-semibold text-slate-900 mb-1">
+                                                    <?= htmlspecialchars($service['service_name'] ?? $service['service_name_original'] ?? 'Dịch vụ') ?>
+                                                </div>
+                                                <?php if (!empty($service['service_provider_name'])): ?>
+                                                    <div class="text-sm text-slate-600 mb-1">
+                                                        <span class="font-medium">Nhà cung cấp:</span> <?= htmlspecialchars($service['service_provider_name']) ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if (!empty($service['unit_price'])): ?>
+                                                <div class="text-right">
+                                                    <div class="font-semibold text-slate-900">
+                                                        <?= number_format($service['unit_price']) ?> VNĐ
+                                                    </div>
+                                                    <?php if (!empty($service['quantity']) && $service['quantity'] > 1): ?>
+                                                        <div class="text-xs text-slate-500">
+                                                            × <?= $service['quantity'] ?> <?= $service['unit'] ?? '' ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if (!empty($service['notes'])): ?>
+                                            <div class="text-sm text-slate-600 mt-2 pt-2 border-t border-slate-200">
+                                                <span class="font-medium">Ghi chú:</span> <?= nl2br(htmlspecialchars($service['notes'])) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (isset($service['is_included_in_price'])): ?>
+                                            <div class="mt-2">
+                                                <span class="text-xs px-2 py-0.5 rounded <?= $service['is_included_in_price'] ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' ?>">
+                                                    <?= $service['is_included_in_price'] ? '✓ Đã bao gồm trong giá' : '⚠ Chưa bao gồm trong giá' ?>
+                                                </span>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+        </div>
+
         <!-- Guide Notes -->
         <?php if (!empty($schedule['guide_notes'])): ?>
             <div class="bg-panel rounded p-6 border-l-4 border-yellow-500">
@@ -168,7 +360,7 @@
     </div>
 
     <!-- PASSENGER LIST -->
-    <div class="bg-panel rounded p-6">
+    <div id="passengers" class="bg-panel rounded p-6">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-lg font-bold text-slate-800">Danh sách hành khách</h2>
             <button onclick="window.print()" class="text-accent hover:text-accent/80 text-sm font-medium transition-colors">
@@ -185,13 +377,14 @@
                         <th class="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Năm sinh</th>
                         <th class="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Giới tính</th>
                         <th class="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">SĐT</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">SĐT Khẩn cấp</th>
                         <th class="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Booking</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     <?php if (empty($passengers)): ?>
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                            <td colspan="7" class="px-6 py-12 text-center text-slate-400">
                                 Chưa có hành khách nào.
                             </td>
                         </tr>
@@ -218,6 +411,16 @@
                                 </td>
                                 <td class="px-4 py-3 text-slate-600 text-sm font-mono">
                                     <?= htmlspecialchars($p['phone']) ?>
+                                </td>
+                                <td class="px-4 py-3 text-slate-600 text-sm font-mono">
+                                    <?php if (!empty($p['emergency_contact'])): ?>
+                                        <a href="tel:<?= htmlspecialchars($p['emergency_contact']) ?>" 
+                                           class="text-accent hover:text-accent/80 font-medium">
+                                            <?= htmlspecialchars($p['emergency_contact']) ?>
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-slate-400">-</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-4 py-3 text-slate-500 text-xs font-mono">
                                     <?= htmlspecialchars($p['booking_code']) ?>

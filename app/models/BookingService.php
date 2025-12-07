@@ -48,6 +48,33 @@ class BookingService
     }
 
     /**
+     * Lấy danh sách dịch vụ theo tour_schedule_id (tất cả bookings trong schedule)
+     */
+    public function getByScheduleId($schedule_id)
+    {
+        $sql = "SELECT bs.*, 
+                       b.booking_code,
+                       s.name as service_name_original,
+                       st.name as service_type_name,
+                       sp.name as supplier_name, 
+                       sp.service_code as supplier_code,
+                       sp.phone as supplier_phone,
+                       sp.contact_person as supplier_contact
+                FROM booking_services bs
+                JOIN bookings b ON bs.booking_id = b.id
+                LEFT JOIN tour_schedules ts ON (b.tour_schedule_id = ts.id OR (b.tour_id = ts.tour_id AND b.start_date = ts.start_date))
+                LEFT JOIN services s ON bs.service_id = s.id
+                LEFT JOIN service_types st ON s.service_type_id = st.id
+                LEFT JOIN service_providers sp ON bs.service_provider_id = sp.id
+                WHERE ts.id = :schedule_id
+                ORDER BY bs.service_date ASC, st.name ASC, bs.created_at ASC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['schedule_id' => $schedule_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Lấy chi tiết một booking service
      */
     public function getById($id)

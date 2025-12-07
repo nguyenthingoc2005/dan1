@@ -61,6 +61,30 @@ switch ($module) {
             case 'getServiceInfo':
                 $controller->getServiceInfo();
                 break;
+            case 'getServiceProviders':
+                $controller->getServiceProviders();
+                break;
+            case 'createPolicy':
+                $controller->createPolicy();
+                break;
+            case 'getPolicy':
+                $controller->getPolicy();
+                break;
+            case 'loadDayServicesEditor':
+                $controller->loadDayServicesEditor();
+                break;
+            case 'loadItineraryManager':
+                $controller->loadItineraryManager();
+                break;
+            case 'saveFormSession':
+                $controller->saveFormSession();
+                break;
+            case 'clearTourSession':
+                $controller->clearTourSession();
+                break;
+            case 'uploadImage':
+                $controller->uploadImage();
+                break;
             default:
                 $controller->index();
                 break;
@@ -95,6 +119,15 @@ switch ($module) {
                 break;
             case 'downloadTemplate':
                 $controller->downloadTemplate();
+                break;
+            case 'storeBookingService':
+                $controller->storeBookingService();
+                break;
+            case 'deleteBookingService':
+                $controller->deleteBookingService();
+                break;
+            case 'addPassengerToBooking':
+                $controller->addPassengerToBooking();
                 break;
             default:
                 $controller->index();

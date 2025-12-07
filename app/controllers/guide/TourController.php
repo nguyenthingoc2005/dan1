@@ -106,19 +106,56 @@ class TourController
             ], 1, 1000);
         }
 
-        // Extract passengers
+        // Extract passengers with emergency contact (primary customer's phone)
         $passengers = [];
         foreach ($bookings as $b) {
-            // Get passengers for each booking
-            // Ideally Booking model should have getPassengers($booking_id)
-            // For now, let's assume we can get them or just list the bookers
-            // Optimization: Add getPassengersBySchedule to BookingModel later
-            // For MVP: List bookings is enough, or fetch passengers individually
             $p_list = $this->bookingModel->getPassengers($b['id']);
+            // Get primary customer's phone as emergency contact
+            $primary_customer_phone = $b['customer_phone'] ?? null;
             foreach ($p_list as $p) {
                 $p['booking_code'] = $b['booking_code'];
+                $p['emergency_contact'] = $primary_customer_phone; // SĐT khẩn cấp = SĐT của người đặt tour
                 $passengers[] = $p;
             }
+        }
+
+        // Get itinerary day services (dịch vụ theo ngày - template)
+        require_once MODELS_PATH . '/ItineraryDayService.php';
+        $dayServiceModel = new \ItineraryDayService($this->db);
+        $dayServices = $dayServiceModel->getByTourId($schedule['tour_id']);
+        
+        // Group services by day
+        $servicesByDay = [];
+        foreach ($dayServices as $service) {
+            $day = $service['day_number'] ?? 1;
+            if (!isset($servicesByDay[$day])) {
+                $servicesByDay[$day] = [];
+            }
+            $servicesByDay[$day][] = $service;
+        }
+
+        // Get booking services (dịch vụ đã đặt thực tế cho các booking trong schedule)
+        require_once MODELS_PATH . '/BookingService.php';
+        $bookingServiceModel = new \BookingService($this->db);
+        $bookingServices = $bookingServiceModel->getByScheduleId($id);
+        
+        // Group booking services by service_date or by service_type
+        $bookingServicesByDate = [];
+        $bookingServicesByType = [];
+        foreach ($bookingServices as $bs) {
+            // Group by date
+            $service_date = $bs['service_date'] ?? $schedule['start_date'];
+            if (!isset($bookingServicesByDate[$service_date])) {
+                $bookingServicesByDate[$service_date] = [];
+            }
+            $bookingServicesByDate[$service_date][] = $bs;
+            
+            // Group by type
+            $service_type = $bs['service_type_name'] ?? 'Khác';
+            if (!isset($bookingServicesByType[$service_type])) {
+                $bookingServicesByType[$service_type] = [];
+            }
+            $bookingServicesByType[$service_type][] = $bs;
         }
 
         $page_title = 'Chi tiết Tour: ' . $tour['tour_code'];

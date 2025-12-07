@@ -621,9 +621,16 @@ class Tour
     public function getItinerary($tour_id)
     {
         $stmt = $this->pdo->prepare("
-            SELECT i.*, d.name as destination_name 
+            SELECT i.*, 
+                   d.name as destination_name,
+                   d.description as destination_description,
+                   d.locations as destination_locations,
+                   p.name as province_name,
+                   c.name as country_name
             FROM itineraries i
             LEFT JOIN destinations d ON i.destination_id = d.id
+            LEFT JOIN provinces p ON d.province_id = p.id
+            LEFT JOIN countries c ON d.country_id = c.id
             WHERE i.tour_id = :id 
             ORDER BY i.day_number ASC
         ");

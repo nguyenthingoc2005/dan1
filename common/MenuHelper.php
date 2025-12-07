@@ -186,6 +186,12 @@ function get_menu_items($role)
                 'active_pattern' => 'guide-journals'
             ],
             [
+                'icon' => '💰',
+                'label' => 'Chi phí phát sinh',
+                'url' => $base_url . '/?act=guide-expenses',
+                'active_pattern' => 'guide-expenses'
+            ],
+            [
                 'icon' => '👤',
                 'label' => 'Thông tin cá nhân',
                 'url' => $base_url . '/?act=profile',
