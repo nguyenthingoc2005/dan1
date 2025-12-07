@@ -59,7 +59,13 @@ class Booking
             $params['start_date'] = $filters['start_date'];
         }
 
-        // Filter by schedule: tour_id + exact start_date
+        // Filter by schedule: tour_schedule_id (direct link)
+        if (!empty($filters['tour_schedule_id'])) {
+            $sql .= " AND b.tour_schedule_id = :tour_schedule_id";
+            $params['tour_schedule_id'] = $filters['tour_schedule_id'];
+        }
+
+        // Filter by schedule_id (backward compatibility - will use tour_id + start_date)
         if (!empty($filters['schedule_id'])) {
             // We need to get schedule info first, but for now use tour_id + start_date
             // This will be handled in controller
@@ -119,6 +125,12 @@ class Booking
                 $sql .= " AND b.start_date >= :start_date";
             }
             $params['start_date'] = $filters['start_date'];
+        }
+
+        // Filter by schedule: tour_schedule_id (direct link)
+        if (!empty($filters['tour_schedule_id'])) {
+            $sql .= " AND b.tour_schedule_id = :tour_schedule_id";
+            $params['tour_schedule_id'] = $filters['tour_schedule_id'];
         }
 
         if (!empty($filters['created_by'])) {

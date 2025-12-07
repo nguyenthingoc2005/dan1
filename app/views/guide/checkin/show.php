@@ -86,7 +86,27 @@
     </div>
 
     <!-- Check-in Form -->
-    <form method="POST" action="?act=guide-checkin&action=store" class="bg-panel rounded overflow-hidden border border-slate-200">
+    <?php 
+    $today = date('Y-m-d');
+    $can_checkin = ($schedule['start_date'] <= $today);
+    ?>
+    
+    <?php if (!$can_checkin): ?>
+        <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <span class="text-yellow-600 text-xl mr-3">⚠️</span>
+                <div>
+                    <p class="font-medium text-yellow-800">Chưa đến ngày bắt đầu tour</p>
+                    <p class="text-sm text-yellow-700 mt-1">
+                        Chỉ có thể check-in từ ngày <strong><?= date('d/m/Y', strtotime($schedule['start_date'])) ?></strong> trở đi.
+                        Hôm nay là: <strong><?= date('d/m/Y') ?></strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    
+    <form method="POST" action="?act=guide-checkin&action=store" class="bg-panel rounded overflow-hidden border border-slate-200 <?= !$can_checkin ? 'opacity-50 pointer-events-none' : '' ?>">
         <?= csrf_field() ?>
         <input type="hidden" name="schedule_id" value="<?= $schedule['id'] ?>">
         
@@ -95,11 +115,13 @@
                 <h2 class="text-lg font-bold text-gray-800">Danh sách hành khách</h2>
                 <div class="flex gap-2">
                     <button type="button" onclick="checkAll('present')" 
-                        class="px-3 py-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm font-medium">
+                        class="px-3 py-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm font-medium <?= !$can_checkin ? 'opacity-50 cursor-not-allowed' : '' ?>"
+                        <?= !$can_checkin ? 'disabled' : '' ?>>
                         ✅ Đánh dấu tất cả "Có mặt"
                     </button>
                     <button type="button" onclick="checkAll('absent')" 
-                        class="px-3 py-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm font-medium">
+                        class="px-3 py-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm font-medium <?= !$can_checkin ? 'opacity-50 cursor-not-allowed' : '' ?>"
+                        <?= !$can_checkin ? 'disabled' : '' ?>>
                         ❌ Đánh dấu tất cả "Vắng mặt"
                     </button>
                 </div>
@@ -149,8 +171,9 @@
                                         <input type="hidden" name="checkins[<?= $index ?>][customer_id]" value="<?= $p['id'] ?>">
                                         <div class="flex flex-col gap-2">
                                             <select name="checkins[<?= $index ?>][status]" 
-                                                class="w-full px-2 py-1.5 border rounded text-sm checkin-status"
-                                                onchange="updateRowColor(this)">
+                                                class="w-full px-2 py-1.5 border rounded text-sm checkin-status <?= !$can_checkin ? 'opacity-50 cursor-not-allowed' : '' ?>"
+                                                onchange="updateRowColor(this)"
+                                                <?= !$can_checkin ? 'disabled' : '' ?>>
                                                 <option value="">-- Chọn --</option>
                                                 <option value="present" <?= $current_status == 'present' ? 'selected' : '' ?>>✅ Có mặt</option>
                                                 <option value="absent" <?= $current_status == 'absent' ? 'selected' : '' ?>>❌ Vắng mặt</option>
@@ -165,7 +188,8 @@
                                         <input type="text" name="checkins[<?= $index ?>][notes]" 
                                             value="<?= htmlspecialchars($p['checkin_notes'] ?? '') ?>"
                                             placeholder="Ghi chú..."
-                                            class="w-full px-2 py-1.5 border rounded text-sm">
+                                            class="w-full px-2 py-1.5 border rounded text-sm <?= !$can_checkin ? 'opacity-50 cursor-not-allowed' : '' ?>"
+                                            <?= !$can_checkin ? 'disabled' : '' ?>>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -179,7 +203,9 @@
                     <a href="?act=guide-checkin" class="px-6 py-2 border rounded hover:bg-gray-50">
                         Hủy
                     </a>
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">
+                    <button type="submit" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium <?= !$can_checkin ? 'opacity-50 cursor-not-allowed' : '' ?>"
+                        <?= !$can_checkin ? 'disabled' : '' ?>>
                         💾 Lưu check-in
                     </button>
                 </div>

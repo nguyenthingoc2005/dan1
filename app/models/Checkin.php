@@ -76,6 +76,13 @@ class Checkin
      */
     public function checkin($booking_id, $customer_id, $status, $notes = null, $checked_by = null)
     {
+        // Validate customer_id tồn tại trong bảng customers
+        $stmt = $this->pdo->prepare("SELECT id FROM customers WHERE id = :id");
+        $stmt->execute(['id' => $customer_id]);
+        if (!$stmt->fetch()) {
+            throw new Exception("Customer ID không hợp lệ hoặc không tồn tại trong hệ thống.");
+        }
+        
         // Check if already exists
         $existing = $this->getCustomerCheckin($booking_id, $customer_id);
 

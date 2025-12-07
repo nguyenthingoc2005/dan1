@@ -89,11 +89,22 @@ class TourController
         // Since bookings are linked to tour_id + start_date (or schedule_id if we had it directly)
         // Let's use tour_id + start_date
 
+        // Get bookings for this schedule using tour_schedule_id (direct link)
+        // Fallback to tour_id + start_date for backward compatibility
         $bookings = $this->bookingModel->getAll([
-            'tour_id' => $schedule['tour_id'],
-            'start_date' => $schedule['start_date'],
-            'status' => 'approved' // Only approved bookings
-        ], 1, 1000); // getAll returns array directly, not ['data']
+            'tour_schedule_id' => $id,
+            'status' => 'approved'
+        ], 1, 1000);
+        
+        // If no bookings found by tour_schedule_id, try fallback method
+        if (empty($bookings)) {
+            $bookings = $this->bookingModel->getAll([
+                'tour_id' => $schedule['tour_id'],
+                'start_date' => $schedule['start_date'],
+                'exact_date' => true,
+                'status' => 'approved'
+            ], 1, 1000);
+        }
 
         // Extract passengers
         $passengers = [];
