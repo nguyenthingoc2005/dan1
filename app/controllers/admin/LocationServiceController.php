@@ -206,6 +206,19 @@ class LocationServiceController
                     if (!isset($service_providers['data'])) {
                         $service_providers['data'] = [];
                     }
+                    
+                    // Loại bỏ trùng lặp dựa trên ID
+                    $unique_providers = [];
+                    $seen_provider_ids = [];
+                    foreach ($service_providers['data'] as $provider) {
+                        $id = (int) $provider['id'];
+                        if (!in_array($id, $seen_provider_ids)) {
+                            $seen_provider_ids[] = $id;
+                            $unique_providers[] = $provider;
+                        }
+                    }
+                    $service_providers['data'] = $unique_providers;
+                    
                     foreach ($service_providers['data'] as &$provider) {
                         try {
                             $provider['services_count'] = $this->serviceProviderModel->getServiceCount($provider['id']);
@@ -214,6 +227,7 @@ class LocationServiceController
                             $provider['services_count'] = 0;
                         }
                     }
+                    unset($provider); // Unset reference
 
                     // Load destinations - Admin cần thấy TẤT CẢ (cả active và inactive)
                     $destinations = $this->destinationModel->getAll(['province_id' => $province_id], 1, 100);
@@ -356,6 +370,19 @@ class LocationServiceController
                                     if (!isset($service_providers['data'])) {
                                         $service_providers['data'] = [];
                                     }
+                                    
+                                    // Loại bỏ trùng lặp dựa trên ID
+                                    $unique_providers = [];
+                                    $seen_provider_ids = [];
+                                    foreach ($service_providers['data'] as $provider) {
+                                        $id = (int) $provider['id'];
+                                        if (!in_array($id, $seen_provider_ids)) {
+                                            $seen_provider_ids[] = $id;
+                                            $unique_providers[] = $provider;
+                                        }
+                                    }
+                                    $service_providers['data'] = $unique_providers;
+                                    
                                     foreach ($service_providers['data'] as &$provider) {
                                         try {
                                             $provider['services_count'] = $this->serviceProviderModel->getServiceCount($provider['id']);
@@ -798,7 +825,8 @@ class LocationServiceController
             ], 1, 10);
             if (!empty($existing['data'])) {
                 foreach ($existing['data'] as $provider) {
-                    if ($provider['id'] != $id && $provider['name'] == $name) {
+                    // Compare case-insensitively and trimmed
+                    if ($provider['id'] != $id && mb_strtolower(trim($provider['name'])) === mb_strtolower(trim($name))) {
                         throw new Exception("Tên nhà dịch vụ đã tồn tại trong tỉnh này. Vui lòng chọn tên khác.");
                     }
                 }

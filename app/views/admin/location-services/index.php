@@ -604,11 +604,23 @@ if (!is_admin())
                         </div>
                     <?php else: ?>
                         <?php foreach ($service_providers['data'] as $provider): ?>
-                            <div class="service-card mb-4">
+                            <?php
+                            $is_inactive = ($provider['status'] ?? 'active') === 'inactive';
+                            ?>
+                            <div class="service-card mb-4 <?= $is_inactive ? 'inactive' : '' ?>">
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="flex-1">
-                                        <h3 class="font-bold text-lg text-primary mb-2"><?= htmlspecialchars($provider['name']) ?></h3>
-                                        <div class="space-y-1 text-sm text-gray-600">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <h3 class="font-bold text-lg <?= $is_inactive ? 'text-gray-500' : 'text-primary' ?>">
+                                                <?= htmlspecialchars($provider['name']) ?>
+                                            </h3>
+                                            <!-- Status Badge -->
+                                            <span class="status-badge <?= $is_inactive ? 'inactive' : 'active' ?>">
+                                                <i class="fas fa-<?= $is_inactive ? 'times-circle' : 'check-circle' ?>"></i>
+                                                <?= $is_inactive ? 'Đã vô hiệu hóa' : 'Hoạt động' ?>
+                                            </span>
+                                        </div>
+                                        <div class="space-y-1 text-sm <?= $is_inactive ? 'text-gray-400' : 'text-gray-600' ?>">
                                             <?php if (!empty($provider['service_code'])): ?>
                                                 <p>Mã: <span class="font-medium"><?= htmlspecialchars($provider['service_code']) ?></span>
                                                 </p>
@@ -637,9 +649,10 @@ if (!is_admin())
                                 </div>
                                 <div class="pt-4 border-t border-gray-200">
                                     <div class="flex justify-between items-center">
-                                        <h4 class="font-semibold text-primary">Dịch vụ (<?= $provider['services_count'] ?? 0 ?>)</h4>
+                                        <h4 class="font-semibold <?= $is_inactive ? 'text-gray-500' : 'text-primary' ?>">Dịch vụ (<?= $provider['services_count'] ?? 0 ?>)</h4>
                                         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>&service_provider_id=<?= $provider['id'] ?>"
-                                            class="px-3 py-1.5 bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition-colors inline-flex items-center gap-1.5">
+                                            class="px-3 py-1.5 bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition-colors inline-flex items-center gap-1.5 <?= $is_inactive ? 'opacity-50 cursor-not-allowed' : '' ?>"
+                                            <?= $is_inactive ? 'onclick="return false;" title="Nhà cung cấp đã bị vô hiệu hóa"' : '' ?>>
                                             <i class="fas fa-list text-xs"></i>
                                             <span>Xem dịch vụ</span>
                                         </a>

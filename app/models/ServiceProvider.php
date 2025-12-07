@@ -93,6 +93,12 @@ class ServiceProvider
                 $params['status'] = $filters['status'];
             }
 
+            // Filter by exact name match (case-insensitive)
+            if (!empty($filters['name'])) {
+                $where_conditions[] = "LOWER(TRIM(sp.name)) = LOWER(TRIM(:name))";
+                $params['name'] = $filters['name'];
+            }
+
             if (!empty($filters['search'])) {
                 $where_conditions[] = "(sp.name LIKE :search OR sp.service_code LIKE :search)";
                 $params['search'] = '%' . $filters['search'] . '%';
