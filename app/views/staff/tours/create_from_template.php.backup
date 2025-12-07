@@ -3,7 +3,8 @@
  * ADMIN - TẠO TOUR TỪ TEMPLATE (Clone & Customize)
  * Variables: $old_input, $categories, $destinations, $services, $template_info
  */
-require_staff_or_admin();
+if (!is_admin())
+    redirect('?act=access-denied');
 
 $old = $old_input ?? [];
 $errs = $errors ?? [];
@@ -21,7 +22,7 @@ $errs = $errors ?? [];
                 </p>
             <?php endif; ?>
         </div>
-        <a href="?act=staff-tours&action=selectTemplate" class="text-gray-500 hover:text-gray-700">← Chọn template khác</a>
+        <a href="?act=admin&module=tours&action=selectTemplate" class="text-gray-500 hover:text-gray-700">← Chọn template khác</a>
     </div>
 
     <!-- Error Alert -->
@@ -35,7 +36,7 @@ $errs = $errors ?? [];
         </div>
     <?php endif; ?>
 
-    <form method="POST" action="?act=staff-tours&action=store" enctype="multipart/form-data" class="space-y-6">
+    <form method="POST" action="?act=admin&module=tours&action=store" enctype="multipart/form-data" class="space-y-6">
         <!-- Hidden Fields -->
         <input type="hidden" name="parent_tour_id" value="<?= $old['parent_tour_id'] ?? '' ?>">
         <input type="hidden" name="tour_type" value="custom">
@@ -242,7 +243,7 @@ $errs = $errors ?? [];
 
         <!-- Submit -->
         <div class="flex justify-end gap-3">
-            <a href="?act=staff-tours&action=selectTemplate" class="px-6 py-2 border rounded hover:bg-gray-50">Hủy</a>
+            <a href="?act=admin&module=tours&action=selectTemplate" class="px-6 py-2 border rounded hover:bg-gray-50">Hủy</a>
             <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium">
                 ✓ Tạo Tour Custom
             </button>
@@ -281,7 +282,7 @@ $errs = $errors ?? [];
             return;
         }
 
-        fetch(`?act=staff-tours&action=getDestinations&category_id=${categoryId}`)
+        fetch(`?act=admin&module=tours&action=getDestinations&category_id=${categoryId}`)
             .then(res => res.json())
             .then(response => {
                 if (response.success) {

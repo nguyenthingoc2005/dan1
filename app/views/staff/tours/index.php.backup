@@ -3,14 +3,15 @@
  * ADMIN - DANH SÁCH TOURS
  */
 
-require_staff_or_admin();
+if (!is_admin())
+    redirect('?act=access-denied');
 ?>
 
 <div class="max-w-8xl mx-auto">
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-primary">Quản lý Tour du lịch</h1>
-        <a href="?act=staff-tours&action=selectTemplate"
+        <a href="?act=admin&module=tours&action=selectTemplate"
             class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -32,7 +33,7 @@ require_staff_or_admin();
             ];
             ?>
             <?php foreach ($tabs as $key => $label): ?>
-                <a href="?act=staff-tours&status=<?= $key ?>" class="<?= $current_status == $key
+                <a href="?act=admin&module=tours&status=<?= $key ?>" class="<?= $current_status == $key
                       ? 'border-accent text-accent'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?> 
                        whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
@@ -130,10 +131,24 @@ require_staff_or_admin();
                                 <?php endif; ?>
                             </td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <a href="?act=staff-tours&action=show&id=<?= $tour['id'] ?>"
+                                <!-- Quick Approve for Draft -->
+                                <?php if ($tour['status'] == 'draft'): ?>
+                                    <form method="POST" action="?act=admin&module=tours&action=changeStatus"
+                                        class="inline-block mr-2" onsubmit="return confirm('Duyệt tour này?');">
+                                        <input type="hidden" name="id" value="<?= $tour['id'] ?>">
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="text-green-600 hover:text-green-800 font-bold"
+                                            title="Duyệt nhanh">✓</button>
+                                    </form>
+                                <?php endif; ?>
+
+                                <a href="?act=admin&module=tours&action=show&id=<?= $tour['id'] ?>"
                                     class="text-green-600 hover:text-green-800 font-medium mr-3">Xem</a>
-                                <a href="?act=staff-tours&action=edit&id=<?= $tour['id'] ?>"
-                                    class="text-blue-600 hover:text-blue-800 font-medium">Sửa</a>
+                                <a href="?act=admin&module=tours&action=edit&id=<?= $tour['id'] ?>"
+                                    class="text-blue-600 hover:text-blue-800 font-medium mr-3">Sửa</a>
+                                <a href="?act=admin&module=tours&action=delete&id=<?= $tour['id'] ?>"
+                                    onclick="return confirm('Bạn có chắc muốn xóa tour này?')"
+                                    class="text-red-600 hover:text-red-800 font-medium">Xóa</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -146,7 +161,7 @@ require_staff_or_admin();
     <?php if ($total_pages > 1): ?>
         <div class="mt-6 flex justify-center gap-2">
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                <a href="?act=staff-tours&page=<?= $i ?>&search=<?= $_GET['search'] ?? '' ?>&approval_status=<?= $_GET['approval_status'] ?? '' ?>&tour_type=<?= $_GET['tour_type'] ?? '' ?>"
+                <a href="?act=admin&module=tours&page=<?= $i ?>&search=<?= $_GET['search'] ?? '' ?>&category_id=<?= $_GET['category_id'] ?? '' ?>"
                     class="px-3 py-1 rounded <?= $i == $current_page ? 'bg-accent text-white' : 'bg-white border hover:bg-gray-100' ?>">
                     <?= $i ?>
                 </a>

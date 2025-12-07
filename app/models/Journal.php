@@ -326,4 +326,35 @@ class Journal
             $this->deleteImage($img['id']);
         }
     }
+
+    /**
+     * Đếm số lượng journals theo filters
+     * 
+     * @param array $filters
+     * @return int
+     */
+    public function count($filters = [])
+    {
+        $sql = "SELECT COUNT(*) FROM journals j WHERE 1=1";
+        $params = [];
+
+        if (!empty($filters['guide_id'])) {
+            $sql .= " AND j.guide_id = :guide_id";
+            $params['guide_id'] = $filters['guide_id'];
+        }
+
+        if (!empty($filters['booking_id'])) {
+            $sql .= " AND j.booking_id = :booking_id";
+            $params['booking_id'] = $filters['booking_id'];
+        }
+
+        if (!empty($filters['tour_schedule_id'])) {
+            $sql .= " AND j.tour_schedule_id = :schedule_id";
+            $params['schedule_id'] = $filters['tour_schedule_id'];
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
 }

@@ -3,7 +3,8 @@
  * ADMIN - CHI TIẾT TOUR
  * Variables: $tour
  */
-require_staff_or_admin();
+if (!is_admin())
+    redirect('?act=access-denied');
 ?>
 
 <div class="max-w-6xl mx-auto">
@@ -21,8 +22,8 @@ require_staff_or_admin();
             </p>
         </div>
         <div class="flex gap-2">
-            <a href="?act=staff-tours" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50">← Quay lại</a>
-            <a href="?act=staff-tours&action=edit&id=<?= $tour['id'] ?>" class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow">✏️ Chỉnh sửa</a>
+            <a href="?act=admin&module=tours" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50">← Quay lại</a>
+            <a href="?act=admin&module=tours&action=edit&id=<?= $tour['id'] ?>" class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow">✏️ Chỉnh sửa</a>
         </div>
     </div>
 
@@ -265,17 +266,33 @@ require_staff_or_admin();
                     </div>
                 </div>
 
-                <!-- Actions - Staff không có quyền changeStatus -->
-                <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-                    <p class="text-sm text-yellow-700">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        Tour đang ở trạng thái: <strong><?= htmlspecialchars($tour['status']) ?></strong>
-                        <?php if (!empty($tour['approval_status'])): ?>
-                            (<?= htmlspecialchars($tour['approval_status']) ?>)
+                <!-- Actions -->
+                <form method="POST" action="?act=admin&module=tours&action=changeStatus">
+                    <input type="hidden" name="id" value="<?= $tour['id'] ?>">
+                    <div class="space-y-2">
+                        <?php if ($tour['approval_status'] == 'pending'): ?>
+                            <button type="submit" name="action" value="approve" class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700" 
+                                onclick="return confirm('Duyệt tour này?')">
+                                ✅ Duyệt Tour
+                            </button>
+                            <button type="submit" name="action" value="reject" class="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                                onclick="return confirm('Từ chối tour này?')">
+                                ⛔ Từ chối
+                            </button>
                         <?php endif; ?>
-                    </p>
-                    <p class="text-xs text-yellow-600 mt-2">Chỉ admin mới có quyền duyệt/từ chối tour.</p>
-                </div>
+                        <?php if ($tour['status'] == 'active'): ?>
+                            <button type="submit" name="action" value="hide" class="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                                onclick="return confirm('Ẩn tour này?')">
+                                🙈 Ẩn Tour
+                            </button>
+                        <?php elseif ($tour['status'] == 'inactive' && $tour['approval_status'] == 'approved'): ?>
+                            <button type="submit" name="action" value="show" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                onclick="return confirm('Hiện lại tour này?')">
+                                👁️ Hiện Tour
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                </form>
             </div>
 
             <!-- Pricing -->
@@ -361,10 +378,15 @@ require_staff_or_admin();
                 <?php endif; ?>
             </div>
 
-            <!-- Delete - Staff không có quyền xóa -->
-            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <h3 class="font-medium text-gray-800 mb-2">Xóa Tour</h3>
-                <p class="text-sm text-gray-600 mb-3">Chỉ admin mới có quyền xóa tour.</p>
+            <!-- Delete -->
+            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                <h3 class="font-medium text-red-800 mb-2">Xóa Tour</h3>
+                <p class="text-sm text-red-600 mb-3">Hành động này không thể hoàn tác. Tour đã có booking sẽ không thể xóa.</p>
+                <a href="?act=admin&module=tours&action=delete&id=<?= $tour['id'] ?>" 
+                   class="block w-full text-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                   onclick="return confirm('Bạn có chắc chắn muốn xóa tour này? Hành động này không thể hoàn tác!')">
+                    🗑️ Xóa Tour
+                </a>
             </div>
 
         </div>

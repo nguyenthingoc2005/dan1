@@ -3,7 +3,8 @@
  * ADMIN - FORM SỬA TOUR
  * Variables: $tour, $categories, $destinations, $services, $tour_services
  */
-require_staff_or_admin();
+if (!is_admin())
+    redirect('?act=access-denied');
 ?>
 
 <div class="max-w-6xl mx-auto">
@@ -15,12 +16,12 @@ require_staff_or_admin();
             </p>
         </div>
         <div class="flex gap-2">
-            <a href="?act=staff-tours&action=show&id=<?= $tour['id'] ?>" class="px-4 py-2 bg-white border rounded hover:bg-gray-50">Xem chi tiết</a>
-            <a href="?act=staff-tours" class="text-gray-500 hover:text-gray-700">← Danh sách</a>
+            <a href="?act=admin&module=tours&action=show&id=<?= $tour['id'] ?>" class="px-4 py-2 bg-white border rounded hover:bg-gray-50">Xem chi tiết</a>
+            <a href="?act=admin&module=tours" class="text-gray-500 hover:text-gray-700">← Danh sách</a>
         </div>
     </div>
 
-    <form method="POST" action="?act=staff-tours&action=update" enctype="multipart/form-data" class="space-y-6">
+    <form method="POST" action="?act=admin&module=tours&action=update" enctype="multipart/form-data" class="space-y-6">
         <input type="hidden" name="id" value="<?= $tour['id'] ?>">
         <input type="hidden" name="tour_type" value="<?= $tour['tour_type'] ?>">
 
@@ -149,9 +150,9 @@ require_staff_or_admin();
                     <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                     <select name="status" class="w-full md:w-1/2 px-3 py-2 border rounded focus:border-accent focus:outline-none">
                         <option value="draft" <?= $tour['status'] == 'draft' ? 'selected' : '' ?>>Bản nháp (Draft)</option>
-                        <option value="pending" <?= $tour['status'] == 'pending' ? 'selected' : '' ?>>Chờ duyệt (Pending)</option>
+                        <option value="active" <?= $tour['status'] == 'active' ? 'selected' : '' ?>>Hoạt động (Active)</option>
+                        <option value="inactive" <?= $tour['status'] == 'inactive' ? 'selected' : '' ?>>Tạm dừng (Inactive)</option>
                     </select>
-                    <p class="text-xs text-gray-500 mt-1">Staff chỉ có thể sửa tour ở trạng thái Nháp hoặc Chờ duyệt.</p>
                 </div>
             </div>
         </div>
@@ -346,7 +347,7 @@ require_staff_or_admin();
                             </label>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <p class="text-gray-500 text-sm">Chưa có chính sách nào. <a href="?act=staff-tours&action=createPolicy" class="text-accent hover:underline">Tạo mới</a></p>
+                        <p class="text-gray-500 text-sm">Chưa có chính sách nào. <a href="?act=admin&module=policies&action=create" class="text-accent hover:underline">Tạo mới</a></p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -398,7 +399,7 @@ require_staff_or_admin();
 
         <!-- Submit -->
         <div class="flex justify-end gap-3">
-            <a href="?act=staff-tours&action=show&id=<?= $tour['id'] ?>" class="px-6 py-2 border rounded hover:bg-gray-50">Hủy</a>
+            <a href="?act=admin&module=tours&action=show&id=<?= $tour['id'] ?>" class="px-6 py-2 border rounded hover:bg-gray-50">Hủy</a>
             <button type="submit" class="px-6 py-2 bg-accent text-white rounded hover:bg-blue-600 font-medium">
                 ✓ Cập nhật Tour
             </button>
@@ -517,13 +518,13 @@ require_staff_or_admin();
 
     function openAddServiceModal(dayNumber) {
         // Load day services editor via AJAX (sử dụng endpoint có sẵn)
-        fetch(`?act=staff-tours&action=loadDayServicesEditor&day=${dayNumber}&tour_id=<?= $tour['id'] ?>`)
+        fetch(`?act=admin&module=tours&action=loadDayServicesEditor&day=${dayNumber}&tour_id=<?= $tour['id'] ?>`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     // Hiển thị modal hoặc load vào container
                     // Tạm thời: redirect đến trang loadDayServicesEditor
-                    window.open(`?act=staff-tours&action=loadDayServicesEditor&day=${dayNumber}&tour_id=<?= $tour['id'] ?>`, '_blank');
+                    window.open(`?act=admin&module=tours&action=loadDayServicesEditor&day=${dayNumber}&tour_id=<?= $tour['id'] ?>`, '_blank');
                 }
             })
             .catch(error => {
