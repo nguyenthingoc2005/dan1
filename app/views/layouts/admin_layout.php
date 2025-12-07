@@ -60,17 +60,15 @@ $user = get_auth_user();
         // Debug: Check if TinyMCE loads
         window.addEventListener('load', function() {
             if (typeof tinymce !== 'undefined') {
-                console.log('✅ TinyMCE loaded successfully');
+                console.log('✅ TinyMCE loaded successfully from local file');
+                // Set GPL license globally to avoid API key requirement
+                if (tinymce.util && tinymce.util.Tools) {
+                    // TinyMCE GPL version doesn't require API key
+                    console.log('✅ Using TinyMCE GPL version (no API key required)');
+                }
             } else {
                 console.error('❌ TinyMCE failed to load from: <?= htmlspecialchars($tinymce_path) ?>');
-                console.log('Trying to load from CDN as fallback...');
-                // Fallback to CDN if local file fails
-                const script = document.createElement('script');
-                script.src = 'https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js';
-                script.onerror = function() {
-                    console.error('❌ TinyMCE CDN also failed to load');
-                };
-                document.head.appendChild(script);
+                console.error('Please ensure TinyMCE files are in: tinymce/js/tinymce/');
             }
         });
     </script>

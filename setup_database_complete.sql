@@ -22,11 +22,15 @@
 -- 
 -- ADDITIONS:
 -- - ✅ Thêm bookings.tour_schedule_id
+-- - ✅ Thêm bookings.rejected_by, rejected_at (theo flow analysis)
 -- - ✅ Thêm tours.fixed_cost_guide, fixed_cost_management, fixed_cost_marketing, fixed_cost_other
 -- - ✅ Thêm tours.booking_deadline_days (default: 1 ngày)
 -- - ✅ Thêm itinerary_day_services (dịch vụ theo từng ngày)
 -- - ❌ Bỏ itinerary_timelines (không dùng timeline chi tiết nữa)
 -- - ✅ tour_schedules.status: thêm 'pending', 'in_progress'
+-- 
+-- FIXES (2024-12-06):
+-- - ✅ Thêm FOREIGN KEY constraint cho booking_services.booking_id → bookings.id (CASCADE)
 -- 
 -- DEPRECATED (giữ lại để backward compatible):
 -- - ⚠️ tours.markup_percentage (default: 0, không dùng nữa)
@@ -600,6 +604,8 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   `approved_by` int DEFAULT NULL,
   `approved_at` timestamp NULL DEFAULT NULL,
   `rejection_reason` text COLLATE utf8mb4_unicode_ci,
+  `rejected_by` int DEFAULT NULL,
+  `rejected_at` timestamp NULL DEFAULT NULL,
   `cancellation_date` date DEFAULT NULL,
   `cancellation_reason` text COLLATE utf8mb4_unicode_ci,
   `cancellation_policy_id` int DEFAULT NULL,
@@ -628,6 +634,7 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   CONSTRAINT `bookings_ibfk_3` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `bookings_ibfk_4` FOREIGN KEY (`cancellation_policy_id`) REFERENCES `cancellation_policies` (`id`) ON DELETE SET NULL,
   CONSTRAINT `bookings_ibfk_5` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `bookings_ibfk_rejected_by` FOREIGN KEY (`rejected_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `bookings_ibfk_schedule` FOREIGN KEY (`tour_schedule_id`) REFERENCES `tour_schedules` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -668,6 +675,7 @@ CREATE TABLE IF NOT EXISTS `booking_services` (
   KEY `service_id` (`service_id`),
   KEY `service_provider_id` (`service_provider_id`),
   KEY `created_by` (`created_by`),
+  CONSTRAINT `booking_services_ibfk_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
   CONSTRAINT `booking_services_ibfk_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`),
   CONSTRAINT `booking_services_ibfk_service_provider` FOREIGN KEY (`service_provider_id`) REFERENCES `service_providers` (`id`) ON DELETE SET NULL,
   CONSTRAINT `booking_services_ibfk_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL

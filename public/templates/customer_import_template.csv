@@ -1,5 +1,5 @@
-Họ tên,SĐT,Email,Giới tính,Loại
-Nguyễn Văn A,0901234567,nguyenvana@gmail.com,Nam,Người lớn
-Trần Thị B,0912345678,tranthib@gmail.com,Nữ,Người lớn
-Lê Văn C,0923456789,levanc@gmail.com,Nam,Trẻ em
+Họ tên,SĐT,Email,Ngày sinh,Giới tính,Loại,Địa chỉ,CMND/CCCD,Passport
+Nguyễn Văn A,0901234567,nguyenvana@gmail.com,1990-01-15,Nam,Người lớn,123 Đường ABC Quận 1,123456789,
+Trần Thị B,0912345678,tranthib@gmail.com,1992-05-20,Nữ,Người lớn,456 Đường XYZ Quận 2,987654321,
+Lê Văn C,0923456789,,2010-03-10,Nam,Trẻ em,789 Đường DEF Quận 3,,
 

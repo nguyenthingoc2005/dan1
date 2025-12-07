@@ -761,6 +761,38 @@ switch ($module) {
         break;
 
     // ==========================================================================
+    // POLICIES MODULE
+    // ==========================================================================
+    case 'policies':
+        require_once CONTROLLERS_PATH . '/admin/PolicyController.php';
+        $policyController = new PolicyController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $policyController->index();
+                break;
+            case 'create':
+                $policyController->create();
+                break;
+            case 'store':
+                $policyController->store();
+                break;
+            case 'edit':
+                $policyController->edit();
+                break;
+            case 'update':
+                $policyController->update();
+                break;
+            case 'delete':
+                $policyController->delete();
+                break;
+            default:
+                http_response_code(404);
+                require VIEWS_PATH . '/errors/404.php';
+        }
+        break;
+
+    // ==========================================================================
     // DEFAULT: DASHBOARD
     // ==========================================================================
     default:

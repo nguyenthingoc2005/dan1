@@ -54,18 +54,8 @@ class BookingController
         // Get open schedules
         require_once 'app/models/TourSchedule.php';
         $scheduleModel = new TourSchedule($this->pdo);
-        $schedulesResult = $scheduleModel->getAll(['status' => 'open'], 1, 1000); // Get all open schedules
+        $schedulesResult = $scheduleModel->getAll(['status' => 'open'], 1, 1000);
         $schedules = $schedulesResult['data'] ?? [];
-
-        // DEBUG: Log data
-        error_log("=== BOOKING CREATE DEBUG ===");
-        error_log("Tours count: " . count($tours));
-        error_log("Customers count: " . count($customers));
-        error_log("Schedules count: " . count($schedules));
-
-        if (!empty($schedules)) {
-            error_log("First schedule: " . print_r($schedules[0] ?? null, true));
-        }
 
         $page_title = 'Tạo Booking Mới';
         $content_file = 'app/views/admin/bookings/create.php';
@@ -348,18 +338,10 @@ class BookingController
                 // Passengers handling
                 $passengers = [];
 
-                // 1. Add Main Customer as Primary Representative (Khách hàng đại diện)
-                    // Note: Primary customer luôn là adult vì người đặt tour thường là người lớn (phụ huynh)
-                    // Nếu booking chỉ có trẻ em, primary vẫn là adult (người đại diện pháp lý)
-                    $primary_age_type = 'adult'; // Mặc định là adult
-                    
-                    // Nếu chỉ có 1 người và là trẻ em/em bé, có thể primary là trẻ em
-                    // Nhưng trong thực tế, người đặt tour luôn là người lớn
-                    // Nên giữ nguyên logic: primary = adult
-                    
+                // 1. Add Main Customer as Primary Representative
                 $passengers[] = [
                     'customer_id' => $customer_id,
-                        'age_type' => $primary_age_type,
+                    'age_type' => 'adult', // Primary customer is always adult
                     'is_primary' => 1
                 ];
 
@@ -369,52 +351,22 @@ class BookingController
                         if (empty($name))
                             continue;
 
-                        // Other passengers cannot be primary (already have one)
                         $p_phone = $_POST['passenger_phones'][$index] ?? ($_POST['new_customer_phone'] ?? '0000000000');
 
-                            // Check duplicate customer by phone before creating
-                            if (!empty($p_phone) && $p_phone !== '0000000000') {
-                                $existingCustomer = $this->customerModel->isPhoneExists($p_phone);
-                                if ($existingCustomer) {
-                                    // Get existing customer ID
-                                    $stmt = $this->pdo->prepare("SELECT id FROM customers WHERE phone = :phone LIMIT 1");
-                                    $stmt->execute(['phone' => $p_phone]);
-                                    $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-                                    if ($existing) {
-                                        $p_id = $existing['id'];
-                                    } else {
-                                        // Create new customer if not found (should not happen, but safety check)
-                                        $passengerData = [
-                                            'full_name' => $name,
-                                            'phone' => $p_phone,
-                                            'email' => $_POST['passenger_emails'][$index] ?? null,
-                                            'gender' => $_POST['passenger_genders'][$index] ?? 'other',
-                                            'created_by' => $_SESSION['user_id'] ?? 1
-                                        ];
-                                        $p_id = $this->customerModel->create($passengerData);
-                                    }
-                                } else {
-                                    // Create new customer
-                                    $passengerData = [
-                                        'full_name' => $name,
-                                        'phone' => $p_phone,
-                                        'email' => $_POST['passenger_emails'][$index] ?? null,
-                                        'gender' => $_POST['passenger_genders'][$index] ?? 'other',
-                                        'created_by' => $_SESSION['user_id'] ?? 1
-                                    ];
-                                    $p_id = $this->customerModel->create($passengerData);
-                                }
+                        // Check duplicate customer by phone before creating
+                        if (!empty($p_phone) && $p_phone !== '0000000000') {
+                            $existingCustomer = $this->customerModel->isPhoneExists($p_phone);
+                            if ($existingCustomer) {
+                                $stmt = $this->pdo->prepare("SELECT id FROM customers WHERE phone = :phone LIMIT 1");
+                                $stmt->execute(['phone' => $p_phone]);
+                                $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+                                $p_id = $existing ? $existing['id'] : $this->createPassengerCustomer($name, $p_phone, $index);
                             } else {
-                                // Create customer without phone check if phone is empty/invalid
-                        $passengerData = [
-                            'full_name' => $name,
-                            'phone' => $p_phone,
-                                    'email' => $_POST['passenger_emails'][$index] ?? null,
-                            'gender' => $_POST['passenger_genders'][$index] ?? 'other',
-                            'created_by' => $_SESSION['user_id'] ?? 1
-                        ];
-                        $p_id = $this->customerModel->create($passengerData);
+                                $p_id = $this->createPassengerCustomer($name, $p_phone, $index);
                             }
+                        } else {
+                            $p_id = $this->createPassengerCustomer($name, $p_phone, $index);
+                        }
 
                         $passengers[] = [
                             'customer_id' => $p_id,
@@ -424,31 +376,26 @@ class BookingController
                     }
                 }
 
-                    // Create booking (skip its own transaction since we're in a transaction already)
-                    $booking_id = $this->bookingModel->create($data, $passengers, false);
+                // Create booking (skip its own transaction since we're in a transaction already)
+                $booking_id = $this->bookingModel->create($data, $passengers, false);
 
-                    // Increment booked count on schedule (must be in same transaction)
-                    if (!$scheduleModel->incrementBooked($schedule_id, $totalParticipants)) {
-                        throw new Exception("Không thể cập nhật số lượng đã đặt cho lịch khởi hành");
-                    }
+                // Increment booked count on schedule (must be in same transaction)
+                if (!$scheduleModel->incrementBooked($schedule_id, $totalParticipants)) {
+                    throw new Exception("Không thể cập nhật số lượng đã đặt cho lịch khởi hành");
+                }
 
-                    // Commit transaction
-                    $this->pdo->commit();
+                // Commit transaction
+                $this->pdo->commit();
 
                 set_success("Tạo Booking thành công!");
                 redirect('?act=admin&module=bookings');
-                    
-                } catch (Exception $e) {
-                    // Rollback transaction on any error
-                    $this->pdo->rollBack();
-                    throw $e; // Re-throw to be caught by outer catch
-                }
+
             } catch (Exception $e) {
-                // Log error for debugging
-                error_log("BookingController::store() ERROR: " . $e->getMessage());
-                error_log("Stack trace: " . $e->getTraceAsString());
-                error_log("POST data: " . print_r($_POST, true));
-                
+                // Rollback transaction on any error
+                $this->pdo->rollBack();
+                throw $e; // Re-throw to be caught by outer catch
+            }
+            } catch (Exception $e) {
                 set_error($e->getMessage());
                 $_SESSION['old'] = $_POST;
                 redirect('?act=admin&module=bookings&action=create');
@@ -569,10 +516,6 @@ class BookingController
                 redirect("?act=admin&module=bookings&action=show&id=$bookingId");
 
             } catch (Exception $e) {
-                // Log error for debugging
-                error_log("BookingController::storePayment() ERROR: " . $e->getMessage());
-                error_log("Stack trace: " . $e->getTraceAsString());
-                
                 set_error($e->getMessage());
                 redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
             }
@@ -658,11 +601,6 @@ class BookingController
                 redirect("?act=admin&module=bookings&action=show&id=$id");
 
             } catch (Exception $e) {
-                // Log error for debugging
-                error_log("BookingController::changeStatus() ERROR: " . $e->getMessage());
-                error_log("Stack trace: " . $e->getTraceAsString());
-                error_log("Action: " . ($_POST['action'] ?? 'unknown') . ", Booking ID: " . ($id ?? 'unknown'));
-                
                 set_error("Lỗi: " . $e->getMessage());
                 redirect("?act=admin&module=bookings&action=show&id=" . ($id ?? ''));
             }
@@ -757,101 +695,68 @@ class BookingController
         require_admin();
         header('Content-Type: application/json');
 
-        // DEBUG
-        error_log("=== PREVIEW PASSENGERS DEBUG ===");
-        error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
-        error_log("Files: " . print_r($_FILES, true));
-
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['file'])) {
-                error_log("❌ Missing file upload");
                 throw new Exception("Thiếu file upload");
             }
 
             $file = $_FILES['file'];
-            error_log("File details: " . print_r($file, true));
 
             if ($file['error'] !== UPLOAD_ERR_OK) {
-                error_log("❌ Upload error: " . $file['error']);
                 throw new Exception("Lỗi upload file: " . $file['error']);
             }
 
             $allowedExtensions = ['csv', 'xlsx', 'xls'];
             $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            error_log("File extension: " . $extension);
 
             if (!in_array($extension, $allowedExtensions)) {
-                error_log("❌ Invalid extension: " . $extension);
                 throw new Exception("File không hợp lệ. Chỉ chấp nhận CSV, XLS, XLSX");
             }
 
             // Read file directly from tmp
             require_once __DIR__ . '/../../models/CustomerImport.php';
             $importModel = new CustomerImport($this->pdo);
-
-            error_log("Reading file: " . $file['tmp_name']);
-            // For Excel files, we'll try to read as CSV (user should save as CSV)
-            // Or we can add PhpSpreadsheet library later
             $rows = $importModel->readFile($file['tmp_name'], $extension);
-            error_log("Rows read: " . count($rows));
-            error_log("First row: " . print_r($rows[0] ?? null, true));
 
             // Format để trả về cho JavaScript
             $passengers = [];
-            foreach ($rows as $index => $row) {
+            foreach ($rows as $row) {
                 // Skip nếu không có tên
                 if (empty($row['full_name'])) {
-                    error_log("Skipping row $index: no full_name");
                     continue;
                 }
 
                 // Format phone: loại bỏ khoảng trắng, dấu gạch ngang
                 $phone = $row['phone'] ?? '';
                 if (!empty($phone)) {
-                    // Loại bỏ khoảng trắng, dấu gạch ngang, dấu ngoặc
                     $phone = preg_replace('/[\s\-\(\)]/', '', $phone);
                     
-                    // Nếu là số (Excel format), chuyển về string
                     if (is_numeric($phone)) {
                         $phone = (string)$phone;
-                        // Nếu bắt đầu bằng 84, chuyển thành 0
                         if (strpos($phone, '84') === 0 && strlen($phone) == 11) {
                             $phone = '0' . substr($phone, 2);
-                        }
-                        // Nếu thiếu số 0 đầu và có 9 chữ số, thêm 0
-                        elseif (strlen($phone) == 9 && substr($phone, 0, 1) != '0') {
+                        } elseif (strlen($phone) == 9 && substr($phone, 0, 1) != '0') {
                             $phone = '0' . $phone;
                         }
                     }
                 }
                 
-                $passenger = [
+                $passengers[] = [
                     'name' => $row['full_name'] ?? '',
                     'phone' => $phone,
                     'email' => $row['email'] ?? '',
                     'gender' => $this->normalizeGender($row['gender'] ?? ''),
                     'age_type' => $this->determineAgeType($row)
                 ];
-
-                error_log("Passenger $index: " . print_r($passenger, true));
-                $passengers[] = $passenger;
             }
 
-            error_log("Total passengers: " . count($passengers));
-
-            $response = [
+            echo json_encode([
                 'success' => true,
                 'passengers' => $passengers,
                 'count' => count($passengers)
-            ];
-
-            error_log("Response: " . json_encode($response, JSON_UNESCAPED_UNICODE));
-            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            ], JSON_UNESCAPED_UNICODE);
 
         } catch (Exception $e) {
-            error_log("❌ Exception: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
-
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -952,18 +857,7 @@ class BookingController
                 }
 
                 // Validate deadline: Không được thêm dịch vụ nếu đã qua deadline
-                $today = date('Y-m-d');
-                $start_date = $booking['start_date'] ?? null;
-                if ($start_date) {
-                    // Lấy booking_deadline_days từ tour
-                    $tour = $this->tourModel->findById($booking['tour_id']);
-                    $deadline_days = (int) ($tour['booking_deadline_days'] ?? 1);
-                    
-                    $daysUntilStart = (strtotime($start_date) - strtotime($today)) / (60 * 60 * 24);
-                    if ($daysUntilStart < $deadline_days) {
-                        throw new Exception("Không thể thêm dịch vụ. Booking này khởi hành trong vòng {$deadline_days} ngày hoặc đã khởi hành. Vui lòng liên hệ admin để xử lý.");
-                    }
-                }
+                $this->validateBookingDeadline($booking);
 
                 if ($booking['approval_status'] === 'cancelled') {
                     throw new Exception("Không thể thêm dịch vụ vào booking đã hủy.");
@@ -1011,7 +905,6 @@ class BookingController
                 redirect("?act=admin&module=bookings&action=show&id=$booking_id");
 
             } catch (Exception $e) {
-                error_log("BookingController::storeBookingService() ERROR: " . $e->getMessage());
                 set_error($e->getMessage());
                 redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
             }
@@ -1061,7 +954,6 @@ class BookingController
                 redirect("?act=admin&module=bookings&action=show&id=$booking_id");
 
             } catch (Exception $e) {
-                error_log("BookingController::deleteBookingService() ERROR: " . $e->getMessage());
                 set_error($e->getMessage());
                 redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
             }
@@ -1094,18 +986,7 @@ class BookingController
                 }
 
                 // Validate deadline: Không được thêm hành khách nếu đã qua deadline
-                $today = date('Y-m-d');
-                $start_date = $booking['start_date'] ?? null;
-                if ($start_date) {
-                    // Lấy booking_deadline_days từ tour
-                    $tour = $this->tourModel->findById($booking['tour_id']);
-                    $deadline_days = (int) ($tour['booking_deadline_days'] ?? 1);
-                    
-                    $daysUntilStart = (strtotime($start_date) - strtotime($today)) / (60 * 60 * 24);
-                    if ($daysUntilStart < $deadline_days) {
-                        throw new Exception("Không thể thêm hành khách. Booking này khởi hành trong vòng {$deadline_days} ngày hoặc đã khởi hành. Vui lòng liên hệ admin để xử lý.");
-                    }
-                }
+                $this->validateBookingDeadline($booking, "Không thể thêm hành khách");
 
                 if ($booking['approval_status'] === 'cancelled') {
                     throw new Exception("Không thể thêm khách vào booking đã hủy.");
@@ -1178,7 +1059,6 @@ class BookingController
                 redirect("?act=admin&module=bookings&action=show&id=$booking_id");
 
             } catch (Exception $e) {
-                error_log("BookingController::addPassengerToBooking() ERROR: " . $e->getMessage());
                 set_error($e->getMessage());
                 redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
             }
@@ -1203,12 +1083,8 @@ class BookingController
         // Normalize path
         $templatePath = realpath($templatePath);
 
-        error_log("Template path: " . $templatePath);
-        error_log("File exists: " . (file_exists($templatePath) ? 'YES' : 'NO'));
-
         if (!$templatePath || !file_exists($templatePath)) {
-            error_log("❌ Template file not found at: " . $templatePath);
-            set_error("File template không tồn tại tại: " . $templatePath);
+            set_error("File template không tồn tại");
             redirect('?act=admin&module=bookings&action=create');
             return;
         }
@@ -1223,5 +1099,41 @@ class BookingController
 
         readfile($templatePath);
         exit;
+    }
+
+    /**
+     * Validate booking deadline (helper method)
+     */
+    private function validateBookingDeadline($booking, $actionMessage = "Không thể thực hiện thao tác")
+    {
+        $today = date('Y-m-d');
+        $start_date = $booking['start_date'] ?? null;
+        
+        if (!$start_date) {
+            throw new Exception("Booking không có ngày khởi hành");
+        }
+
+        $tour = $this->tourModel->findById($booking['tour_id']);
+        $deadline_days = (int) ($tour['booking_deadline_days'] ?? 1);
+        
+        $daysUntilStart = (strtotime($start_date) - strtotime($today)) / (60 * 60 * 24);
+        if ($daysUntilStart < $deadline_days) {
+            throw new Exception("{$actionMessage}. Booking này khởi hành trong vòng {$deadline_days} ngày hoặc đã khởi hành. Vui lòng liên hệ admin để xử lý.");
+        }
+    }
+
+    /**
+     * Create passenger customer (helper method)
+     */
+    private function createPassengerCustomer($name, $phone, $index)
+    {
+        $passengerData = [
+            'full_name' => $name,
+            'phone' => $phone,
+            'email' => $_POST['passenger_emails'][$index] ?? null,
+            'gender' => $_POST['passenger_genders'][$index] ?? 'other',
+            'created_by' => $_SESSION['user_id'] ?? 1
+        ];
+        return $this->customerModel->create($passengerData);
     }
 }

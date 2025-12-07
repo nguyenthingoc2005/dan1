@@ -407,7 +407,6 @@ if (!is_admin())
     </form>
 </div>
 
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
     const destinations = <?= json_encode($destinations) ?>;
     const services = <?= json_encode($services ?? []) ?>;
@@ -416,23 +415,33 @@ if (!is_admin())
 
     // Initialize TinyMCE for existing textareas
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize TinyMCE for all itinerary description textareas
-        const textareas = document.querySelectorAll('.tinymce-editor');
-        textareas.forEach(textarea => {
-            if (typeof tinymce !== 'undefined' && !tinymce.get(textarea.id)) {
-                tinymce.init({
-                    selector: '#' + textarea.id,
-                    license_key: 'gpl',
-                    height: 300,
-                    menubar: false,
-                    plugins: ['advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen', 'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'],
-                    toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | outdent indent | removeformat | image link | code | fullscreen | help',
-                    content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
-                    branding: false,
-                    promotion: false
-                });
+        // Wait for TinyMCE to load from admin_layout.php
+        const initAllTinyMCE = () => {
+            if (typeof tinymce === 'undefined') {
+                setTimeout(initAllTinyMCE, 100);
+                return;
             }
-        });
+            
+            // Initialize TinyMCE for all itinerary description textareas
+            const textareas = document.querySelectorAll('.tinymce-editor');
+            textareas.forEach(textarea => {
+                if (!tinymce.get(textarea.id)) {
+                    tinymce.init({
+                        selector: '#' + textarea.id,
+                        license_key: 'gpl',
+                        height: 300,
+                        menubar: false,
+                        plugins: ['advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen', 'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'],
+                        toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | outdent indent | removeformat | image link | code | fullscreen | help',
+                        content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
+                        branding: false,
+                        promotion: false
+                    });
+                }
+            });
+        };
+        
+        initAllTinyMCE();
     });
 
     function addItineraryDay() {
@@ -485,11 +494,15 @@ if (!is_admin())
         container.insertAdjacentHTML('beforeend', html);
         
         // Initialize TinyMCE for the new textarea
-        setTimeout(() => {
-            if (typeof tinymce !== 'undefined') {
-                tinymce.init({
-                    selector: '#itinerary-description-day-' + dayCount,
-                    license_key: 'gpl',
+        const initNewTinyMCE = () => {
+            if (typeof tinymce === 'undefined') {
+                setTimeout(initNewTinyMCE, 100);
+                return;
+            }
+            
+            tinymce.init({
+                selector: '#itinerary-description-day-' + dayCount,
+                license_key: 'gpl',
                     height: 300,
                     menubar: false,
                     plugins: ['advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen', 'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'],
@@ -498,8 +511,9 @@ if (!is_admin())
                     branding: false,
                     promotion: false
                 });
-            }
-        }, 100);
+        };
+        
+        setTimeout(initNewTinyMCE, 100);
     }
 
     function openAddServiceModal(dayNumber) {

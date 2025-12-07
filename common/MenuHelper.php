@@ -95,6 +95,12 @@ function get_menu_items($role)
                 'url' => $base_url . '/?act=admin&module=service-types',
                 'active_pattern' => 'admin:service-types'
             ],
+            [
+                'icon' => '📋',
+                'label' => 'Chính sách',
+                'url' => $base_url . '/?act=admin&module=policies',
+                'active_pattern' => 'admin:policies'
+            ],
         ],
 
         'staff' => [

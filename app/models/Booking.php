@@ -363,11 +363,20 @@ class Booking
         $params = ['id' => $id, 'status' => $status];
 
         if ($type == 'approval') {
-            $sql = "UPDATE bookings SET approval_status = :status, approved_by = :user_id, approved_at = NOW() WHERE id = :id";
-            if ($status == 'rejected' || $status == 'cancelled') {
+            if ($status == 'rejected') {
+                $sql = "UPDATE bookings SET 
+                        approval_status = :status, 
+                        rejection_reason = :reason,
+                        rejected_by = :user_id,
+                        rejected_at = NOW()
+                        WHERE id = :id";
+                $params['reason'] = $reason;
+                $params['user_id'] = $userId;
+            } elseif ($status == 'cancelled') {
                 $sql = "UPDATE bookings SET approval_status = :status, rejection_reason = :reason WHERE id = :id";
                 $params['reason'] = $reason;
             } else {
+                $sql = "UPDATE bookings SET approval_status = :status, approved_by = :user_id, approved_at = NOW() WHERE id = :id";
                 $params['user_id'] = $userId;
             }
         } elseif ($type == 'payment') {
@@ -509,14 +518,16 @@ class Booking
                 throw new Exception("Booking đã được hủy trước đó");
             }
 
-            // 2. Calculate Days Before Departure
+            // Validate booking chưa khởi hành
             $startDate = new DateTime($booking['start_date']);
             $today = new DateTime();
-            $interval = $today->diff($startDate);
-            $daysBefore = (int) $interval->format('%r%a'); // %r for sign (negative if passed)
+            if ($startDate < $today) {
+                throw new Exception("Không thể hủy booking đã khởi hành");
+            }
 
-            if ($daysBefore < 0)
-                $daysBefore = 0;
+            // 2. Calculate Days Before Departure
+            $interval = $today->diff($startDate);
+            $daysBefore = (int) $interval->format('%a'); // Số ngày trước ngày khởi hành (luôn >= 0 vì đã validate ở trên)
 
             // 3. Find Policy (chỉ lấy policy active)
             $sql = "SELECT * FROM cancellation_policies 
@@ -605,11 +616,14 @@ class Booking
             // 2. Update Booking
             $sql = "UPDATE bookings SET 
                     approval_status = 'rejected',
-                    rejection_reason = :reason
+                    rejection_reason = :reason,
+                    rejected_by = :user_id,
+                    rejected_at = NOW()
                     WHERE id = :id";
 
             $this->pdo->prepare($sql)->execute([
                 'reason' => $reason,
+                'user_id' => $userId,
                 'id' => $id
             ]);
 

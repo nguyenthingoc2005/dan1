@@ -253,10 +253,7 @@ class BookingService
             $errors['service_id'] = 'Vui lòng chọn dịch vụ';
         }
 
-        // Supplier ID required
-        if (empty($data['service_provider_id']) && empty($data['supplier_id'])) {
-            $errors['service_provider_id'] = 'Vui lòng chọn nhà cung cấp';
-        }
+        // Service provider ID is optional (can be null)
 
         // Quantity > 0
         if (isset($data['quantity']) && $data['quantity'] < 1) {
