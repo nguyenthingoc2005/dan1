@@ -72,6 +72,7 @@ if (!is_admin())
                     <th class="px-4 py-3 border-b">Tên Tour</th>
                     <th class="px-4 py-3 border-b">Giá (Người lớn)</th>
                     <th class="px-4 py-3 border-b">Thời gian</th>
+                    <th class="px-4 py-3 border-b">Ngày đi</th>
                     <th class="px-4 py-3 border-b">Trạng thái</th>
                     <th class="px-4 py-3 border-b text-right">Hành động</th>
                 </tr>
@@ -79,7 +80,7 @@ if (!is_admin())
             <tbody class="text-sm">
                 <?php if (empty($tours)): ?>
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">
                             Chưa có tour nào.
                         </td>
                     </tr>
@@ -107,18 +108,47 @@ if (!is_admin())
                             <td class="px-4 py-3 text-gray-600">
                                 <?= $tour['duration_days'] ?>N<?= $tour['duration_nights'] ?>Đ
                             </td>
-                            <td class="px-4 py-3">
-                                <?php if ($tour['status'] == 'active'): ?>
-                                    <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Active</span>
-                                <?php elseif ($tour['status'] == 'draft'): ?>
-                                    <span class="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">Draft</span>
+                            <td class="px-4 py-3 text-gray-600">
+                                <?php if (!empty($tour['next_departure_date'])): ?>
+                                    <div class="font-medium text-blue-600">
+                                        <?= date('d/m/Y', strtotime($tour['next_departure_date'])) ?>
+                                    </div>
+                                    <?php if (!empty($tour['upcoming_schedules_count']) && $tour['upcoming_schedules_count'] > 1): ?>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            +<?= $tour['upcoming_schedules_count'] - 1 ?> lịch khác
+                                        </div>
+                                    <?php endif; ?>
                                 <?php else: ?>
-                                    <span class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">Inactive</span>
+                                    <span class="text-gray-400 italic text-xs">Chưa có lịch</span>
                                 <?php endif; ?>
                             </td>
+                            <td class="px-4 py-3">
+                                <?php
+                                // Hiển thị trạng thái từ cột status (đã gộp approval_status)
+                                switch ($tour['status']) {
+                                    case 'pending':
+                                        echo '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">Chờ duyệt</span>';
+                                        break;
+                                    case 'active':
+                                        echo '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Hoạt động</span>';
+                                        break;
+                                    case 'rejected':
+                                        echo '<span class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">Từ chối</span>';
+                                        break;
+                                    case 'draft':
+                                        echo '<span class="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">Nháp</span>';
+                                        break;
+                                    case 'inactive':
+                                        echo '<span class="px-2 py-1 bg-gray-300 text-gray-800 text-xs rounded-full">Đã ẩn</span>';
+                                        break;
+                                    default:
+                                        echo '<span class="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">' . htmlspecialchars($tour['status']) . '</span>';
+                                }
+                                ?>
+                            </td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <!-- Quick Approve for Draft -->
-                                <?php if ($tour['status'] == 'draft'): ?>
+                                <!-- Quick Approve for Pending tours -->
+                                <?php if ($tour['status'] == 'pending'): ?>
                                     <form method="POST" action="?act=admin&module=tours&action=changeStatus"
                                         class="inline-block mr-2" onsubmit="return confirm('Duyệt tour này?');">
                                         <input type="hidden" name="id" value="<?= $tour['id'] ?>">
@@ -147,7 +177,7 @@ if (!is_admin())
     <?php if ($total_pages > 1): ?>
         <div class="mt-6 flex justify-center gap-2">
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                <a href="?act=admin&module=tours&page=<?= $i ?>&search=<?= $_GET['search'] ?? '' ?>&status=<?= $_GET['status'] ?? '' ?>&approval_status=<?= $_GET['approval_status'] ?? '' ?>&tour_type=<?= $_GET['tour_type'] ?? '' ?>"
+                <a href="?act=admin&module=tours&page=<?= $i ?>&search=<?= $_GET['search'] ?? '' ?>&status=<?= $_GET['status'] ?? '' ?>&tour_type=<?= $_GET['tour_type'] ?? '' ?>"
                     class="px-3 py-1 rounded <?= $i == $current_page ? 'bg-accent text-white' : 'bg-white border hover:bg-gray-100' ?>">
                     <?= $i ?>
                 </a>

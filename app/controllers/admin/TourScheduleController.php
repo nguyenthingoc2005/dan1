@@ -47,11 +47,8 @@ class TourScheduleController
     {
         require_admin();
 
-        // Filter tours: status = 'active' AND approval_status = 'approved'
+        // Filter tours: status = 'active' (đã bao gồm duyệt rồi)
         $tours = $this->tourModel->getAll(['status' => 'active'], 1, 1000)['data'];
-        $tours = array_filter($tours, function ($tour) {
-            return (!isset($tour['approval_status']) || $tour['approval_status'] === 'approved');
-        });
 
         // Get all guides for dropdown
         require_once MODELS_PATH . '/TourAssignment.php';
@@ -87,10 +84,8 @@ class TourScheduleController
                     throw new Exception("Chỉ có thể tạo lịch cho tour đang hoạt động (Active)");
                 }
 
-                // Validate tour approval (nếu cần)
-                if (isset($tour['approval_status']) && $tour['approval_status'] !== 'approved') {
-                    throw new Exception("Tour chưa được duyệt. Vui lòng duyệt tour trước khi tạo lịch");
-                }
+                // Tour phải có status = 'active' (đã được duyệt) để có thể tạo lịch
+                // Đã validate ở trên: status !== 'active'
 
                 // Validate start_date >= today
                 $today = date('Y-m-d');
@@ -436,7 +431,7 @@ class TourScheduleController
             set_error("Lịch khởi hành không tồn tại");
             redirect('?act=admin&module=schedules');
         }
-        
+
         // Debug: Log schedule info
         error_log("=== Schedule Show Debug - ID: $id ===");
         error_log("Schedule - tour_id: " . $schedule['tour_id']);
@@ -447,7 +442,7 @@ class TourScheduleController
         // Bookings are linked to schedule by tour_id + start_date (exact match)
         require_once MODELS_PATH . '/Booking.php';
         $bookingModel = new Booking($this->pdo);
-        
+
         // Get all bookings for this schedule (KHÔNG filter approval_status để xem tất cả)
         // Try both tour_schedule_id (if exists) and tour_id + start_date match
         $sql = "SELECT b.*, 
@@ -460,7 +455,7 @@ class TourScheduleController
                    OR (b.tour_id = :tour_id AND b.start_date = :start_date))
                 ORDER BY b.created_at DESC
                 LIMIT 100";
-        
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
             'schedule_id' => $id,
@@ -468,7 +463,7 @@ class TourScheduleController
             'start_date' => $schedule['start_date']
         ]);
         $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // Calculate actual booked count from SQL (chính xác hơn)
         // Tính tổng số người từ bookings approved/pending/completed (không tính cancelled/rejected)
         // Try both tour_schedule_id and tour_id + start_date
@@ -480,7 +475,7 @@ class TourScheduleController
                      FROM bookings
                      WHERE (tour_schedule_id = :schedule_id 
                         OR (tour_id = :tour_id AND start_date = :start_date))";
-        
+
         $countStmt = $this->pdo->prepare($countSql);
         $countStmt->execute([
             'schedule_id' => $id,
@@ -491,7 +486,7 @@ class TourScheduleController
         $actualBookedCount = (int) ($countResult['active_participants'] ?? 0);
         $approvedBookingsCount = (int) ($countResult['active_booking_count'] ?? 0);
         $totalBookingsCount = (int) ($countResult['booking_count'] ?? 0);
-        
+
         // Debug: Log booking count results
         error_log("=== Schedule Show Debug - ID: $id ===");
         error_log("Schedule - tour_id: " . $schedule['tour_id'] . ", start_date: " . $schedule['start_date']);
@@ -499,7 +494,7 @@ class TourScheduleController
         error_log("Actual booked count (active only): $actualBookedCount");
         error_log("Approved bookings count: $approvedBookingsCount");
         error_log("Total bookings count (all status): " . ($totalBookingsCount ?? 0));
-        
+
         // Debug: Check if there are bookings with different tour_id or start_date
         // Sử dụng placeholder riêng cho mỗi lần sử dụng để tránh lỗi PDO
         $debugSql = "SELECT 
@@ -523,13 +518,13 @@ class TourScheduleController
         error_log("Debug - By tour_id={$schedule['tour_id']} AND start_date={$schedule['start_date']}: " . ($debugResult['by_tour_date'] ?? 0));
         error_log("Debug - By tour_id={$schedule['tour_id']} only: " . ($debugResult['by_tour_only'] ?? 0));
         error_log("Debug - By start_date={$schedule['start_date']} only: " . ($debugResult['by_date_only'] ?? 0));
-        
+
         if (!empty($bookings)) {
             error_log("First booking sample: " . json_encode($bookings[0]));
         } else {
             error_log("No bookings found for schedule ID: $id");
         }
-        
+
         // Update schedule booked count if it's different (sync issue fix)
         if ($schedule['booked'] != $actualBookedCount) {
             $updateSql = "UPDATE tour_schedules SET booked = :booked WHERE id = :id";

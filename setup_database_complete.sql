@@ -35,6 +35,7 @@
 -- 
 -- FIXES (2024-12-XX):
 -- - ✅ Journals: Thêm tour_schedule_id (bắt buộc), booking_id có thể NULL (backward compatible)
+-- - ✅ Tours: Xóa cột approval_status, gộp vào status (draft, pending, active, rejected, inactive)
 -- 
 -- DEPRECATED (giữ lại để backward compatible):
 -- - ⚠️ tours.markup_percentage (default: 0, không dùng nữa)
@@ -292,11 +293,10 @@ CREATE TABLE IF NOT EXISTS `tours` (
   `fixed_cost_other` decimal(15,2) DEFAULT '0.00' COMMENT 'Chi phí khác (cố định)',
   `booking_deadline_days` int DEFAULT '1' COMMENT 'Số ngày tối thiểu trước ngày khởi hành để đặt booking (default: 1 ngày)',
   `tour_type` enum('public','custom') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'public',
-  `approval_status` enum('pending','approved','rejected') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
   `approved_by` int DEFAULT NULL,
   `approved_at` timestamp NULL DEFAULT NULL,
   `rejection_reason` text COLLATE utf8mb4_unicode_ci,
-  `status` enum('active','inactive','draft') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
+  `status` enum('draft','pending','active','rejected','inactive') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
   `created_by` int DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -304,7 +304,6 @@ CREATE TABLE IF NOT EXISTS `tours` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `tour_code` (`tour_code`),
   KEY `approved_by` (`approved_by`),
-  KEY `idx_tours_approval_status` (`approval_status`),
   KEY `idx_tours_status` (`status`),
   KEY `idx_tours_created_by` (`created_by`),
   KEY `parent_tour_id` (`parent_tour_id`),

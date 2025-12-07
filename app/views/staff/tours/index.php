@@ -131,7 +131,7 @@ require_staff_or_admin();
     <?php if ($total_pages > 1): ?>
         <div class="mt-6 flex justify-center gap-2">
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                <a href="?act=staff-tours&page=<?= $i ?>&search=<?= $_GET['search'] ?? '' ?>&status=<?= $_GET['status'] ?? '' ?>&approval_status=<?= $_GET['approval_status'] ?? '' ?>&tour_type=<?= $_GET['tour_type'] ?? '' ?>"
+                <a href="?act=staff-tours&page=<?= $i ?>&search=<?= $_GET['search'] ?? '' ?>&status=<?= $_GET['status'] ?? '' ?>&tour_type=<?= $_GET['tour_type'] ?? '' ?>"
                     class="px-3 py-1 rounded <?= $i == $current_page ? 'bg-accent text-white' : 'bg-white border hover:bg-gray-100' ?>">
                     <?= $i ?>
                 </a>

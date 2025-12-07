@@ -67,8 +67,7 @@ class TourController
 
         if (!empty($_GET['status']))
             $filters['status'] = sanitize($_GET['status']);
-        if (!empty($_GET['approval_status']))
-            $filters['approval_status'] = sanitize($_GET['approval_status']);
+        // Filter by Approval Status - REMOVED: Đã gộp vào status
         if (!empty($_GET['tour_type']))
             $filters['tour_type'] = sanitize($_GET['tour_type']);
         if (!empty($_GET['search']))
@@ -276,7 +275,6 @@ class TourController
                 'fixed_cost_marketing' => $fixed_costs['marketing'],
                 'fixed_cost_other' => $fixed_costs['other'],
                 'tour_type' => $form_data['tour_type'] ?? 'public',
-                'approval_status' => ($form_data['status'] ?? 'draft') == 'pending' ? 'pending' : null,
                 'status' => $status, // Đã validate ở trên
                 'parent_tour_id' => !empty($form_data['parent_tour_id']) ? (int) $form_data['parent_tour_id'] : null,
                 'created_by' => get_user_id() // KEY: Set created_by
@@ -390,7 +388,7 @@ class TourController
         }
 
         // STAFF: Chỉ edit được tour status = draft, rejected, hoặc pending
-        if (!in_array($tour['approval_status'] ?? null, [null, 'draft', 'rejected', 'pending'])) {
+        if (!in_array($tour['status'] ?? 'draft', ['draft', 'rejected', 'pending'])) {
             set_error("Bạn chỉ có thể sửa tour ở trạng thái Nháp, Chờ duyệt hoặc Bị từ chối.");
             redirect('?act=staff-tours');
             return;
@@ -438,7 +436,7 @@ class TourController
             }
 
             // STAFF: Chỉ update được tour draft/rejected/pending
-            if (!in_array($tour['approval_status'] ?? null, [null, 'draft', 'rejected', 'pending'])) {
+            if (!in_array($tour['status'] ?? 'draft', ['draft', 'rejected', 'pending'])) {
                 throw new \Exception('Bạn chỉ có thể sửa tour ở trạng thái Nháp, Chờ duyệt hoặc Bị từ chối.');
             }
 
@@ -497,8 +495,7 @@ class TourController
                 'fixed_cost_marketing' => $fixed_costs['marketing'],
                 'fixed_cost_other' => $fixed_costs['other'],
                 'tour_type' => $_POST['tour_type'] ?? 'public',
-                'status' => $status,
-                'approval_status' => $status == 'pending' ? 'pending' : null
+                'status' => $status
             ];
 
             // Prepare Itinerary Data

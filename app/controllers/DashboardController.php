@@ -37,7 +37,7 @@ class DashboardController
             // ====================================================================
             // STATISTICS QUERIES
             // ====================================================================
-            
+
             // 1. Tổng số bookings
             $sql_total_bookings = "SELECT COUNT(*) as total FROM bookings";
             $stmt = $this->db->prepare($sql_total_bookings);
@@ -114,7 +114,7 @@ class DashboardController
                                             u.full_name as staff_name
                                         FROM tours t
                                         LEFT JOIN users u ON t.created_by = u.id
-                                        WHERE t.approval_status = 'pending'
+                                        WHERE t.status = 'pending'
                                         ORDER BY t.created_at DESC
                                         LIMIT 10";
             $stmt = $this->db->prepare($sql_pending_tours_list);
@@ -135,7 +135,7 @@ class DashboardController
 
         } catch (PDOException $e) {
             error_log("DashboardController::adminDashboard() Error: " . $e->getMessage());
-            
+
             // Fallback to empty data on error
             $stats = [
                 'total_bookings' => 0,

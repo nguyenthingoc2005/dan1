@@ -42,11 +42,7 @@ class Tour
                 $params['status'] = $filters['status'];
             }
 
-            // Filter by Approval Status
-            if (!empty($filters['approval_status'])) {
-                $where_conditions[] = "t.approval_status = :approval_status";
-                $params['approval_status'] = $filters['approval_status'];
-            }
+            // Filter by Approval Status - REMOVED: Đã gộp vào status
 
             // Filter by Tour Type
             if (!empty($filters['tour_type'])) {
@@ -81,7 +77,9 @@ class Tour
 
             $sql = "
                 SELECT t.*,
-                       (SELECT image_url FROM tour_images WHERE tour_id = t.id AND is_primary = 1 LIMIT 1) as thumbnail
+                       (SELECT image_url FROM tour_images WHERE tour_id = t.id AND is_primary = 1 LIMIT 1) as thumbnail,
+                       (SELECT MIN(start_date) FROM tour_schedules WHERE tour_id = t.id AND start_date >= CURDATE() AND status = 'open') as next_departure_date,
+                       (SELECT COUNT(*) FROM tour_schedules WHERE tour_id = t.id AND start_date >= CURDATE() AND status = 'open') as upcoming_schedules_count
                 FROM tours t
                 {$where_clause}
                 ORDER BY t.created_at DESC
@@ -176,7 +174,6 @@ class Tour
                 FROM tours t
                 WHERE t.tour_type = 'public' 
                   AND t.status = 'active'
-                  AND t.approval_status = 'approved'
                 ORDER BY t.name ASC";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
@@ -209,7 +206,7 @@ class Tour
             if ($this->pdo->inTransaction()) {
                 throw new Exception("Already in transaction. Cannot start new transaction.");
             }
-            
+
             $this->pdo->beginTransaction();
 
             // 1. Insert Tours Table - ĐÃ XÓA category_id, price_based_on_pax
@@ -219,14 +216,14 @@ class Tour
                 adult_price, child_price, infant_price, estimated_cost_per_person,
                 deposit_percentage, booking_deadline_days,
                 fixed_cost_guide, fixed_cost_management, fixed_cost_marketing, fixed_cost_other,
-                tour_type, approval_status, status, parent_tour_id, created_by
+                tour_type, status, parent_tour_id, created_by
             ) VALUES (
                 :code, :name, :introduction, :description, :duration_days, :duration_nights,
                 :departure_location, :min_participants, :max_participants,
                 :adult_price, :child_price, :infant_price, :estimated_cost_per_person,
                 :deposit_percentage, :booking_deadline_days,
                 :fixed_cost_guide, :fixed_cost_management, :fixed_cost_marketing, :fixed_cost_other,
-                :tour_type, :approval_status, :status, :parent_tour_id, :created_by
+                :tour_type, :status, :parent_tour_id, :created_by
             )";
 
             $stmt = $this->pdo->prepare($sql);
@@ -251,8 +248,8 @@ class Tour
                 'fixed_cost_marketing' => $data['fixed_cost_marketing'] ?? 0,
                 'fixed_cost_other' => $data['fixed_cost_other'] ?? 0,
                 'tour_type' => $data['tour_type'] ?? 'public',
-                'approval_status' => $data['approval_status'] ?? 'pending',
-                'status' => $data['status'] ?? 'draft',
+                // BUG FIX: Validate status để đảm bảo giá trị hợp lệ
+                'status' => $this->sanitizeTourStatus($data['status'] ?? 'draft'),
                 'parent_tour_id' => $data['parent_tour_id'] ?? null,
                 'created_by' => get_user_id()
             ]);
@@ -290,7 +287,7 @@ class Tour
             if (!$this->pdo->inTransaction()) {
                 throw new Exception("No active transaction before commit");
             }
-            
+
             $this->pdo->commit();
             return $tour_id;
 
@@ -361,7 +358,8 @@ class Tour
                 'fixed_cost_marketing' => $data['fixed_cost_marketing'] ?? 0,
                 'fixed_cost_other' => $data['fixed_cost_other'] ?? 0,
                 'tour_type' => $data['tour_type'] ?? 'public',
-                'status' => $data['status']
+                // BUG FIX: Validate status để đảm bảo giá trị hợp lệ
+                'status' => $this->sanitizeTourStatus($data['status'] ?? 'draft')
             ]);
 
             // 2. Update Itinerary
@@ -585,10 +583,10 @@ class Tour
     {
         require_once MODELS_PATH . '/Policy.php';
         $policyModel = new Policy($this->pdo);
-        
+
         // Check if we're in a transaction - if so, don't let Policy model start its own
         $in_transaction = $this->pdo->inTransaction();
-        
+
         if ($in_transaction) {
             // We're already in a transaction, so we need to manually insert
             // instead of calling assignMultipleToTour which has its own transaction
@@ -683,5 +681,23 @@ class Tour
         // Simple hard delete for now. In real app, check for bookings first.
         $stmt = $this->pdo->prepare("DELETE FROM tours WHERE id = :id");
         return $stmt->execute(['id' => $id]);
+    }
+
+    /**
+     * Sanitize và validate tour status
+     * Chỉ cho phép các giá trị hợp lệ: draft, pending, active, rejected, inactive
+     */
+    private function sanitizeTourStatus($status)
+    {
+        $allowed_statuses = ['draft', 'pending', 'active', 'rejected', 'inactive'];
+        $status = trim(strtolower($status ?? 'draft'));
+
+        if (!in_array($status, $allowed_statuses)) {
+            // Nếu không hợp lệ, trả về 'draft' làm default
+            error_log("Tour::sanitizeTourStatus() - Invalid status: $status, defaulting to 'draft'");
+            return 'draft';
+        }
+
+        return $status;
     }
 }

@@ -1003,6 +1003,14 @@ if (is_array($old_day_services)) {
                         if (savedContent) {
                             editor.setContent(savedContent);
                             console.log(`📝 Restored content for ${textareaId}`);
+                        } else {
+                            // BUG FIX: Nếu không có savedContent (khi validation fail và reload form),
+                            // lấy từ textarea value (đã có oldDay.description từ PHP)
+                            const textareaValue = textarea.value || '';
+                            if (textareaValue.trim()) {
+                                editor.setContent(textareaValue);
+                                console.log(`📝 Restored content from textarea for ${textareaId}`);
+                            }
                         }
                     });
                     editor.on('error', function (e) {

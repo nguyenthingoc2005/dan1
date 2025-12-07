@@ -102,9 +102,26 @@
                             <?php echo format_currency($tour['adult_price']); ?>
                         </td>
                         <td class="px-6 py-4">
+                            <?php
+                            $status = $tour['status'] ?? 'draft';
+                            $statusColors = [
+                                'pending' => 'bg-yellow-100 text-yellow-700',
+                                'active' => 'bg-green-100 text-green-700',
+                                'rejected' => 'bg-red-100 text-red-700',
+                                'draft' => 'bg-gray-200 text-gray-700',
+                                'inactive' => 'bg-gray-300 text-gray-800'
+                            ];
+                            $statusTexts = [
+                                'pending' => 'Chờ duyệt',
+                                'active' => 'Hoạt động',
+                                'rejected' => 'Từ chối',
+                                'draft' => 'Nháp',
+                                'inactive' => 'Đã ẩn'
+                            ];
+                            ?>
                             <span
-                                class="px-3 py-1 rounded-full text-xs font-medium <?php echo get_status_color($tour['approval_status']); ?>">
-                                <?php echo approval_status_text($tour['approval_status']); ?>
+                                class="px-3 py-1 rounded-full text-xs font-medium <?= $statusColors[$status] ?? 'bg-gray-200 text-gray-700' ?>">
+                                <?= $statusTexts[$status] ?? $status ?>
                             </span>
                         </td>
                         <td class="px-6 py-4 text-slate-700 text-sm">

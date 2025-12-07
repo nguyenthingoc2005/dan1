@@ -57,8 +57,7 @@ class TourController
         $filters = [];
         if (!empty($_GET['status']))
             $filters['status'] = sanitize($_GET['status']);
-        if (!empty($_GET['approval_status']))
-            $filters['approval_status'] = sanitize($_GET['approval_status']);
+        // Filter by Approval Status - REMOVED: Đã gộp vào status
         if (!empty($_GET['tour_type']))
             $filters['tour_type'] = sanitize($_GET['tour_type']);
         if (!empty($_GET['search']))
@@ -207,11 +206,21 @@ class TourController
             $session_data = $this->loadTourSession();
 
             // Merge session data vào POST (POST có priority cao hơn)
+            // BUG FIX: Các field quan trọng được lưu qua AJAX (itinerary, itinerary_day_services)
+            // không có trong POST khi submit form, nên cần giữ lại từ session
             $form_data = array_merge($session_data, $_POST);
 
-            // Đảm bảo các field từ POST được ưu tiên
+            // Đảm bảo các field từ POST được ưu tiên (nhưng không ghi đè nếu POST rỗng)
             foreach ($_POST as $key => $value) {
-                $form_data[$key] = $value;
+                // Chỉ ghi đè nếu POST có giá trị thực sự (không phải rỗng, null, hoặc mảng rỗng)
+                if (!empty($value) || (is_array($value) && count($value) > 0)) {
+                    $form_data[$key] = $value;
+                } elseif (in_array($key, ['itinerary', 'itinerary_day_services', 'highlights', 'included', 'excluded', 'policy_ids'])) {
+                    // Các field này được lưu qua AJAX, nếu POST không có thì giữ lại từ session
+                    if (empty($form_data[$key]) && !empty($session_data[$key])) {
+                        $form_data[$key] = $session_data[$key];
+                    }
+                }
             }
 
             // 2. Validation (dùng form_data đã merge, và cần có session_data để validate day services)
@@ -219,7 +228,31 @@ class TourController
 
             if (!empty($errors)) {
                 // Có lỗi: Giữ session, hiển thị lỗi + dữ liệu cũ
+                // BUG FIX: Merge session_data vào old_input để giữ lại dữ liệu từ session
+                // (đặc biệt là itinerary với TinyMCE content và itinerary_day_services)
                 $old_input = $form_data;
+
+                // Ưu tiên lấy dữ liệu từ session cho các field quan trọng (không có trong POST)
+                // Vì các field này được lưu qua AJAX vào session, không phải qua POST form submit
+                if (!empty($session_data['itinerary']) && empty($old_input['itinerary'])) {
+                    $old_input['itinerary'] = $session_data['itinerary'];
+                }
+                if (!empty($session_data['itinerary_day_services']) && empty($old_input['itinerary_day_services'])) {
+                    $old_input['itinerary_day_services'] = $session_data['itinerary_day_services'];
+                }
+                if (!empty($session_data['highlights']) && empty($old_input['highlights'])) {
+                    $old_input['highlights'] = $session_data['highlights'];
+                }
+                if (!empty($session_data['included']) && empty($old_input['included'])) {
+                    $old_input['included'] = $session_data['included'];
+                }
+                if (!empty($session_data['excluded']) && empty($old_input['excluded'])) {
+                    $old_input['excluded'] = $session_data['excluded'];
+                }
+                if (!empty($session_data['policy_ids']) && empty($old_input['policy_ids'])) {
+                    $old_input['policy_ids'] = $session_data['policy_ids'];
+                }
+
                 $destinations = $this->destinationModel->getForDropdown();
                 $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
                 $service_providers = $this->serviceProviderModel->getForDropdown();
@@ -268,8 +301,9 @@ class TourController
                 'fixed_cost_marketing' => $fixed_costs['marketing'],
                 'fixed_cost_other' => $fixed_costs['other'],
                 'tour_type' => $form_data['tour_type'] ?? 'public',
-                'approval_status' => ($form_data['status'] ?? 'draft') == 'pending' ? 'pending' : null,
-                'status' => $form_data['status'] ?? 'draft',
+                // Status: draft, pending, active, rejected, inactive
+                // BUG FIX: Validate và sanitize status để đảm bảo giá trị hợp lệ
+                'status' => $this->sanitizeTourStatus($form_data['status'] ?? 'draft'),
                 'parent_tour_id' => !empty($form_data['parent_tour_id']) ? (int) $form_data['parent_tour_id'] : null
             ];
 
@@ -348,7 +382,31 @@ class TourController
         } catch (Exception $e) {
             error_log("TourController::store() Error: " . $e->getMessage());
             $errors = ['system' => $e->getMessage()];
-            $old_input = $_POST;
+
+            // BUG FIX: Lấy dữ liệu từ session để không mất dữ liệu khi có exception
+            $session_data = $this->loadTourSession();
+            $old_input = array_merge($session_data, $_POST);
+
+            // Đảm bảo các field quan trọng từ session được giữ lại
+            if (!empty($session_data['itinerary'])) {
+                $old_input['itinerary'] = $session_data['itinerary'];
+            }
+            if (!empty($session_data['itinerary_day_services'])) {
+                $old_input['itinerary_day_services'] = $session_data['itinerary_day_services'];
+            }
+            if (!empty($session_data['highlights'])) {
+                $old_input['highlights'] = $session_data['highlights'];
+            }
+            if (!empty($session_data['included'])) {
+                $old_input['included'] = $session_data['included'];
+            }
+            if (!empty($session_data['excluded'])) {
+                $old_input['excluded'] = $session_data['excluded'];
+            }
+            if (!empty($session_data['policy_ids'])) {
+                $old_input['policy_ids'] = $session_data['policy_ids'];
+            }
+
             $destinations = $this->destinationModel->getForDropdown();
             $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
             $service_providers = $this->serviceProviderModel->getForDropdown();
@@ -512,11 +570,29 @@ class TourController
 
         // Validate Status
         $status = $post['status'] ?? 'draft';
-        if (!in_array($status, ['draft', 'pending', 'active'])) {
+        if (!in_array($status, ['draft', 'pending', 'active', 'rejected', 'inactive'])) {
             $errors['status'] = 'Trạng thái không hợp lệ';
         }
 
         return $errors;
+    }
+
+    /**
+     * Sanitize và validate tour status
+     * Chỉ cho phép các giá trị hợp lệ: draft, pending, active, rejected, inactive
+     */
+    private function sanitizeTourStatus($status)
+    {
+        $allowed_statuses = ['draft', 'pending', 'active', 'rejected', 'inactive'];
+        $status = trim(strtolower($status ?? 'draft'));
+
+        if (!in_array($status, $allowed_statuses)) {
+            // Nếu không hợp lệ, trả về 'draft' làm default
+            error_log("Invalid tour status: $status, defaulting to 'draft'");
+            return 'draft';
+        }
+
+        return $status;
     }
 
     /**
@@ -767,10 +843,10 @@ class TourController
                 $services = $this->serviceModel->getAll(['status' => 'active'], 1, 1000)['data'];
                 $service_providers = $this->serviceProviderModel->getForDropdown();
                 $policies = $this->policyModel->getAll(['status' => 'active']);
-                
+
                 // Merge tour data với POST để giữ lại dữ liệu đã nhập
                 $tour = array_merge($tour, $_POST);
-                
+
                 $page_title = 'Sửa Tour: ' . htmlspecialchars($tour['name']);
                 $content_file = VIEWS_PATH . '/admin/tours/edit.php';
                 require VIEWS_PATH . '/layouts/admin_layout.php';
@@ -905,18 +981,19 @@ class TourController
         switch ($action) {
             case 'approve':
                 $data = [
-                    'approval_status' => 'approved',
+                    'status' => 'active',
                     'approved_by' => get_user_id(),
                     'approved_at' => date('Y-m-d H:i:s'),
-                    'status' => 'active'
+                    'rejection_reason' => null  // Xóa lý do từ chối cũ (nếu có)
                 ];
                 $message = 'Đã duyệt tour thành công.';
                 break;
             case 'reject':
                 $data = [
-                    'approval_status' => 'rejected',
+                    'status' => 'rejected',
                     'rejection_reason' => $_POST['reason'] ?? '',
-                    'status' => 'draft'
+                    'approved_by' => null,  // Xóa thông tin duyệt cũ
+                    'approved_at' => null
                 ];
                 $message = 'Đã từ chối tour.';
                 break;

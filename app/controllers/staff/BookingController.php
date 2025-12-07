@@ -63,8 +63,8 @@ class BookingController
 
     public function create()
     {
-        // Get active approved tours
-        $tours = $this->tourModel->getAll(['status' => 'active', 'approval_status' => 'approved'])['data'] ?? [];
+        // Get active tours (status = 'active' đã bao gồm duyệt rồi)
+        $tours = $this->tourModel->getAll(['status' => 'active'])['data'] ?? [];
 
         // Get customers
         $customers = $this->customerModel->getAll([], 1, 1000)['data'] ?? [];
@@ -90,7 +90,7 @@ class BookingController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Verify CSRF token
             require_csrf_token();
-            
+
             try {
                 // Handle Customer (New vs Existing)
                 $customer_id = $_POST['customer_id'] ?? null;
@@ -178,18 +178,21 @@ class BookingController
                     $passenger_adult_count = 0;
                     $passenger_child_count = 0;
                     $passenger_infant_count = 0;
-                    
+
                     foreach ($_POST['passenger_types'] as $age_type) {
-                        if ($age_type === 'adult') $passenger_adult_count++;
-                        elseif ($age_type === 'child') $passenger_child_count++;
-                        elseif ($age_type === 'infant') $passenger_infant_count++;
+                        if ($age_type === 'adult')
+                            $passenger_adult_count++;
+                        elseif ($age_type === 'child')
+                            $passenger_child_count++;
+                        elseif ($age_type === 'infant')
+                            $passenger_infant_count++;
                     }
-                    
+
                     // Primary customer được tính là adult (mặc định)
                     $total_adult_expected = 1 + $passenger_adult_count;
                     $total_child_expected = $passenger_child_count;
                     $total_infant_expected = $passenger_infant_count;
-                    
+
                     if ($total_adult_expected != $adult || $total_child_expected != $child || $total_infant_expected != $infant) {
                         throw new \Exception("Số lượng loại hành khách không khớp. Đã nhập: $adult người lớn, $child trẻ em, $infant em bé. Nhưng trong danh sách có: $total_adult_expected người lớn, $total_child_expected trẻ em, $total_infant_expected em bé.");
                     }
@@ -210,8 +213,9 @@ class BookingController
                     throw new \Exception("Tour không đang hoạt động. Không thể tạo booking.");
                 }
 
-                if (isset($tour['approval_status']) && $tour['approval_status'] !== 'approved') {
-                    throw new \Exception("Tour chưa được duyệt. Không thể tạo booking.");
+                // Tour phải có status = 'active' (đã được duyệt) để có thể booking
+                if ($tour['status'] !== 'active') {
+                    throw new \Exception("Tour chưa được duyệt hoặc không đang hoạt động. Không thể tạo booking.");
                 }
 
                 $totalParticipants = $adult + $child + $infant;
@@ -275,11 +279,11 @@ class BookingController
                             // Check max_participants before increasing quota
                             $maxParticipants = (int) ($tour['max_participants'] ?? 999);
                             $new_quota = $schedule['booked'] + $totalParticipants;
-                            
+
                             if ($new_quota > $maxParticipants) {
                                 throw new \Exception("Số lượng người tham gia ($totalParticipants) vượt quá giới hạn tối đa của tour ($maxParticipants người).");
                             }
-                            
+
                             $stmt = $this->pdo->prepare("UPDATE tour_schedules SET quota = :quota WHERE id = :id");
                             $stmt->execute(['quota' => $new_quota, 'id' => $schedule_id]);
                             $schedule['quota'] = $new_quota;
@@ -336,7 +340,7 @@ class BookingController
 
                 // Start transaction to ensure atomicity
                 $this->pdo->beginTransaction();
-                
+
                 try {
                     $data = [
                         'tour_id' => $_POST['tour_id'],
@@ -486,7 +490,7 @@ class BookingController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Verify CSRF token
             require_csrf_token();
-            
+
             try {
                 require_once MODELS_PATH . '/Payment.php';
                 $paymentModel = new \Payment($this->pdo);
@@ -526,7 +530,7 @@ class BookingController
 
                 // Start transaction
                 $this->pdo->beginTransaction();
-                
+
                 try {
                     $data = [
                         'booking_id' => $bookingId,
@@ -541,10 +545,10 @@ class BookingController
                     ];
 
                     $payment_id = $paymentModel->create($data);
-                    
+
                     // Update booking payment status
                     $this->bookingModel->updatePaymentStatus($bookingId);
-                    
+
                     // Log payment action
                     $this->bookingModel->logHistory($bookingId, 'payment', $booking['approval_status'], get_user_id(), "Thanh toán: " . number_format($amount, 0, ',', '.') . " đ");
 
@@ -612,9 +616,9 @@ class BookingController
                 $phone = $row['phone'] ?? '';
                 if (!empty($phone)) {
                     $phone = preg_replace('/[\s\-\(\)]/', '', $phone);
-                    
+
                     if (is_numeric($phone)) {
-                        $phone = (string)$phone;
+                        $phone = (string) $phone;
                         if (strpos($phone, '84') === 0 && strlen($phone) == 11) {
                             $phone = '0' . substr($phone, 2);
                         } elseif (strlen($phone) == 9 && substr($phone, 0, 1) != '0') {
@@ -622,7 +626,7 @@ class BookingController
                         }
                     }
                 }
-                
+
                 $passenger = [
                     'name' => $row['full_name'] ?? '',
                     'phone' => $phone,
@@ -719,16 +723,16 @@ class BookingController
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_csrf_token();
-            
+
             try {
                 require_once MODELS_PATH . '/BookingService.php';
                 require_once MODELS_PATH . '/Service.php';
                 $bookingServiceModel = new \BookingService($this->pdo);
                 $serviceModel = new \Service($this->pdo);
 
-                $booking_id = (int)($_POST['booking_id'] ?? 0);
-                $service_id = (int)($_POST['service_id'] ?? 0);
-                $service_provider_id = !empty($_POST['service_provider_id']) ? (int)$_POST['service_provider_id'] : null;
+                $booking_id = (int) ($_POST['booking_id'] ?? 0);
+                $service_id = (int) ($_POST['service_id'] ?? 0);
+                $service_provider_id = !empty($_POST['service_provider_id']) ? (int) $_POST['service_provider_id'] : null;
 
                 if (!$booking_id || !$service_id) {
                     throw new \Exception("Thiếu thông tin bắt buộc.");
@@ -763,8 +767,8 @@ class BookingController
                     $service_provider_id = $service['service_provider_id'];
                 }
 
-                $quantity = (int)($_POST['quantity'] ?? 1);
-                $unit_price = (float)($_POST['unit_price'] ?? 0);
+                $quantity = (int) ($_POST['quantity'] ?? 1);
+                $unit_price = (float) ($_POST['unit_price'] ?? 0);
                 $total_price = $quantity * $unit_price;
 
                 if ($quantity <= 0) {
@@ -807,13 +811,13 @@ class BookingController
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_csrf_token();
-            
+
             try {
                 require_once MODELS_PATH . '/BookingService.php';
                 $bookingServiceModel = new \BookingService($this->pdo);
 
-                $id = (int)($_POST['id'] ?? 0);
-                $booking_id = (int)($_POST['booking_id'] ?? 0);
+                $id = (int) ($_POST['id'] ?? 0);
+                $booking_id = (int) ($_POST['booking_id'] ?? 0);
 
                 if (!$id || !$booking_id) {
                     throw new \Exception("Thiếu thông tin.");
@@ -866,10 +870,10 @@ class BookingController
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_csrf_token();
-            
+
             try {
-                $booking_id = (int)($_POST['booking_id'] ?? 0);
-                $customer_id = (int)($_POST['customer_id'] ?? 0);
+                $booking_id = (int) ($_POST['booking_id'] ?? 0);
+                $customer_id = (int) ($_POST['customer_id'] ?? 0);
                 $age_type = $_POST['age_type'] ?? 'adult';
                 $is_primary = isset($_POST['is_primary']) ? 1 : 0;
 
@@ -955,8 +959,13 @@ class BookingController
                 ]);
 
                 // Log history
-                $this->bookingModel->logHistory($booking_id, $booking['approval_status'], $booking['approval_status'], 
-                    get_user_id(), "Thêm khách hàng vào booking");
+                $this->bookingModel->logHistory(
+                    $booking_id,
+                    $booking['approval_status'],
+                    $booking['approval_status'],
+                    get_user_id(),
+                    "Thêm khách hàng vào booking"
+                );
 
                 set_success("Đã thêm khách hàng vào booking!");
                 redirect("?act=staff-bookings&action=show&id=$booking_id");
@@ -975,14 +984,14 @@ class BookingController
     {
         $today = date('Y-m-d');
         $start_date = $booking['start_date'] ?? null;
-        
+
         if (!$start_date) {
             throw new \Exception("Booking không có ngày khởi hành");
         }
 
         $tour = $this->tourModel->findById($booking['tour_id']);
         $deadline_days = (int) ($tour['booking_deadline_days'] ?? 1);
-        
+
         $daysUntilStart = (strtotime($start_date) - strtotime($today)) / (60 * 60 * 24);
         if ($daysUntilStart < $deadline_days) {
             throw new \Exception("{$actionMessage}. Booking này khởi hành trong vòng {$deadline_days} ngày hoặc đã khởi hành. Vui lòng liên hệ admin để xử lý.");
