@@ -66,28 +66,32 @@ if (is_array($old_day_services)) {
 ?>
 
 <div class="max-w-6xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
+    <!-- Header - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-primary">
+            <h1 class="text-xl lg:text-2xl font-bold text-primary-700">
                 <?= $is_from_template ? 'Tạo Tour Custom từ Template' : 'Thêm Tour mới' ?>
             </h1>
             <?php if (!empty($template_info) && is_array($template_info)): ?>
-                <p class="text-sm text-gray-600 mt-1">
+                <p class="text-xs lg:text-sm text-primary-500 mt-1">
                     Template: <?= htmlspecialchars($template_info['name'] ?? 'N/A') ?>
                     (<?= htmlspecialchars($template_info['code'] ?? 'N/A') ?>)
                 </p>
             <?php endif; ?>
         </div>
-        <a href="?act=staff-tours" class="text-gray-500 hover:text-gray-700">
-            <i class="fas fa-arrow-left mr-2"></i>Quay lại danh sách
+        <a href="?act=staff-tours"
+            class="text-primary-500 hover:text-primary-700 font-semibold text-sm lg:text-base flex items-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            Quay lại danh sách
         </a>
     </div>
 
-    <!-- ERROR ALERT -->
+    <!-- ERROR ALERT - Responsive -->
     <?php if (!empty($errs)): ?>
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
-            <strong class="font-bold">Có lỗi xảy ra!</strong>
-            <ul class="mt-2 list-disc list-inside text-sm">
+        <div class="bg-danger-bg border border-danger text-danger-text px-4 lg:px-6 py-3 lg:py-4 rounded-2xl relative mb-4 lg:mb-6"
+            role="alert">
+            <strong class="font-bold text-sm lg:text-base">Có lỗi xảy ra!</strong>
+            <ul class="mt-2 list-disc list-inside text-xs lg:text-sm">
                 <?php foreach ($errs as $key => $msg): ?>
                     <li><?= htmlspecialchars(is_array($msg) ? implode(', ', $msg) : $msg) ?></li>
                 <?php endforeach; ?>
@@ -96,7 +100,7 @@ if (is_array($old_day_services)) {
     <?php endif; ?>
 
     <form id="tourForm" method="POST" action="?act=staff-tours&action=store" enctype="multipart/form-data"
-        class="bg-white rounded-lg shadow-sm overflow-hidden">
+        class="bg-panel rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
 
         <!-- Hidden fields -->
         <input type="hidden" name="tour_type" value="<?= htmlspecialchars($old['tour_type'] ?? 'public') ?>">
@@ -104,126 +108,138 @@ if (is_array($old_day_services)) {
             <input type="hidden" name="parent_tour_id" value="<?= (int) $old['parent_tour_id'] ?>">
         <?php endif; ?>
 
-        <!-- WIZARD STEPS (6 steps) -->
-        <div class="flex border-b bg-gray-50 overflow-x-auto">
-            <div class="step-indicator px-4 py-3 text-sm font-medium text-accent border-b-2 border-accent flex-1 text-center whitespace-nowrap"
+        <!-- WIZARD STEPS (6 steps) - Responsive -->
+        <div class="flex border-b border-primary-100 bg-primary-50 overflow-x-auto">
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-accent border-b-2 border-accent flex-1 text-center whitespace-nowrap min-w-[100px]"
                 data-step="1">
                 1. Thông tin chung
             </div>
-            <div class="step-indicator px-4 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent flex-1 text-center whitespace-nowrap"
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px]"
                 data-step="2">
                 2. Lịch trình
             </div>
-            <div class="step-indicator px-4 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent flex-1 text-center whitespace-nowrap"
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px]"
                 data-step="3">
                 3. Bao gồm
             </div>
-            <div class="step-indicator px-4 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent flex-1 text-center whitespace-nowrap"
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px]"
                 data-step="4">
                 4. Chính sách
             </div>
-            <div class="step-indicator px-4 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent flex-1 text-center whitespace-nowrap"
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px]"
                 data-step="5">
                 5. Hình ảnh
             </div>
-            <div class="step-indicator px-4 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent flex-1 text-center whitespace-nowrap"
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px]"
                 data-step="6">
                 6. Giá & Lưu
             </div>
         </div>
 
-        <!-- STEPS CONTENT -->
-        <div class="p-6">
+        <!-- STEPS CONTENT - Responsive -->
+        <div class="p-4 lg:p-6">
 
             <!-- ============================================================
                  STEP 1: THÔNG TIN CHUNG
                  ============================================================ -->
             <div id="step-1" class="step-content block">
-                <h2 class="text-xl font-bold text-gray-800 mb-6">Thông tin chung</h2>
+                <h2 class="text-lg lg:text-xl font-bold text-primary-700 mb-4 lg:mb-6">Thông tin chung</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5">
                     <!-- Tên Tour -->
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Tên Tour <span class="text-red-500">*</span>
+                    <div class="lg:col-span-2">
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                            Tên Tour <span class="text-danger">*</span>
                         </label>
                         <input type="text" name="name" id="name" value="<?= htmlspecialchars($old['name'] ?? '') ?>"
                             required
-                            class="w-full px-3 py-2 border rounded focus:border-accent <?= isset($errs['name']) ? 'border-red-500' : '' ?>"
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base <?= isset($errs['name']) ? 'border-danger' : '' ?>"
                             placeholder="VD: Tour Đà Lạt 3 ngày 2 đêm">
                         <?php if (isset($errs['name'])): ?>
-                            <p class="text-red-500 text-xs mt-1"><?= htmlspecialchars($errs['name']) ?></p>
+                            <p class="text-danger text-xs mt-1"><?= htmlspecialchars($errs['name']) ?></p>
                         <?php endif; ?>
                     </div>
 
                     <!-- Điểm khởi hành -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Điểm khởi hành</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Điểm khởi
+                            hành</label>
                         <input type="text" name="departure_location"
                             value="<?= htmlspecialchars($old['departure_location'] ?? '') ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent"
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                             placeholder="VD: TP. Hồ Chí Minh">
                     </div>
 
                     <!-- Số ngày -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Số ngày <span class="text-red-500">*</span>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                            Số ngày <span class="text-danger">*</span>
                         </label>
                         <input type="number" name="duration_days" id="duration_days" min="1"
                             value="<?= $old['duration_days'] ?? '3' ?>" required
-                            class="w-full px-3 py-2 border rounded focus:border-accent font-bold text-accent"
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 font-bold text-accent text-sm lg:text-base"
                             onchange="generateItineraryDays()">
                     </div>
 
                     <!-- Số đêm -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Số đêm</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số
+                            đêm</label>
                         <input type="number" name="duration_nights" id="duration_nights" min="0"
                             value="<?= $old['duration_nights'] ?? '2' ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
                     </div>
                 </div>
 
                 <!-- Giới thiệu ngắn -->
-                <div class="mt-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Giới thiệu ngắn</label>
-                    <textarea name="introduction" rows="3" class="w-full px-3 py-2 border rounded focus:border-accent"
+                <div class="mt-4 lg:mt-5">
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Giới thiệu
+                        ngắn</label>
+                    <textarea name="introduction" rows="3"
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                         placeholder="Mô tả ngắn gọn về tour (sẽ hiển thị ở danh sách)..."><?= htmlspecialchars($old['introduction'] ?? '') ?></textarea>
                 </div>
 
                 <!-- Mô tả chi tiết -->
-                <div class="mt-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
+                <div class="mt-4 lg:mt-5">
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Mô tả chi
+                        tiết</label>
                     <textarea name="description" id="description" rows="6"
-                        class="w-full px-3 py-2 border rounded focus:border-accent"
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                         placeholder="Mô tả chi tiết về tour..."><?= htmlspecialchars($old['description'] ?? '') ?></textarea>
-                    <p class="text-xs text-gray-500 mt-1">Bạn có thể sử dụng HTML hoặc rich text editor</p>
+                    <p class="text-xs text-primary-500 mt-1">Bạn có thể sử dụng HTML hoặc rich text editor</p>
                 </div>
 
                 <!-- Số người & Booking Deadline -->
-                <div class="mt-5 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 class="font-medium text-blue-800 mb-3">📊 Thông tin số lượng khách</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div class="mt-4 lg:mt-5 p-4 lg:p-5 bg-info-bg rounded-2xl border border-info">
+                    <h4 class="font-semibold text-info-text mb-3 text-sm lg:text-base flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4"></i>
+                        Thông tin số lượng khách
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Số người tối thiểu</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số người
+                                tối thiểu</label>
                             <input type="number" name="min_participants" id="min_participants" min="1"
                                 value="<?= $old['min_participants'] ?? '15' ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent text-center"
+                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base"
                                 onchange="updatePricing(); updateMinParticipantsDisplay();">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Số người tối đa</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số người
+                                tối đa</label>
                             <input type="number" name="max_participants" min="1"
                                 value="<?= $old['max_participants'] ?? '45' ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent text-center">
+                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Deadline đặt tour (ngày)</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Deadline
+                                đặt tour (ngày)</label>
                             <input type="number" name="booking_deadline_days" min="1"
                                 value="<?= $old['booking_deadline_days'] ?? '1' ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent text-center" placeholder="1">
-                            <p class="text-xs text-gray-500 mt-1">Trước ngày khởi hành</p>
+                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base"
+                                placeholder="1">
+                            <p class="text-xs text-primary-500 mt-1">Trước ngày khởi hành</p>
                         </div>
                     </div>
                 </div>
@@ -233,11 +249,13 @@ if (is_array($old_day_services)) {
                  STEP 2: LỊCH TRÌNH (Timeline và Dịch vụ ngay dưới mỗi ngày)
                  ============================================================ -->
             <div id="step-2" class="step-content hidden">
-                <h2 class="text-xl font-bold text-gray-800 mb-6">Lịch trình</h2>
+                <h2 class="text-lg lg:text-xl font-bold text-primary-700 mb-4 lg:mb-6">Lịch trình</h2>
 
-                <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded mb-4 text-sm">
-                    ℹ️ Lịch trình được tạo tự động dựa trên số ngày bạn nhập ở Bước 1.
-                    Mỗi ngày có thể quản lý Timeline chi tiết và Dịch vụ ngay bên dưới.
+                <div
+                    class="bg-info-bg border border-info text-info-text px-4 lg:px-5 py-3 lg:py-4 rounded-2xl mb-4 lg:mb-6 text-xs lg:text-sm flex items-start gap-2">
+                    <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+                    <span>Lịch trình được tạo tự động dựa trên số ngày bạn nhập ở Bước 1. Mỗi ngày có thể quản lý
+                        Timeline chi tiết và Dịch vụ ngay bên dưới.</span>
                 </div>
 
                 <div id="itinerary-overview-container" class="space-y-4">
@@ -249,9 +267,9 @@ if (is_array($old_day_services)) {
                  STEP 3: BAO GỒM/KHÔNG BAO GỒM
                  ============================================================ -->
             <div id="step-3" class="step-content hidden">
-                <h2 class="text-xl font-bold text-gray-800 mb-6">Bao gồm / Không bao gồm</h2>
+                <h2 class="text-lg lg:text-xl font-bold text-primary-700 mb-4 lg:mb-6">Bao gồm / Không bao gồm</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                     <!-- Điểm nổi bật -->
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -264,39 +282,53 @@ if (is_array($old_day_services)) {
                     </div>
 
                     <!-- Bao gồm -->
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="bg-success-bg border border-success rounded-2xl p-4 lg:p-5">
                         <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-bold text-green-800">✅ Giá tour BAO GỒM</h3>
+                            <h3 class="font-bold text-success-text text-sm lg:text-base flex items-center gap-2">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                Giá tour BAO GỒM
+                            </h3>
                             <button type="button" onclick="addIncludedItem()"
-                                class="text-sm text-green-600 hover:underline">
-                                <i class="fas fa-plus mr-1"></i>Thêm
+                                class="text-xs lg:text-sm text-success-text hover:text-success font-semibold flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3 h-3"></i>
+                                Thêm
                             </button>
                         </div>
                         <div id="included-container" class="space-y-2">
                             <!-- Dynamic items -->
                         </div>
-                        <p class="text-xs text-green-600 mt-3">💡 Các dịch vụ/tiện ích đã tính trong giá tour</p>
+                        <p class="text-xs text-success-text mt-3 flex items-center gap-1">
+                            <i data-lucide="lightbulb" class="w-3 h-3"></i>
+                            Các dịch vụ/tiện ích đã tính trong giá tour
+                        </p>
                     </div>
 
                     <!-- Không bao gồm -->
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="bg-danger-bg border border-danger rounded-2xl p-4 lg:p-5">
                         <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-bold text-red-800">❌ Giá tour KHÔNG BAO GỒM</h3>
+                            <h3 class="font-bold text-danger-text text-sm lg:text-base flex items-center gap-2">
+                                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                Giá tour KHÔNG BAO GỒM
+                            </h3>
                             <button type="button" onclick="addExcludedItem()"
-                                class="text-sm text-red-600 hover:underline">
-                                <i class="fas fa-plus mr-1"></i>Thêm
+                                class="text-xs lg:text-sm text-danger-text hover:text-danger font-semibold flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3 h-3"></i>
+                                Thêm
                             </button>
                         </div>
                         <div id="excluded-container" class="space-y-2">
                             <!-- Dynamic items -->
                         </div>
-                        <p class="text-xs text-red-600 mt-3">💡 Chi phí khách tự chi trả thêm</p>
+                        <p class="text-xs text-danger-text mt-3 flex items-center gap-1">
+                            <i data-lucide="lightbulb" class="w-3 h-3"></i>
+                            Chi phí khách tự chi trả thêm
+                        </p>
                     </div>
                 </div>
 
                 <!-- Quick Templates -->
-                <div class="mt-4 p-3 bg-gray-50 rounded-lg">
-                    <span class="text-sm text-gray-600 mr-2">Mẫu nhanh:</span>
+                <div class="mt-4 p-3 lg:p-4 bg-primary-50 rounded-2xl border border-primary-100">
+                    <span class="text-xs lg:text-sm text-primary-700 mr-2 font-semibold">Mẫu nhanh:</span>
                     <button type="button" onclick="applyTemplate('domestic')"
                         class="text-sm text-accent hover:underline mr-3">
                         Tour trong nước
@@ -312,7 +344,7 @@ if (is_array($old_day_services)) {
                  STEP 4: CHÍNH SÁCH
                  ============================================================ -->
             <div id="step-4" class="step-content hidden">
-                <h2 class="text-xl font-bold text-gray-800 mb-6">Chọn chính sách</h2>
+                <h2 class="text-lg lg:text-xl font-bold text-primary-700 mb-4 lg:mb-6">Chọn chính sách</h2>
 
                 <?php
                 // Include Policy Selector Component
@@ -324,7 +356,7 @@ if (is_array($old_day_services)) {
                  STEP 5: HÌNH ẢNH
                  ============================================================ -->
             <div id="step-5" class="step-content hidden">
-                <h2 class="text-xl font-bold text-gray-800 mb-6">Hình ảnh Tour</h2>
+                <h2 class="text-lg lg:text-xl font-bold text-primary-700 mb-4 lg:mb-6">Hình ảnh Tour</h2>
 
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -355,7 +387,7 @@ if (is_array($old_day_services)) {
                  STEP 6: GIÁ & LƯU
                  ============================================================ -->
             <div id="step-6" class="step-content hidden">
-                <h2 class="text-xl font-bold text-gray-800 mb-6">Giá Tour & Lưu</h2>
+                <h2 class="text-lg lg:text-xl font-bold text-primary-700 mb-4 lg:mb-6">Giá Tour & Lưu</h2>
 
                 <!-- Pricing Breakdown -->
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
@@ -519,26 +551,31 @@ if (is_array($old_day_services)) {
 
         </div>
 
-        <!-- FOOTER ACTIONS -->
-        <div class="bg-gray-50 px-6 py-4 flex justify-between border-t">
+        <!-- FOOTER ACTIONS - Responsive -->
+        <div
+            class="bg-primary-50 px-4 lg:px-6 py-3 lg:py-4 flex flex-col sm:flex-row justify-between gap-3 border-t border-primary-100">
             <button type="button" id="prevBtn"
-                class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 hidden"
+                class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base hidden flex items-center justify-center gap-2"
                 onclick="changeStep(-1)">
-                <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Quay lại
             </button>
-            <div class="flex gap-2">
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <a href="?act=staff-tours"
-                    class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
+                    class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base text-center">
                     Hủy
                 </a>
                 <button type="button" id="nextBtn"
-                    class="px-6 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow" onclick="changeStep(1)">
-                    Tiếp theo <i class="fas fa-arrow-right ml-2"></i>
+                    class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2"
+                    onclick="changeStep(1)">
+                    Tiếp theo
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
                 <button type="submit" id="submitBtn" form="tourForm"
-                    class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 shadow hidden"
+                    class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-success hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base hidden flex items-center justify-center gap-2"
                     onclick="console.log('🔵 Button onclick triggered!'); return true;">
-                    <i class="fas fa-save mr-2"></i>Hoàn tất & Lưu
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    Hoàn tất & Lưu
                 </button>
             </div>
         </div>

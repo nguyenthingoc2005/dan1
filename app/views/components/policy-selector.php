@@ -38,23 +38,26 @@ $policy_type_names = [
 ?>
 
 <div class="policy-selector">
-    <div class="mb-4 flex justify-between items-center">
-        <h4 class="text-lg font-semibold text-gray-800">Chọn chính sách</h4>
+    <div class="mb-4 lg:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h4 class="text-base lg:text-lg font-bold text-primary-700">Chọn chính sách</h4>
         <button type="button" onclick="openCreatePolicyModal()"
-            class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm">
-            <i class="fas fa-plus mr-2"></i>Thêm chính sách mới
+            class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Thêm chính sách mới
         </button>
     </div>
 
     <!-- Selected Policies -->
-    <div id="selected-policies-list" class="mb-6">
+    <div id="selected-policies-list" class="mb-4 lg:mb-6">
         <?php if (empty($selected_policy_ids)): ?>
-            <div class="text-gray-500 text-center py-4 bg-gray-50 rounded-lg border-2 border-dashed">
-                <i class="fas fa-file-contract text-2xl mb-2"></i>
-                <p class="text-sm">Chưa chọn chính sách nào</p>
+            <div class="text-primary-500 text-center py-6 lg:py-8 bg-primary-50 rounded-2xl border-2 border-dashed border-primary-200">
+                <div class="flex justify-center mb-2 lg:mb-3">
+                    <i data-lucide="file-text" class="w-8 h-8 lg:w-12 lg:h-12 text-primary-300"></i>
+                </div>
+                <p class="text-xs lg:text-sm text-primary-600">Chưa chọn chính sách nào</p>
             </div>
         <?php else: ?>
-            <div class="space-y-2">
+            <div class="space-y-2 lg:space-y-3">
                 <?php foreach ($selected_policy_ids as $policy_id): ?>
                     <?php
                     $policy = null;
@@ -67,15 +70,15 @@ $policy_type_names = [
                     if ($policy):
                         ?>
                         <div
-                            class="selected-policy-item bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                            class="selected-policy-item bg-success-bg border border-success rounded-xl p-3 lg:p-4 flex items-center justify-between">
                             <div>
-                                <span class="font-medium text-green-900"><?= htmlspecialchars($policy['name']) ?></span>
-                                <span class="text-sm text-green-700 ml-2">
+                                <span class="font-semibold text-success-dark text-sm lg:text-base"><?= htmlspecialchars($policy['name']) ?></span>
+                                <span class="text-xs lg:text-sm text-success-text ml-2">
                                     (<?= $policy_type_names[$policy['policy_type'] ?? 'other'] ?? 'Khác' ?>)
                                 </span>
                             </div>
-                            <button type="button" onclick="removePolicy(<?= $policy_id ?>)" class="text-red-500 hover:text-red-700">
-                                <i class="fas fa-times"></i>
+                            <button type="button" onclick="removePolicy(<?= $policy_id ?>)" class="text-danger hover:text-danger-dark flex items-center justify-center w-6 h-6 lg:w-8 lg:h-8 rounded-lg hover:bg-danger-bg transition-colors">
+                                <i data-lucide="x" class="w-4 h-4"></i>
                             </button>
                             <input type="hidden" name="policy_ids[]" value="<?= $policy_id ?>">
                         </div>
@@ -86,35 +89,36 @@ $policy_type_names = [
     </div>
 
     <!-- Available Policies by Type -->
-    <div class="space-y-6">
+    <div class="space-y-4 lg:space-y-6">
         <?php foreach ($policies_by_type as $type => $type_policies): ?>
             <div class="policy-type-group">
-                <h5 class="font-semibold text-gray-700 mb-3">
+                <h5 class="font-bold text-primary-700 mb-3 text-sm lg:text-base">
                     <?= $policy_type_names[$type] ?? 'Chính sách khác' ?>
                 </h5>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4">
                     <?php foreach ($type_policies as $policy): ?>
                         <?php $is_selected = in_array($policy['id'], $selected_policy_ids); ?>
                         <div
-                            class="policy-card border rounded-lg p-4 <?= $is_selected ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200 hover:border-blue-300' ?> transition-colors">
+                            class="policy-card border rounded-xl p-3 lg:p-4 <?= $is_selected ? 'bg-accent-100 border-accent shadow-sm' : 'bg-panel border-primary-100 hover:border-accent' ?> transition-all">
                             <div class="flex items-start gap-3">
                                 <input type="checkbox" id="policy-<?= $policy['id'] ?>" value="<?= $policy['id'] ?>"
                                     <?= $is_selected ? 'checked' : '' ?>
                                     onchange="togglePolicy(this, <?= $policy['id'] ?>, '<?= htmlspecialchars($policy['name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($policy_type_names[$type] ?? 'Khác', ENT_QUOTES) ?>')"
-                                    class="mt-1 w-5 h-5 text-blue-600 rounded">
+                                    class="mt-1 w-4 h-4 lg:w-5 lg:h-5 text-accent rounded focus:ring-2 focus:ring-accent">
                                 <div class="flex-1">
                                     <label for="policy-<?= $policy['id'] ?>" class="cursor-pointer">
-                                        <div class="font-medium text-gray-800"><?= htmlspecialchars($policy['name']) ?></div>
+                                        <div class="font-semibold text-primary-700 text-sm lg:text-base"><?= htmlspecialchars($policy['name']) ?></div>
                                         <?php if (!empty($policy['description'])): ?>
-                                            <div class="text-sm text-gray-600 mt-1"><?= htmlspecialchars($policy['description']) ?>
+                                            <div class="text-xs lg:text-sm text-primary-600 mt-1"><?= htmlspecialchars($policy['description']) ?>
                                             </div>
                                         <?php endif; ?>
                                     </label>
 
                                     <button type="button" onclick="previewPolicy(<?= $policy['id'] ?>)"
-                                        class="mt-2 text-sm text-blue-600 hover:text-blue-800">
-                                        <i class="fas fa-eye mr-1"></i>Xem chi tiết
+                                        class="mt-2 text-xs lg:text-sm text-accent hover:text-accent-dark font-semibold flex items-center gap-1">
+                                        <i data-lucide="eye" class="w-3 h-3 lg:w-4 lg:h-4"></i>
+                                        Xem chi tiết
                                     </button>
                                 </div>
                             </div>
@@ -127,25 +131,25 @@ $policy_type_names = [
 </div>
 
 <!-- Create Policy Modal -->
-<div id="create-policy-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="p-6 border-b">
-            <h3 class="text-lg font-bold text-gray-800">Thêm chính sách mới</h3>
+<div id="create-policy-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-panel rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-primary-100">
+        <div class="p-4 lg:p-6 border-b border-primary-100 bg-primary-50 rounded-t-2xl">
+            <h3 class="text-base lg:text-lg font-bold text-primary-700">Thêm chính sách mới</h3>
         </div>
 
-        <form id="create-policy-form" class="p-6" onsubmit="saveNewPolicy(event); return false;">
-            <div class="space-y-4">
+        <form id="create-policy-form" class="p-4 lg:p-6" onsubmit="saveNewPolicy(event); return false;">
+            <div class="space-y-3 lg:space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tên chính sách <span
-                            class="text-red-500">*</span></label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Tên chính sách <span
+                            class="text-danger">*</span></label>
                     <input type="text" id="new-policy-name"
-                        class="w-full px-3 py-2 border rounded focus:border-purple-500"
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"
                         placeholder="VD: Chính sách hủy tour 7 ngày">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Loại chính sách</label>
-                    <select id="new-policy-type" class="w-full px-3 py-2 border rounded focus:border-purple-500">
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Loại chính sách</label>
+                    <select id="new-policy-type" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
                         <option value="">-- Chọn loại --</option>
                         <option value="cancellation">Chính sách hủy tour</option>
                         <option value="change">Chính sách đổi tour</option>
@@ -156,28 +160,28 @@ $policy_type_names = [
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Mô tả</label>
                     <textarea id="new-policy-description" rows="2"
-                        class="w-full px-3 py-2 border rounded focus:border-purple-500"
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"
                         placeholder="Mô tả ngắn..."></textarea>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nội dung chi tiết <span
-                            class="text-red-500">*</span></label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Nội dung chi tiết <span
+                            class="text-danger">*</span></label>
                     <textarea id="new-policy-content" rows="8"
-                        class="w-full px-3 py-2 border rounded focus:border-purple-500"
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"
                         placeholder="Nhập nội dung chi tiết của chính sách..."></textarea>
-                    <p class="text-xs text-gray-500 mt-1">Bạn có thể sử dụng rich text editor để format nội dung</p>
+                    <p class="text-xs text-primary-500 mt-1">Bạn có thể sử dụng rich text editor để format nội dung</p>
                 </div>
             </div>
 
-            <div class="mt-6 flex justify-end gap-3">
+            <div class="mt-4 lg:mt-6 flex flex-col sm:flex-row justify-end gap-2 lg:gap-3">
                 <button type="button" onclick="closeCreatePolicyModal()"
-                    class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-50 text-primary-700 border border-primary-100 rounded-xl hover:bg-primary-100 font-semibold transition-colors text-sm lg:text-base">
                     Hủy
                 </button>
-                <button type="submit" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                <button type="submit" class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base">
                     Tạo chính sách
                 </button>
             </div>
@@ -187,17 +191,17 @@ $policy_type_names = [
 
 <!-- Preview Policy Modal -->
 <div id="preview-policy-modal"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="p-6 border-b">
-            <h3 id="preview-policy-title" class="text-lg font-bold text-gray-800"></h3>
+    class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-panel rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-primary-100">
+        <div class="p-4 lg:p-6 border-b border-primary-100 bg-primary-50 rounded-t-2xl">
+            <h3 id="preview-policy-title" class="text-base lg:text-lg font-bold text-primary-700"></h3>
         </div>
-        <div class="p-6">
-            <div id="preview-policy-content" class="prose max-w-none"></div>
+        <div class="p-4 lg:p-6">
+            <div id="preview-policy-content" class="prose max-w-none text-primary-700 text-sm lg:text-base"></div>
         </div>
-        <div class="p-6 border-t flex justify-end">
+        <div class="p-4 lg:p-6 border-t border-primary-100 flex justify-end">
             <button type="button" onclick="closePreviewPolicyModal()"
-                class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                class="px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-600 text-white rounded-xl hover:opacity-90 font-semibold transition-all text-sm lg:text-base">
                 Đóng
             </button>
         </div>
@@ -235,15 +239,15 @@ $policy_type_names = [
         }
 
         const policyHtml = `
-        <div class="selected-policy-item bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between" data-policy-id="${policyId}">
+        <div class="selected-policy-item bg-success-bg border border-success rounded-xl p-3 lg:p-4 flex items-center justify-between" data-policy-id="${policyId}">
             <div>
-                <span class="font-medium text-green-900">${escapeHtml(policyName)}</span>
-                <span class="text-sm text-green-700 ml-2">(${escapeHtml(policyType)})</span>
+                <span class="font-semibold text-success-dark text-sm lg:text-base">${escapeHtml(policyName)}</span>
+                <span class="text-xs lg:text-sm text-success-text ml-2">(${escapeHtml(policyType)})</span>
             </div>
             <button type="button" 
                     onclick="removePolicy(${policyId})"
-                    class="text-red-500 hover:text-red-700">
-                <i class="fas fa-times"></i>
+                    class="text-danger hover:text-danger-dark flex items-center justify-center w-6 h-6 lg:w-8 lg:h-8 rounded-lg hover:bg-danger-bg transition-colors">
+                <i data-lucide="x" class="w-4 h-4"></i>
             </button>
             <input type="hidden" name="policy_ids[]" value="${policyId}">
         </div>
@@ -278,9 +282,11 @@ $policy_type_names = [
         const container = document.getElementById('selected-policies-list');
         if (container.children.length === 0) {
             container.innerHTML = `
-            <div class="text-gray-500 text-center py-4 bg-gray-50 rounded-lg border-2 border-dashed">
-                <i class="fas fa-file-contract text-2xl mb-2"></i>
-                <p class="text-sm">Chưa chọn chính sách nào</p>
+            <div class="text-primary-500 text-center py-6 lg:py-8 bg-primary-50 rounded-2xl border-2 border-dashed border-primary-200">
+                <div class="flex justify-center mb-2 lg:mb-3">
+                    <i data-lucide="file-text" class="w-8 h-8 lg:w-12 lg:h-12 text-primary-300"></i>
+                </div>
+                <p class="text-xs lg:text-sm text-primary-600">Chưa chọn chính sách nào</p>
             </div>
         `;
         }

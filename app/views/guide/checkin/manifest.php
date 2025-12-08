@@ -142,12 +142,14 @@
 
     <!-- Print Button (hidden when printing) -->
     <div class="no-print mt-8 text-center">
-        <button onclick="window.print()" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">
-            🖨️ In danh sách
+        <button onclick="window.print()" class="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold shadow-sm transition-all">
+            <i data-lucide="printer" class="w-4 h-4 inline-block mr-2"></i>
+            In danh sách
         </button>
         <a href="?act=guide-checkin&action=show&schedule_id=<?= $schedule['id'] ?>" 
-            class="ml-3 px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium">
-            ← Quay lại
+            class="ml-3 px-6 py-2 bg-gray-600 text-white rounded-xl hover:bg-gray-700 font-semibold transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4 inline-block mr-2"></i>
+            Quay lại
         </a>
     </div>
 </div>

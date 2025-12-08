@@ -5,52 +5,56 @@
  */
 ?>
 <div class="max-w-8xl mx-auto">
-    <!-- HEADER -->
-    <div class="flex justify-between items-center mb-6">
+    <!-- HEADER - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-primary">📅 Lịch Tour Khởi Hành</h1>
-            <p class="text-sm text-gray-500 mt-1">Xem lịch tour để tư vấn khách hàng</p>
+            <h1 class="text-xl lg:text-2xl font-bold text-primary-700 flex items-center gap-2">
+                <i data-lucide="calendar" class="w-5 h-5 lg:w-6 lg:h-6"></i>
+                Lịch Tour Khởi Hành
+            </h1>
+            <p class="text-xs lg:text-sm text-primary-500 mt-1">Xem lịch tour để tư vấn khách hàng</p>
         </div>
         <a href="?act=staff-bookings&action=create"
-            class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow">
-            + Tạo Booking
+            class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Tạo Booking
         </a>
     </div>
 
     <!-- SUMMARY STATS -->
-    <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div class="text-sm text-green-600 mb-1">Đang mở bán</div>
-            <div class="text-2xl font-bold text-green-700">
+    <div class="mt-4 lg:mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div class="bg-success-bg border border-success rounded-2xl p-3 lg:p-4">
+            <div class="text-xs lg:text-sm text-success-text mb-1 font-semibold">Đang mở bán</div>
+            <div class="text-xl lg:text-2xl font-bold text-success-text">
                 <?= $stats['open'] ?? 0 ?>
             </div>
         </div>
-        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div class="text-sm text-yellow-600 mb-1">Sắp hết chỗ</div>
-            <div class="text-2xl font-bold text-yellow-700">
+        <div class="bg-warning-bg border border-warning rounded-2xl p-3 lg:p-4">
+            <div class="text-xs lg:text-sm text-warning-text mb-1 font-semibold">Sắp hết chỗ</div>
+            <div class="text-xl lg:text-2xl font-bold text-warning-text">
                 <?= $stats['almost_full'] ?? 0 ?>
             </div>
         </div>
-        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div class="text-sm text-red-600 mb-1">Đã đầy</div>
-            <div class="text-2xl font-bold text-red-700">
+        <div class="bg-danger-bg border border-danger rounded-2xl p-3 lg:p-4">
+            <div class="text-xs lg:text-sm text-danger-text mb-1 font-semibold">Đã đầy</div>
+            <div class="text-xl lg:text-2xl font-bold text-danger-text">
                 <?= $stats['full'] ?? 0 ?>
             </div>
         </div>
-        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <div class="text-sm text-gray-600 mb-1">Tổng lịch</div>
-            <div class="text-2xl font-bold text-gray-700"><?= $total ?? 0 ?></div>
+        <div class="bg-primary-50 border border-primary-100 rounded-2xl p-3 lg:p-4">
+            <div class="text-xs lg:text-sm text-primary-500 mb-1 font-semibold">Tổng lịch</div>
+            <div class="text-xl lg:text-2xl font-bold text-primary-700"><?= $total ?? 0 ?></div>
         </div>
     </div>
 
     <!-- FILTER -->
-    <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-panel p-4 lg:p-5 rounded-2xl shadow-sm border border-primary-100 mb-4 lg:mb-6">
+        <form method="GET" class="grid grid-cols-1 lg:grid-cols-5 gap-3 lg:gap-4">
             <input type="hidden" name="act" value="staff-schedules">
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tour</label>
-                <select name="tour_id" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Tour</label>
+                <select name="tour_id" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     <option value="">-- Tất cả Tour --</option>
                     <?php foreach ($tours as $t): ?>
                         <option value="<?= $t['id'] ?>" <?= ($view_filters['tour_id'] ?? '') == $t['id'] ? 'selected' : '' ?>>
@@ -61,20 +65,20 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Từ ngày</label>
                 <input type="date" name="start_date" value="<?= $view_filters['start_date'] ?? '' ?>"
-                    class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Đến ngày</label>
                 <input type="date" name="end_date" value="<?= $view_filters['end_date'] ?? '' ?>"
-                    class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                <select name="status" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Trạng thái</label>
+                <select name="status" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     <option value="">-- Tất cả --</option>
                     <option value="open" <?= ($view_filters['status'] ?? '') == 'open' ? 'selected' : '' ?>>Đang mở bán</option>
                     <option value="closed" <?= ($view_filters['status'] ?? '') == 'closed' ? 'selected' : '' ?>>Đóng bán</option>
@@ -83,8 +87,8 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
-                <select name="category_id" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Danh mục</label>
+                <select name="category_id" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     <option value="">-- Tất cả --</option>
                     <?php foreach ($categories as $cat_id => $cat_name): ?>
                         <option value="<?= $cat_id ?>" <?= ($view_filters['category_id'] ?? '') == $cat_id ? 'selected' : '' ?>>
@@ -94,50 +98,52 @@
                 </select>
             </div>
 
-            <div class="md:col-span-5 flex items-center gap-4">
+            <div class="lg:col-span-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:gap-4">
                 <div class="flex items-center gap-2">
                     <input type="checkbox" name="only_available" value="1" id="only_available"
                         <?= !empty($_GET['only_available']) ? 'checked' : '' ?>
-                        class="rounded border-gray-300 text-accent focus:ring-accent">
-                    <label for="only_available" class="text-sm text-gray-700">Chỉ hiển thị còn chỗ</label>
+                        class="rounded-xl border-primary-200 text-accent focus:ring-accent w-4 h-4">
+                    <label for="only_available" class="text-xs lg:text-sm text-primary-700">Chỉ hiển thị còn chỗ</label>
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="checkbox" name="almost_full" value="1" id="almost_full"
                         <?= !empty($_GET['almost_full']) ? 'checked' : '' ?>
-                        class="rounded border-gray-300 text-accent focus:ring-accent">
-                    <label for="almost_full" class="text-sm text-gray-700">Sắp hết chỗ (< 10%)</label>
+                        class="rounded-xl border-primary-200 text-accent focus:ring-accent w-4 h-4">
+                    <label for="almost_full" class="text-xs lg:text-sm text-primary-700">Sắp hết chỗ (< 10%)</label>
                 </div>
-                <button type="submit" class="ml-auto px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">
-                    🔍 Lọc
+                <button type="submit" class="w-full sm:w-auto sm:ml-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-primary-600 hover:opacity-90 text-white rounded-xl font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                    <i data-lucide="filter" class="w-4 h-4"></i>
+                    Lọc
                 </button>
             </div>
         </form>
     </div>
 
     <!-- TABLE -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-50 text-gray-700 uppercase text-xs font-bold">
+    <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[1000px]">
+                <thead class="bg-primary-50 text-primary-700 uppercase text-xs font-bold">
                 <tr>
-                    <th class="px-4 py-3 border-b">Mã Tour</th>
-                    <th class="px-4 py-3 border-b">Tên Tour</th>
-                    <th class="px-4 py-3 border-b">Danh mục</th>
-                    <th class="px-4 py-3 border-b">Khởi hành</th>
-                    <th class="px-4 py-3 border-b">Kết thúc</th>
-                    <th class="px-4 py-3 border-b text-center">Chỗ</th>
-                    <th class="px-4 py-3 border-b text-center">Đã đặt</th>
-                    <th class="px-4 py-3 border-b text-center">Còn lại</th>
-                    <th class="px-4 py-3 border-b text-right">Giá (NL)</th>
-                    <th class="px-4 py-3 border-b text-right">Giá (TE)</th>
-                    <th class="px-4 py-3 border-b">HDV</th>
-                    <th class="px-4 py-3 border-b text-center">Trạng thái</th>
-                    <th class="px-4 py-3 border-b text-right">Hành động</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100">Mã Tour</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100">Tên Tour</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100">Danh mục</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100">Khởi hành</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100">Kết thúc</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100 text-center">Chỗ</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100 text-center">Đã đặt</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100 text-center">Còn lại</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100 text-right">Giá (NL)</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100 text-right">Giá (TE)</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100">HDV</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100 text-center">Trạng thái</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 border-b border-primary-100 text-right">Hành động</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200">
+            <tbody class="divide-y divide-primary-100">
                 <?php if (empty($schedules)): ?>
                     <tr>
-                        <td colspan="13" class="px-6 py-8 text-center text-gray-500">
+                        <td colspan="13" class="px-3 lg:px-4 py-6 lg:py-8 text-center text-primary-500 text-sm">
                             Không tìm thấy lịch tour nào.
                         </td>
                     </tr>
@@ -147,63 +153,64 @@
                         $fill_rate = ($s['quota'] ?? 0) > 0 ? round((($s['booked'] ?? 0) / ($s['quota'] ?? 1)) * 100, 1) : 0;
                         $is_almost_full = $fill_rate >= 90 && $available > 0;
                         ?>
-                        <tr class="hover:bg-gray-50 <?= $available <= 0 ? 'bg-red-50' : ($is_almost_full ? 'bg-yellow-50' : '') ?>">
-                            <td class="px-4 py-3 font-mono text-sm text-blue-600">
+                        <tr class="hover:bg-primary-50 transition-colors <?= $available <= 0 ? 'bg-danger-bg/30' : ($is_almost_full ? 'bg-warning-bg/30' : '') ?>">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 font-mono text-sm text-accent">
                                 <?= htmlspecialchars($s['tour_code'] ?? '') ?>
                             </td>
-                            <td class="px-4 py-3 font-medium">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 font-semibold">
                                 <a href="?act=staff-schedules&action=show&id=<?= $s['id'] ?>"
-                                    class="text-gray-800 hover:text-accent hover:underline">
+                                    class="text-primary-700 hover:text-accent hover:underline text-sm">
                                     <?= htmlspecialchars($s['tour_name'] ?? '') ?>
                                 </a>
-                                <div class="text-xs text-gray-500 mt-1">
+                                <div class="text-xs text-primary-500 mt-1">
                                     <?= ($s['duration_days'] ?? 0) ?> ngày 
                                     <?= ($s['duration_nights'] ?? 0) > 0 ? ($s['duration_nights'] ?? 0) . ' đêm' : '' ?>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-600">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm text-primary-600">
                                 <?= htmlspecialchars($s['category_name'] ?? 'Chưa phân loại') ?>
                             </td>
-                            <td class="px-4 py-3">
-                                <span class="text-green-700 font-bold"><?= date('d/m/Y', strtotime($s['start_date'])) ?></span>
+                            <td class="px-3 lg:px-4 py-2 lg:py-3">
+                                <span class="text-success-text font-bold text-sm"><?= date('d/m/Y', strtotime($s['start_date'])) ?></span>
                             </td>
-                            <td class="px-4 py-3 text-gray-500">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-primary-600 text-sm">
                                 <?= date('d/m/Y', strtotime($s['end_date'])) ?>
                             </td>
-                            <td class="px-4 py-3 text-center font-medium"><?= $s['quota'] ?? 0 ?></td>
-                            <td class="px-4 py-3 text-center">
-                                <span class="font-bold <?= $fill_rate >= 80 ? 'text-yellow-600' : 'text-accent' ?>">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-center font-semibold text-sm"><?= $s['quota'] ?? 0 ?></td>
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-center">
+                                <span class="font-bold text-sm <?= $fill_rate >= 80 ? 'text-warning-text' : 'text-accent' ?>">
                                     <?= $s['booked'] ?? 0 ?>
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-center">
-                                <span class="font-bold <?= $available <= 0 ? 'text-red-600' : ($available <= 5 ? 'text-yellow-600' : 'text-green-600') ?>">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-center">
+                                <span class="font-bold text-sm <?= $available <= 0 ? 'text-danger-text' : ($available <= 5 ? 'text-warning-text' : 'text-success-text') ?>">
                                     <?= $available ?>
                                 </span>
                                 <?php if ($fill_rate > 0): ?>
-                                    <div class="text-xs text-gray-400"><?= $fill_rate ?>%</div>
+                                    <div class="text-xs text-primary-400"><?= $fill_rate ?>%</div>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3 text-right font-medium">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-right font-semibold text-sm">
                                 <?= number_format($s['adult_price'] ?? 0, 0, ',', '.') ?> đ
                             </td>
-                            <td class="px-4 py-3 text-right text-sm text-gray-600">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-right text-sm text-primary-600">
                                 <?= number_format($s['child_price'] ?? 0, 0, ',', '.') ?> đ
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3">
                                 <?php if (!empty($s['guide_name'])): ?>
-                                    <span class="text-sm text-blue-600" title="<?= htmlspecialchars($s['guide_phone'] ?? '') ?>">
-                                        👤 <?= htmlspecialchars($s['guide_name']) ?>
+                                    <span class="text-xs lg:text-sm text-info-text flex items-center gap-1" title="<?= htmlspecialchars($s['guide_phone'] ?? '') ?>">
+                                        <i data-lucide="user" class="w-3 h-3"></i>
+                                        <?= htmlspecialchars($s['guide_name']) ?>
                                     </span>
                                 <?php else: ?>
-                                    <span class="text-xs text-gray-400">Chưa gán</span>
+                                    <span class="text-xs text-primary-400">Chưa gán</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3 text-center">
-                                <span class="px-2 py-1 text-xs rounded-full font-medium
-                                    <?= $s['status'] == 'open' ? 'bg-green-100 text-green-800' :
-                                        ($s['status'] == 'closed' ? 'bg-red-100 text-red-800' :
-                                            ($s['status'] == 'completed' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800')) ?>">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-center">
+                                <span class="px-2 lg:px-3 py-1 rounded-full text-xs font-bold uppercase
+                                    <?= $s['status'] == 'open' ? 'bg-success-bg text-success-text' :
+                                        ($s['status'] == 'closed' ? 'bg-danger-bg text-danger-text' :
+                                            ($s['status'] == 'completed' ? 'bg-info-bg text-info-text' : 'bg-primary-100 text-primary-500')) ?>">
                                     <?php
                                     $status_names = [
                                         'open' => 'Mở bán',
@@ -215,16 +222,16 @@
                                     ?>
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-right">
-                                <div class="flex items-center justify-end gap-2">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-right">
+                                <div class="flex items-center justify-end gap-1 lg:gap-2">
                                     <a href="?act=staff-schedules&action=show&id=<?= $s['id'] ?>"
-                                        class="text-blue-600 hover:text-blue-800" title="Xem chi tiết">
-                                        👁️
+                                        class="text-accent hover:text-accent-hover p-1.5 rounded-xl hover:bg-primary-50 transition-all" title="Xem chi tiết">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
                                     </a>
                                     <?php if ($s['status'] == 'open' && $available > 0): ?>
                                         <a href="?act=staff-bookings&action=create&tour_id=<?= $s['tour_id'] ?>&start_date=<?= $s['start_date'] ?>"
-                                            class="text-green-600 hover:text-green-800 font-medium" title="Tạo booking">
-                                            ➕
+                                            class="text-success-text hover:text-success-text p-1.5 rounded-xl hover:bg-success-bg transition-all font-semibold" title="Tạo booking">
+                                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
                                         </a>
                                     <?php endif; ?>
                                 </div>
@@ -234,14 +241,15 @@
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
     </div>
 
     <!-- Pagination -->
     <?php if (($total_pages ?? 1) > 1): ?>
-        <div class="mt-4 flex justify-center gap-2">
+        <div class="mt-4 flex justify-center gap-2 flex-wrap">
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                 <a href="?act=staff-schedules&page=<?= $i ?>&tour_id=<?= $view_filters['tour_id'] ?? '' ?>&start_date=<?= $view_filters['start_date'] ?? '' ?>&end_date=<?= $view_filters['end_date'] ?? '' ?>&status=<?= $view_filters['status'] ?? '' ?>&category_id=<?= $view_filters['category_id'] ?? '' ?>"
-                    class="px-3 py-1 rounded <?= $i == $current_page ? 'bg-accent text-white' : 'bg-gray-200 hover:bg-gray-300' ?>">
+                    class="px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-sm font-semibold transition-all <?= $i == $current_page ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white shadow-sm' : 'bg-panel border border-primary-100 text-primary-700 hover:bg-primary-50' ?>">
                     <?= $i ?>
                 </a>
             <?php endfor; ?>

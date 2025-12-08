@@ -8,36 +8,27 @@ if (!is_admin())
 ?>
 
 <style>
-    /* Flat Design - Simple & Clean */
-    :root {
-        --primary: #1e293b;
-        --accent: #3b82f6;
-        --background: #f3f4f6;
-        --panel: #ffffff;
-        --gray-200: #e5e7eb;
-        --gray-400: #9ca3af;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-    }
-
+    /* Horizon UI Style - Location Services */
     /* Simple Tree Item */
     .tree-item {
         padding: 12px 16px;
         margin-bottom: 4px;
         background-color: var(--panel);
         border-left: 3px solid transparent;
-        transition: background-color 0.15s;
+        border-radius: 12px;
+        transition: all 0.2s;
     }
 
     .tree-item:hover {
-        background-color: var(--background);
+        background-color: var(--primary-50);
         border-left-color: var(--accent);
     }
 
     .tree-item.active {
-        background-color: var(--primary);
+        background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-700) 100%);
         color: white;
         border-left-color: var(--accent);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     .tree-item.active * {
@@ -49,7 +40,6 @@ if (!is_admin())
         color: inherit;
         display: block;
     }
-
 
     .tree-icon {
         margin-right: 10px;
@@ -68,22 +58,23 @@ if (!is_admin())
 
     .tree-label {
         flex: 1;
-        font-weight: 500;
+        font-weight: 600;
         font-size: 14px;
     }
 
     .tree-badge {
-        background-color: var(--gray-200);
-        padding: 3px 8px;
+        background-color: var(--primary-100);
+        padding: 4px 10px;
         font-size: 11px;
-        font-weight: 600;
-        color: var(--gray-700);
+        font-weight: 700;
+        color: var(--primary-700);
         margin-left: 8px;
         margin-right: 8px;
+        border-radius: 12px;
     }
 
     .tree-item.active .tree-badge {
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.25);
         color: white;
     }
 
@@ -101,163 +92,181 @@ if (!is_admin())
         justify-content: center;
         font-size: 12px;
         border: none;
-        transition: opacity 0.15s;
+        border-radius: 8px;
+        transition: all 0.2s;
+        cursor: pointer;
     }
 
     .tree-action-btn:hover {
-        opacity: 0.8;
+        transform: scale(1.05);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     /* Service Cards */
     .service-card {
         background-color: var(--panel);
-        border-left: 3px solid var(--accent);
+        border-left: 4px solid var(--accent);
         padding: 20px;
         margin-bottom: 16px;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s;
     }
 
     .service-card:hover {
-        background-color: var(--background);
+        background-color: var(--primary-50);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     .service-card.inactive {
         opacity: 0.6;
-        border-left-color: var(--gray-400);
+        border-left-color: var(--primary-300);
     }
 
     /* Price Items */
     .price-item {
         background-color: var(--panel);
-        border-left: 2px solid var(--gray-200);
+        border-left: 3px solid var(--primary-100);
         padding: 12px 16px;
         margin-bottom: 8px;
+        border-radius: 12px;
+        transition: all 0.2s;
     }
 
     .price-item:hover {
-        background-color: var(--background);
+        background-color: var(--primary-50);
         border-left-color: var(--accent);
     }
 
     /* Main Content */
     #mainContent {
         min-height: 600px;
-        background-color: var(--background);
+        background-color: transparent;
     }
 
     /* Empty States */
     .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: var(--gray-500);
+        color: var(--primary-500);
     }
 
     .empty-state i {
         font-size: 48px;
-        color: var(--gray-400);
+        color: var(--primary-300);
         margin-bottom: 12px;
     }
 
     .empty-state p {
         font-size: 14px;
-        color: var(--gray-600);
+        color: var(--primary-600);
     }
 
     /* Tabs */
     .tab-nav {
-        border-bottom: 1px solid var(--gray-200);
+        border-bottom: 2px solid var(--primary-100);
         margin-bottom: 20px;
     }
 
     .tab-link {
         padding: 12px 20px;
-        font-weight: 500;
+        font-weight: 600;
         font-size: 14px;
-        color: var(--gray-600);
-        border-bottom: 2px solid transparent;
+        color: var(--primary-600);
+        border-bottom: 3px solid transparent;
+        border-radius: 8px 8px 0 0;
+        transition: all 0.2s;
     }
 
     .tab-link:hover {
         color: var(--accent);
-        background-color: var(--background);
+        background-color: var(--primary-50);
     }
 
     .tab-link.active {
         color: var(--accent);
         border-bottom-color: var(--accent);
-    }
-
-    /* Buttons */
-    .btn-primary {
-        background-color: var(--accent);
-        color: white;
-    }
-
-    .btn-primary:hover {
-        opacity: 0.9;
+        background-color: var(--primary-50);
     }
 
     /* Province Cards */
     .province-card {
         padding: 16px;
         background: var(--panel);
-        border: 1px solid var(--gray-200);
-        border-left: 3px solid var(--accent);
+        border: 1px solid var(--primary-100);
+        border-left: 4px solid var(--accent);
+        border-radius: 16px;
         color: inherit;
         display: block;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .province-card:hover {
-        background-color: var(--background);
+        background-color: var(--primary-50);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     /* Destination Cards */
     .destination-card {
         background: var(--panel);
-        border: 1px solid var(--gray-200);
+        border: 1px solid var(--primary-100);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .destination-card:hover {
-        background-color: var(--background);
+        background-color: var(--primary-50);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
     }
 
     /* Status Badges */
     .status-badge {
-        padding: 4px 10px;
+        padding: 4px 12px;
         font-size: 11px;
-        font-weight: 600;
+        font-weight: 700;
+        border-radius: 12px;
     }
 
     .status-badge.active {
-        background-color: #d1fae5;
-        color: var(--gray-700);
+        background-color: var(--success-bg);
+        color: var(--success-dark);
     }
 
     .status-badge.inactive {
-        background-color: var(--gray-200);
-        color: var(--gray-600);
+        background-color: var(--primary-100);
+        color: var(--primary-600);
     }
 
     /* Search Box */
     #searchBox {
-        border: 1px solid var(--gray-200);
+        border: 1px solid var(--primary-100);
+        border-radius: 12px;
     }
 
     #searchBox:focus {
         border-color: var(--accent);
         outline: none;
+        ring: 2px;
+        ring-color: var(--accent);
     }
 
     /* Sidebar Container */
     .sidebar-container {
         background: var(--panel);
-        border: 1px solid var(--gray-200);
+        border: 1px solid var(--primary-100);
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     /* Empty state */
     .tree-view-empty {
         text-align: center;
         padding: 40px 20px;
-        color: var(--gray-400);
+        color: var(--primary-400);
     }
 
     .tree-view-empty i {
@@ -268,50 +277,35 @@ if (!is_admin())
 
     .tree-view-empty p {
         font-size: 13px;
-        color: var(--gray-500);
-    }
-
-    /* Header */
-    .page-header {
-        background: var(--panel);
-        padding: 20px;
-        margin-bottom: 20px;
-        border-bottom: 1px solid var(--gray-200);
-    }
-
-    .page-header h1 {
-        font-size: 24px;
-        font-weight: 600;
-        color: var(--primary);
+        color: var(--primary-500);
     }
 
 </style>
 
-<div class="max-w-full mx-auto px-4 py-6">
-    <!-- Header -->
-    <div class="page-header">
-        <h1 class="text-xl font-semibold text-primary">
-            <i class="fas fa-map-marked-alt mr-2"></i>
+<div class="max-w-full mx-auto p-4 lg:p-8">
+    <!-- Header - Responsive -->
+    <div class="mb-4 lg:mb-6 bg-panel rounded-2xl p-4 lg:p-6 border border-primary-100 shadow-sm">
+        <h1 class="text-xl lg:text-2xl font-bold text-primary-700 flex items-center gap-2 lg:gap-3">
+            <i data-lucide="map-pin" class="w-5 h-5 lg:w-6 lg:h-6 text-accent"></i>
             Quản lý Địa điểm & Dịch vụ
         </h1>
     </div>
 
-    <!-- Main Container -->
-    <div class="flex gap-6" style="min-height: 600px;">
+    <!-- Main Container - Responsive -->
+    <div class="flex flex-col lg:flex-row gap-4 lg:gap-6" style="min-height: 600px;">
         <!-- Sidebar - Tree View -->
-        <div class="w-96 sidebar-container p-6"
-            style="max-height: calc(100vh - 200px); overflow-y: auto; min-width: 384px; position: sticky; top: 24px;">
-            <div class="mb-6">
+        <div class="w-full lg:w-96 sidebar-container p-4 lg:p-6"
+            style="max-height: calc(100vh - 200px); overflow-y: auto; position: sticky; top: 24px;">
+            <div class="mb-4 lg:mb-6">
                 <a href="?act=admin&module=location-services&action=create-country"
-                    class="w-full mb-4 px-4 py-2.5 btn-primary text-white text-sm font-medium text-center inline-block flex items-center justify-center gap-2">
-                    <i class="fas fa-plus"></i>
+                    class="w-full mb-3 lg:mb-4 px-4 lg:px-6 py-2.5 lg:py-3 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base text-center inline-block flex items-center justify-center gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
                     <span>Thêm Quốc gia</span>
                 </a>
                 <div class="relative">
-                    <i
-                        class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-400 w-4 h-4"></i>
                     <input type="text" id="searchBox" placeholder="Tìm kiếm..."
-                        class="w-full pl-10 pr-3 py-2.5 text-sm">
+                        class="w-full pl-10 pr-3 py-2.5 lg:py-3 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
                 </div>
             </div>
 
@@ -329,9 +323,11 @@ if (!is_admin())
                 if (empty($countries['data'])):
             ?>
                 <div class="tree-view-empty">
-                    <i class="fas fa-globe"></i>
-                    <p>Chưa có quốc gia nào</p>
-                    <p style="font-size: 12px; margin-top: 4px;">Nhấn "Thêm Quốc gia" để bắt đầu</p>
+                    <div class="flex justify-center mb-3">
+                        <i data-lucide="globe" class="w-12 h-12 text-primary-300"></i>
+                    </div>
+                    <p class="font-semibold text-primary-600">Chưa có quốc gia nào</p>
+                    <p class="text-xs text-primary-500 mt-1">Nhấn "Thêm Quốc gia" để bắt đầu</p>
                 </div>
             <?php else: ?>
                 <?php
@@ -401,23 +397,23 @@ if (!is_admin())
                         <div class="flex items-center justify-between w-full">
                             <a href="?act=admin&module=location-services&country_id=<?= $country_id ?>" 
                                class="flex items-center flex-1 no-underline" style="cursor: pointer; text-decoration: none; color: inherit;">
-                                <i class="fas fa-globe tree-icon"></i>
+                                <i data-lucide="globe" class="tree-icon w-4 h-4 lg:w-5 lg:h-5"></i>
                                 <span class="tree-label"><?= htmlspecialchars($country['name']) ?></span>
                                 <span class="tree-badge"><?= $country['provinces_count'] ?? 0 ?></span>
                             </a>
                             <div class="tree-actions" onclick="event.stopPropagation();">
                                 <a href="?act=admin&module=location-services&action=edit-country&id=<?= $country['id'] ?>"
-                                    class="tree-action-btn bg-blue-500 text-white hover:bg-blue-600" title="Sửa" onclick="event.stopPropagation();">
-                                    <i class="fas fa-edit"></i>
+                                    class="tree-action-btn bg-accent text-white hover:opacity-90" title="Sửa" onclick="event.stopPropagation();">
+                                    <i data-lucide="edit" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                 </a>
                                 <button onclick="event.stopPropagation(); toggleCountryStatus(<?= $country['id'] ?>, '<?= $country['status'] ?>')"
-                                    class="tree-action-btn <?= $country['status'] == 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500' ?> text-white"
+                                    class="tree-action-btn <?= $country['status'] == 'active' ? 'bg-success hover:opacity-90' : 'bg-primary-400 hover:opacity-90' ?> text-white"
                                     title="<?= $country['status'] == 'active' ? 'Vô hiệu hóa' : 'Kích hoạt' ?>">
-                                    <i class="fas fa-<?= $country['status'] == 'active' ? 'check' : 'times' ?>"></i>
+                                    <i data-lucide="<?= $country['status'] == 'active' ? 'check' : 'x' ?>" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                 </button>
                                 <button onclick="event.stopPropagation(); deleteCountry(<?= $country['id'] ?>)"
-                                    class="tree-action-btn bg-red-500 text-white hover:bg-red-600" title="Xóa">
-                                    <i class="fas fa-trash"></i>
+                                    class="tree-action-btn bg-danger text-white hover:opacity-90" title="Xóa">
+                                    <i data-lucide="trash-2" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                 </button>
                             </div>
                         </div>
@@ -428,26 +424,32 @@ if (!is_admin())
         </div>
 
         <!-- Main Content Area -->
-        <div class="flex-1 p-5" id="mainContent" style="min-height: 600px;">
+        <div class="flex-1 p-4 lg:p-6" id="mainContent" style="min-height: 600px;">
             <?php if (!empty($current_service_provider_id) && !empty($current_provider)): ?>
                 <!-- Services List for Provider - Kiểm tra service_provider_id TRƯỚC province_id -->
-                <div class="mb-4">
+                <div class="mb-4 lg:mb-6">
                     <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
-                        class="text-blue-600 hover:underline mb-2 inline-block">← Quay lại danh sách nhà cung cấp</a>
-                    <h2 class="text-xl font-bold mb-2">Dịch vụ của: <?= htmlspecialchars($current_provider['name'] ?? '') ?>
-                    </h2>
-                    <a href="?act=admin&module=location-services&action=create-service&service_provider_id=<?= $current_service_provider_id ?>"
-                        class="px-4 py-2.5 bg-green-500 text-white font-medium hover:bg-green-600 transition-colors inline-flex items-center gap-2">
-                        <i class="fas fa-plus"></i>
-                        <span>Thêm dịch vụ</span>
+                        class="text-accent hover:text-accent-dark font-semibold mb-2 lg:mb-3 inline-block flex items-center gap-2 text-sm lg:text-base">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        Quay lại danh sách nhà cung cấp
                     </a>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4 mb-4">
+                        <h2 class="text-lg lg:text-xl font-bold text-primary-700">Dịch vụ của: <?= htmlspecialchars($current_provider['name'] ?? '') ?></h2>
+                        <a href="?act=admin&module=location-services&action=create-service&service_provider_id=<?= $current_service_provider_id ?>"
+                            class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-success to-success-dark hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base inline-flex items-center justify-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Thêm dịch vụ</span>
+                        </a>
+                    </div>
                 </div>
 
                 <?php if (empty($services['data'])): ?>
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p class="text-lg font-medium mb-2">Chưa có dịch vụ nào</p>
-                        <p class="text-sm text-gray-500">Hãy thêm dịch vụ mới để bắt đầu</p>
+                    <div class="empty-state bg-panel rounded-2xl p-8 lg:p-12 border border-primary-100">
+                        <div class="flex justify-center mb-3 lg:mb-4">
+                            <i data-lucide="inbox" class="w-12 h-12 lg:w-16 lg:h-16 text-primary-300"></i>
+                        </div>
+                        <p class="text-base lg:text-lg font-semibold text-primary-700 mb-2">Chưa có dịch vụ nào</p>
+                        <p class="text-xs lg:text-sm text-primary-500">Hãy thêm dịch vụ mới để bắt đầu</p>
                     </div>
                 <?php else: ?>
                     <?php foreach ($services['data'] as $service): ?>
@@ -455,75 +457,75 @@ if (!is_admin())
                         $is_inactive = ($service['status'] ?? 'active') === 'inactive';
                         ?>
                         <div class="service-card <?= $is_inactive ? 'inactive' : '' ?>">
-                            <div class="flex justify-between items-start mb-4">
+                            <div class="flex flex-col sm:flex-row justify-between items-start gap-3 lg:gap-4 mb-4">
                                 <div class="flex-1">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <h5 class="font-semibold text-lg <?= $is_inactive ? 'text-gray-500' : 'text-primary' ?>">
+                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                        <h5 class="font-bold text-base lg:text-lg <?= $is_inactive ? 'text-primary-500' : 'text-primary-700' ?>">
                                             <?= htmlspecialchars($service['service_type_name'] ?? '') ?> -
                                             <?= htmlspecialchars($service['name']) ?>
                                         </h5>
                                         <!-- Status Badge -->
-                                        <span class="status-badge <?= $is_inactive ? 'inactive' : 'active' ?>">
-                                            <i class="fas fa-<?= $is_inactive ? 'times-circle' : 'check-circle' ?>"></i>
+                                        <span class="status-badge <?= $is_inactive ? 'inactive' : 'active' ?> flex items-center gap-1">
+                                            <i data-lucide="<?= $is_inactive ? 'x-circle' : 'check-circle' ?>" class="w-3 h-3"></i>
                                             <?= $is_inactive ? 'Đã vô hiệu hóa' : 'Hoạt động' ?>
                                         </span>
                                     </div>
                                     <?php if (!empty($service['description'])): ?>
-                                        <p class="text-sm <?= $is_inactive ? 'text-gray-400' : 'text-gray-600' ?> mt-2">
+                                        <p class="text-xs lg:text-sm <?= $is_inactive ? 'text-primary-400' : 'text-primary-600' ?> mt-2">
                                             <?= htmlspecialchars($service['description']) ?></p>
                                     <?php endif; ?>
                                     <?php if (!empty($service['unit'])): ?>
-                                        <p class="text-xs <?= $is_inactive ? 'text-gray-400' : 'text-gray-500' ?> mt-2">Đơn vị:
+                                        <p class="text-xs <?= $is_inactive ? 'text-primary-400' : 'text-primary-500' ?> mt-2">Đơn vị:
                                             <?= htmlspecialchars($service['unit']) ?></p>
                                     <?php endif; ?>
                                 </div>
-                                <div class="flex gap-2 ml-4">
+                                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                                     <button
-                                        class="px-3 py-1.5 bg-accent text-white text-xs font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-1.5 <?= $is_inactive ? 'opacity-50 cursor-not-allowed' : '' ?>"
+                                        class="px-3 lg:px-4 py-1.5 lg:py-2 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center gap-1.5 <?= $is_inactive ? 'opacity-50 cursor-not-allowed' : '' ?>"
                                         onclick="<?= $is_inactive ? 'return false;' : 'openCreatePriceModal(' . $service['id'] . ')' ?>"
                                         <?= $is_inactive ? 'disabled title="Dịch vụ đã bị vô hiệu hóa"' : '' ?>>
-                                        <i class="fas fa-plus text-xs"></i>
+                                        <i data-lucide="plus" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                         <span>Thêm giá</span>
                                     </button>
                                     <a href="?act=admin&module=location-services&action=edit-service&id=<?= $service['id'] ?>"
-                                        class="px-3 py-1.5 bg-yellow-500 text-white text-xs font-medium hover:bg-yellow-600 inline-flex items-center gap-1.5 transition-colors">
-                                        <i class="fas fa-edit text-xs"></i>
+                                        class="px-3 lg:px-4 py-1.5 lg:py-2 bg-warning hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center gap-1.5">
+                                        <i data-lucide="edit" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                         <span>Sửa</span>
                                     </a>
                                     <button
-                                        class="px-3 py-1.5 bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors inline-flex items-center gap-1.5"
+                                        class="px-3 lg:px-4 py-1.5 lg:py-2 bg-danger hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center gap-1.5"
                                         onclick="deleteService(<?= $service['id'] ?>)">
-                                        <i class="fas fa-trash text-xs"></i>
+                                        <i data-lucide="trash-2" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                         <span>Xóa</span>
                                     </button>
                                 </div>
                             </div>
 
                             <!-- Danh sách giá -->
-                            <div class="mt-5 pt-4 border-t border-gray-200">
-                                <h6 class="font-semibold text-sm mb-3 text-primary">
+                            <div class="mt-4 lg:mt-5 pt-4 border-t border-primary-100">
+                                <h6 class="font-bold text-xs lg:text-sm mb-3 text-primary-700">
                                     Bảng giá (<?= count($service['prices'] ?? []) ?>)
                                 </h6>
                                 <?php if (empty($service['prices'])): ?>
-                                    <p class="text-xs text-gray-500">Chưa có giá nào. Nhấn "+ Thêm giá" để thêm giá mới.</p>
+                                    <p class="text-xs text-primary-500">Chưa có giá nào. Nhấn "+ Thêm giá" để thêm giá mới.</p>
                                 <?php else: ?>
-                                    <div class="space-y-2">
+                                    <div class="space-y-2 lg:space-y-3">
                                         <?php foreach ($service['prices'] as $price): ?>
-                                            <div class="price-item flex justify-between items-center">
-                                                <div class="flex-1">
-                                                    <div class="flex items-center gap-3 mb-1">
-                                                        <span class="font-semibold text-accent text-base">
+                                            <div class="price-item flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 lg:gap-3">
+                                                <div class="flex-1 w-full sm:w-auto">
+                                                    <div class="flex flex-wrap items-center gap-2 lg:gap-3 mb-1">
+                                                        <span class="font-bold text-accent text-sm lg:text-base">
                                                             <?= number_format($price['unit_price'], 0, ',', '.') ?> VND
                                                         </span>
                                                         <span
-                                                            class="px-2 py-0.5 text-xs font-medium
-                                                            <?= $price['price_type'] == 'peak' ? 'bg-red-100 text-red-700' :
-                                                                ($price['price_type'] == 'low' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700') ?>">
+                                                            class="px-2 lg:px-3 py-0.5 lg:py-1 text-xs font-bold rounded-full
+                                                            <?= $price['price_type'] == 'peak' ? 'bg-danger-bg text-danger-dark' :
+                                                                ($price['price_type'] == 'low' ? 'bg-success-bg text-success-dark' : 'bg-info-bg text-info-dark') ?>">
                                                             <?= $price['price_type'] == 'peak' ? 'Cao điểm' :
                                                                 ($price['price_type'] == 'low' ? 'Thấp điểm' : 'Tiêu chuẩn') ?>
                                                         </span>
                                                     </div>
-                                                    <div class="flex items-center gap-4 text-xs text-gray-500">
+                                                    <div class="flex flex-wrap items-center gap-2 lg:gap-4 text-xs text-primary-500">
                                                         <?php if (!empty($price['start_date']) || !empty($price['end_date'])): ?>
                                                             <span>
                                                                 <?= !empty($price['start_date']) ? date('d/m/Y', strtotime($price['start_date'])) : '...' ?>
@@ -534,24 +536,24 @@ if (!is_admin())
                                                             <span>Vô thời hạn</span>
                                                         <?php endif; ?>
                                                         <?php if (!empty($price['notes'])): ?>
-                                                            <span class="text-gray-400">
+                                                            <span class="text-primary-400">
                                                                 <?= htmlspecialchars(substr($price['notes'], 0, 50)) ?>
                                                                 <?= strlen($price['notes']) > 50 ? '...' : '' ?>
                                                             </span>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
-                                                <div class="flex gap-2 ml-4">
+                                                <div class="flex gap-2 w-full sm:w-auto">
                                                     <button
-                                                        class="px-2.5 py-1 bg-yellow-500 text-white text-xs font-medium hover:bg-yellow-600 transition-colors inline-flex items-center gap-1"
+                                                        class="px-2.5 lg:px-3 py-1 lg:py-1.5 bg-warning hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs inline-flex items-center gap-1"
                                                         onclick="openEditPriceModal(<?= $price['id'] ?>)">
-                                                        <i class="fas fa-edit text-xs"></i>
+                                                        <i data-lucide="edit" class="w-3 h-3"></i>
                                                         <span>Sửa</span>
                                                     </button>
                                                     <button
-                                                        class="px-2.5 py-1 bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors inline-flex items-center gap-1"
+                                                        class="px-2.5 lg:px-3 py-1 lg:py-1.5 bg-danger hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs inline-flex items-center gap-1"
                                                         onclick="deletePrice(<?= $price['id'] ?>)">
-                                                        <i class="fas fa-trash text-xs"></i>
+                                                        <i data-lucide="trash-2" class="w-3 h-3"></i>
                                                         <span>Xóa</span>
                                                     </button>
                                                 </div>
@@ -567,40 +569,46 @@ if (!is_admin())
             <?php elseif (!empty($current_province_id)): ?>
                 <!-- Có province_id - Hiển thị tabs và nội dung -->
                 <!-- Tab Navigation -->
-                <div class="tab-nav">
+                <div class="tab-nav bg-panel rounded-2xl p-2 border border-primary-100 mb-4 lg:mb-6">
                     <nav class="flex gap-2">
                         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>&tab=providers"
-                            class="tab-link <?= ($current_tab ?? 'providers') == 'providers' ? 'active' : '' ?>">
-                            <i class="fas fa-building mr-2"></i>
+                            class="tab-link <?= ($current_tab ?? 'providers') == 'providers' ? 'active' : '' ?> flex items-center gap-2">
+                            <i data-lucide="building" class="w-4 h-4"></i>
                             Nhà cung cấp dịch vụ
-                            <span class="ml-2 px-2 py-0.5 bg-gray-100 rounded-full text-xs font-semibold"><?= count($service_providers['data'] ?? []) ?></span>
+                            <span class="px-2 py-0.5 bg-primary-100 rounded-full text-xs font-bold text-primary-700"><?= count($service_providers['data'] ?? []) ?></span>
                         </a>
                         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>&tab=destinations"
-                            class="tab-link <?= ($current_tab ?? 'providers') == 'destinations' ? 'active' : '' ?>">
-                            <i class="fas fa-map-marked-alt mr-2"></i>
+                            class="tab-link <?= ($current_tab ?? 'providers') == 'destinations' ? 'active' : '' ?> flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-4 h-4"></i>
                             Địa điểm du lịch
-                            <span class="ml-2 px-2 py-0.5 bg-gray-100 rounded-full text-xs font-semibold"><?= count($destinations['data'] ?? []) ?></span>
+                            <span class="px-2 py-0.5 bg-primary-100 rounded-full text-xs font-bold text-primary-700"><?= count($destinations['data'] ?? []) ?></span>
                         </a>
                     </nav>
                 </div>
 
                 <?php if (($current_tab ?? 'providers') == 'providers'): ?>
                     <!-- Service Providers Tab -->
-                    <div class="mb-4">
-                        <h2 class="text-xl font-bold mb-2">📍 <?= htmlspecialchars($current_province['name'] ?? 'Tỉnh thành') ?>
-                        </h2>
-                        <a href="?act=admin&module=location-services&action=create-provider&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
-                            class="px-4 py-2.5 bg-accent text-white font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-2">
-                            <i class="fas fa-plus"></i>
-                            <span>Thêm nhà cung cấp</span>
-                        </a>
+                    <div class="mb-4 lg:mb-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4 mb-4">
+                            <h2 class="text-lg lg:text-xl font-bold text-primary-700 flex items-center gap-2">
+                                <i data-lucide="map-pin" class="w-5 h-5 lg:w-6 lg:h-6 text-accent"></i>
+                                <?= htmlspecialchars($current_province['name'] ?? 'Tỉnh thành') ?>
+                            </h2>
+                            <a href="?act=admin&module=location-services&action=create-provider&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
+                                class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base inline-flex items-center justify-center gap-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Thêm nhà cung cấp</span>
+                            </a>
+                        </div>
                     </div>
 
                     <?php if (empty($service_providers['data'])): ?>
-                        <div class="empty-state">
-                            <i class="fas fa-building"></i>
-                            <p class="text-lg font-medium mb-2">Chưa có nhà cung cấp nào</p>
-                            <p class="text-sm text-gray-500">Hãy thêm nhà cung cấp mới để bắt đầu</p>
+                        <div class="empty-state bg-panel rounded-2xl p-8 lg:p-12 border border-primary-100">
+                            <div class="flex justify-center mb-3 lg:mb-4">
+                                <i data-lucide="building" class="w-12 h-12 lg:w-16 lg:h-16 text-primary-300"></i>
+                            </div>
+                            <p class="text-base lg:text-lg font-semibold text-primary-700 mb-2">Chưa có nhà cung cấp nào</p>
+                            <p class="text-xs lg:text-sm text-primary-500">Hãy thêm nhà cung cấp mới để bắt đầu</p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($service_providers['data'] as $provider): ?>
@@ -608,52 +616,58 @@ if (!is_admin())
                             $is_inactive = ($provider['status'] ?? 'active') === 'inactive';
                             ?>
                             <div class="service-card mb-4 <?= $is_inactive ? 'inactive' : '' ?>">
-                                <div class="flex justify-between items-start mb-4">
+                                <div class="flex flex-col sm:flex-row justify-between items-start gap-3 lg:gap-4 mb-4">
                                     <div class="flex-1">
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <h3 class="font-bold text-lg <?= $is_inactive ? 'text-gray-500' : 'text-primary' ?>">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 class="font-bold text-base lg:text-lg <?= $is_inactive ? 'text-primary-500' : 'text-primary-700' ?>">
                                                 <?= htmlspecialchars($provider['name']) ?>
                                             </h3>
                                             <!-- Status Badge -->
-                                            <span class="status-badge <?= $is_inactive ? 'inactive' : 'active' ?>">
-                                                <i class="fas fa-<?= $is_inactive ? 'times-circle' : 'check-circle' ?>"></i>
+                                            <span class="status-badge <?= $is_inactive ? 'inactive' : 'active' ?> flex items-center gap-1">
+                                                <i data-lucide="<?= $is_inactive ? 'x-circle' : 'check-circle' ?>" class="w-3 h-3"></i>
                                                 <?= $is_inactive ? 'Đã vô hiệu hóa' : 'Hoạt động' ?>
                                             </span>
                                         </div>
-                                        <div class="space-y-1 text-sm <?= $is_inactive ? 'text-gray-400' : 'text-gray-600' ?>">
+                                        <div class="space-y-1 text-xs lg:text-sm <?= $is_inactive ? 'text-primary-400' : 'text-primary-600' ?>">
                                             <?php if (!empty($provider['service_code'])): ?>
-                                                <p>Mã: <span class="font-medium"><?= htmlspecialchars($provider['service_code']) ?></span>
+                                                <p>Mã: <span class="font-semibold"><?= htmlspecialchars($provider['service_code']) ?></span>
                                                 </p>
                                             <?php endif; ?>
                                             <?php if (!empty($provider['phone'])): ?>
-                                                <p>📞 <?= htmlspecialchars($provider['phone']) ?></p>
+                                                <p class="flex items-center gap-1">
+                                                    <i data-lucide="phone" class="w-3 h-3 lg:w-4 lg:h-4"></i>
+                                                    <?= htmlspecialchars($provider['phone']) ?>
+                                                </p>
                                             <?php endif; ?>
                                             <?php if (!empty($provider['email'])): ?>
-                                                <p>✉️ <?= htmlspecialchars($provider['email']) ?></p>
+                                                <p class="flex items-center gap-1">
+                                                    <i data-lucide="mail" class="w-3 h-3 lg:w-4 lg:h-4"></i>
+                                                    <?= htmlspecialchars($provider['email']) ?>
+                                                </p>
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    <div class="flex gap-2 ml-4">
+                                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                                         <a href="?act=admin&module=location-services&action=edit-provider&id=<?= $provider['id'] ?>&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
-                                            class="px-3 py-1.5 bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-1.5">
-                                            <i class="fas fa-edit text-xs"></i>
+                                            class="px-3 lg:px-4 py-1.5 lg:py-2 bg-accent hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center gap-1.5">
+                                            <i data-lucide="edit" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                             <span>Sửa</span>
                                         </a>
                                         <button
-                                            class="px-3 py-1.5 bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors inline-flex items-center gap-1.5"
+                                            class="px-3 lg:px-4 py-1.5 lg:py-2 bg-danger hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center gap-1.5"
                                             onclick="deleteServiceProvider(<?= $provider['id'] ?>)">
-                                            <i class="fas fa-trash text-xs"></i>
+                                            <i data-lucide="trash-2" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                             <span>Xóa</span>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="pt-4 border-t border-gray-200">
-                                    <div class="flex justify-between items-center">
-                                        <h4 class="font-semibold <?= $is_inactive ? 'text-gray-500' : 'text-primary' ?>">Dịch vụ (<?= $provider['services_count'] ?? 0 ?>)</h4>
+                                <div class="pt-4 border-t border-primary-100">
+                                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 lg:gap-3">
+                                        <h4 class="font-bold text-sm lg:text-base <?= $is_inactive ? 'text-primary-500' : 'text-primary-700' ?>">Dịch vụ (<?= $provider['services_count'] ?? 0 ?>)</h4>
                                         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>&service_provider_id=<?= $provider['id'] ?>"
-                                            class="px-3 py-1.5 bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition-colors inline-flex items-center gap-1.5 <?= $is_inactive ? 'opacity-50 cursor-not-allowed' : '' ?>"
+                                            class="w-full sm:w-auto px-3 lg:px-4 py-1.5 lg:py-2 bg-gradient-to-r from-success to-success-dark hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center justify-center gap-1.5 <?= $is_inactive ? 'opacity-50 cursor-not-allowed' : '' ?>"
                                             <?= $is_inactive ? 'onclick="return false;" title="Nhà cung cấp đã bị vô hiệu hóa"' : '' ?>>
-                                            <i class="fas fa-list text-xs"></i>
+                                            <i data-lucide="list" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                             <span>Xem dịch vụ</span>
                                         </a>
                                     </div>
@@ -664,44 +678,50 @@ if (!is_admin())
 
                 <?php elseif (($current_tab ?? 'providers') == 'destinations'): ?>
                     <!-- Destinations Tab -->
-                    <div class="mb-4">
-                        <h2 class="text-xl font-bold mb-2">📍 <?= htmlspecialchars($current_province['name'] ?? 'Tỉnh thành') ?>
-                        </h2>
-                        <a href="?act=admin&module=location-services&action=create-destination&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
-                            class="px-4 py-2.5 bg-accent text-white font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-2">
-                            <i class="fas fa-plus"></i>
-                            <span>Thêm địa điểm du lịch</span>
-                        </a>
+                    <div class="mb-4 lg:mb-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4 mb-4">
+                            <h2 class="text-lg lg:text-xl font-bold text-primary-700 flex items-center gap-2">
+                                <i data-lucide="map-pin" class="w-5 h-5 lg:w-6 lg:h-6 text-accent"></i>
+                                <?= htmlspecialchars($current_province['name'] ?? 'Tỉnh thành') ?>
+                            </h2>
+                            <a href="?act=admin&module=location-services&action=create-destination&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
+                                class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base inline-flex items-center justify-center gap-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Thêm địa điểm du lịch</span>
+                            </a>
+                        </div>
                     </div>
 
                     <?php if (empty($destinations['data'])): ?>
-                        <div class="empty-state">
-                            <i class="fas fa-map-marked-alt"></i>
-                            <p class="text-lg font-medium mb-2">Chưa có địa điểm nào</p>
-                            <p class="text-sm text-gray-500">Hãy thêm địa điểm du lịch mới</p>
+                        <div class="empty-state bg-panel rounded-2xl p-8 lg:p-12 border border-primary-100">
+                            <div class="flex justify-center mb-3 lg:mb-4">
+                                <i data-lucide="map-pin" class="w-12 h-12 lg:w-16 lg:h-16 text-primary-300"></i>
+                            </div>
+                            <p class="text-base lg:text-lg font-semibold text-primary-700 mb-2">Chưa có địa điểm nào</p>
+                            <p class="text-xs lg:text-sm text-primary-500">Hãy thêm địa điểm du lịch mới</p>
                         </div>
                     <?php else: ?>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                             <?php foreach ($destinations['data'] as $destination): ?>
                                 <div class="destination-card">
                                     <!-- Image Section -->
-                                    <div class="relative w-full h-48 bg-gray-100 overflow-hidden">
+                                    <div class="relative w-full h-48 bg-primary-100 overflow-hidden rounded-t-2xl">
                                         <?php if (!empty($destination['thumbnail'])): ?>
                                             <img src="<?= htmlspecialchars($destination['thumbnail']) ?>"
                                                 alt="<?= htmlspecialchars($destination['name']) ?>" class="w-full h-full object-cover">
                                         <?php else: ?>
                                             <div
-                                                class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                                                class="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-100 to-primary-200">
                                                 <div class="text-center">
-                                                    <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
-                                                    <p class="text-xs text-gray-500">Chưa có ảnh</p>
+                                                    <i data-lucide="image" class="w-12 h-12 text-primary-300 mb-2"></i>
+                                                    <p class="text-xs text-primary-500">Chưa có ảnh</p>
                                                 </div>
                                             </div>
                                         <?php endif; ?>
                                         <!-- Status Badge -->
                                         <div class="absolute top-3 right-3">
-                                            <span class="status-badge <?= ($destination['status'] ?? 'active') == 'active' ? 'active' : 'inactive' ?>">
-                                                <i class="fas fa-<?= ($destination['status'] ?? 'active') == 'active' ? 'check-circle' : 'times-circle' ?>"></i>
+                                            <span class="status-badge <?= ($destination['status'] ?? 'active') == 'active' ? 'active' : 'inactive' ?> flex items-center gap-1">
+                                                <i data-lucide="<?= ($destination['status'] ?? 'active') == 'active' ? 'check-circle' : 'x-circle' ?>" class="w-3 h-3"></i>
                                                 <?= ($destination['status'] ?? 'active') == 'active' ? 'Hoạt động' : 'Ngừng hoạt động' ?>
                                             </span>
                                         </div>
@@ -709,27 +729,27 @@ if (!is_admin())
 
                                     <!-- Content Section -->
                                     <div class="p-4">
-                                        <h3 class="font-bold text-lg text-primary mb-2 line-clamp-1">
+                                        <h3 class="font-bold text-base lg:text-lg text-primary-700 mb-2 line-clamp-1">
                                             <?= htmlspecialchars($destination['name']) ?>
                                         </h3>
                                         <?php if (!empty($destination['description'])): ?>
-                                            <p class="text-sm text-gray-600 mb-3 line-clamp-2">
+                                            <p class="text-xs lg:text-sm text-primary-600 mb-3 line-clamp-2">
                                                 <?= htmlspecialchars(substr($destination['description'], 0, 100)) ?>
                                                 <?= mb_strlen($destination['description']) > 100 ? '...' : '' ?>
                                             </p>
                                         <?php endif; ?>
 
                                         <!-- Actions -->
-                                        <div class="flex gap-2 pt-3 border-t border-gray-200">
+                                        <div class="flex gap-2 pt-3 border-t border-primary-100">
                                             <a href="?act=admin&module=location-services&action=edit-destination&id=<?= $destination['id'] ?>&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>"
-                                                class="flex-1 px-3 py-1.5 bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-colors inline-flex items-center justify-center gap-1.5">
-                                                <i class="fas fa-edit text-xs"></i>
+                                                class="flex-1 px-3 py-1.5 lg:py-2 bg-accent hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center justify-center gap-1.5">
+                                                <i data-lucide="edit" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                                 <span>Sửa</span>
                                             </a>
                                             <button
-                                                class="flex-1 px-3 py-1.5 bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors inline-flex items-center justify-center gap-1.5"
+                                                class="flex-1 px-3 py-1.5 lg:py-2 bg-danger hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center justify-center gap-1.5"
                                                 onclick="deleteDestination(<?= $destination['id'] ?>)">
-                                                <i class="fas fa-trash text-xs"></i>
+                                                <i data-lucide="trash-2" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                                 <span>Xóa</span>
                                             </button>
                                         </div>
@@ -743,11 +763,14 @@ if (!is_admin())
             <?php elseif (!empty($current_country_id) && !empty($current_country)): ?>
                 <!-- Chỉ có country_id - Hiển thị danh sách provinces với action buttons -->
                 <div>
-                    <div class="mb-6 flex justify-between items-center">
-                        <h2 class="text-xl font-bold">📍 <?= htmlspecialchars($current_country['name']) ?></h2>
+                    <div class="mb-4 lg:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4">
+                        <h2 class="text-lg lg:text-xl font-bold text-primary-700 flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-5 h-5 lg:w-6 lg:h-6 text-accent"></i>
+                            <?= htmlspecialchars($current_country['name']) ?>
+                        </h2>
                         <a href="?act=admin&module=location-services&action=create-province&country_id=<?= $current_country_id ?>"
-                            class="px-4 py-2.5 bg-green-500 text-white font-medium hover:bg-green-600 transition-colors inline-flex items-center gap-2">
-                            <i class="fas fa-plus"></i>
+                            class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-success to-success-dark hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base inline-flex items-center justify-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
                             <span>Thêm tỉnh thành</span>
                         </a>
                     </div>
@@ -771,51 +794,57 @@ if (!is_admin())
                                 <div class="province-card <?= $is_province_active ? 'border-accent border-2' : '' ?>">
                                     <div class="flex items-center justify-between mb-3">
                                         <a href="<?= $province_url ?>" class="flex-1">
-                                            <h3 class="font-semibold text-lg hover:text-accent"><?= htmlspecialchars($province['name']) ?></h3>
+                                            <h3 class="font-bold text-base lg:text-lg text-primary-700 hover:text-accent transition-colors"><?= htmlspecialchars($province['name']) ?></h3>
                                         </a>
-                                        <span class="status-badge <?= ($province['status'] ?? 'active') == 'active' ? 'active' : 'inactive' ?> ml-2">
+                                        <span class="status-badge <?= ($province['status'] ?? 'active') == 'active' ? 'active' : 'inactive' ?> ml-2 flex items-center gap-1">
+                                            <i data-lucide="<?= ($province['status'] ?? 'active') == 'active' ? 'check-circle' : 'x-circle' ?>" class="w-3 h-3"></i>
                                             <?= ($province['status'] ?? 'active') == 'active' ? 'Hoạt động' : 'Tạm dừng' ?>
                                         </span>
                                     </div>
-                                    <div class="text-sm text-gray-600 mb-3">
-                                        <p>Nhà cung cấp: <span class="font-medium"><?= $province['providers_count'] ?? 0 ?></span></p>
+                                    <div class="text-xs lg:text-sm text-primary-600 mb-3">
+                                        <p>Nhà cung cấp: <span class="font-semibold"><?= $province['providers_count'] ?? 0 ?></span></p>
                                     </div>
-                                    <div class="flex gap-2 pt-3 border-t border-gray-200">
+                                    <div class="flex flex-wrap gap-2 pt-3 border-t border-primary-100">
                                         <a href="<?= $province_url ?>" 
-                                           class="flex-1 px-3 py-2 bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-colors text-center">
-                                            <i class="fas fa-eye mr-1"></i> Xem
+                                           class="flex-1 px-3 py-2 bg-accent hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm text-center inline-flex items-center justify-center gap-1">
+                                            <i data-lucide="eye" class="w-3 h-3 lg:w-4 lg:h-4"></i>
+                                            <span>Xem</span>
                                         </a>
                                         <a href="?act=admin&module=location-services&action=edit-province&id=<?= $province['id'] ?>&country_id=<?= $current_country_id ?>"
-                                            class="px-3 py-2 bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors">
-                                            <i class="fas fa-edit"></i>
+                                            class="px-3 py-2 bg-warning hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center justify-center">
+                                            <i data-lucide="edit" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                         </a>
                                         <button
                                             onclick="toggleProvinceStatus(<?= $province['id'] ?>, '<?= $province['status'] ?? 'active' ?>')"
-                                            class="px-3 py-2 <?= ($province['status'] ?? 'active') == 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500' ?> text-white transition-colors"
+                                            class="px-3 py-2 <?= ($province['status'] ?? 'active') == 'active' ? 'bg-success hover:opacity-90' : 'bg-primary-400 hover:opacity-90' ?> text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center justify-center"
                                             title="<?= ($province['status'] ?? 'active') == 'active' ? 'Vô hiệu hóa' : 'Kích hoạt' ?>">
-                                            <i class="fas fa-<?= ($province['status'] ?? 'active') == 'active' ? 'check' : 'times' ?>"></i>
+                                            <i data-lucide="<?= ($province['status'] ?? 'active') == 'active' ? 'check' : 'x' ?>" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                         </button>
                                         <button onclick="deleteProvince(<?= $province['id'] ?>, <?= $current_country_id ?>)"
-                                            class="px-3 py-2 bg-red-500 text-white hover:bg-red-600 transition-colors" title="Xóa">
-                                            <i class="fas fa-trash"></i>
+                                            class="px-3 py-2 bg-danger hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center justify-center" title="Xóa">
+                                            <i data-lucide="trash-2" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                         </button>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
                         </div>
                     <?php else: ?>
-                        <div class="empty-state">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <p class="text-lg font-medium mb-2">Chưa có tỉnh thành nào</p>
-                            <p class="text-sm text-gray-500">Hãy thêm tỉnh thành mới cho quốc gia này</p>
+                        <div class="empty-state bg-panel rounded-2xl p-8 lg:p-12 border border-primary-100">
+                            <div class="flex justify-center mb-3 lg:mb-4">
+                                <i data-lucide="map-pin" class="w-12 h-12 lg:w-16 lg:h-16 text-primary-300"></i>
+                            </div>
+                            <p class="text-base lg:text-lg font-semibold text-primary-700 mb-2">Chưa có tỉnh thành nào</p>
+                            <p class="text-xs lg:text-sm text-primary-500">Hãy thêm tỉnh thành mới cho quốc gia này</p>
                         </div>
                     <?php endif; ?>
                 </div>
                 <?php else: ?>
                 <!-- Chưa chọn gì - Hiển thị hướng dẫn -->
-                <div class="empty-state">
-                    <i class="fas fa-hand-pointer"></i>
-                    <p class="text-base font-medium">Vui lòng chọn một quốc gia từ danh sách bên trái để bắt đầu</p>
+                <div class="empty-state bg-panel rounded-2xl p-8 lg:p-12 border border-primary-100">
+                    <div class="flex justify-center mb-3 lg:mb-4">
+                        <i data-lucide="hand-pointer" class="w-12 h-12 lg:w-16 lg:h-16 text-primary-300"></i>
+                    </div>
+                    <p class="text-base lg:text-lg font-semibold text-primary-700">Vui lòng chọn một quốc gia từ danh sách bên trái để bắt đầu</p>
                 </div>
             <?php endif; ?>
         </div>

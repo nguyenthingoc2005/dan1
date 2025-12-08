@@ -8,26 +8,35 @@ if (!is_admin())
 ?>
 
 <div class="max-w-4xl mx-auto">
-    <h1 class="text-2xl font-bold text-primary mb-6">Thêm địa điểm mới</h1>
+    <!-- Header - Responsive -->
+    <div class="mb-4 lg:mb-6">
+        <div class="flex items-center gap-2 mb-2">
+            <a href="?act=admin&module=destinations" class="text-primary-500 hover:text-primary-700 font-semibold text-sm lg:text-base flex items-center gap-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Quay lại
+            </a>
+        </div>
+        <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Thêm địa điểm mới</h1>
+    </div>
 
     <form method="POST" action="?act=admin&module=destinations&action=store" enctype="multipart/form-data"
-        class="bg-white p-6 rounded shadow-sm">
+        class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100 space-y-4 lg:space-y-6">
 
         <!-- Basic Info -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Tên địa điểm <span class="text-red-500">*</span>
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                    Tên địa điểm <span class="text-danger">*</span>
                 </label>
                 <input type="text" name="name" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                     placeholder="VD: Vịnh Hạ Long">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Danh mục</label>
                 <select name="category_id"
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     <option value="">-- Chọn danh mục --</option>
                     <?php foreach ($categories as $id => $name): ?>
                         <option value="<?= $id ?>"><?= htmlspecialchars($name) ?></option>
@@ -35,56 +44,59 @@ if (!is_admin())
                 </select>
             </div>
         </div>
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
+        <div>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Mô tả chi tiết</label>
             <textarea name="description" rows="4"
-                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
+                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                 placeholder="Giới thiệu về địa điểm..."></textarea>
         </div>
 
         <!-- Locations -->
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ / Vị trí</label>
+        <div>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Địa chỉ / Vị trí</label>
             <input type="text" name="locations"
-                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
+                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                 placeholder="VD: Quảng Ninh, Việt Nam">
         </div>
 
         <!-- Images Upload -->
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Hình ảnh (Chọn nhiều)</label>
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition cursor-pointer"
+        <div>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-2">Hình ảnh (Chọn nhiều)</label>
+            <div class="border-2 border-dashed border-primary-200 rounded-2xl p-4 lg:p-6 text-center hover:bg-primary-50 transition cursor-pointer"
                 onclick="document.getElementById('images').click()">
                 <input type="file" name="images[]" id="images" multiple accept="image/*" class="hidden"
                     onchange="previewImages(this)">
-                <div class="text-4xl mb-2">📷</div>
-                <p class="text-sm text-gray-500">Click để chọn ảnh hoặc kéo thả vào đây</p>
-                <p class="text-xs text-gray-400 mt-1">Hỗ trợ JPG, PNG, WEBP (Max 5MB)</p>
+                <div class="mb-2 flex justify-center">
+                    <i data-lucide="image" class="w-12 h-12 text-primary-400"></i>
+                </div>
+                <p class="text-xs lg:text-sm text-primary-600">Click để chọn ảnh hoặc kéo thả vào đây</p>
+                <p class="text-xs text-primary-400 mt-1">Hỗ trợ JPG, PNG, WEBP (Max 5MB)</p>
             </div>
 
             <!-- Preview Container -->
-            <div id="image-preview" class="grid grid-cols-4 gap-4 mt-4"></div>
+            <div id="image-preview" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 mt-4"></div>
         </div>
 
         <!-- Status -->
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+        <div>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Trạng thái</label>
             <select name="status"
-                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                 <option value="active">Hoạt động</option>
                 <option value="inactive">Vô hiệu</option>
             </select>
         </div>
 
         <!-- Buttons -->
-        <div class="flex gap-4 border-t pt-6">
-            <button type="submit" class="px-6 py-2 bg-accent text-white rounded hover:bg-blue-600">
-                Tạo địa điểm
-            </button>
+        <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-primary-100">
             <a href="?act=admin&module=destinations"
-                class="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base text-center">
                 Hủy
             </a>
+            <button type="submit" class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                Tạo địa điểm
+            </button>
         </div>
     </form>
 </div>
@@ -99,7 +111,7 @@ if (!is_admin())
                 const reader = new FileReader();
                 reader.onload = function (e) {
                     const div = document.createElement('div');
-                    div.className = 'relative aspect-video bg-gray-100 rounded overflow-hidden';
+                    div.className = 'relative aspect-video bg-primary-100 rounded-xl overflow-hidden border border-primary-100';
                     div.innerHTML = `
                     <img src="${e.target.result}" class="w-full h-full object-cover">
                 `;

@@ -9,30 +9,32 @@ unset($_SESSION['old']);
 ?>
 
 <div class="max-w-[95%] mx-auto">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-primary">Tạo Booking Mới</h1>
-        <a href="?act=admin&module=bookings" class="text-gray-600 hover:text-gray-800">
-            ← Quay lại danh sách
+    <!-- Header - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
+        <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Tạo Booking Mới</h1>
+        <a href="?act=admin&module=bookings" class="text-primary-500 hover:text-primary-700 font-semibold text-sm lg:text-base flex items-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            Quay lại danh sách
         </a>
     </div>
 
-    <form action="?act=admin&module=bookings&action=store" method="POST" class="grid grid-cols-1 lg:grid-cols-4 gap-6"
+    <form action="?act=admin&module=bookings&action=store" method="POST" class="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6"
         id="bookingForm">
         <?= csrf_field() ?>
 
         <!-- LEFT COLUMN: TOUR & CUSTOMER -->
-        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 h-fit">
+        <div class="lg:col-span-3 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 h-fit">
 
             <!-- 1. Tour Selection -->
-            <div class="bg-white p-6 rounded shadow-sm h-full">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">1. Thông tin Tour</h2>
+            <div class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100 h-full">
+                <h2 class="text-base lg:text-lg font-bold text-primary-700 border-b border-primary-100 pb-2 lg:pb-3 mb-4 lg:mb-5">1. Thông tin Tour</h2>
 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Chọn Tour <span
-                                class="text-red-500">*</span></label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Chọn Tour <span
+                                class="text-danger">*</span></label>
                         <select name="tour_id" id="tour_id"
-                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base"
                             required>
                             <option value="">-- Chọn Tour --</option>
                             <?php if (!empty($tours)): ?>
@@ -62,28 +64,29 @@ unset($_SESSION['old']);
                     </div>
 
                     <!-- Giá tour hiển thị -->
-                    <div id="tour_price_display" class="hidden bg-blue-50 p-3 rounded border border-blue-200">
-                        <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div id="tour_price_display" class="hidden bg-info-bg p-3 lg:p-4 rounded-2xl border border-info">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 text-sm">
                             <div>
-                                <span class="text-gray-600">Giá người lớn:</span>
-                                <span id="display_adult_price" class="font-bold text-blue-600 ml-2">0 đ</span>
+                                <span class="text-primary-500">Giá người lớn:</span>
+                                <span id="display_adult_price" class="font-bold text-accent ml-2">0 đ</span>
                             </div>
                             <div>
-                                <span class="text-gray-600">Giá trẻ em:</span>
-                                <span id="display_child_price" class="font-bold text-blue-600 ml-2">0 đ</span>
+                                <span class="text-primary-500">Giá trẻ em:</span>
+                                <span id="display_child_price" class="font-bold text-accent ml-2">0 đ</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Lịch khởi hành <span
-                                    class="text-red-500">*</span></label>
-                            <div class="bg-yellow-50 border border-yellow-200 rounded p-2 mb-2 text-sm" id="deadline_notice">
-                                ⚠️ <strong>Lưu ý:</strong> Phải đặt trước <span id="deadline_days_display">1</span> ngày so với ngày khởi hành
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Lịch khởi hành <span
+                                    class="text-danger">*</span></label>
+                            <div class="bg-warning-bg border border-warning rounded-2xl p-2 lg:p-3 mb-2 text-xs lg:text-sm flex items-start gap-2" id="deadline_notice">
+                                <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+                                <span><strong>Lưu ý:</strong> Phải đặt trước <span id="deadline_days_display">1</span> ngày so với ngày khởi hành</span>
                             </div>
                             <select name="start_date" id="start_date"
-                                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent"
+                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base"
                                 required>
                                 <option value="">-- Chọn ngày đi --</option>
                                 <?php if (!empty($schedules)): ?>
@@ -127,8 +130,8 @@ unset($_SESSION['old']);
             </div>
 
             <!-- 2. Customer Info -->
-            <div class="bg-white p-6 rounded shadow-sm h-full">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">2. Khách hàng</h2>
+            <div class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100 h-full">
+                <h2 class="text-base lg:text-lg font-bold text-primary-700 border-b border-primary-100 pb-2 lg:pb-3 mb-4 lg:mb-5">2. Khách hàng</h2>
 
                 <div class="flex gap-4 mb-4">
                     <label class="inline-flex items-center cursor-pointer">
@@ -193,27 +196,27 @@ unset($_SESSION['old']);
             </div>
 
             <!-- 3. Passengers & Notes -->
-            <div class="bg-white p-6 rounded shadow-sm md:col-span-2">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">3. Số lượng & Ghi chú</h2>
+            <div class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100 md:col-span-2">
+                <h2 class="text-base lg:text-lg font-bold text-primary-700 border-b border-primary-100 pb-2 lg:pb-3 mb-4 lg:mb-5">3. Số lượng & Ghi chú</h2>
 
-                <div class="grid grid-cols-3 gap-4 mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Người lớn (>12t)</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Người lớn (>12t)</label>
                         <input type="number" name="adult_count" id="adult_count" value="<?= $old['adult_count'] ?? 1 ?>"
                             min="1"
-                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent text-center font-bold">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-center font-bold text-sm lg:text-base">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Trẻ em (5-11t)</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Trẻ em (5-11t)</label>
                         <input type="number" name="child_count" id="child_count" value="<?= $old['child_count'] ?? 0 ?>"
                             min="0"
-                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent text-center">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-center text-sm lg:text-base">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Em bé (<5t)< /label>
-                                <input type="number" name="infant_count" id="infant_count"
-                                    value="<?= $old['infant_count'] ?? 0 ?>" min="0"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent text-center">
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Em bé (<5t)</label>
+                        <input type="number" name="infant_count" id="infant_count"
+                            value="<?= $old['infant_count'] ?? 0 ?>" min="0"
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-center text-sm lg:text-base">
                     </div>
                 </div>
 
@@ -298,38 +301,40 @@ unset($_SESSION['old']);
 
         <!-- RIGHT COLUMN: FINANCIALS -->
         <div class="lg:col-span-1 space-y-6">
-            <div class="bg-white p-6 rounded shadow-sm border-t-4 border-accent sticky top-6">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Thanh toán</h2>
+            <div class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border-t-4 border-accent sticky top-6">
+                <h2 class="text-base lg:text-lg font-bold text-primary-700 border-b border-primary-100 pb-2 lg:pb-3 mb-4 lg:mb-5">Thanh toán</h2>
 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm text-gray-600">Tổng tiền tour</label>
+                        <label class="block text-xs lg:text-sm text-primary-500 font-semibold mb-1">Tổng tiền tour</label>
                         <input type="text" id="total_amount_display"
-                            class="w-full text-right font-bold text-gray-800 bg-gray-50 border-0 text-lg" value="0 đ"
+                            class="w-full text-right font-bold text-primary-700 bg-primary-50 border-0 rounded-xl text-base lg:text-lg px-3 py-2" value="0 đ"
                             readonly>
                         <input type="hidden" name="total_amount" id="total_amount" value="0">
                     </div>
 
-                    <div class="border-t pt-4">
-                        <label class="block text-sm text-gray-600 font-bold">THÀNH TIỀN</label>
+                    <div class="border-t border-primary-100 pt-4">
+                        <label class="block text-xs lg:text-sm text-primary-700 font-bold mb-1">THÀNH TIỀN</label>
                         <input type="text" id="final_amount_display"
-                            class="w-full text-right font-bold text-red-600 bg-white border-0 text-xl" value="0 đ"
+                            class="w-full text-right font-bold text-accent bg-white border-0 rounded-xl text-lg lg:text-xl px-3 py-2" value="0 đ"
                             readonly>
                         <input type="hidden" name="final_amount" id="final_amount" value="0">
-                        <p class="text-xs text-gray-500 mt-1 text-center">
-                            💡 Mã giảm giá và đặt cọc sẽ được xử lý sau khi tạo booking
+                        <p class="text-xs text-primary-500 mt-1 text-center flex items-center justify-center gap-1">
+                            <i data-lucide="info" class="w-3 h-3"></i>
+                            Mã giảm giá và đặt cọc sẽ được xử lý sau khi tạo booking
                         </p>
                     </div>
 
                     <div>
-                        <label class="block text-sm text-gray-600">Còn lại</label>
+                        <label class="block text-xs lg:text-sm text-primary-500 font-semibold mb-1">Còn lại</label>
                         <input type="text" id="remaining_amount_display"
-                            class="w-full text-right font-bold text-gray-500 bg-gray-50 border-0" value="0 đ" readonly>
+                            class="w-full text-right font-bold text-primary-500 bg-primary-50 border-0 rounded-xl px-3 py-2" value="0 đ" readonly>
                         <input type="hidden" name="remaining_amount" id="remaining_amount" value="0">
                     </div>
 
                     <button type="submit"
-                        class="w-full py-3 bg-accent text-white font-bold rounded hover:bg-blue-600 shadow mt-4">
+                        class="w-full py-3 lg:py-3.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white font-bold rounded-xl shadow-sm transition-all mt-4 text-sm lg:text-base">
+                        <i data-lucide="check-circle" class="w-4 h-4 inline mr-2"></i>
                         TẠO BOOKING
                     </button>
                 </div>

@@ -7,21 +7,19 @@ require_staff_or_admin();
 ?>
 
 <div class="max-w-8xl mx-auto">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-primary">Quản lý Tour du lịch</h1>
+    <!-- Header - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
+        <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Quản lý Tour du lịch</h1>
         <a href="?act=staff-tours&action=selectTemplate"
-            class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
+            class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
             Thêm Tour mới
         </a>
     </div>
 
-    <!-- Status Tabs -->
-    <div class="mb-6 border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+    <!-- Status Tabs - Responsive -->
+    <div class="mb-4 lg:mb-6 border-b border-primary-100 overflow-x-auto">
+        <nav class="-mb-px flex space-x-4 lg:space-x-8" aria-label="Tabs">
             <?php
             $current_status = $_GET['status'] ?? '';
             $tabs = [
@@ -34,105 +32,137 @@ require_staff_or_admin();
             <?php foreach ($tabs as $key => $label): ?>
                 <a href="?act=staff-tours&status=<?= $key ?>" class="<?= $current_status == $key
                       ? 'border-accent text-accent'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?> 
-                       whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                      : 'border-transparent text-primary-500 hover:text-primary-700 hover:border-primary-300' ?> 
+                       whitespace-nowrap py-3 lg:py-4 px-1 border-b-2 font-semibold text-xs lg:text-sm">
                     <?= $label ?>
                 </a>
             <?php endforeach; ?>
         </nav>
     </div>
 
-    <!-- Search & Filter -->
-    <form method="GET" class="bg-white p-4 rounded shadow-sm mb-6">
+    <!-- Search & Filter - Responsive -->
+    <form method="GET" class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100 mb-4 lg:mb-6">
         <input type="hidden" name="act" value="staff-tours">
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="md:col-span-2">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2">
                 <input type="text" name="search" value="<?= $_GET['search'] ?? '' ?>"
                     placeholder="Tìm kiếm tên tour, mã tour..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
             </div>
             <div>
-                <button type="submit" class="w-full px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">
+                <button type="submit"
+                    class="w-full px-4 lg:px-5 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold transition-all text-sm lg:text-base">
+                    <i data-lucide="search" class="w-4 h-4 inline mr-2"></i>
                     Lọc dữ liệu
                 </button>
             </div>
         </div>
     </form>
 
-    <!-- Table -->
-    <div class="bg-white rounded shadow-sm overflow-hidden">
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-50 text-gray-700 uppercase text-xs font-bold">
-                <tr>
-                    <th class="px-4 py-3 border-b">Hình ảnh</th>
-                    <th class="px-4 py-3 border-b">Mã Tour</th>
-                    <th class="px-4 py-3 border-b">Tên Tour</th>
-                    <th class="px-4 py-3 border-b">Giá (Người lớn)</th>
-                    <th class="px-4 py-3 border-b">Thời gian</th>
-                    <th class="px-4 py-3 border-b">Trạng thái</th>
-                    <th class="px-4 py-3 border-b text-right">Hành động</th>
-                </tr>
-            </thead>
-            <tbody class="text-sm">
-                <?php if (empty($tours)): ?>
-                    <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                            Chưa có tour nào.
-                        </td>
+    <!-- Table - Responsive -->
+    <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                    <tr class="bg-primary-50">
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Hình ảnh</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Mã Tour</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Tên Tour</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Giá (Người lớn)</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Thời gian</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Trạng thái</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider text-right">
+                            Hành động</th>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($tours as $tour): ?>
-                        <tr class="hover:bg-gray-50 border-b last:border-0">
-                            <td class="px-4 py-3 w-24">
-                                <?php if ($tour['thumbnail']): ?>
-                                    <img src="<?= htmlspecialchars($tour['thumbnail']) ?>" class="w-16 h-12 object-cover rounded">
-                                <?php else: ?>
-                                    <div
-                                        class="w-16 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
-                                        No Img</div>
-                                <?php endif; ?>
-                            </td>
-                            <td class="px-4 py-3 font-mono text-gray-600">
-                                <?= htmlspecialchars($tour['tour_code']) ?>
-                            </td>
-                            <td class="px-4 py-3">
-                                <div class="font-medium text-gray-800"><?= htmlspecialchars($tour['name']) ?></div>
-                            </td>
-                            <td class="px-4 py-3 font-bold text-accent">
-                                <?= number_format($tour['adult_price'], 0, ',', '.') ?> đ
-                            </td>
-                            <td class="px-4 py-3 text-gray-600">
-                                <?= $tour['duration_days'] ?>N<?= $tour['duration_nights'] ?>Đ
-                            </td>
-                            <td class="px-4 py-3">
-                                <?php if ($tour['status'] == 'active'): ?>
-                                    <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Active</span>
-                                <?php elseif ($tour['status'] == 'draft'): ?>
-                                    <span class="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">Draft</span>
-                                <?php else: ?>
-                                    <span class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">Inactive</span>
-                                <?php endif; ?>
-                            </td>
-                            <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <a href="?act=staff-tours&action=show&id=<?= $tour['id'] ?>"
-                                    class="text-green-600 hover:text-green-800 font-medium mr-3">Xem</a>
-                                <a href="?act=staff-tours&action=edit&id=<?= $tour['id'] ?>"
-                                    class="text-blue-600 hover:text-blue-800 font-medium">Sửa</a>
+                </thead>
+                <tbody>
+                    <?php if (empty($tours)): ?>
+                        <tr>
+                            <td colspan="7" class="px-4 py-8 text-center text-primary-500">
+                                Chưa có tour nào.
                             </td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    <?php else: ?>
+                        <?php foreach ($tours as $tour): ?>
+                            <tr class="border-b border-primary-100 hover:bg-primary-50 transition-colors">
+                                <td class="px-3 lg:px-4 py-3 lg:py-4 w-20 lg:w-24">
+                                    <?php if ($tour['thumbnail']): ?>
+                                        <img src="<?= htmlspecialchars($tour['thumbnail']) ?>"
+                                            class="w-12 h-10 lg:w-16 lg:h-12 object-cover rounded-xl">
+                                    <?php else: ?>
+                                        <div
+                                            class="w-12 h-10 lg:w-16 lg:h-12 bg-primary-100 rounded-xl flex items-center justify-center text-primary-400 text-xs">
+                                            No Img</div>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4">
+                                    <span
+                                        class="font-mono text-accent font-semibold text-sm"><?= htmlspecialchars($tour['tour_code']) ?></span>
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4">
+                                    <div class="font-semibold text-primary-700 text-sm"><?= htmlspecialchars($tour['name']) ?>
+                                    </div>
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4">
+                                    <span
+                                        class="font-bold text-accent text-sm"><?= number_format($tour['adult_price'], 0, ',', '.') ?>
+                                        đ</span>
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4 text-primary-700 text-sm">
+                                    <?= $tour['duration_days'] ?>N<?= $tour['duration_nights'] ?>Đ
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4">
+                                    <?php if ($tour['status'] == 'active'): ?>
+                                        <span
+                                            class="px-3 py-1 bg-success-bg text-success-text text-xs font-bold rounded-full">Active</span>
+                                    <?php elseif ($tour['status'] == 'draft'): ?>
+                                        <span
+                                            class="px-3 py-1 bg-primary-100 text-primary-500 text-xs font-bold rounded-full">Draft</span>
+                                    <?php else: ?>
+                                        <span
+                                            class="px-3 py-1 bg-danger-bg text-danger-text text-xs font-bold rounded-full">Inactive</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4 text-right whitespace-nowrap">
+                                    <div class="flex gap-2 justify-end">
+                                        <a href="?act=staff-tours&action=show&id=<?= $tour['id'] ?>"
+                                            class="text-accent hover:text-accent-hover transition-colors">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </a>
+                                        <a href="?act=staff-tours&action=edit&id=<?= $tour['id'] ?>"
+                                            class="text-primary-700 hover:text-primary-900 transition-colors">
+                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- Pagination -->
+    <!-- Pagination - Responsive -->
     <?php if ($total_pages > 1): ?>
-        <div class="mt-6 flex justify-center gap-2">
+        <div class="mt-4 lg:mt-6 flex justify-center gap-2 flex-wrap">
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                 <a href="?act=staff-tours&page=<?= $i ?>&search=<?= $_GET['search'] ?? '' ?>&status=<?= $_GET['status'] ?? '' ?>&tour_type=<?= $_GET['tour_type'] ?? '' ?>"
-                    class="px-3 py-1 rounded <?= $i == $current_page ? 'bg-accent text-white' : 'bg-white border hover:bg-gray-100' ?>">
+                    class="px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors <?= $i == $current_page ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white' : 'bg-panel border border-primary-100 text-primary-700 hover:bg-primary-50' ?>">
                     <?= $i ?>
                 </a>
             <?php endfor; ?>

@@ -8,20 +8,24 @@ if (!is_admin())
 ?>
 
 <div class="max-w-4xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-primary">Thêm Lịch Khởi Hành</h1>
-        <a href="?act=admin&module=schedules" class="text-gray-600 hover:text-gray-800">← Quay lại danh sách</a>
+    <!-- Header - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
+        <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Thêm Lịch Khởi Hành</h1>
+        <a href="?act=admin&module=schedules" class="text-primary-500 hover:text-primary-700 font-semibold text-sm lg:text-base flex items-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            Quay lại danh sách
+        </a>
     </div>
 
-    <form action="?act=admin&module=schedules&action=store" method="POST" class="bg-white p-6 rounded-lg shadow-sm space-y-6">
+    <form action="?act=admin&module=schedules&action=store" method="POST" class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100 space-y-4 lg:space-y-6">
         
         <!-- Tour Selection -->
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-                Chọn Tour <span class="text-red-500">*</span>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                Chọn Tour <span class="text-danger">*</span>
             </label>
             <select name="tour_id" id="tour_id" 
-                class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none" required>
+                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base" required>
                 <option value="">-- Chọn Tour --</option>
                 <?php foreach ($tours as $t): ?>
                     <option value="<?= $t['id'] ?>" 
@@ -39,18 +43,18 @@ if (!is_admin())
                     </option>
                 <?php endforeach; ?>
             </select>
-            <div id="tour-info" class="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+            <div id="tour-info" class="mt-3 p-4 bg-info-bg border border-info rounded-2xl hidden">
                 <div class="flex items-center gap-2 mb-2">
-                    <span id="tour-type-badge" class="px-2 py-1 rounded text-xs"></span>
-                    <span id="tour-participants" class="text-sm font-medium text-gray-700"></span>
+                    <span id="tour-type-badge" class="px-2 lg:px-3 py-1 rounded-full text-xs font-bold"></span>
+                    <span id="tour-participants" class="text-xs lg:text-sm font-semibold text-primary-700"></span>
                 </div>
-                <div class="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-xs lg:text-sm text-primary-600">
                     <div>
-                        <span class="font-medium">Thời gian:</span>
+                        <span class="font-semibold">Thời gian:</span>
                         <span id="tour-duration" class="ml-2"></span>
                     </div>
                     <div>
-                        <span class="font-medium">Giá mặc định:</span>
+                        <span class="font-semibold">Giá mặc định:</span>
                         <span id="tour-default-prices" class="ml-2"></span>
                     </div>
                 </div>
@@ -58,47 +62,47 @@ if (!is_admin())
         </div>
 
         <!-- Dates -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Ngày khởi hành <span class="text-red-500">*</span>
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                    Ngày khởi hành <span class="text-danger">*</span>
                 </label>
                 <input type="date" name="start_date" id="start_date" 
                     min="<?= date('Y-m-d') ?>"
-                    class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none" required>
-                <p class="text-xs text-gray-500 mt-1">Phải từ hôm nay trở đi</p>
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base" required>
+                <p class="text-xs text-primary-500 mt-1">Phải từ hôm nay trở đi</p>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc (Tự động)</label>
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Ngày kết thúc (Tự động)</label>
                 <input type="date" id="end_date_display" 
-                    class="w-full px-3 py-2 border bg-gray-100 rounded" readonly>
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl text-primary-700 text-sm lg:text-base" readonly>
                 <input type="hidden" id="end_date" name="end_date">
             </div>
         </div>
 
         <!-- Quota -->
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-                Số chỗ mở bán (Quota) <span class="text-red-500">*</span>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                Số chỗ mở bán (Quota) <span class="text-danger">*</span>
             </label>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                 <input type="number" name="quota" id="quota" value="" min="1" 
-                    class="w-full md:w-48 px-3 py-2 border rounded focus:border-accent focus:outline-none" required>
-                <span class="text-sm text-gray-500">
-                    (Tối thiểu: <span id="min-pax-display">10</span>, 
-                    Tối đa: <span id="max-pax-display">45</span>)
+                    class="w-full sm:w-48 px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base" required>
+                <span class="text-xs lg:text-sm text-primary-500">
+                    (Tối thiểu: <span id="min-pax-display" class="font-semibold">10</span>, 
+                    Tối đa: <span id="max-pax-display" class="font-semibold">45</span>)
                 </span>
             </div>
-            <p id="quota-warning" class="text-xs text-red-600 mt-1 hidden"></p>
-            <p class="text-xs text-gray-500 mt-1">Mặc định: Số chỗ = Số người tối đa của tour</p>
+            <p id="quota-warning" class="text-xs text-danger-text mt-1 hidden"></p>
+            <p class="text-xs text-primary-500 mt-1">Mặc định: Số chỗ = Số người tối đa của tour</p>
         </div>
 
         <!-- Guide Assignment (Optional) -->
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-                Hướng dẫn viên <span class="text-gray-400 text-xs">(Tùy chọn)</span>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                Hướng dẫn viên <span class="text-primary-400 text-xs">(Tùy chọn)</span>
             </label>
-            <select name="guide_id" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+            <select name="guide_id" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                 <option value="">-- Chưa gán HDV --</option>
                 <?php foreach ($guides as $g): ?>
                     <option value="<?= $g['id'] ?>">
@@ -109,48 +113,51 @@ if (!is_admin())
                     </option>
                 <?php endforeach; ?>
             </select>
-            <p class="text-xs text-gray-500 mt-1">Có thể gán sau khi tạo lịch</p>
+            <p class="text-xs text-primary-500 mt-1">Có thể gán sau khi tạo lịch</p>
         </div>
 
         <!-- Pricing -->
-        <div class="border-t pt-4">
-            <h3 class="font-bold text-gray-800 mb-3">Giá bán (Để trống nếu dùng giá gốc của Tour)</h3>
-            <div class="grid grid-cols-3 gap-4">
+        <div class="border-t border-primary-100 pt-4">
+            <h3 class="font-bold text-primary-700 mb-3 text-sm lg:text-base">Giá bán (Để trống nếu dùng giá gốc của Tour)</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">Giá người lớn</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-600 mb-1 lg:mb-2">Giá người lớn</label>
                     <input type="number" name="adult_price" id="adult_price" min="0" step="1000"
                         placeholder="Giá gốc..."
-                        class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
                 </div>
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">Giá trẻ em</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-600 mb-1 lg:mb-2">Giá trẻ em</label>
                     <input type="number" name="child_price" id="child_price" min="0" step="1000"
                         placeholder="Giá gốc..."
-                        class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
                 </div>
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">Giá em bé</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-600 mb-1 lg:mb-2">Giá em bé</label>
                     <input type="number" name="infant_price" id="infant_price" min="0" step="1000"
                         placeholder="Giá gốc..."
-                        class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
                 </div>
             </div>
         </div>
 
         <!-- Guide Notes -->
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú cho HDV</label>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Ghi chú cho HDV</label>
             <textarea name="guide_notes" rows="2" 
-                class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none"
+                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                 placeholder="Ghi chú đặc biệt cho hướng dẫn viên..."></textarea>
         </div>
 
         <!-- Submit -->
-        <div class="flex justify-end gap-3 pt-4 border-t">
+        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-primary-100">
             <a href="?act=admin&module=schedules"
-                class="px-6 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Hủy</a>
-            <button type="submit" class="px-6 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow">
-                ✓ Lưu Lịch Khởi Hành
+                class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base text-center">
+                Hủy
+            </a>
+            <button type="submit" class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                Lưu Lịch Khởi Hành
             </button>
         </div>
     </form>
@@ -204,10 +211,10 @@ if (!is_admin())
             
             if (tourType == 'custom') {
                 tourTypeBadge.textContent = 'Tour Tùy Chỉnh';
-                tourTypeBadge.className = 'px-2 py-1 rounded text-xs bg-purple-100 text-purple-700';
+                tourTypeBadge.className = 'px-2 lg:px-3 py-1 rounded-full text-xs font-bold bg-accent-bg text-accent-text';
             } else {
                 tourTypeBadge.textContent = 'Tour Công Khai';
-                tourTypeBadge.className = 'px-2 py-1 rounded text-xs bg-blue-100 text-blue-700';
+                tourTypeBadge.className = 'px-2 lg:px-3 py-1 rounded-full text-xs font-bold bg-info-bg text-info-text';
             }
 
             tourParticipants.textContent = `Số khách: ${minPax} - ${maxPax} người`;

@@ -29,74 +29,74 @@ function get_menu_items($role)
     $menus = [
         'admin' => [
             [
-                'icon' => '📊',
+                'icon' => 'layout-dashboard',
                 'label' => 'Dashboard',
                 'url' => $base_url . '/?act=admin',
                 'active_pattern' => 'admin'
             ],
             [
-                'icon' => '🗺️',
+                'icon' => 'map-pin',
                 'label' => 'Quản lý Tour',
                 'url' => $base_url . '/?act=admin&module=tours',
                 'active_pattern' => 'admin:tours'
             ],
             [
-                'icon' => '📅',
+                'icon' => 'calendar',
                 'label' => 'Lịch Khởi Hành',
                 'url' => $base_url . '/?act=admin&module=schedules',
                 'active_pattern' => 'admin:schedules'
             ],
             [
-                'icon' => '📝',
+                'icon' => 'calendar-check',
                 'label' => 'Quản lý Đặt Tour',
                 'url' => $base_url . '/?act=admin&module=bookings',
                 'active_pattern' => 'admin:bookings'
             ],
             [
-                'icon' => '👥',
+                'icon' => 'users',
                 'label' => 'Khách hàng',
                 'url' => $base_url . '/?act=admin&module=customers',
                 'active_pattern' => 'admin:customers'
             ],
             [
-                'icon' => '💰',
+                'icon' => 'credit-card',
                 'label' => 'Thanh toán',
                 'url' => $base_url . '/?act=admin&module=payments',
                 'active_pattern' => 'admin:payments'
             ],
             [
-                'icon' => '📔',
+                'icon' => 'book-open',
                 'label' => 'Nhật ký Tour',
                 'url' => $base_url . '/?act=admin&module=journals',
                 'active_pattern' => 'admin:journals'
             ],
             [
-                'icon' => '📈',
+                'icon' => 'bar-chart-3',
                 'label' => 'Báo cáo',
                 'url' => $base_url . '/?act=admin&module=reports',
                 'active_pattern' => 'admin:reports'
             ],
             [
-                'icon' => '👔',
+                'icon' => 'user-check',
                 'label' => 'Nhân viên',
                 'url' => $base_url . '/?act=admin&module=users',
                 'active_pattern' => 'admin:users'
             ],
             // Danh mục & Cấu hình khác
             [
-                'icon' => '🌍',
+                'icon' => 'map',
                 'label' => 'Địa điểm & Dịch vụ',
                 'url' => $base_url . '/?act=admin&module=location-services',
                 'active_pattern' => 'admin:location-services'
             ],
             [
-                'icon' => '🛎️',
+                'icon' => 'bell',
                 'label' => 'Loại dịch vụ',
                 'url' => $base_url . '/?act=admin&module=service-types',
                 'active_pattern' => 'admin:service-types'
             ],
             [
-                'icon' => '📋',
+                'icon' => 'clipboard-list',
                 'label' => 'Chính sách',
                 'url' => $base_url . '/?act=admin&module=policies',
                 'active_pattern' => 'admin:policies'
@@ -105,13 +105,13 @@ function get_menu_items($role)
 
         'staff' => [
             [
-                'icon' => '📊',
+                'icon' => 'layout-dashboard',
                 'label' => 'Dashboard',
                 'url' => $base_url . '/?act=staff-dashboard',
                 'active_pattern' => 'staff-dashboard'
             ],
             [
-                'icon' => '✈️',
+                'icon' => 'map-pin',
                 'label' => 'Tours',
                 'url' => $base_url . '/?act=staff-tours',
                 'active_pattern' => 'staff-tours',
@@ -121,7 +121,7 @@ function get_menu_items($role)
                 ]
             ],
             [
-                'icon' => '📝',
+                'icon' => 'calendar-check',
                 'label' => 'Bookings',
                 'url' => $base_url . '/?act=staff-bookings',
                 'active_pattern' => 'staff-bookings',
@@ -131,13 +131,13 @@ function get_menu_items($role)
                 ]
             ],
             [
-                'icon' => '📅',
+                'icon' => 'calendar',
                 'label' => 'Lịch Tour',
                 'url' => $base_url . '/?act=staff-schedules',
                 'active_pattern' => 'staff-schedules'
             ],
             [
-                'icon' => '👥',
+                'icon' => 'users',
                 'label' => 'Customers',
                 'url' => $base_url . '/?act=staff-customers',
                 'active_pattern' => 'staff-customers',
@@ -147,13 +147,13 @@ function get_menu_items($role)
                 ]
             ],
             [
-                'icon' => '💰',
+                'icon' => 'credit-card',
                 'label' => 'Payments',
                 'url' => $base_url . '/?act=staff-payments',
                 'active_pattern' => 'staff-payments'
             ],
             [
-                'icon' => '👤',
+                'icon' => 'user',
                 'label' => 'Thông tin cá nhân',
                 'url' => $base_url . '/?act=profile',
                 'active_pattern' => 'profile'
@@ -162,37 +162,37 @@ function get_menu_items($role)
 
         'guide' => [
             [
-                'icon' => '📊',
+                'icon' => 'layout-dashboard',
                 'label' => 'Dashboard',
                 'url' => $base_url . '/?act=guide-dashboard',
                 'active_pattern' => 'guide-dashboard'
             ],
             [
-                'icon' => '✈️',
+                'icon' => 'calendar',
                 'label' => 'Lịch Tour',
                 'url' => $base_url . '/?act=guide-tours',
                 'active_pattern' => 'guide-tours'
             ],
             [
-                'icon' => '✅',
+                'icon' => 'check-circle',
                 'label' => 'Check-in',
                 'url' => $base_url . '/?act=guide-checkin',
                 'active_pattern' => 'guide-checkin'
             ],
             [
-                'icon' => '📔',
+                'icon' => 'book-open',
                 'label' => 'Nhật ký Tour',
                 'url' => $base_url . '/?act=guide-journals',
                 'active_pattern' => 'guide-journals'
             ],
             [
-                'icon' => '💰',
+                'icon' => 'dollar-sign',
                 'label' => 'Chi phí phát sinh',
                 'url' => $base_url . '/?act=guide-expenses',
                 'active_pattern' => 'guide-expenses'
             ],
             [
-                'icon' => '👤',
+                'icon' => 'user',
                 'label' => 'Thông tin cá nhân',
                 'url' => $base_url . '/?act=profile',
                 'active_pattern' => 'profile'
@@ -252,25 +252,25 @@ function render_menu()
             $is_active = is_active_route($item['active_pattern']);
         }
 
-        // Flat Design - No border, no shadow
-        $active_class = $is_active ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700 hover:text-white';
+        // Horizon UI Style - Better contrast
+        $active_class = $is_active 
+            ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white font-semibold' 
+            : 'text-primary-700 hover:bg-primary-50 hover:text-primary-900 font-semibold';
         $submenu_id = 'submenu-' . $index;
 
         // Check if has submenu
         if (isset($item['submenu']) && !empty($item['submenu'])) {
             // Parent menu item with submenu
             echo '<div class="mb-1">';
-            echo '<button onclick="toggleSubmenu(\'' . $submenu_id . '\')" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded transition-colors ' . $active_class . '">';
+            echo '<button onclick="toggleSubmenu(\'' . $submenu_id . '\')" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-colors ' . $active_class . '">';
             echo '<div class="flex items-center gap-3">';
-            echo '<span class="text-lg">' . $item['icon'] . '</span>';
-            echo '<span class="font-medium">' . $item['label'] . '</span>';
+            echo '<i data-lucide="' . $item['icon'] . '" class="w-5 h-5"></i>';
+            echo '<span>' . $item['label'] . '</span>';
             echo '</div>';
-            echo '<svg id="arrow-' . $submenu_id . '" class="w-4 h-4 transition-transform duration-200 ' . ($is_active ? 'rotate-180' : '') . '" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
-            echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>';
-            echo '</svg>';
+            echo '<i data-lucide="chevron-down" id="arrow-' . $submenu_id . '" class="w-4 h-4 transition-transform duration-200 ' . ($is_active ? 'rotate-180' : '') . '"></i>';
             echo '</button>';
 
-            // Submenu - Flat Design
+            // Submenu - Horizon UI Style
             $submenu_display = $is_active ? 'block' : 'hidden';
             echo '<div id="' . $submenu_id . '" class="submenu ml-4 mt-1 space-y-1 pl-2 ' . $submenu_display . '">';
             foreach ($item['submenu'] as $subitem) {
@@ -278,19 +278,21 @@ function render_menu()
                 $sub_act = str_replace('?act=', '', parse_url($subitem['url'], PHP_URL_QUERY));
                 $sub_is_active = ($current_act === $sub_act);
 
-                $sub_active_class = $sub_is_active ? 'text-accent font-medium bg-slate-700' : 'text-slate-400 hover:text-white hover:bg-slate-700';
+                $sub_active_class = $sub_is_active 
+                    ? 'text-accent font-semibold bg-primary-50' 
+                    : 'text-primary-500 hover:text-primary-700 hover:bg-primary-50 font-medium';
 
-                echo '<a href="' . $subitem['url'] . '" class="block px-4 py-2 rounded transition-colors text-sm ' . $sub_active_class . '">';
+                echo '<a href="' . $subitem['url'] . '" class="block px-4 py-2 rounded-xl transition-colors text-sm ' . $sub_active_class . '">';
                 echo $subitem['label'];
                 echo '</a>';
             }
             echo '</div>';
             echo '</div>';
         } else {
-            // Simple menu item - Flat Design
-            echo '<a href="' . $item['url'] . '" class="flex items-center gap-3 px-4 py-3 rounded transition-colors mb-1 ' . $active_class . '">';
-            echo '<span class="text-lg">' . $item['icon'] . '</span>';
-            echo '<span class="font-medium">' . $item['label'] . '</span>';
+            // Simple menu item - Horizon UI Style
+            echo '<a href="' . $item['url'] . '" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors mb-1 ' . $active_class . '">';
+            echo '<i data-lucide="' . $item['icon'] . '" class="w-5 h-5"></i>';
+            echo '<span>' . $item['label'] . '</span>';
             echo '</a>';
         }
     }

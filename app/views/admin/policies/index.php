@@ -9,27 +9,28 @@ if (!is_admin())
 ?>
 
 <div class="max-w-8xl mx-auto">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
+    <!-- Header - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-primary">Quản lý chính sách</h1>
-            <p class="text-sm text-gray-500 mt-1">Quản lý các chính sách áp dụng cho tour</p>
+            <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Quản lý chính sách</h1>
+            <p class="text-xs lg:text-sm text-primary-500 mt-1">Quản lý các chính sách áp dụng cho tour</p>
         </div>
         <a href="?act=admin&module=policies&action=create"
-            class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600">
-            + Thêm chính sách mới
+            class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Thêm chính sách mới
         </a>
     </div>
 
     <!-- Filters -->
-    <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
-        <form method="GET" action="?act=admin&module=policies" class="flex gap-4 items-end">
+    <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-5 mb-4">
+        <form method="GET" action="?act=admin&module=policies" class="flex flex-col lg:flex-row gap-3 lg:gap-4 items-end">
             <input type="hidden" name="act" value="admin">
             <input type="hidden" name="module" value="policies">
 
-            <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Loại chính sách</label>
-                <select name="policy_type" class="w-full px-3 py-2 border rounded focus:border-accent">
+            <div class="flex-1 w-full lg:w-auto">
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Loại chính sách</label>
+                <select name="policy_type" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     <option value="">-- Tất cả --</option>
                     <option value="cancellation" <?= ($_GET['policy_type'] ?? '') == 'cancellation' ? 'selected' : '' ?>>
                         Hủy tour</option>
@@ -41,9 +42,9 @@ if (!is_admin())
                 </select>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                <select name="status" class="w-full px-3 py-2 border rounded focus:border-accent">
+            <div class="w-full lg:w-auto">
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Trạng thái</label>
+                <select name="status" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     <option value="">-- Tất cả --</option>
                     <option value="active" <?= ($_GET['status'] ?? '') == 'active' ? 'selected' : '' ?>>Hoạt động</option>
                     <option value="inactive" <?= ($_GET['status'] ?? '') == 'inactive' ? 'selected' : '' ?>>Vô hiệu
@@ -51,98 +52,105 @@ if (!is_admin())
                 </select>
             </div>
 
-            <button type="submit" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                🔍 Lọc
+            <button type="submit" class="w-full lg:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-primary-600 hover:opacity-90 text-white rounded-xl font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                <i data-lucide="filter" class="w-4 h-4"></i>
+                Lọc
             </button>
 
             <?php if (!empty($_GET['status']) || !empty($_GET['policy_type'])): ?>
-                <a href="?act=admin&module=policies" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
-                    ✕ Xóa bộ lọc
+                <a href="?act=admin&module=policies" class="w-full lg:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                    Xóa bộ lọc
                 </a>
             <?php endif; ?>
         </form>
     </div>
 
     <!-- Table -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table class="w-full">
-            <thead class="bg-slate-50 border-b border-slate-200">
+    <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse min-w-[800px]">
+                <thead class="bg-primary-50 border-b border-primary-100">
                 <tr>
-                    <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">ID</th>
-                    <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Tên chính sách</th>
-                    <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Loại</th>
-                    <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Mô tả</th>
-                    <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Số tour sử dụng</th>
-                    <th class="px-4 py-3 text-left text-sm font-medium text-slate-700">Trạng thái</th>
-                    <th class="px-4 py-3 text-right text-sm font-medium text-slate-700">Thao tác</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 text-left text-xs uppercase font-semibold text-primary-700 tracking-wider">ID</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 text-left text-xs uppercase font-semibold text-primary-700 tracking-wider">Tên chính sách</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 text-left text-xs uppercase font-semibold text-primary-700 tracking-wider">Loại</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 text-left text-xs uppercase font-semibold text-primary-700 tracking-wider">Mô tả</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 text-left text-xs uppercase font-semibold text-primary-700 tracking-wider">Số tour sử dụng</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 text-left text-xs uppercase font-semibold text-primary-700 tracking-wider">Trạng thái</th>
+                    <th class="px-3 lg:px-4 py-2 lg:py-3 text-right text-xs uppercase font-semibold text-primary-700 tracking-wider">Thao tác</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200">
+            <tbody class="divide-y divide-primary-100">
                 <?php if (empty($policies)): ?>
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-slate-500">
+                        <td colspan="7" class="px-3 lg:px-4 py-6 lg:py-8 text-center text-primary-500 text-sm">
                             Chưa có chính sách nào.
-                            <a href="?act=admin&module=policies&action=create" class="text-accent hover:underline">Thêm
+                            <a href="?act=admin&module=policies&action=create" class="text-accent hover:text-accent-hover font-semibold ml-1">Thêm
                                 mới</a>
                         </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($policies as $policy): ?>
-                        <tr class="hover:bg-slate-50">
-                            <td class="px-4 py-3 text-sm"><?= $policy['id'] ?></td>
-                            <td class="px-4 py-3 text-sm font-medium">
+                        <tr class="hover:bg-primary-50 transition-colors">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm text-primary-700"><?= $policy['id'] ?></td>
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm font-semibold">
                                 <a href="?act=admin&module=policies&action=edit&id=<?= $policy['id'] ?>"
-                                    class="text-blue-600 hover:text-blue-800">
+                                    class="text-accent hover:text-accent-hover">
                                     <?= htmlspecialchars($policy['name']) ?>
                                 </a>
                             </td>
-                            <td class="px-4 py-3 text-sm">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm">
                                 <?php if ($policy['policy_type']): ?>
-                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                                    <span class="px-2 lg:px-3 py-1 rounded-full bg-info-bg text-info-text text-xs font-bold">
                                         <?= htmlspecialchars($policy['policy_type']) ?>
                                     </span>
                                 <?php else: ?>
-                                    <span class="text-gray-400">-</span>
+                                    <span class="text-primary-400">-</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3 text-sm text-slate-600">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm text-primary-600">
                                 <?= htmlspecialchars(substr($policy['description'] ?? '', 0, 50)) ?>
                                 <?= strlen($policy['description'] ?? '') > 50 ? '...' : '' ?>
                             </td>
-                            <td class="px-4 py-3 text-sm text-center">
-                                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm text-center">
+                                <span class="px-2 lg:px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-bold">
                                     <?= $policy['tour_count'] ?? 0 ?> tour
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-sm">
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm">
                                 <?php if ($policy['status'] == 'active'): ?>
-                                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Hoạt động</span>
+                                    <span class="px-2 lg:px-3 py-1 rounded-full bg-success-bg text-success-text text-xs font-bold">Hoạt động</span>
                                 <?php else: ?>
-                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">Vô hiệu</span>
+                                    <span class="px-2 lg:px-3 py-1 rounded-full bg-primary-100 text-primary-500 text-xs font-bold">Vô hiệu</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3 text-sm text-right">
-                                <a href="?act=admin&module=policies&action=edit&id=<?= $policy['id'] ?>"
-                                    class="text-blue-600 hover:text-blue-800 mr-3">
-                                    ✏️ Sửa
-                                </a>
-                                <a href="?act=admin&module=policies&action=delete&id=<?= $policy['id'] ?>"
-                                    onclick="return confirm('Xác nhận xóa chính sách này? Chính sách đang được sử dụng sẽ không thể xóa.')"
-                                    class="text-red-600 hover:text-red-800">
-                                    🗑️ Xóa
-                                </a>
+                            <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="?act=admin&module=policies&action=edit&id=<?= $policy['id'] ?>"
+                                        class="text-accent hover:text-accent-hover p-1.5 rounded-xl hover:bg-primary-50 transition-all" title="Sửa">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </a>
+                                    <a href="?act=admin&module=policies&action=delete&id=<?= $policy['id'] ?>"
+                                        onclick="return confirm('Xác nhận xóa chính sách này? Chính sách đang được sử dụng sẽ không thể xóa.')"
+                                        class="text-danger hover:text-danger-text p-1.5 rounded-xl hover:bg-danger-bg transition-all" title="Xóa">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
     </div>
 
     <!-- Note -->
-    <div class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r">
-        <p class="text-sm text-blue-700">
-            💡 <strong>Lưu ý:</strong> Chính sách có thể được gán cho nhiều tour. Chỉ có thể xóa chính sách khi không
+    <div class="mt-4 p-4 bg-info-bg rounded-2xl border border-info">
+        <p class="text-xs lg:text-sm text-info-text flex items-start gap-2">
+            <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+            <span><strong>Lưu ý:</strong> Chính sách có thể được gán cho nhiều tour. Chỉ có thể xóa chính sách khi không
             còn tour nào sử dụng.
         </p>
     </div>

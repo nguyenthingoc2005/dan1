@@ -7,67 +7,71 @@
 ?>
 
 <div class="max-w-7xl mx-auto">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
+    <!-- Header - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800">Chi tiết Tour</h1>
-            <p class="text-slate-500 text-sm mt-1">
+            <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Chi tiết Tour</h1>
+            <p class="text-xs lg:text-sm text-primary-500 mt-1">
                 <?= htmlspecialchars($tour['tour_code']) ?> - <?= htmlspecialchars($tour['name']) ?>
             </p>
         </div>
         <a href="?act=guide-tours"
-            class="px-4 py-2 bg-panel border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition-colors">
-            ← Quay lại
+            class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base text-center flex items-center justify-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            Quay lại
         </a>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="bg-panel rounded p-2 mb-6 border border-slate-200">
+    <!-- Navigation Tabs - Responsive -->
+    <div class="bg-panel rounded-2xl p-2 lg:p-3 mb-4 lg:mb-6 border border-primary-100">
         <div class="flex gap-2 overflow-x-auto">
-            <a href="#tour-info" class="px-4 py-2 rounded whitespace-nowrap bg-slate-100 text-slate-800 font-medium hover:bg-slate-200">
-                📋 Thông tin Tour
+            <a href="#tour-info" class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors text-xs lg:text-sm">
+                <i data-lucide="file-text" class="w-4 h-4 inline mr-1"></i>
+                Thông tin Tour
             </a>
-            <a href="#services" class="px-4 py-2 rounded whitespace-nowrap <?= !empty($bookingServices) ? 'bg-accent text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200' ?>">
-                🛎️ Dịch vụ (<?= count($bookingServices ?? []) ?>)
+            <a href="#services" class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap transition-colors text-xs lg:text-sm <?= !empty($bookingServices) ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200' ?>">
+                <i data-lucide="briefcase" class="w-4 h-4 inline mr-1"></i>
+                Dịch vụ (<?= count($bookingServices ?? []) ?>)
             </a>
-            <a href="#passengers" class="px-4 py-2 rounded whitespace-nowrap bg-slate-100 text-slate-800 font-medium hover:bg-slate-200">
-                👥 Hành khách (<?= count($passengers ?? []) ?>)
+            <a href="#passengers" class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors text-xs lg:text-sm">
+                <i data-lucide="users" class="w-4 h-4 inline mr-1"></i>
+                Hành khách (<?= count($passengers ?? []) ?>)
             </a>
         </div>
     </div>
 
     <!-- TOUR DETAILS SECTION -->
-    <div id="tour-info" class="space-y-8 mb-8">
-        <!-- Basic Info - Flat Design: Dùng gap thay border -->
-        <div class="bg-panel rounded p-6">
-            <h2 class="text-lg font-bold text-slate-800 mb-6">Thông tin chuyến đi</h2>
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+    <div id="tour-info" class="space-y-4 lg:space-y-8 mb-6 lg:mb-8">
+        <!-- Basic Info - Responsive -->
+        <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
+            <h2 class="text-base lg:text-lg font-bold text-primary-700 mb-4 lg:mb-6">Thông tin chuyến đi</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
                 <div>
-                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-1">Ngày khởi hành</div>
-                    <div class="font-semibold text-slate-900"><?= date('d/m/Y', strtotime($schedule['start_date'])) ?></div>
+                    <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Ngày khởi hành</div>
+                    <div class="font-semibold text-primary-700 text-sm lg:text-base"><?= date('d/m/Y', strtotime($schedule['start_date'])) ?></div>
                 </div>
                 <div>
-                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-1">Ngày kết thúc</div>
-                    <div class="font-semibold text-slate-900"><?= date('d/m/Y', strtotime($schedule['end_date'])) ?></div>
+                    <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Ngày kết thúc</div>
+                    <div class="font-semibold text-primary-700 text-sm lg:text-base"><?= date('d/m/Y', strtotime($schedule['end_date'])) ?></div>
                 </div>
                 <div>
-                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-1">Thời lượng</div>
-                    <div class="font-semibold text-slate-900">
+                    <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Thời lượng</div>
+                    <div class="font-semibold text-primary-700 text-sm lg:text-base">
                         <?= $tour['duration_days'] ?> ngày <?= $tour['duration_nights'] ?> đêm
                     </div>
                 </div>
                 <div>
-                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-1">Số lượng khách</div>
-                    <div class="font-bold text-accent text-lg"><?= count($passengers) ?></div>
-                    <div class="text-xs text-slate-400">/ <?= $schedule['quota'] ?> chỗ</div>
+                    <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Số lượng khách</div>
+                    <div class="font-bold text-accent text-base lg:text-lg"><?= count($passengers) ?></div>
+                    <div class="text-xs text-primary-500">/ <?= $schedule['quota'] ?> chỗ</div>
                 </div>
                 <div>
-                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-1">Điểm khởi hành</div>
-                    <div class="font-semibold text-slate-900"><?= htmlspecialchars($tour['departure_location'] ?? '-') ?></div>
+                    <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Điểm khởi hành</div>
+                    <div class="font-semibold text-primary-700 text-sm lg:text-base"><?= htmlspecialchars($tour['departure_location'] ?? '-') ?></div>
                 </div>
                 <div>
-                    <div class="text-xs text-slate-500 uppercase tracking-wide mb-1">Loại tour</div>
-                    <div class="font-semibold text-slate-900">
+                    <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Loại tour</div>
+                    <div class="font-semibold text-primary-700 text-sm lg:text-base">
                         <?= $tour['tour_type'] === 'public' ? 'Tour công khai' : 'Tour riêng' ?>
                     </div>
                 </div>
@@ -76,9 +80,9 @@
 
         <!-- Introduction & Description -->
         <?php if (!empty($tour['introduction']) || !empty($tour['description'])): ?>
-            <div class="bg-panel rounded p-6">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">Giới thiệu Tour</h2>
-                <div class="space-y-4 text-slate-700 leading-relaxed">
+            <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
+                <h2 class="text-base lg:text-lg font-bold text-primary-700 mb-4">Giới thiệu Tour</h2>
+                <div class="space-y-4 text-primary-700 leading-relaxed text-sm lg:text-base">
                     <?php if (!empty($tour['introduction'])): ?>
                         <p><?= nl2br(htmlspecialchars($tour['introduction'])) ?></p>
                     <?php endif; ?>
@@ -91,13 +95,13 @@
 
         <!-- Highlights -->
         <?php if (!empty($tour['highlights'])): ?>
-            <div class="bg-panel rounded p-6">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">Điểm nổi bật</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
+                <h2 class="text-base lg:text-lg font-bold text-primary-700 mb-4">Điểm nổi bật</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     <?php foreach ($tour['highlights'] as $highlight): ?>
                         <div class="flex items-start gap-2">
-                            <span class="text-accent mt-0.5">•</span>
-                            <span class="text-slate-700"><?= htmlspecialchars(is_array($highlight) ? ($highlight['highlight'] ?? '') : $highlight) ?></span>
+                            <i data-lucide="star" class="w-4 h-4 text-accent mt-0.5 flex-shrink-0"></i>
+                            <span class="text-primary-700 text-sm lg:text-base"><?= htmlspecialchars(is_array($highlight) ? ($highlight['highlight'] ?? '') : $highlight) ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>

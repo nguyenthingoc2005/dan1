@@ -6,18 +6,19 @@ require_staff_or_admin();
 ?>
 
 <div class="max-w-8xl mx-auto">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-primary">Quản lý Đặt Tour của tôi</h1>
+    <!-- Header - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
+        <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Quản lý Đặt Tour của tôi</h1>
         <a href="?act=staff-bookings&action=create"
-            class="px-4 py-2 bg-accent text-white rounded hover:bg-blue-600 shadow flex items-center gap-2 transition-colors">
-            <span>+</span> Tạo Booking mới
+            class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            Tạo Booking mới
         </a>
     </div>
 
-    <!-- Status Tabs -->
-    <div class="mb-6 border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
+    <!-- Status Tabs - Responsive -->
+    <div class="mb-4 lg:mb-6 border-b border-primary-100 overflow-x-auto">
+        <nav class="-mb-px flex space-x-4 lg:space-x-8" aria-label="Tabs">
             <?php
             $current_status = $_GET['status'] ?? '';
             $tabs = [
@@ -29,30 +30,31 @@ require_staff_or_admin();
             ];
             ?>
             <?php foreach ($tabs as $key => $label): ?>
-                <a href="?act=staff-bookings&status=<?= $key ?>" class="<?= $current_status == $key
-                      ? 'border-accent text-accent'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?> 
-                       whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                <a href="?act=staff-bookings&status=<?= $key ?>"
+                    class="<?= $current_status == $key
+                        ? 'border-accent text-accent'
+                        : 'border-transparent text-primary-500 hover:text-primary-700 hover:border-primary-300' ?> 
+                       whitespace-nowrap py-3 lg:py-4 px-1 border-b-2 font-semibold text-xs lg:text-sm transition-colors">
                     <?= $label ?>
                 </a>
             <?php endforeach; ?>
         </nav>
     </div>
 
-    <!-- Search & Filter -->
-    <form method="GET" class="bg-white p-4 rounded shadow-sm mb-6">
+    <!-- Search & Filter - Responsive -->
+    <form method="GET" class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100 mb-4 lg:mb-6">
         <input type="hidden" name="act" value="staff-bookings">
         <input type="hidden" name="status" value="<?= $current_status ?>">
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="md:col-span-1">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div class="lg:col-span-1">
                 <input type="text" name="search" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>"
                     placeholder="Mã booking, tên khách, SĐT..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent transition-colors">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
             </div>
-            <div class="md:col-span-1">
+            <div class="lg:col-span-1">
                 <select name="tour_id"
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent transition-colors">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     <option value="">-- Tất cả Tour --</option>
                     <?php if (!empty($tours)): ?>
                         <?php foreach ($tours as $t): ?>
@@ -63,121 +65,143 @@ require_staff_or_admin();
                     <?php endif; ?>
                 </select>
             </div>
-            <div class="md:col-span-1">
+            <div class="lg:col-span-1">
                 <input type="date" name="start_date" value="<?= htmlspecialchars($_GET['start_date'] ?? '') ?>"
-                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent transition-colors">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
             </div>
             <div>
                 <button type="submit"
-                    class="w-full px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-700 transition-colors">
-                    <i class="fas fa-filter mr-2"></i> Lọc dữ liệu
+                    class="w-full px-4 lg:px-5 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold transition-all text-sm lg:text-base">
+                    <i data-lucide="filter" class="w-4 h-4 inline mr-2"></i>
+                    Lọc dữ liệu
                 </button>
             </div>
         </div>
     </form>
 
-    <!-- Table -->
-    <div class="bg-white rounded shadow-sm overflow-hidden">
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-slate-50 text-slate-700 uppercase text-xs font-bold">
-                <tr>
-                    <th class="px-4 py-3 border-b">Mã Booking</th>
-                    <th class="px-4 py-3 border-b">Thông tin Tour</th>
-                    <th class="px-4 py-3 border-b">Khách hàng</th>
-                    <th class="px-4 py-3 border-b">Ngày đi</th>
-                    <th class="px-4 py-3 border-b text-right">Tổng tiền</th>
-                    <th class="px-4 py-3 border-b text-center">Trạng thái</th>
-                    <th class="px-4 py-3 border-b text-right">Hành động</th>
-                </tr>
-            </thead>
-            <tbody class="text-sm">
-                <?php if (empty($bookings)): ?>
-                    <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-slate-500">
-                            <div class="flex flex-col items-center gap-3">
-                                <i class="fas fa-ticket-alt text-4xl text-slate-300"></i>
-                                <p>Bạn chưa có booking nào.</p>
-                            </div>
-                        </td>
+    <!-- Table - Responsive -->
+    <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                    <tr class="bg-primary-50">
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Mã Booking</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Thông tin Tour</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Khách hàng</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Ngày đi</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider text-right">
+                            Tổng tiền</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider text-center">
+                            Trạng thái</th>
+                        <th
+                            class="px-3 lg:px-4 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider text-right">
+                            Hành động</th>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($bookings as $b): ?>
-                        <tr class="hover:bg-slate-50 border-b last:border-0 transition-colors">
-                            <td class="px-4 py-3 font-mono font-bold text-accent">
-                                <a href="?act=staff-bookings&action=show&id=<?= $b['id'] ?>" class="hover:underline">
-                                    <?= htmlspecialchars($b['booking_code']) ?>
-                                </a>
-                            </td>
-                            <td class="px-4 py-3">
-                                <div class="font-medium text-slate-900"><?= htmlspecialchars($b['tour_name']) ?></div>
-                                <div class="text-xs text-slate-500"><?= htmlspecialchars($b['tour_code']) ?></div>
-                            </td>
-                            <td class="px-4 py-3">
-                                <div class="font-medium text-slate-900"><?= htmlspecialchars($b['customer_name']) ?></div>
-                                <div class="text-xs text-slate-500"><?= htmlspecialchars($b['customer_phone']) ?></div>
-                            </td>
-                            <td class="px-4 py-3 text-slate-600">
-                                <?= date('d/m/Y', strtotime($b['start_date'])) ?>
-                            </td>
-                            <td class="px-4 py-3 text-right font-bold text-slate-800">
-                                <?= number_format($b['final_amount'], 0, ',', '.') ?> đ
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <!-- Payment Status (đã gộp approval_status) -->
-                                <?php
-                                switch ($b['payment_status']) {
-                                    case 'unpaid':
-                                        echo '<span class="block px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full mb-1">Chờ thanh toán</span>';
-                                        break;
-                                    case 'partial':
-                                        echo '<span class="block px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full mb-1">Đã cọc</span>';
-                                        break;
-                                    case 'paid':
-                                        echo '<span class="block px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full mb-1">Đã thanh toán</span>';
-                                        break;
-                                    case 'rejected':
-                                        echo '<span class="block px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full mb-1">Từ chối</span>';
-                                        break;
-                                    case 'cancelled':
-                                        echo '<span class="block px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full mb-1">Đã hủy</span>';
-                                        break;
-                                    case 'refunded':
-                                        echo '<span class="block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full mb-1">Đã hoàn tiền</span>';
-                                        break;
-                                    default:
-                                        echo '<span class="block px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full mb-1">' . htmlspecialchars($b['payment_status']) . '</span>';
-                                }
-                                ?>
-
-                                <?php
-                                $daysToStart = (strtotime($b['start_date']) - time()) / (60 * 60 * 24);
-                                if ($daysToStart <= 1 && !in_array($b['payment_status'], ['paid', 'cancelled', 'refunded'])):
-                                    ?>
-                                    <div
-                                        class="mt-1 text-[10px] font-bold text-red-600 flex items-center justify-center gap-1 animate-pulse">
-                                        <span>⚠ Sắp đi</span>
-                                    </div>
-                                <?php endif; ?>
-                            </td>
-                            <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <a href="?act=staff-bookings&action=show&id=<?= $b['id'] ?>"
-                                    class="text-blue-600 hover:text-blue-800 font-medium text-sm border border-blue-200 bg-blue-50 px-3 py-1 rounded hover:bg-blue-100 transition-colors">
-                                    Chi tiết
-                                </a>
+                </thead>
+                <tbody>
+                    <?php if (empty($bookings)): ?>
+                        <tr>
+                            <td colspan="7" class="px-4 py-8 text-center text-primary-500">
+                                <div class="flex flex-col items-center gap-3">
+                                    <i data-lucide="ticket" class="w-12 h-12 text-primary-300"></i>
+                                    <p class="text-sm">Bạn chưa có booking nào.</p>
+                                </div>
                             </td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    <?php else: ?>
+                        <?php foreach ($bookings as $b): ?>
+                            <tr class="border-b border-primary-100 hover:bg-primary-50 transition-colors">
+                                <td class="px-3 lg:px-4 py-3 lg:py-4">
+                                    <a href="?act=staff-bookings&action=show&id=<?= $b['id'] ?>"
+                                        class="font-mono font-bold text-accent text-sm hover:text-accent-hover transition-colors">
+                                        <?= htmlspecialchars($b['booking_code']) ?>
+                                    </a>
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4">
+                                    <div class="font-semibold text-primary-700 text-sm"><?= htmlspecialchars($b['tour_name']) ?>
+                                    </div>
+                                    <div class="text-xs text-primary-500"><?= htmlspecialchars($b['tour_code']) ?></div>
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4">
+                                    <div class="font-semibold text-primary-700 text-sm">
+                                        <?= htmlspecialchars($b['customer_name']) ?></div>
+                                    <div class="text-xs text-primary-500"><?= htmlspecialchars($b['customer_phone']) ?></div>
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4 text-primary-700 text-sm">
+                                    <?= date('d/m/Y', strtotime($b['start_date'])) ?>
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4 text-right font-bold text-primary-700 text-sm">
+                                    <?= number_format($b['final_amount'], 0, ',', '.') ?> đ
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4 text-center">
+                                    <!-- Payment Status (đã gộp approval_status) -->
+                                    <?php
+                                    switch ($b['payment_status']) {
+                                        case 'unpaid':
+                                            echo '<span class="block px-3 py-1 bg-warning-bg text-warning-text text-xs font-bold rounded-full mb-1">Chờ thanh toán</span>';
+                                            break;
+                                        case 'partial':
+                                            echo '<span class="block px-3 py-1 bg-warning-bg text-warning-text text-xs font-bold rounded-full mb-1">Đã cọc</span>';
+                                            break;
+                                        case 'paid':
+                                            echo '<span class="block px-3 py-1 bg-success-bg text-success-text text-xs font-bold rounded-full mb-1">Đã thanh toán</span>';
+                                            break;
+                                        case 'rejected':
+                                            echo '<span class="block px-3 py-1 bg-primary-100 text-primary-500 text-xs font-bold rounded-full mb-1">Từ chối</span>';
+                                            break;
+                                        case 'cancelled':
+                                            echo '<span class="block px-3 py-1 bg-danger-bg text-danger-text text-xs font-bold rounded-full mb-1">Đã hủy</span>';
+                                            break;
+                                        case 'refunded':
+                                            echo '<span class="block px-3 py-1 bg-info-bg text-info-text text-xs font-bold rounded-full mb-1">Đã hoàn tiền</span>';
+                                            break;
+                                        default:
+                                            echo '<span class="block px-3 py-1 bg-primary-100 text-primary-500 text-xs font-bold rounded-full mb-1">' . htmlspecialchars($b['payment_status']) . '</span>';
+                                    }
+                                    ?>
+
+                                    <?php
+                                    $daysToStart = (strtotime($b['start_date']) - time()) / (60 * 60 * 24);
+                                    if ($daysToStart <= 1 && !in_array($b['payment_status'], ['paid', 'cancelled', 'refunded'])):
+                                        ?>
+                                        <div
+                                            class="mt-1 text-[10px] font-bold text-danger flex items-center justify-center gap-1 animate-pulse">
+                                            <i data-lucide="alert-circle" class="w-3 h-3"></i>
+                                            <span>Sắp đi</span>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-3 lg:px-4 py-3 lg:py-4 text-right whitespace-nowrap">
+                                    <a href="?act=staff-bookings&action=show&id=<?= $b['id'] ?>"
+                                        class="text-accent hover:text-accent-hover font-semibold text-xs lg:text-sm border border-primary-100 bg-primary-50 px-3 py-1.5 rounded-xl hover:bg-primary-100 transition-all inline-flex items-center gap-1">
+                                        <i data-lucide="eye" class="w-3 h-3"></i>
+                                        Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- Pagination -->
+    <!-- Pagination - Responsive -->
     <?php if (isset($total_pages) && $total_pages > 1): ?>
-        <div class="mt-6 flex justify-center gap-2">
+        <div class="mt-4 lg:mt-6 flex justify-center gap-2 flex-wrap">
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                 <a href="?act=staff-bookings&page=<?= $i ?>&search=<?= urlencode($_GET['search'] ?? '') ?>&status=<?= $_GET['status'] ?? '' ?>&tour_id=<?= $_GET['tour_id'] ?? '' ?>"
-                    class="w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-colors <?= $i == ($current_page ?? 1) ? 'bg-accent text-white shadow-md' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' ?>">
+                    class="w-10 h-10 flex items-center justify-center rounded-xl text-sm font-semibold transition-colors <?= $i == ($current_page ?? 1) ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white shadow-sm' : 'bg-panel border border-primary-100 text-primary-700 hover:bg-primary-50' ?>">
                     <?= $i ?>
                 </a>
             <?php endfor; ?>

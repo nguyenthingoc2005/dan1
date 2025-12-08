@@ -1,27 +1,27 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Page Header -->
-    <div class="flex justify-between items-center mb-6">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
+    <!-- Page Header - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800">Quản lý Khách hàng</h1>
-            <p class="text-sm text-gray-500 mt-1">Danh sách khách hàng và lịch sử đặt tour</p>
+            <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Quản lý Khách hàng</h1>
+            <p class="text-xs lg:text-sm text-primary-500 mt-1">Danh sách khách hàng và lịch sử đặt tour</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <label
-                class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm cursor-pointer">
-                <i class="fas fa-file-import"></i>
+                class="w-full sm:w-auto bg-success hover:opacity-90 text-white font-semibold py-2 lg:py-2.5 px-4 lg:px-5 rounded-xl transition-all text-sm lg:text-base flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+                <i data-lucide="upload" class="w-4 h-4"></i>
                 <span>Import Excel/CSV</span>
                 <input type="file" id="importFile" accept=".csv,.xlsx,.xls" class="hidden"
                     onchange="handleImportFile(event)">
             </label>
             <a href="?act=staff-customers&action=downloadTemplate"
-                class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                class="w-full sm:w-auto bg-primary-500 hover:opacity-90 text-white font-semibold py-2 lg:py-2.5 px-4 lg:px-5 rounded-xl transition-all text-sm lg:text-base flex items-center justify-center gap-2 shadow-sm"
                 title="Tải file mẫu">
-                <i class="fas fa-download"></i>
+                <i data-lucide="download" class="w-4 h-4"></i>
                 <span>Template</span>
             </a>
             <a href="?act=staff-customers&action=create"
-                class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
-                <i class="fas fa-plus"></i>
+                class="w-full sm:w-auto bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white font-semibold py-2 lg:py-2.5 px-4 lg:px-5 rounded-xl transition-all text-sm lg:text-base flex items-center justify-center gap-2 shadow-sm">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 <span>Thêm khách hàng</span>
             </a>
         </div>
@@ -30,26 +30,26 @@
     <!-- Import Status -->
     <div id="importStatus" class="mb-4 hidden"></div>
 
-    <!-- Filters -->
-    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-        <form method="GET" action="" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+    <!-- Filters - Responsive -->
+    <div class="bg-panel rounded-2xl border border-primary-100 p-4 lg:p-5 mb-4 lg:mb-6">
+        <form method="GET" action="" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <input type="hidden" name="act" value="staff-customers">
 
-            <div class="md:col-span-5">
+            <div class="lg:col-span-5">
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <i class="fas fa-search"></i>
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-primary-400">
+                        <i data-lucide="search" class="w-4 h-4"></i>
                     </span>
                     <input type="text" name="search"
-                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+                        class="w-full pl-10 pr-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                         placeholder="Tìm kiếm theo tên, SĐT, Email..."
                         value="<?= htmlspecialchars($filters['search'] ?? '') ?>">
                 </div>
             </div>
 
-            <div class="md:col-span-3">
+            <div class="lg:col-span-3">
                 <select name="status"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm bg-white">
+                    class="w-full px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all text-sm lg:text-base text-primary-700">
                     <option value="">-- Tất cả trạng thái --</option>
                     <option value="active" <?= ($filters['status'] ?? '') == 'active' ? 'selected' : '' ?>>Đang hoạt động
                     </option>
@@ -60,65 +60,80 @@
                 </select>
             </div>
 
-            <div class="md:col-span-2">
+            <div class="lg:col-span-2">
                 <button type="submit"
-                    class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm h-full">
+                    class="w-full bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white font-semibold py-2 lg:py-2.5 px-4 rounded-xl transition-all text-sm lg:text-base h-full">
+                    <i data-lucide="filter" class="w-4 h-4 inline mr-2"></i>
                     Lọc dữ liệu
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- Customers Table -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <!-- Customers Table - Responsive -->
+    <div class="bg-panel rounded-2xl border border-primary-100 overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse min-w-[800px]">
                 <thead>
-                    <tr
-                        class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold tracking-wider">
-                        <th class="px-6 py-4">Mã KH</th>
-                        <th class="px-6 py-4">Thông tin khách hàng</th>
-                        <th class="px-6 py-4">Liên hệ</th>
-                        <th class="px-6 py-4">Phân loại</th>
-                        <th class="px-6 py-4">Tổng chi tiêu</th>
-                        <th class="px-6 py-4">Trạng thái</th>
-                        <th class="px-6 py-4 text-right">Hành động</th>
+                    <tr class="bg-primary-50">
+                        <th
+                            class="px-3 lg:px-6 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Mã KH</th>
+                        <th
+                            class="px-3 lg:px-6 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Thông tin khách hàng</th>
+                        <th
+                            class="px-3 lg:px-6 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Liên hệ</th>
+                        <th
+                            class="px-3 lg:px-6 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Phân loại</th>
+                        <th
+                            class="px-3 lg:px-6 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Tổng chi tiêu</th>
+                        <th
+                            class="px-3 lg:px-6 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider">
+                            Trạng thái</th>
+                        <th
+                            class="px-3 lg:px-6 py-3 lg:py-4 border-b border-primary-100 text-primary-700 font-semibold text-xs uppercase tracking-wider text-right">
+                            Hành động</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-primary-100">
                     <?php if (!empty($customers)): ?>
                         <?php foreach ($customers as $customer): ?>
-                            <tr class="hover:bg-gray-50 transition-colors group">
-                                <td class="px-6 py-4 whitespace-nowrap">
+                            <tr class="border-b border-primary-100 hover:bg-primary-50 transition-colors group">
+                                <td class="px-3 lg:px-6 py-3 lg:py-4 whitespace-nowrap">
                                     <a href="?act=staff-customers&action=show&id=<?= $customer['id'] ?>"
-                                        class="font-mono text-blue-600 font-medium hover:underline">
+                                        class="font-mono text-accent font-semibold text-sm hover:text-accent-hover transition-colors">
                                         <?= htmlspecialchars($customer['customer_code'] ?? 'KH' . $customer['id']) ?>
                                     </a>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 lg:px-6 py-3 lg:py-4">
                                     <div class="flex items-center">
                                         <div
-                                            class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm mr-3">
+                                            class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-500 font-bold text-sm mr-3">
                                             <?= strtoupper(substr($customer['full_name'], 0, 1)) ?>
                                         </div>
                                         <div>
-                                            <div class="font-medium text-slate-800">
-                                                <?= htmlspecialchars($customer['full_name']) ?></div>
-                                            <div class="text-xs text-gray-500">
+                                            <div class="font-semibold text-primary-700 text-sm">
+                                                <?= htmlspecialchars($customer['full_name']) ?>
+                                            </div>
+                                            <div class="text-xs text-primary-500">
                                                 <?= $customer['gender'] == 'male' ? 'Nam' : ($customer['gender'] == 'female' ? 'Nữ' : 'Khác') ?>
                                             </div>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 lg:px-6 py-3 lg:py-4">
                                     <div class="flex flex-col gap-1">
-                                        <div class="flex items-center text-sm text-gray-600">
-                                            <i class="fas fa-phone-alt w-4 text-gray-400"></i>
+                                        <div class="flex items-center text-sm text-primary-700">
+                                            <i data-lucide="phone" class="w-4 h-4 text-primary-400 mr-1"></i>
                                             <span><?= htmlspecialchars($customer['phone']) ?></span>
                                         </div>
                                         <?php if (!empty($customer['email'])): ?>
-                                            <div class="flex items-center text-sm text-gray-600">
-                                                <i class="fas fa-envelope w-4 text-gray-400"></i>
+                                            <div class="flex items-center text-sm text-primary-700">
+                                                <i data-lucide="mail" class="w-4 h-4 text-primary-400 mr-1"></i>
                                                 <span class="truncate max-w-[150px]"
                                                     title="<?= htmlspecialchars($customer['email']) ?>">
                                                     <?= htmlspecialchars($customer['email']) ?>
@@ -127,56 +142,57 @@
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 lg:px-6 py-3 lg:py-4">
                                     <?php
-                                    $typeClass = 'bg-gray-100 text-gray-600';
+                                    $typeClass = 'bg-primary-100 text-primary-500';
                                     $typeName = 'Cá nhân';
                                     if ($customer['customer_type'] == 'group') {
-                                        $typeClass = 'bg-blue-50 text-blue-600';
+                                        $typeClass = 'bg-info-bg text-info-text';
                                         $typeName = 'Nhóm';
                                     } elseif ($customer['customer_type'] == 'corporate') {
-                                        $typeClass = 'bg-purple-50 text-purple-600';
+                                        $typeClass = 'bg-accent-light/20 text-accent-light';
                                         $typeName = 'Doanh nghiệp';
                                     }
                                     ?>
                                     <span
-                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $typeClass ?>">
+                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold <?= $typeClass ?>">
                                         <?= $typeName ?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 font-medium text-emerald-600">
+                                <td class="px-3 lg:px-6 py-3 lg:py-4 font-semibold text-success-text text-sm">
                                     <?= format_currency($customer['total_spent'] ?? 0) ?>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 lg:px-6 py-3 lg:py-4">
                                     <?php if ($customer['status'] == 'active'): ?>
                                         <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-success-bg text-success-text">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-success-text mr-1.5"></span>
                                             Hoạt động
                                         </span>
                                     <?php elseif ($customer['status'] == 'blacklist'): ?>
                                         <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5"></span>
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-danger-bg text-danger-text">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-danger-text mr-1.5"></span>
                                             Blacklist
                                         </span>
                                     <?php else: ?>
                                         <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-gray-400 mr-1.5"></span>
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary-100 text-primary-500">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-primary-500 mr-1.5"></span>
                                             Ngừng HĐ
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-6 py-4 text-right text-sm font-medium">
+                                <td class="px-3 lg:px-6 py-3 lg:py-4 text-right text-sm font-medium">
                                     <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <a href="?act=staff-customers&action=show&id=<?= $customer['id'] ?>"
-                                            class="text-blue-600 hover:text-blue-900 p-1" title="Chi tiết">
-                                            <i class="fas fa-eye"></i>
+                                            class="text-accent hover:text-accent-hover p-1.5 transition-colors"
+                                            title="Chi tiết">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
                                         <a href="?act=staff-customers&action=edit&id=<?= $customer['id'] ?>"
-                                            class="text-amber-600 hover:text-amber-900 p-1" title="Sửa">
-                                            <i class="fas fa-edit"></i>
+                                            class="text-primary-700 hover:text-primary-900 p-1.5 transition-colors" title="Sửa">
+                                            <i data-lucide="pencil" class="w-4 h-4"></i>
                                         </a>
                                         <!-- Staff không có quyền xóa -->
                                     </div>
@@ -185,10 +201,10 @@
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="7" class="px-6 py-12 text-center text-primary-500">
                                 <div class="flex flex-col items-center justify-center">
-                                    <i class="fas fa-users text-4xl text-gray-300 mb-3"></i>
-                                    <p>Không tìm thấy khách hàng nào phù hợp.</p>
+                                    <i data-lucide="users" class="w-12 h-12 text-primary-300 mb-3"></i>
+                                    <p class="text-sm">Không tìm thấy khách hàng nào phù hợp.</p>
                                 </div>
                             </td>
                         </tr>
@@ -202,10 +218,9 @@
             <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-center">
                 <nav class="flex gap-1">
                     <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <a href="?act=staff-customers&page=<?= $i ?>&search=<?= urlencode($filters['search'] ?? '') ?>"
-                            class="px-3 py-1 rounded-md text-sm font-medium transition-colors <?= $i == $current_page
-                                ? 'bg-blue-600 text-white shadow-sm'
-                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100' ?>">
+                        <a href="?act=staff-customers&page=<?= $i ?>&search=<?= urlencode($filters['search'] ?? '') ?>" class="px-3 py-1 rounded-md text-sm font-medium transition-colors <?= $i == $current_page
+                                  ? 'bg-blue-600 text-white shadow-sm'
+                                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100' ?>">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>
@@ -261,7 +276,7 @@
             })
             .then(data => {
                 console.log('📦 Response data:', data);
-                
+
                 // If redirect happened, the page will reload
                 // Otherwise show success message
                 if (data && !data.includes('<!DOCTYPE')) {

@@ -7,16 +7,23 @@ require_staff_or_admin();
 ?>
 
 <div class="max-w-6xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
+    <!-- Header - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-primary">Sửa Tour</h1>
-            <p class="text-sm text-gray-500">
+            <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Sửa Tour</h1>
+            <p class="text-xs lg:text-sm text-primary-500 mt-1">
                 <?= htmlspecialchars($tour['tour_code']) ?> - <?= htmlspecialchars($tour['name']) ?>
             </p>
         </div>
-        <div class="flex gap-2">
-            <a href="?act=staff-tours&action=show&id=<?= $tour['id'] ?>" class="px-4 py-2 bg-white border rounded hover:bg-gray-50">Xem chi tiết</a>
-            <a href="?act=staff-tours" class="text-gray-500 hover:text-gray-700">← Danh sách</a>
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <a href="?act=staff-tours&action=show&id=<?= $tour['id'] ?>" class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base text-center flex items-center justify-center gap-2">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+                Xem chi tiết
+            </a>
+            <a href="?act=staff-tours" class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base text-center flex items-center justify-center gap-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Danh sách
+            </a>
         </div>
     </div>
 
@@ -25,79 +32,82 @@ require_staff_or_admin();
         <input type="hidden" name="tour_type" value="<?= $tour['tour_type'] ?>">
 
         <!-- Section 1: Thông tin cơ bản -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div class="bg-gray-50 px-5 py-3 border-b">
-                <h2 class="font-bold text-gray-800">1. Thông tin cơ bản</h2>
+        <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
+            <div class="bg-primary-50 px-4 lg:px-5 py-3 lg:py-4 border-b border-primary-100">
+                <h2 class="font-bold text-primary-700 text-base lg:text-lg">1. Thông tin cơ bản</h2>
             </div>
-            <div class="p-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tên Tour <span class="text-red-500">*</span></label>
+            <div class="p-4 lg:p-5">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5">
+                    <div class="lg:col-span-2">
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Tên Tour <span class="text-danger">*</span></label>
                         <input type="text" name="name" value="<?= htmlspecialchars($tour['name']) ?>" required
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Điểm khởi hành</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Điểm khởi hành</label>
                         <input type="text" name="departure_location" value="<?= htmlspecialchars($tour['departure_location']) ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Số ngày <span class="text-red-500">*</span></label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số ngày <span class="text-danger">*</span></label>
                         <input type="number" name="duration_days" id="duration_days" min="1" required
                             value="<?= $tour['duration_days'] ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Số đêm</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số đêm</label>
                         <input type="number" name="duration_nights" min="0" value="<?= $tour['duration_nights'] ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giới thiệu ngắn</label>
-                        <textarea name="introduction" rows="2" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none" placeholder="Giới thiệu ngắn gọn về tour..."><?= htmlspecialchars($tour['introduction'] ?? '') ?></textarea>
+                    <div class="lg:col-span-2">
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Giới thiệu ngắn</label>
+                        <textarea name="introduction" rows="2" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base" placeholder="Giới thiệu ngắn gọn về tour..."><?= htmlspecialchars($tour['introduction'] ?? '') ?></textarea>
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết</label>
-                        <textarea name="description" rows="4" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none"><?= htmlspecialchars($tour['description'] ?? '') ?></textarea>
+                    <div class="lg:col-span-2">
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Mô tả chi tiết</label>
+                        <textarea name="description" rows="4" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"><?= htmlspecialchars($tour['description'] ?? '') ?></textarea>
                     </div>
                 </div>
 
                 <!-- Số lượng khách & Đặt cọc -->
-                <div class="mt-5 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 class="font-medium text-blue-800 mb-3">📊 Số lượng khách & Đặt cọc</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="mt-4 lg:mt-5 p-4 lg:p-5 bg-info-bg rounded-2xl border border-info">
+                    <h4 class="font-semibold text-info-text mb-3 text-sm lg:text-base flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4"></i>
+                        Số lượng khách & Đặt cọc
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Số khách tối thiểu</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số khách tối thiểu</label>
                             <input type="number" name="min_participants" min="1" value="<?= $tour['min_participants'] ?? 10 ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent text-center">
+                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Số khách tối đa</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số khách tối đa</label>
                             <input type="number" name="max_participants" min="1" value="<?= $tour['max_participants'] ?? 45 ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent text-center">
+                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tỷ lệ đặt cọc</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Tỷ lệ đặt cọc</label>
                             <div class="flex items-center">
                                 <input type="number" name="deposit_percentage" min="0" max="100" value="<?= $tour['deposit_percentage'] ?? 30 ?>"
-                                    class="w-full px-3 py-2 border rounded-l focus:border-accent text-center">
-                                <span class="px-3 py-2 bg-gray-100 border border-l-0 rounded-r text-sm text-gray-600">%</span>
+                                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-l-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base">
+                                <span class="px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-l-0 border-primary-100 rounded-r-xl text-xs lg:text-sm text-primary-600">%</span>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Hạn đặt tour (ngày)</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Hạn đặt tour (ngày)</label>
                             <div class="flex items-center">
                                 <input type="number" name="booking_deadline_days" min="0" value="<?= $tour['booking_deadline_days'] ?? 1 ?>"
-                                    class="w-full px-3 py-2 border rounded-l focus:border-accent text-center">
-                                <span class="px-3 py-2 bg-gray-100 border border-l-0 rounded-r text-sm text-gray-600">ngày</span>
+                                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-l-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base">
+                                <span class="px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-l-0 border-primary-100 rounded-r-xl text-xs lg:text-sm text-primary-600">ngày</span>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1">Số ngày trước khi khởi hành phải đặt tour</p>
+                            <p class="text-xs text-primary-500 mt-1">Số ngày trước khi khởi hành phải đặt tour</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Chi phí cố định -->
-                <div class="mt-5 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div class="mt-4 lg:mt-5 p-4 lg:p-5 bg-warning-bg rounded-2xl border border-warning">
                     <h4 class="font-medium text-yellow-900 mb-3">💼 Chi phí cố định (chia đều cho số người)</h4>
                     <p class="text-sm text-yellow-700 mb-4">
                         Nhập các chi phí cố định cho tour (lương HDV, quản lý, marketing...).
@@ -397,10 +407,13 @@ require_staff_or_admin();
         </div>
 
         <!-- Submit -->
-        <div class="flex justify-end gap-3">
-            <a href="?act=staff-tours&action=show&id=<?= $tour['id'] ?>" class="px-6 py-2 border rounded hover:bg-gray-50">Hủy</a>
-            <button type="submit" class="px-6 py-2 bg-accent text-white rounded hover:bg-blue-600 font-medium">
-                ✓ Cập nhật Tour
+        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-primary-100">
+            <a href="?act=staff-tours&action=show&id=<?= $tour['id'] ?>" class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base text-center">
+                Hủy
+            </a>
+            <button type="submit" class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                Cập nhật Tour
             </button>
         </div>
     </form>

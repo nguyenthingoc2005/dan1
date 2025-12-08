@@ -1,37 +1,34 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Page Header -->
-    <div class="flex justify-between items-center mb-6">
+<div class="max-w-8xl mx-auto p-4 lg:p-8">
+    <!-- Page Header - Responsive -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800">Quản lý Thanh toán</h1>
-            <p class="text-sm text-gray-500 mt-1">Theo dõi lịch sử giao dịch và doanh thu</p>
+            <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Quản lý Thanh toán</h1>
+            <p class="text-xs lg:text-sm text-primary-500 mt-1">Theo dõi lịch sử giao dịch và doanh thu</p>
         </div>
-        <!-- <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
-            <i class="fas fa-download"></i> <span>Xuất báo cáo</span>
-        </button> -->
     </div>
 
     <!-- Filters -->
-    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6 shadow-sm">
-        <form method="GET" action="" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+    <div class="bg-panel rounded-2xl border border-primary-100 p-4 lg:p-5 mb-4 lg:mb-6 shadow-sm">
+        <form method="GET" action="" class="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4">
             <input type="hidden" name="act" value="admin">
             <input type="hidden" name="module" value="payments">
 
-            <div class="md:col-span-3">
-                <label class="block text-xs font-medium text-gray-700 mb-1">Từ ngày</label>
+            <div class="lg:col-span-3">
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Từ ngày</label>
                 <input type="date" name="start_date"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-sm lg:text-base text-primary-700"
                     value="<?= $filters['start_date'] ?? '' ?>">
             </div>
-            <div class="md:col-span-3">
-                <label class="block text-xs font-medium text-gray-700 mb-1">Đến ngày</label>
+            <div class="lg:col-span-3">
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Đến ngày</label>
                 <input type="date" name="end_date"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-sm lg:text-base text-primary-700"
                     value="<?= $filters['end_date'] ?? '' ?>">
             </div>
-            <div class="md:col-span-2">
-                <label class="block text-xs font-medium text-gray-700 mb-1">Phương thức</label>
+            <div class="lg:col-span-2">
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Phương thức</label>
                 <select name="method"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm bg-white">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-sm lg:text-base text-primary-700">
                     <option value="">Tất cả</option>
                     <option value="cash" <?= ($filters['payment_method'] ?? '') == 'cash' ? 'selected' : '' ?>>Tiền mặt
                     </option>
@@ -39,10 +36,10 @@
                     <option value="credit_card" <?= ($filters['payment_method'] ?? '') == 'credit_card' ? 'selected' : '' ?>>Thẻ tín dụng</option>
                 </select>
             </div>
-            <div class="md:col-span-2">
-                <label class="block text-xs font-medium text-gray-700 mb-1">Loại</label>
+            <div class="lg:col-span-2">
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Loại</label>
                 <select name="type"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm bg-white">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-sm lg:text-base text-primary-700">
                     <option value="">Tất cả</option>
                     <option value="deposit" <?= ($filters['payment_type'] ?? '') == 'deposit' ? 'selected' : '' ?>>Đặt cọc
                     </option>
@@ -54,122 +51,127 @@
                     </option>
                 </select>
             </div>
-            <div class="md:col-span-2 flex items-end">
+            <div class="lg:col-span-2 flex items-end">
                 <button type="submit"
-                    class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm h-[38px] shadow-sm">
-                    <i class="fas fa-filter mr-1"></i> Lọc
+                    class="w-full px-4 lg:px-5 py-2 lg:py-2.5 bg-primary-600 hover:opacity-90 text-white font-semibold rounded-xl transition-all text-sm lg:text-base flex items-center justify-center gap-2 h-[38px] shadow-sm">
+                    <i data-lucide="filter" class="w-4 h-4"></i>
+                    Lọc
                 </button>
             </div>
         </form>
     </div>
 
     <!-- Payments Table -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+    <div class="bg-panel rounded-2xl border border-primary-100 overflow-hidden shadow-sm">
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse min-w-[1000px]">
                 <thead>
                     <tr
-                        class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold tracking-wider">
-                        <th class="px-6 py-4">Mã GD</th>
-                        <th class="px-6 py-4">Ngày TT</th>
-                        <th class="px-6 py-4">Booking</th>
-                        <th class="px-6 py-4">Khách hàng</th>
-                        <th class="px-6 py-4">Số tiền</th>
-                        <th class="px-6 py-4">Loại</th>
-                        <th class="px-6 py-4">Phương thức</th>
-                        <th class="px-6 py-4">Trạng thái</th>
-                        <th class="px-6 py-4 text-right">Thao tác</th>
+                        class="bg-primary-50 border-b border-primary-100 text-xs uppercase text-primary-600 font-semibold tracking-wider">
+                        <th class="px-3 lg:px-4 py-2 lg:py-3">Mã GD</th>
+                        <th class="px-3 lg:px-4 py-2 lg:py-3">Ngày TT</th>
+                        <th class="px-3 lg:px-4 py-2 lg:py-3">Booking</th>
+                        <th class="px-3 lg:px-4 py-2 lg:py-3">Khách hàng</th>
+                        <th class="px-3 lg:px-4 py-2 lg:py-3">Số tiền</th>
+                        <th class="px-3 lg:px-4 py-2 lg:py-3">Loại</th>
+                        <th class="px-3 lg:px-4 py-2 lg:py-3">Phương thức</th>
+                        <th class="px-3 lg:px-4 py-2 lg:py-3">Trạng thái</th>
+                        <th class="px-3 lg:px-4 py-2 lg:py-3 text-right">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-primary-100">
                     <?php if (!empty($payments)): ?>
                         <?php foreach ($payments as $payment): ?>
-                            <tr class="hover:bg-gray-50 transition-colors group">
-                                <td class="px-6 py-4 whitespace-nowrap">
+                            <tr class="hover:bg-primary-50 transition-colors group">
+                                <td class="px-3 lg:px-4 py-2 lg:py-3 whitespace-nowrap">
                                     <a href="?act=admin&module=payments&action=show&id=<?= $payment['id'] ?>"
-                                        class="font-mono text-blue-600 font-medium hover:underline">
+                                        class="font-mono text-accent font-semibold hover:text-accent-dark">
                                         <?= htmlspecialchars($payment['receipt_number'] ?? 'GD' . $payment['id']) ?>
                                     </a>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
+                                <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm text-primary-600">
                                     <?= date('d/m/Y', strtotime($payment['payment_date'])) ?>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 lg:px-4 py-2 lg:py-3">
                                     <a href="?act=admin&module=bookings&action=show&id=<?= $payment['booking_id'] ?>"
-                                        class="text-sm text-slate-700 hover:text-blue-600 font-medium">
+                                        class="text-sm text-primary-700 hover:text-accent font-semibold">
                                         <?= htmlspecialchars($payment['booking_code']) ?>
                                     </a>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-800">
+                                <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm text-primary-700 font-medium">
                                     <?= htmlspecialchars($payment['customer_name']) ?>
                                 </td>
                                 <td
-                                    class="px-6 py-4 font-medium <?= $payment['payment_type'] == 'refund' ? 'text-red-600' : 'text-emerald-600' ?>">
+                                    class="px-3 lg:px-4 py-2 lg:py-3 font-semibold <?= $payment['payment_type'] == 'refund' ? 'text-danger-text' : 'text-success-text' ?>">
                                     <?= $payment['payment_type'] == 'refund' ? '-' : '+' ?>
                                     <?= format_currency($payment['amount']) ?>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 lg:px-4 py-2 lg:py-3">
                                     <?php
                                     $typeMap = [
-                                        'deposit' => ['class' => 'bg-amber-100 text-amber-700', 'text' => 'Đặt cọc'],
-                                        'full' => ['class' => 'bg-emerald-100 text-emerald-700', 'text' => 'TT Hết'],
-                                        'installment' => ['class' => 'bg-blue-100 text-blue-700', 'text' => 'Trả góp'],
-                                        'refund' => ['class' => 'bg-red-100 text-red-700', 'text' => 'Hoàn tiền'],
+                                        'deposit' => ['class' => 'bg-warning-bg text-warning-text', 'text' => 'Đặt cọc'],
+                                        'full' => ['class' => 'bg-success-bg text-success-text', 'text' => 'TT Hết'],
+                                        'installment' => ['class' => 'bg-info-bg text-info-text', 'text' => 'Trả góp'],
+                                        'refund' => ['class' => 'bg-danger-bg text-danger-text', 'text' => 'Hoàn tiền'],
                                     ];
-                                    $type = $typeMap[$payment['payment_type']] ?? ['class' => 'bg-gray-100 text-gray-600', 'text' => $payment['payment_type']];
+                                    $type = $typeMap[$payment['payment_type']] ?? ['class' => 'bg-primary-100 text-primary-500', 'text' => $payment['payment_type']];
                                     ?>
                                     <span
-                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $type['class'] ?>">
+                                        class="inline-flex items-center px-2 lg:px-3 py-1 rounded-full text-xs font-bold uppercase <?= $type['class'] ?>">
                                         <?= $type['text'] ?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
+                                <td class="px-3 lg:px-4 py-2 lg:py-3 text-sm text-primary-600">
                                     <?php
                                     $methodMap = [
-                                        'cash' => '<i class="fas fa-money-bill-wave mr-1 text-emerald-500"></i> Tiền mặt',
-                                        'bank_transfer' => '<i class="fas fa-university mr-1 text-blue-500"></i> CK',
-                                        'credit_card' => '<i class="fas fa-credit-card mr-1 text-purple-500"></i> Thẻ',
-                                        'other' => 'Khác'
+                                        'cash' => ['icon' => 'banknote', 'text' => 'Tiền mặt', 'color' => 'text-success-text'],
+                                        'bank_transfer' => ['icon' => 'building-2', 'text' => 'CK', 'color' => 'text-info-text'],
+                                        'credit_card' => ['icon' => 'credit-card', 'text' => 'Thẻ', 'color' => 'text-accent'],
+                                        'other' => ['icon' => 'more-horizontal', 'text' => 'Khác', 'color' => 'text-primary-500']
                                     ];
-                                    echo $methodMap[$payment['payment_method']] ?? $payment['payment_method'];
+                                    $method = $methodMap[$payment['payment_method']] ?? ['icon' => 'more-horizontal', 'text' => $payment['payment_method'], 'color' => 'text-primary-500'];
                                     ?>
+                                    <span class="flex items-center gap-1 <?= $method['color'] ?>">
+                                        <i data-lucide="<?= $method['icon'] ?>" class="w-4 h-4"></i>
+                                        <?= $method['text'] ?>
+                                    </span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-3 lg:px-4 py-2 lg:py-3">
                                     <?php if ($payment['status'] == 'completed'): ?>
                                         <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+                                            class="inline-flex items-center px-2 lg:px-3 py-1 rounded-full text-xs font-bold uppercase bg-success-bg text-success-text">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-success-text mr-1.5"></span>
                                             Thành công
                                         </span>
                                     <?php elseif ($payment['status'] == 'failed'): ?>
                                         <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5"></span>
+                                            class="inline-flex items-center px-2 lg:px-3 py-1 rounded-full text-xs font-bold uppercase bg-danger-bg text-danger-text">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-danger-text mr-1.5"></span>
                                             Thất bại
                                         </span>
                                     <?php else: ?>
                                         <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>
+                                            class="inline-flex items-center px-2 lg:px-3 py-1 rounded-full text-xs font-bold uppercase bg-warning-bg text-warning-text">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-warning-text mr-1.5"></span>
                                             Chờ xử lý
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-6 py-4 text-right text-sm font-medium">
+                                <td class="px-3 lg:px-4 py-2 lg:py-3 text-right text-sm font-medium">
                                     <a href="?act=admin&module=payments&action=show&id=<?= $payment['id'] ?>"
-                                        class="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-50 transition-colors"
+                                        class="text-accent hover:text-accent-dark p-1.5 rounded-xl hover:bg-accent-50 transition-all inline-flex items-center"
                                         title="In phiếu">
-                                        <i class="fas fa-print"></i>
+                                        <i data-lucide="printer" class="w-4 h-4"></i>
                                     </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="9" class="px-3 lg:px-4 py-8 lg:py-12 text-center text-primary-500">
                                 <div class="flex flex-col items-center justify-center">
-                                    <i class="fas fa-receipt text-4xl text-gray-300 mb-3"></i>
-                                    <p>Chưa có giao dịch nào.</p>
+                                    <i data-lucide="receipt" class="w-12 h-12 text-primary-300 mb-3"></i>
+                                    <p class="text-sm">Chưa có giao dịch nào.</p>
                                 </div>
                             </td>
                         </tr>
@@ -180,13 +182,13 @@
 
         <!-- Pagination -->
         <?php if ($total_pages > 1): ?>
-            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-center">
-                <nav class="flex gap-1">
+            <div class="px-4 lg:px-6 py-3 lg:py-4 border-t border-primary-100 bg-primary-50 flex justify-center">
+                <nav class="flex gap-1 lg:gap-2">
                     <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                         <a href="?act=admin&module=payments&page=<?= $i ?>&start_date=<?= $filters['start_date'] ?? '' ?>&end_date=<?= $filters['end_date'] ?? '' ?>&method=<?= $filters['payment_method'] ?? '' ?>&type=<?= $filters['payment_type'] ?? '' ?>"
-                            class="px-3 py-1 rounded-md text-sm font-medium transition-colors <?= $i == $current_page
-                                ? 'bg-blue-600 text-white shadow-sm'
-                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100' ?>">
+                            class="px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-sm font-semibold transition-all <?= $i == $current_page
+                                ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white shadow-sm'
+                                : 'bg-panel border border-primary-100 text-primary-700 hover:bg-primary-50' ?>">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>

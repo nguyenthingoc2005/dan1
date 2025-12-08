@@ -7,48 +7,48 @@ if (!is_admin())
     redirect('?act=access-denied');
 ?>
 
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <a href="?act=admin&module=schedules" class="hover:text-blue-600">Lịch khởi hành</a>
-            <i class="fas fa-chevron-right text-xs"></i>
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
+    <!-- Page Header - Responsive -->
+    <div class="mb-4 lg:mb-8">
+        <div class="flex items-center gap-2 text-xs lg:text-sm text-primary-500 mb-2">
+            <a href="?act=admin&module=schedules" class="hover:text-accent">Lịch khởi hành</a>
+            <i data-lucide="chevron-right" class="w-3 h-3"></i>
             <span>Chỉnh sửa</span>
         </div>
-        <h1 class="text-2xl font-bold text-slate-800">Chỉnh sửa Lịch Khởi Hành</h1>
-        <p class="text-sm text-gray-500 mt-1">Cập nhật thông tin lịch khởi hành cho tour</p>
+        <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Chỉnh sửa Lịch Khởi Hành</h1>
+        <p class="text-xs lg:text-sm text-primary-500 mt-1">Cập nhật thông tin lịch khởi hành cho tour</p>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div class="text-sm text-blue-600 mb-1">Số chỗ mở bán</div>
-            <div class="text-2xl font-bold text-blue-700"><?= $schedule['quota'] ?></div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
+        <div class="bg-info-bg border border-info rounded-2xl p-3 lg:p-4">
+            <div class="text-xs lg:text-sm text-info-text mb-1 font-semibold">Số chỗ mở bán</div>
+            <div class="text-xl lg:text-2xl font-bold text-info-text"><?= $schedule['quota'] ?></div>
         </div>
-        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div class="text-sm text-green-600 mb-1">Đã đặt</div>
-            <div class="text-2xl font-bold text-green-700"><?= $schedule['booked'] ?? 0 ?></div>
+        <div class="bg-success-bg border border-success rounded-2xl p-3 lg:p-4">
+            <div class="text-xs lg:text-sm text-success-text mb-1 font-semibold">Đã đặt</div>
+            <div class="text-xl lg:text-2xl font-bold text-success-text"><?= $schedule['booked'] ?? 0 ?></div>
         </div>
-        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <div class="text-sm text-purple-600 mb-1">Còn lại</div>
-            <div class="text-2xl font-bold text-purple-700">
+        <div class="bg-accent-bg border border-accent rounded-2xl p-3 lg:p-4">
+            <div class="text-xs lg:text-sm text-accent-text mb-1 font-semibold">Còn lại</div>
+            <div class="text-xl lg:text-2xl font-bold text-accent-text">
                 <?= max(0, ($schedule['quota'] - ($schedule['booked'] ?? 0))) ?>
             </div>
         </div>
     </div>
 
     <!-- Edit Form -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <form action="?act=admin&module=schedules&action=update" method="POST" class="p-6">
+    <div class="bg-panel rounded-2xl border border-primary-100 shadow-sm overflow-hidden">
+        <form action="?act=admin&module=schedules&action=update" method="POST" class="p-4 lg:p-6">
             <input type="hidden" name="id" value="<?= $schedule['id'] ?>">
             
-            <div class="space-y-6">
+            <div class="space-y-4 lg:space-y-6">
                 <!-- Tour Selection (Read-only) -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tour du lịch</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Tour du lịch</label>
                     <div class="relative">
                         <select name="tour_id" 
-                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed outline-none" 
+                            class="w-full pl-10 pr-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl bg-primary-50 text-primary-500 cursor-not-allowed outline-none text-sm lg:text-base" 
                             readonly onclick="return false;">
                             <?php foreach ($tours as $tour): ?>
                                 <option value="<?= $tour['id'] ?>" <?= $tour['id'] == $schedule['tour_id'] ? 'selected' : '' ?>>
@@ -57,84 +57,85 @@ if (!is_admin())
                             <?php endforeach; ?>
                         </select>
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-map-marked-alt text-gray-400"></i>
+                            <i data-lucide="map-pin" class="w-4 h-4 text-primary-400"></i>
                         </div>
                     </div>
-                    <p class="mt-1 text-xs text-gray-500">Không thể thay đổi tour của lịch đã tạo.</p>
+                    <p class="mt-1 text-xs text-primary-500">Không thể thay đổi tour của lịch đã tạo.</p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                     <!-- Start Date -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Ngày khởi hành <span class="text-red-500">*</span>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                            Ngày khởi hành <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <input type="date" name="start_date" 
                                    value="<?= $schedule['start_date'] ?>"
                                    min="<?= date('Y-m-d') ?>"
-                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required>
+                                   class="w-full pl-10 pr-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-primary-50 text-primary-700 text-sm lg:text-base" required>
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="far fa-calendar-alt text-gray-400"></i>
+                                <i data-lucide="calendar" class="w-4 h-4 text-primary-400"></i>
                             </div>
                         </div>
                     </div>
 
                     <!-- Quota -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Số chỗ mở bán <span class="text-red-500">*</span>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                            Số chỗ mở bán <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <input type="number" name="quota" min="<?= $schedule['booked'] ?? 0 ?>" 
                                    value="<?= $schedule['quota'] ?>"
                                    id="quota-input"
-                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required>
+                                   class="w-full pl-10 pr-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-primary-50 text-primary-700 text-sm lg:text-base" required>
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-users text-gray-400"></i>
+                                <i data-lucide="users" class="w-4 h-4 text-primary-400"></i>
                             </div>
                         </div>
-                        <p id="quota-warning" class="mt-1 text-xs text-red-600 hidden"></p>
-                        <p class="mt-1 text-xs text-gray-500">
+                        <p id="quota-warning" class="mt-1 text-xs text-danger-text hidden"></p>
+                        <p class="mt-1 text-xs text-primary-500">
                             ⚠️ Không được nhỏ hơn số đã đặt: <strong><?= $schedule['booked'] ?? 0 ?></strong>
                         </p>
                     </div>
                 </div>
 
                 <!-- Pricing -->
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <i class="fas fa-tag text-blue-500"></i> Giá bán áp dụng (VND)
+                <div class="bg-primary-50 p-4 lg:p-5 rounded-2xl border border-primary-100">
+                    <h3 class="text-xs lg:text-sm font-semibold text-primary-700 mb-3 flex items-center gap-2">
+                        <i data-lucide="tag" class="w-4 h-4 text-accent"></i>
+                        Giá bán áp dụng (VND)
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Người lớn</label>
+                            <label class="block text-xs font-semibold text-primary-600 mb-1 lg:mb-2">Người lớn</label>
                             <input type="number" name="adult_price" min="0" step="1000"
                                    value="<?= $schedule['adult_price'] ?>"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm" required>
+                                   class="w-full px-3 lg:px-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-white text-primary-700 text-sm lg:text-base" required>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Trẻ em</label>
+                            <label class="block text-xs font-semibold text-primary-600 mb-1 lg:mb-2">Trẻ em</label>
                             <input type="number" name="child_price" min="0" step="1000"
                                    value="<?= $schedule['child_price'] ?>"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm" required>
+                                   class="w-full px-3 lg:px-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-white text-primary-700 text-sm lg:text-base" required>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Em bé</label>
+                            <label class="block text-xs font-semibold text-primary-600 mb-1 lg:mb-2">Em bé</label>
                             <input type="number" name="infant_price" min="0" step="1000"
                                    value="<?= $schedule['infant_price'] ?>"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm" required>
+                                   class="w-full px-3 lg:px-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-white text-primary-700 text-sm lg:text-base" required>
                         </div>
                     </div>
                 </div>
 
                 <!-- Guide Assignment -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Hướng dẫn viên <span class="text-gray-400 text-xs">(Tùy chọn)</span>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                        Hướng dẫn viên <span class="text-primary-400 text-xs">(Tùy chọn)</span>
                     </label>
                     <select name="guide_id" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-primary-50 text-primary-700 text-sm lg:text-base">
                         <option value="">-- Chưa gán HDV --</option>
                         <?php foreach ($guides as $g): ?>
                             <option value="<?= $g['id'] ?>" 
@@ -147,7 +148,7 @@ if (!is_admin())
                         <?php endforeach; ?>
                     </select>
                     <?php if (!empty($schedule['guide_name'])): ?>
-                        <p class="mt-1 text-xs text-blue-600">
+                        <p class="mt-1 text-xs text-accent">
                             HDV hiện tại: <strong><?= htmlspecialchars($schedule['guide_name']) ?></strong>
                             <?php if (!empty($schedule['guide_phone'])): ?>
                                 (<?= htmlspecialchars($schedule['guide_phone']) ?>)
@@ -158,11 +159,11 @@ if (!is_admin())
 
                 <!-- Guide Change Reason (only show if guide is being changed) -->
                 <div id="guide-change-reason-section" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Lý do đổi HDV <span class="text-red-500">*</span>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                        Lý do đổi HDV <span class="text-danger">*</span>
                     </label>
                     <select name="guide_change_reason" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-primary-50 text-primary-700 text-sm lg:text-base">
                         <option value="">-- Chọn lý do --</option>
                         <option value="HDV bận">HDV bận</option>
                         <option value="HDV ốm">HDV ốm</option>
@@ -171,22 +172,22 @@ if (!is_admin())
                         <option value="Tối ưu phân công">Tối ưu phân công</option>
                         <option value="Khác">Khác</option>
                     </select>
-                    <p class="text-xs text-gray-500 mt-1">Vui lòng chọn lý do khi đổi HDV</p>
+                    <p class="text-xs text-primary-500 mt-1">Vui lòng chọn lý do khi đổi HDV</p>
                 </div>
 
                 <!-- Guide Notes -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú cho HDV</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Ghi chú cho HDV</label>
                     <textarea name="guide_notes" rows="3" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-primary-50 placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                         placeholder="Ghi chú đặc biệt cho hướng dẫn viên..."><?= htmlspecialchars($schedule['guide_notes'] ?? '') ?></textarea>
                 </div>
 
                 <!-- Status -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Trạng thái</label>
                     <select name="status" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-primary-50 text-primary-700 text-sm lg:text-base">
                         <option value="open" <?= ($schedule['status'] ?? 'open') == 'open' ? 'selected' : '' ?>>Đang mở bán</option>
                         <option value="closed" <?= ($schedule['status'] ?? '') == 'closed' ? 'selected' : '' ?>>Đóng bán</option>
                         <option value="completed" <?= ($schedule['status'] ?? '') == 'completed' ? 'selected' : '' ?>>Đã hoàn thành</option>
@@ -200,7 +201,7 @@ if (!is_admin())
                         </option>
                     </select>
                     <?php if (($schedule['booked'] ?? 0) > 0): ?>
-                        <p class="mt-1 text-xs text-red-600">
+                        <p class="mt-1 text-xs text-danger-text">
                             ⚠️ Lịch này đang có <?= $schedule['booked'] ?> khách đã đặt. Không thể hủy lịch. Hãy hủy các booking trước.
                         </p>
                     <?php endif; ?>
@@ -209,22 +210,23 @@ if (!is_admin())
 
             <!-- Guide Change History -->
             <?php if (!empty($guide_history)): ?>
-                <div class="mt-6 border-t pt-6">
-                    <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <i class="fas fa-history text-blue-500"></i> Lịch sử thay đổi HDV
+                <div class="mt-4 lg:mt-6 border-t border-primary-100 pt-4 lg:pt-6">
+                    <h3 class="text-xs lg:text-sm font-semibold text-primary-700 mb-3 flex items-center gap-2">
+                        <i data-lucide="history" class="w-4 h-4 text-info-text"></i>
+                        Lịch sử thay đổi HDV
                     </h3>
                     <div class="space-y-2 max-h-48 overflow-y-auto">
                         <?php foreach ($guide_history as $h): ?>
-                            <div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm">
+                            <div class="bg-primary-50 p-3 rounded-2xl border border-primary-100 text-xs lg:text-sm">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <div class="font-medium text-gray-800">
+                                        <div class="font-semibold text-primary-700">
                                             <?php if ($h['old_guide_name'] && $h['new_guide_name']): ?>
-                                                <span class="text-red-600"><?= htmlspecialchars($h['old_guide_name']) ?></span>
+                                                <span class="text-danger-text"><?= htmlspecialchars($h['old_guide_name']) ?></span>
                                                 <span class="mx-2">→</span>
-                                                <span class="text-green-600"><?= htmlspecialchars($h['new_guide_name']) ?></span>
+                                                <span class="text-success-text"><?= htmlspecialchars($h['new_guide_name']) ?></span>
                                             <?php elseif ($h['new_guide_name']): ?>
-                                                Gán: <span class="text-green-600"><?= htmlspecialchars($h['new_guide_name']) ?></span>
+                                                Gán: <span class="text-success-text"><?= htmlspecialchars($h['new_guide_name']) ?></span>
                                             <?php else: ?>
                                                 Hủy gán: <span class="text-red-600"><?= htmlspecialchars($h['old_guide_name']) ?></span>
                                             <?php endif; ?>
