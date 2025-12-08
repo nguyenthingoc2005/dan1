@@ -130,38 +130,35 @@ if (!is_admin())
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-3 lg:px-4 py-2 lg:py-3">
-                                    <div class="flex flex-col gap-2">
+                                    <div class="flex flex-col gap-2 items-center">
                                         <?php if (!empty($expense['receipt_file'])): ?>
                                             <a href="<?= BASE_URL ?>/public/<?= $expense['receipt_file'] ?>" 
                                                target="_blank"
                                                class="text-accent hover:text-accent-dark text-xs font-semibold flex items-center gap-1">
                                                 <i data-lucide="file-text" class="w-3 h-3"></i>
-                                                Hóa đơn
+                                                Xem hóa đơn
                                             </a>
                                         <?php endif; ?>
-                                        <div class="flex gap-2">
-                                            <a href="?act=admin&module=expenses&action=edit&id=<?= $expense['id'] ?>" 
-                                               class="text-info-text hover:text-info-dark text-xs font-semibold">
-                                                Sửa
-                                            </a>
-                                            <?php if ($status === 'pending'): ?>
+                                        <?php if ($status === 'pending'): ?>
+                                            <div class="flex gap-2">
                                                 <a href="?act=admin&module=expenses&action=approve&id=<?= $expense['id'] ?>&schedule_id=<?= $schedule['id'] ?>&token=<?= csrf_token() ?>" 
                                                    onclick="return confirm('Bạn có chắc muốn duyệt chi phí này?')"
-                                                   class="text-success-text hover:text-success-dark text-xs font-semibold">
+                                                   class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-semibold transition-colors">
+                                                    <i data-lucide="check-circle" class="w-3 h-3"></i>
                                                     Duyệt
                                                 </a>
                                                 <a href="#" 
                                                    onclick="showRejectModal(<?= $expense['id'] ?>); return false;"
-                                                   class="text-danger-text hover:text-danger-dark text-xs font-semibold">
+                                                   class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold transition-colors">
+                                                    <i data-lucide="x-circle" class="w-3 h-3"></i>
                                                     Từ chối
                                                 </a>
-                                            <?php endif; ?>
-                                            <a href="?act=admin&module=expenses&action=delete&id=<?= $expense['id'] ?>&schedule_id=<?= $schedule['id'] ?>" 
-                                               onclick="return confirm('Bạn có chắc muốn xóa chi phí này?')"
-                                               class="text-danger-text hover:text-danger-dark text-xs font-semibold">
-                                                Xóa
-                                            </a>
-                                        </div>
+                                            </div>
+                                        <?php elseif ($status === 'approved'): ?>
+                                            <span class="text-xs text-primary-500 italic">Đã được duyệt</span>
+                                        <?php elseif ($status === 'rejected'): ?>
+                                            <span class="text-xs text-red-500 italic">Đã bị từ chối</span>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>

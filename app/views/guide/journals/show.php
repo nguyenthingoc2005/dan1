@@ -5,7 +5,7 @@
  */
 ?>
 
-<div class="max-w-4xl mx-auto p-4 lg:p-8">
+<div class="max-w-7xl mx-auto p-4 lg:p-8">
     <!-- Header - Responsive -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
@@ -36,6 +36,13 @@
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                 Xóa
             </a>
+            <?php if (!empty($journal['tour_schedule_id'])): ?>
+                <a href="?act=guide-tours&action=show&id=<?= $journal['tour_schedule_id'] ?>&tab=journals" 
+                   class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                    <i data-lucide="home" class="w-4 h-4"></i>
+                    Quay về Tour
+                </a>
+            <?php endif; ?>
             <a href="?act=guide-journals" class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 font-semibold transition-colors text-sm lg:text-base flex items-center justify-center gap-2">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
                 Quay lại

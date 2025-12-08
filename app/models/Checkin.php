@@ -82,6 +82,9 @@ class Checkin
 
     /**
      * Tạo hoặc cập nhật check-in
+     * 
+     * FIX: Xóa các records trùng lặp cũ trước khi INSERT/UPDATE
+     * để đảm bảo chỉ có 1 check-in cho mỗi booking_id + customer_id
      */
     public function checkin($booking_id, $customer_id, $status, $notes = null, $checked_by = null)
     {
@@ -96,6 +99,19 @@ class Checkin
         $existing = $this->getCustomerCheckin($booking_id, $customer_id);
 
         if ($existing) {
+            // Xóa các records trùng lặp cũ (nếu có) - chỉ giữ lại record mới nhất
+            // Điều này đảm bảo không có nhiều records cho cùng booking_id + customer_id
+            $sql_delete_duplicates = "DELETE FROM customer_checkins 
+                                     WHERE booking_id = :booking_id 
+                                     AND customer_id = :customer_id 
+                                     AND id != :keep_id";
+            $stmt = $this->pdo->prepare($sql_delete_duplicates);
+            $stmt->execute([
+                'booking_id' => $booking_id,
+                'customer_id' => $customer_id,
+                'keep_id' => $existing['id']
+            ]);
+
             // Update existing
             $sql = "UPDATE customer_checkins 
                     SET status = :status, notes = :notes, checkin_time = NOW(), checked_by = :checked_by
@@ -108,6 +124,16 @@ class Checkin
                 'checked_by' => $checked_by
             ]);
         } else {
+            // Trước khi INSERT, xóa các records trùng lặp cũ (nếu có) để đảm bảo an toàn
+            $sql_delete_duplicates = "DELETE FROM customer_checkins 
+                                     WHERE booking_id = :booking_id 
+                                     AND customer_id = :customer_id";
+            $stmt = $this->pdo->prepare($sql_delete_duplicates);
+            $stmt->execute([
+                'booking_id' => $booking_id,
+                'customer_id' => $customer_id
+            ]);
+
             // Create new
             $sql = "INSERT INTO customer_checkins (booking_id, customer_id, status, notes, checked_by, checkin_time)
                     VALUES (:booking_id, :customer_id, :status, :notes, :checked_by, NOW())";

@@ -9,10 +9,22 @@
     <!-- Header - Responsive -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Sửa Nhật ký</h1>
-        <a href="?act=guide-journals&action=show&id=<?= $journal['id'] ?>" class="text-primary-500 hover:text-primary-700 font-semibold text-sm lg:text-base flex items-center gap-2">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            Quay lại
-        </a>
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <?php 
+            $schedule_id = !empty($journal['tour_schedule_id']) ? $journal['tour_schedule_id'] : ($schedule ? $schedule['id'] : null);
+            if ($schedule_id): 
+            ?>
+                <a href="?act=guide-tours&action=show&id=<?= $schedule_id ?>&tab=journals" 
+                   class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                    <i data-lucide="home" class="w-4 h-4"></i>
+                    Quay về Tour
+                </a>
+            <?php endif; ?>
+            <a href="?act=guide-journals&action=show&id=<?= $journal['id'] ?>" class="w-full sm:w-auto px-4 lg:px-5 py-2 lg:py-2.5 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 font-semibold transition-colors text-sm lg:text-base flex items-center justify-center gap-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Quay lại
+            </a>
+        </div>
     </div>
 
     <form method="POST" action="?act=guide-journals&action=update" enctype="multipart/form-data"
@@ -147,10 +159,20 @@
 
             <!-- Submit -->
             <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-primary-100">
-                <a href="?act=guide-journals&action=show&id=<?= $journal['id'] ?>" 
-                    class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 font-semibold transition-colors text-sm lg:text-base text-center">
-                    Hủy
-                </a>
+                <?php 
+                $schedule_id = !empty($journal['tour_schedule_id']) ? $journal['tour_schedule_id'] : ($schedule ? $schedule['id'] : null);
+                if ($schedule_id): 
+                ?>
+                    <a href="?act=guide-tours&action=show&id=<?= $schedule_id ?>&tab=journals" 
+                        class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 font-semibold transition-colors text-sm lg:text-base text-center">
+                        Hủy
+                    </a>
+                <?php else: ?>
+                    <a href="?act=guide-journals&action=show&id=<?= $journal['id'] ?>" 
+                        class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 font-semibold transition-colors text-sm lg:text-base text-center">
+                        Hủy
+                    </a>
+                <?php endif; ?>
                 <button type="submit" class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
                     <i data-lucide="save" class="w-4 h-4"></i>
                     Cập nhật

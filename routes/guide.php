@@ -36,7 +36,7 @@ switch ($module) {
         break;
 
     // ==========================================================================
-    // CHECK-IN MODULE
+    // CHECK-IN MODULE (Cũ)
     // ==========================================================================
     case 'checkin':
         require_once CONTROLLERS_PATH . '/guide/CheckinController.php';
@@ -57,6 +57,70 @@ switch ($module) {
                 break;
             default:
                 $checkinController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // CHECKPOINTS MODULE (Mới - HDV tự tạo checkpoints)
+    // ==========================================================================
+    case 'checkpoints':
+        require_once CONTROLLERS_PATH . '/guide/ActivityCheckpointController.php';
+        $checkpointController = new Guide\ActivityCheckpointController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $checkpointController->index();
+                break;
+            case 'create':
+                $checkpointController->create();
+                break;
+            case 'store':
+                $checkpointController->store();
+                break;
+            case 'edit':
+                $checkpointController->edit();
+                break;
+            case 'update':
+                $checkpointController->update();
+                break;
+            case 'delete':
+                $checkpointController->delete();
+                break;
+            default:
+                $checkpointController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // ACTIVITY CHECK-IN MODULE (Mới - Check-in theo checkpoint)
+    // ==========================================================================
+    case 'activity-checkin':
+        require_once CONTROLLERS_PATH . '/guide/ActivityCheckinController.php';
+        $activityCheckinController = new Guide\ActivityCheckinController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $activityCheckinController->index();
+                break;
+            case 'checkpoints':
+                $activityCheckinController->checkpoints();
+                break;
+            case 'show':
+                $activityCheckinController->show();
+                break;
+            case 'store':
+                $activityCheckinController->store();
+                break;
+            case 'summary':
+                $activityCheckinController->summary();
+                break;
+            case 'history':
+                $activityCheckinController->history();
+                break;
+            default:
+                $activityCheckinController->index();
                 break;
         }
         break;

@@ -58,14 +58,32 @@ class TourSchedule
 
         // Get Data
         $offset = ($page - 1) * $limit;
-        $sql = "SELECT ts.*, t.name as tour_name, t.tour_code, t.duration_days, t.duration_nights,
-                       t.departure_location,
-                       u.full_name as guide_name, u.phone as guide_phone, u.email as guide_email
+        // Query đơn giản: lấy tất cả schedules, không filter duplicate
+        $sql = "SELECT DISTINCT ts.id,
+                       ts.tour_id,
+                       ts.start_date,
+                       ts.end_date,
+                       ts.quota,
+                       ts.booked,
+                       ts.status,
+                       ts.adult_price,
+                       ts.child_price,
+                       ts.infant_price,
+                       ts.guide_id,
+                       ts.guide_notes,
+                       ts.created_at,
+                       ts.updated_at,
+                       (SELECT name FROM tours WHERE id = ts.tour_id LIMIT 1) as tour_name,
+                       (SELECT tour_code FROM tours WHERE id = ts.tour_id LIMIT 1) as tour_code,
+                       (SELECT duration_days FROM tours WHERE id = ts.tour_id LIMIT 1) as duration_days,
+                       (SELECT duration_nights FROM tours WHERE id = ts.tour_id LIMIT 1) as duration_nights,
+                       (SELECT departure_location FROM tours WHERE id = ts.tour_id LIMIT 1) as departure_location,
+                       (SELECT full_name FROM users WHERE id = ts.guide_id LIMIT 1) as guide_name,
+                       (SELECT phone FROM users WHERE id = ts.guide_id LIMIT 1) as guide_phone,
+                       (SELECT email FROM users WHERE id = ts.guide_id LIMIT 1) as guide_email
                 FROM tour_schedules ts
-                JOIN tours t ON ts.tour_id = t.id
-                LEFT JOIN users u ON ts.guide_id = u.id
                 WHERE " . implode(" AND ", $where) . "
-                ORDER BY ts.start_date ASC
+                ORDER BY ts.start_date DESC
                 LIMIT $limit OFFSET $offset";
 
         $stmt = $this->pdo->prepare($sql);

@@ -217,6 +217,133 @@ class DashboardController
         ], 1, 5)['data'];
 
         // ====================================================================
+        // TOURS BẮT ĐẦU HÔM NAY
+        // ====================================================================
+        $tours_today_sql = "SELECT ts.*, t.name as tour_name, t.tour_code, t.duration_days, t.duration_nights
+                           FROM tour_schedules ts
+                           JOIN tours t ON ts.tour_id = t.id
+                           WHERE ts.guide_id = :guide_id 
+                             AND ts.start_date = :today
+                           ORDER BY ts.start_date ASC
+                           LIMIT 5";
+        $stmt = $this->db->prepare($tours_today_sql);
+        $stmt->execute(['guide_id' => $user_id, 'today' => $today]);
+        $tours_today = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        
+        // Thêm thông tin hành khách cho tours hôm nay
+        foreach ($tours_today as &$tour) {
+            $passengers_today_sql = "SELECT COUNT(DISTINCT bc.customer_id) as count,
+                                     COUNT(DISTINCT CASE WHEN cc.id IS NOT NULL THEN bc.customer_id END) as checked_in
+                                     FROM bookings b
+                                     JOIN booking_customers bc ON b.id = bc.booking_id
+                                     LEFT JOIN customer_checkins cc ON cc.booking_id = b.id AND cc.customer_id = bc.customer_id
+                                     WHERE (b.tour_schedule_id = :schedule_id OR 
+                                            (b.tour_id = :tour_id AND b.start_date = :start_date))
+                                       AND b.payment_status IN ('paid', 'partial')
+                                       AND bc.customer_id IS NOT NULL";
+            $stmt = $this->db->prepare($passengers_today_sql);
+            $stmt->execute([
+                'schedule_id' => $tour['id'],
+                'tour_id' => $tour['tour_id'],
+                'start_date' => $tour['start_date']
+            ]);
+            $passenger_info = $stmt->fetch(\PDO::FETCH_ASSOC);
+            $tour['passengers_count'] = (int) ($passenger_info['count'] ?? 0);
+            $tour['checked_in_count'] = (int) ($passenger_info['checked_in'] ?? 0);
+        }
+
+        // ====================================================================
+        // ACTIVITY CHECKPOINTS HÔM NAY VÀ SẮP TỚI
+        // ====================================================================
+        $next_3_days = date('Y-m-d', strtotime('+3 days'));
+        $checkpoints_today_sql = "SELECT acp.*, ts.tour_id, t.name as tour_name, t.tour_code,
+                                  acs.status as summary_status, acs.present_count, acs.total_customers
+                                  FROM activity_checkpoints acp
+                                  JOIN tour_schedules ts ON acp.tour_schedule_id = ts.id
+                                  JOIN tours t ON ts.tour_id = t.id
+                                  LEFT JOIN activity_checkin_summary acs ON acs.activity_checkpoint_id = acp.id 
+                                    AND acs.checkpoint_date = acp.scheduled_date
+                                  WHERE ts.guide_id = :guide_id
+                                    AND acp.scheduled_date >= :today
+                                    AND acp.scheduled_date <= :next_3_days
+                                  ORDER BY acp.scheduled_date ASC, acp.scheduled_time ASC
+                                  LIMIT 10";
+        $stmt = $this->db->prepare($checkpoints_today_sql);
+        $stmt->execute([
+            'guide_id' => $user_id, 
+            'today' => $today,
+            'next_3_days' => $next_3_days
+        ]);
+        $upcoming_checkpoints = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // ====================================================================
+        // CHI PHÍ CHỜ DUYỆT (chi tiết)
+        // ====================================================================
+        $pending_expenses_detail_sql = "SELECT ie.*, 
+                                       COALESCE(ts.id, b.tour_schedule_id) as schedule_id,
+                                       t.name as tour_name, t.tour_code
+                                       FROM incurred_expenses ie
+                                       LEFT JOIN bookings b ON ie.booking_id = b.id
+                                       LEFT JOIN tour_schedules ts ON (ie.tour_schedule_id = ts.id OR 
+                                                                      (ie.tour_schedule_id IS NULL AND b.tour_schedule_id = ts.id) OR
+                                                                      (ie.tour_schedule_id IS NULL AND b.tour_schedule_id IS NULL 
+                                                                       AND b.tour_id = ts.tour_id AND b.start_date = ts.start_date))
+                                       LEFT JOIN tours t ON ts.tour_id = t.id
+                                       WHERE ts.guide_id = :guide_id
+                                         AND ie.reported_by = :user_id
+                                         AND ie.approval_status = 'pending'
+                                       ORDER BY ie.created_at DESC
+                                       LIMIT 5";
+        $stmt = $this->db->prepare($pending_expenses_detail_sql);
+        $stmt->execute(['guide_id' => $user_id, 'user_id' => $user_id]);
+        $pending_expenses_detail = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        
+        // Tổng tiền chi phí chờ duyệt
+        $pending_expenses_amount_sql = "SELECT COALESCE(SUM(ie.amount), 0) as total
+                                        FROM incurred_expenses ie
+                                        LEFT JOIN bookings b ON ie.booking_id = b.id
+                                        LEFT JOIN tour_schedules ts ON (ie.tour_schedule_id = ts.id OR 
+                                                                       (ie.tour_schedule_id IS NULL AND b.tour_schedule_id = ts.id) OR
+                                                                       (ie.tour_schedule_id IS NULL AND b.tour_schedule_id IS NULL 
+                                                                        AND b.tour_id = ts.tour_id AND b.start_date = ts.start_date))
+                                        WHERE ts.guide_id = :guide_id
+                                          AND ie.reported_by = :user_id
+                                          AND ie.approval_status = 'pending'";
+        $stmt = $this->db->prepare($pending_expenses_amount_sql);
+        $stmt->execute(['guide_id' => $user_id, 'user_id' => $user_id]);
+        $pending_expenses_amount = (float) $stmt->fetchColumn();
+
+        // ====================================================================
+        // THỐNG KÊ THÁNG NÀY
+        // ====================================================================
+        $this_month_start = date('Y-m-01');
+        $this_month_end = date('Y-m-t');
+        
+        // Tours tháng này
+        $tours_this_month_sql = "SELECT COUNT(*) 
+                                FROM tour_schedules 
+                                WHERE guide_id = :guide_id 
+                                  AND start_date >= :month_start
+                                  AND start_date <= :month_end";
+        $stmt = $this->db->prepare($tours_this_month_sql);
+        $stmt->execute(['guide_id' => $user_id, 'month_start' => $this_month_start, 'month_end' => $this_month_end]);
+        $tours_this_month = (int) $stmt->fetchColumn();
+
+        // Hành khách tháng này
+        $passengers_this_month_sql = "SELECT COUNT(DISTINCT bc.customer_id) as total
+                                      FROM bookings b
+                                      JOIN tour_schedules ts ON (b.tour_schedule_id = ts.id OR (b.tour_id = ts.tour_id AND b.start_date = ts.start_date))
+                                      JOIN booking_customers bc ON b.id = bc.booking_id
+                                      WHERE ts.guide_id = :guide_id
+                                        AND ts.start_date >= :month_start
+                                        AND ts.start_date <= :month_end
+                                        AND b.payment_status IN ('paid', 'partial')
+                                        AND bc.customer_id IS NOT NULL";
+        $stmt = $this->db->prepare($passengers_this_month_sql);
+        $stmt->execute(['guide_id' => $user_id, 'month_start' => $this_month_start, 'month_end' => $this_month_end]);
+        $passengers_this_month = (int) $stmt->fetchColumn();
+
+        // ====================================================================
         // NHẬT KÝ GẦN ĐÂY (3 nhật ký mới nhất)
         // ====================================================================
         $recent_journals_all = $journalModel->getAll(['guide_id' => $user_id], 1, 3);
@@ -234,7 +361,10 @@ class DashboardController
             'upcoming_passengers' => $upcoming_passengers_count,
             'total_expenses' => $total_expenses,
             'pending_expenses' => $pending_expenses_count,
+            'pending_expenses_amount' => $pending_expenses_amount,
             'journals_count' => $journals_count,
+            'tours_this_month' => $tours_this_month,
+            'passengers_this_month' => $passengers_this_month,
             'checkin_stats' => [
                 'total_checked_in' => $checkin_stats['total_checked_in'] ?? 0,
                 'total_passengers' => $checkin_stats['total_passengers'] ?? 0,

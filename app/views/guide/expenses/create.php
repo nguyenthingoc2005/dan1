@@ -14,11 +14,18 @@
                 <?= htmlspecialchars($tour['tour_code']) ?> - <?= htmlspecialchars($tour['name']) ?>
             </p>
         </div>
-        <a href="?act=guide-expenses&action=show&schedule_id=<?= $schedule['id'] ?>" 
-           class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 font-semibold transition-colors text-sm lg:text-base flex items-center justify-center gap-2">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            Quay lại
-        </a>
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <a href="?act=guide-tours&action=show&id=<?= $schedule['id'] ?>&tab=expenses" 
+               class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                <i data-lucide="home" class="w-4 h-4"></i>
+                Quay về Tour
+            </a>
+            <a href="?act=guide-expenses&action=show&schedule_id=<?= $schedule['id'] ?>" 
+               class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 font-semibold transition-colors text-sm lg:text-base flex items-center justify-center gap-2">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Quay lại
+            </a>
+        </div>
     </div>
 
     <form method="POST" action="?act=guide-expenses&action=store" enctype="multipart/form-data" class="bg-panel rounded-2xl p-4 lg:p-6 border border-primary-100 shadow-sm">
@@ -26,23 +33,6 @@
         <input type="hidden" name="schedule_id" value="<?= $schedule['id'] ?>">
 
         <div class="space-y-4 lg:space-y-6">
-            <!-- Booking Selection -->
-            <div>
-                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
-                    Booking <span class="text-danger">*</span>
-                </label>
-                <select name="booking_id" required 
-                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
-                    <option value="">-- Chọn booking --</option>
-                    <?php foreach ($bookings as $booking): ?>
-                        <option value="<?= $booking['id'] ?>">
-                            <?= htmlspecialchars($booking['booking_code']) ?> - 
-                            <?= htmlspecialchars($booking['customer_name'] ?? 'Khách hàng') ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
             <!-- Expense Date -->
             <div>
                 <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
@@ -113,7 +103,7 @@
 
             <!-- Submit Buttons -->
             <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-primary-100">
-                <a href="?act=guide-expenses&action=show&schedule_id=<?= $schedule['id'] ?>" 
+                <a href="?act=guide-tours&action=show&id=<?= $schedule['id'] ?>&tab=expenses" 
                    class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 font-semibold transition-colors text-sm lg:text-base text-center">
                     Hủy
                 </a>

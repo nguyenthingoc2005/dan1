@@ -552,6 +552,11 @@ class BookingController
                     throw new Exception("Không thể áp dụng mã giảm giá cho booking đã hủy/từ chối");
                 }
 
+                // Không cho phép áp dụng mã giảm giá khi đã thanh toán hết
+                if ($booking['payment_status'] === 'paid') {
+                    throw new Exception("Không thể áp dụng mã giảm giá cho booking đã thanh toán hết");
+                }
+
                 $total_amount = (float) $booking['total_amount'];
                 $old_discount_code = $booking['discount_code'] ?? null;
                 $old_discount_amount = (float) ($booking['discount_amount'] ?? 0);

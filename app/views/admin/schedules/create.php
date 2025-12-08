@@ -11,42 +11,43 @@ if (!is_admin())
     <!-- Header - Responsive -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Thêm Lịch Khởi Hành</h1>
-        <a href="?act=admin&module=schedules" class="text-primary-500 hover:text-primary-700 font-semibold text-sm lg:text-base flex items-center gap-2">
+        <a href="?act=admin&module=schedules"
+            class="text-primary-500 hover:text-primary-700 font-semibold text-sm lg:text-base flex items-center gap-2">
             <i data-lucide="arrow-left" class="w-4 h-4"></i>
             Quay lại danh sách
         </a>
     </div>
 
-    <form action="?act=admin&module=schedules&action=store" method="POST" class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100 space-y-4 lg:space-y-6">
-        
+    <form action="?act=admin&module=schedules&action=store" method="POST"
+        class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100 space-y-4 lg:space-y-6">
+
         <!-- Tour Selection with Quick Search -->
         <div>
             <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
                 Chọn Tour <span class="text-danger">*</span>
             </label>
-            
+
             <!-- Quick Search Box -->
             <div class="mb-3">
                 <div class="relative">
-                    <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary-400"></i>
-                    <input type="text" id="tour-search-input" 
-                        placeholder="Tìm kiếm tour nhanh (mã tour, tên tour)..."
+                    <i data-lucide="search"
+                        class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary-400"></i>
+                    <input type="text" id="tour-search-input" placeholder="Tìm kiếm tour nhanh (mã tour, tên tour)..."
+                        style="padding-left:30px"
                         class="w-full pl-10 pr-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                         oninput="filterTourOptions()">
                 </div>
                 <p class="text-xs text-primary-500 mt-1">Gõ để tìm kiếm tour nhanh chóng</p>
             </div>
-            
-            <select name="tour_id" id="tour_id" 
-                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base" required>
+
+            <select name="tour_id" id="tour_id"
+                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base"
+                required>
                 <option value="">-- Chọn Tour --</option>
                 <?php foreach ($tours as $t): ?>
-                    <option value="<?= $t['id'] ?>" 
-                        data-price-adult="<?= $t['adult_price'] ?>"
-                        data-price-child="<?= $t['child_price'] ?>"
-                        data-price-infant="<?= $t['infant_price'] ?>"
-                        data-duration="<?= $t['duration_days'] ?>"
-                        data-tour-type="<?= $t['tour_type'] ?>"
+                    <option value="<?= $t['id'] ?>" data-price-adult="<?= $t['adult_price'] ?>"
+                        data-price-child="<?= $t['child_price'] ?>" data-price-infant="<?= $t['infant_price'] ?>"
+                        data-duration="<?= $t['duration_days'] ?>" data-tour-type="<?= $t['tour_type'] ?>"
                         data-min-pax="<?= $t['min_participants'] ?? 10 ?>"
                         data-max-pax="<?= $t['max_participants'] ?? 45 ?>"
                         data-tour-code="<?= htmlspecialchars(strtolower($t['tour_code'])) ?>"
@@ -82,15 +83,17 @@ if (!is_admin())
                 <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
                     Ngày khởi hành <span class="text-danger">*</span>
                 </label>
-                <input type="date" name="start_date" id="start_date" 
-                    min="<?= date('Y-m-d') ?>"
-                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base" required>
+                <input type="date" name="start_date" id="start_date" min="<?= date('Y-m-d') ?>"
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base"
+                    required>
                 <p class="text-xs text-primary-500 mt-1">Phải từ hôm nay trở đi</p>
             </div>
             <div>
-                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Ngày kết thúc (Tự động)</label>
-                <input type="date" id="end_date_display" 
-                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl text-primary-700 text-sm lg:text-base" readonly>
+                <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Ngày kết thúc (Tự
+                    động)</label>
+                <input type="date" id="end_date_display"
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl text-primary-700 text-sm lg:text-base"
+                    readonly>
                 <input type="hidden" id="end_date" name="end_date">
             </div>
         </div>
@@ -101,10 +104,11 @@ if (!is_admin())
                 Số chỗ mở bán (Quota) <span class="text-danger">*</span>
             </label>
             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                <input type="number" name="quota" id="quota" value="" min="1" 
-                    class="w-full sm:w-48 px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base" required>
+                <input type="number" name="quota" id="quota" value="" min="1"
+                    class="w-full sm:w-48 px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base"
+                    required>
                 <span class="text-xs lg:text-sm text-primary-500">
-                    (Tối thiểu: <span id="min-pax-display" class="font-semibold">10</span>, 
+                    (Tối thiểu: <span id="min-pax-display" class="font-semibold">10</span>,
                     Tối đa: <span id="max-pax-display" class="font-semibold">45</span>)
                 </span>
             </div>
@@ -114,22 +118,26 @@ if (!is_admin())
 
         <!-- Pricing -->
         <div class="border-t border-primary-100 pt-4">
-            <h3 class="font-bold text-primary-700 mb-3 text-sm lg:text-base">Giá bán (Để trống nếu dùng giá gốc của Tour)</h3>
+            <h3 class="font-bold text-primary-700 mb-3 text-sm lg:text-base">Giá bán (Để trống nếu dùng giá gốc của
+                Tour)</h3>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-xs lg:text-sm font-semibold text-primary-600 mb-1 lg:mb-2">Giá người lớn</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-600 mb-1 lg:mb-2">Giá người
+                        lớn</label>
                     <input type="number" name="adult_price" id="adult_price" min="0" step="1000"
                         placeholder="Giá gốc..."
                         class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
                 </div>
                 <div>
-                    <label class="block text-xs lg:text-sm font-semibold text-primary-600 mb-1 lg:mb-2">Giá trẻ em</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-600 mb-1 lg:mb-2">Giá trẻ
+                        em</label>
                     <input type="number" name="child_price" id="child_price" min="0" step="1000"
                         placeholder="Giá gốc..."
                         class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
                 </div>
                 <div>
-                    <label class="block text-xs lg:text-sm font-semibold text-primary-600 mb-1 lg:mb-2">Giá em bé</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-600 mb-1 lg:mb-2">Giá em
+                        bé</label>
                     <input type="number" name="infant_price" id="infant_price" min="0" step="1000"
                         placeholder="Giá gốc..."
                         class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
@@ -143,7 +151,8 @@ if (!is_admin())
                 class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base text-center">
                 Hủy
             </a>
-            <button type="submit" class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+            <button type="submit"
+                class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
                 <i data-lucide="check-circle" class="w-4 h-4"></i>
                 Lưu Lịch Khởi Hành
             </button>
@@ -196,7 +205,7 @@ if (!is_admin())
             const infantPrice = parseFloat(selectedOption.dataset.priceInfant) || 0;
 
             tourInfo.classList.remove('hidden');
-            
+
             if (tourType == 'custom') {
                 tourTypeBadge.textContent = 'Tour Tùy Chỉnh';
                 tourTypeBadge.className = 'px-2 lg:px-3 py-1 rounded-full text-xs font-bold bg-accent-bg text-accent-text';
@@ -274,7 +283,7 @@ if (!is_admin())
     // Set min date to today
     startDateInput.min = new Date().toISOString().split('T')[0];
 
-    tourSelect.addEventListener('change', function() {
+    tourSelect.addEventListener('change', function () {
         updateEndDate();
         updateTourInfo();
         updateDefaultPrices();
@@ -295,14 +304,14 @@ if (!is_admin())
         const searchInput = document.getElementById('tour-search-input');
         const searchTerm = searchInput.value.toLowerCase().trim();
         const options = tourSelect.querySelectorAll('option:not([value=""])');
-        
+
         let visibleCount = 0;
-        
+
         options.forEach(option => {
             const tourCode = option.dataset.tourCode || '';
             const tourName = option.dataset.tourName || '';
             const match = tourCode.includes(searchTerm) || tourName.includes(searchTerm);
-            
+
             if (match) {
                 option.style.display = '';
                 visibleCount++;
@@ -310,7 +319,7 @@ if (!is_admin())
                 option.style.display = 'none';
             }
         });
-        
+
         // Show/hide placeholder option based on search
         const placeholderOption = tourSelect.querySelector('option[value=""]');
         if (placeholderOption) {
@@ -322,4 +331,3 @@ if (!is_admin())
         }
     }
 </script>
-

@@ -131,6 +131,19 @@ $current_user = get_auth_user(); // Đổi tên để không conflict với $use
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #707EAE;
         }
+
+        /* Submenu Animation */
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+            opacity: 0;
+        }
+
+        .submenu.block {
+            max-height: 500px;
+            opacity: 1;
+        }
     </style>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>

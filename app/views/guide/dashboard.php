@@ -1,13 +1,14 @@
 <?php
 /**
  * GUIDE DASHBOARD - Dashboard hiện đại với metrics và quick actions
- * Variables: $stats, $my_schedules, $completed_tours, $ongoing_tours, $recent_journals, $user
+ * Variables: $stats, $my_schedules, $completed_tours, $ongoing_tours, $tours_today, 
+ *            $upcoming_checkpoints, $pending_expenses_detail, $recent_journals, $user
  * Flat Design - Không shadow, không gradient, dùng spacing thay border
  */
 $user = get_auth_user();
 ?>
 
-<div class="max-w-7xl mx-auto">
+<div class="max-w-8xl mx-auto">
     <!-- Welcome Header -->
     <div class="mb-6 lg:mb-8">
         <h1 class="text-xl lg:text-2xl font-bold text-primary-700 mb-2">
@@ -26,10 +27,10 @@ $user = get_auth_user();
                     <i data-lucide="calendar" class="w-5 h-5 lg:w-6 lg:h-6 mx-auto mb-2"></i>
                     <div class="text-xs lg:text-sm font-semibold">Tour sắp tới</div>
                 </a>
-                <a href="?act=guide-tours"
+                <a href="?act=guide-activity-checkin"
                     class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl p-3 lg:p-4 text-white text-center transition-all">
-                    <i data-lucide="map-pin" class="w-5 h-5 lg:w-6 lg:h-6 mx-auto mb-2"></i>
-                    <div class="text-xs lg:text-sm font-semibold">Lịch Tour</div>
+                    <i data-lucide="check-circle" class="w-5 h-5 lg:w-6 lg:h-6 mx-auto mb-2"></i>
+                    <div class="text-xs lg:text-sm font-semibold">Check-in</div>
                 </a>
                 <a href="?act=guide-journals&action=create"
                     class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl p-3 lg:p-4 text-white text-center transition-all">
@@ -45,7 +46,7 @@ $user = get_auth_user();
         </div>
     </div>
 
-    <!-- Stats Overview -->
+    <!-- Key Metrics Overview -->
     <div class="mb-6 lg:mb-8">
         <h2 class="text-base lg:text-lg font-semibold text-primary-700 mb-4 lg:mb-6">Thống kê tổng quan</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -54,8 +55,7 @@ $user = get_auth_user();
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
                         <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Tour Đang Diễn Ra</p>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700"><?= $stats['ongoing_tours'] ?? 0 ?>
-                        </h3>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700"><?= $stats['ongoing_tours'] ?? 0 ?></h3>
                         <p class="text-xs text-primary-500 mt-1">tour hiện tại</p>
                     </div>
                     <div class="p-3 bg-accent/10 rounded-xl">
@@ -69,8 +69,7 @@ $user = get_auth_user();
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
                         <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Tour Sắp Tới</p>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700"><?= $stats['upcoming_tours'] ?? 0 ?>
-                        </h3>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700"><?= $stats['upcoming_tours'] ?? 0 ?></h3>
                         <p class="text-xs text-primary-500 mt-1"><?= $stats['upcoming_7days'] ?? 0 ?> trong 7 ngày tới</p>
                     </div>
                     <div class="p-3 bg-info/10 rounded-xl">
@@ -84,8 +83,7 @@ $user = get_auth_user();
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
                         <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Hành Khách Sắp Tới</p>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700">
-                            <?= $stats['upcoming_passengers'] ?? 0 ?></h3>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700"><?= $stats['upcoming_passengers'] ?? 0 ?></h3>
                         <p class="text-xs text-primary-500 mt-1">người</p>
                     </div>
                     <div class="p-3 bg-success/10 rounded-xl">
@@ -99,11 +97,9 @@ $user = get_auth_user();
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
                         <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Tỷ lệ Check-in</p>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700">
-                            <?= $stats['checkin_stats']['percentage'] ?? 0 ?>%</h3>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700"><?= $stats['checkin_stats']['percentage'] ?? 0 ?>%</h3>
                         <p class="text-xs text-primary-500 mt-1">
-                            <?= $stats['checkin_stats']['total_checked_in'] ?? 0 ?>/<?= $stats['checkin_stats']['total_passengers'] ?? 0 ?>
-                            người
+                            <?= $stats['checkin_stats']['total_checked_in'] ?? 0 ?>/<?= $stats['checkin_stats']['total_passengers'] ?? 0 ?> người
                         </p>
                     </div>
                     <div class="p-3 bg-warning/10 rounded-xl">
@@ -117,8 +113,7 @@ $user = get_auth_user();
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
                         <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Tour Đã Hoàn Thành</p>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700">
-                            <?= $stats['completed_tours'] ?? 0 ?></h3>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700"><?= $stats['completed_tours'] ?? 0 ?></h3>
                     </div>
                     <div class="p-3 bg-success/10 rounded-xl">
                         <i data-lucide="check-circle-2" class="w-6 h-6 lg:w-8 lg:h-8 text-success"></i>
@@ -131,8 +126,7 @@ $user = get_auth_user();
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
                         <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Tổng Ngày Làm Việc</p>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700">
-                            <?= $stats['total_working_days'] ?? 0 ?></h3>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700"><?= $stats['total_working_days'] ?? 0 ?></h3>
                         <p class="text-xs text-primary-500 mt-1">ngày</p>
                     </div>
                     <div class="p-3 bg-info/10 rounded-xl">
@@ -146,8 +140,7 @@ $user = get_auth_user();
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
                         <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Khách Đã Phục Vụ</p>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700">
-                            <?= $stats['customers_served'] ?? 0 ?></h3>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700"><?= $stats['customers_served'] ?? 0 ?></h3>
                         <p class="text-xs text-primary-500 mt-1">người</p>
                     </div>
                     <div class="p-3 bg-success/10 rounded-xl">
@@ -156,86 +149,56 @@ $user = get_auth_user();
                 </div>
             </div>
 
-            <!-- Tổng tour được phân công -->
+            <!-- Chi phí chờ duyệt -->
             <div class="bg-panel rounded-2xl p-4 lg:p-5 shadow-sm border border-primary-100">
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
-                        <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Tổng Tour Phân Công</p>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700">
-                            <?= $stats['total_tours_assigned'] ?? 0 ?></h3>
-                    </div>
-                    <div class="p-3 bg-accent/10 rounded-xl">
-                        <i data-lucide="map-pin" class="w-6 h-6 lg:w-8 lg:h-8 text-accent"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chi phí phát sinh -->
-            <div class="bg-panel rounded-2xl p-4 lg:p-5 shadow-sm border border-primary-100">
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex-1">
-                        <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Tổng Chi Phí</p>
-                        <h3 class="text-xl lg:text-2xl font-bold text-primary-700">
-                            <?= number_format($stats['total_expenses'] ?? 0, 0, ',', '.') ?></h3>
-                        <p class="text-xs text-primary-500 mt-1">VNĐ</p>
+                        <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Chi Phí Chờ Duyệt</p>
+                        <h3 class="text-xl lg:text-2xl font-bold text-warning-text">
+                            <?= number_format($stats['pending_expenses_amount'] ?? 0, 0, ',', '.') ?></h3>
+                        <p class="text-xs text-primary-500 mt-1"><?= $stats['pending_expenses'] ?? 0 ?> khoản</p>
                     </div>
                     <div class="p-3 bg-warning/10 rounded-xl">
-                        <i data-lucide="dollar-sign" class="w-6 h-6 lg:w-8 lg:h-8 text-warning-text"></i>
-                    </div>
-                </div>
-                <?php if ($stats['pending_expenses'] > 0): ?>
-                    <div class="mt-2 pt-2 border-t border-primary-100">
-                        <span class="text-xs text-warning-text font-semibold">
-                            <i data-lucide="clock" class="w-3 h-3 inline"></i>
-                            <?= $stats['pending_expenses'] ?> chờ duyệt
-                        </span>
-                    </div>
-                <?php endif; ?>
-            </div>
-
-            <!-- Nhật ký đã viết -->
-            <div class="bg-panel rounded-2xl p-4 lg:p-5 shadow-sm border border-primary-100">
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex-1">
-                        <p class="text-xs text-primary-500 uppercase tracking-wide mb-2">Nhật Ký Đã Viết</p>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-primary-700"><?= $stats['journals_count'] ?? 0 ?>
-                        </h3>
-                    </div>
-                    <div class="p-3 bg-accent/10 rounded-xl">
-                        <i data-lucide="book-open" class="w-6 h-6 lg:w-8 lg:h-8 text-accent"></i>
+                        <i data-lucide="clock" class="w-6 h-6 lg:w-8 lg:h-8 text-warning-text"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Tour đang diễn ra -->
-    <?php if (!empty($ongoing_tours)): ?>
+    <!-- Tours Hôm Nay - Priority Section -->
+    <?php if (!empty($tours_today)): ?>
         <div class="mb-6 lg:mb-8">
-            <div class="bg-gradient-to-r from-success/20 to-success/10 rounded-2xl p-4 lg:p-6 border border-success/30">
+            <div class="bg-gradient-to-r from-warning/20 to-warning/10 rounded-2xl p-4 lg:p-6 border border-warning/30">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-base lg:text-lg font-semibold text-primary-700">Tour Đang Diễn Ra</h2>
-                    <span class="px-3 py-1 bg-success text-white rounded-full text-xs font-semibold">Hoạt động</span>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="calendar-days" class="w-5 h-5 text-warning-text"></i>
+                        <h2 class="text-base lg:text-lg font-semibold text-primary-700">Tour Bắt Đầu Hôm Nay</h2>
+                    </div>
+                    <span class="px-3 py-1 bg-warning text-white rounded-full text-xs font-semibold"><?= count($tours_today) ?> tour</span>
                 </div>
                 <div class="space-y-3">
-                    <?php foreach ($ongoing_tours as $tour): ?>
+                    <?php foreach ($tours_today as $tour): ?>
                         <a href="?act=guide-tours&action=show&id=<?= $tour['id'] ?>"
                             class="block bg-white rounded-xl p-4 hover:shadow-md transition-all">
                             <div class="flex items-center justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2 mb-1">
-                                        <span
-                                            class="font-mono text-accent font-bold text-sm"><?= htmlspecialchars($tour['tour_code']) ?></span>
-                                        <span class="text-xs px-2 py-0.5 bg-success/20 text-success rounded">Đang diễn ra</span>
+                                        <span class="font-mono text-accent font-bold text-sm"><?= htmlspecialchars($tour['tour_code']) ?></span>
+                                        <span class="text-xs px-2 py-0.5 bg-warning/20 text-warning-text rounded">Hôm nay</span>
                                     </div>
                                     <h3 class="font-semibold text-primary-700 text-sm lg:text-base mb-1">
                                         <?= htmlspecialchars($tour['tour_name']) ?></h3>
                                     <div class="flex gap-4 text-xs text-primary-500">
-                                        <span><i data-lucide="calendar" class="w-3 h-3 inline"></i>
-                                            <?= date('d/m/Y', strtotime($tour['start_date'])) ?> - <?= date('d/m/Y', strtotime($tour['end_date'])) ?>
+                                        <span><i data-lucide="users" class="w-3 h-3 inline"></i>
+                                            <?= $tour['passengers_count'] ?? 0 ?> khách
+                                        </span>
+                                        <span><i data-lucide="check-circle" class="w-3 h-3 inline"></i>
+                                            Đã check-in: <?= $tour['checked_in_count'] ?? 0 ?>/<?= $tour['passengers_count'] ?? 0 ?>
                                         </span>
                                         <span><i data-lucide="clock" class="w-3 h-3 inline"></i>
-                                            <?= $tour['duration_days'] ?>N<?= $tour['duration_nights'] ?>Đ</span>
+                                            <?= $tour['duration_days'] ?>N<?= $tour['duration_nights'] ?>Đ
+                                        </span>
                                     </div>
                                 </div>
                                 <i data-lucide="chevron-right" class="w-5 h-5 text-primary-500"></i>
@@ -246,6 +209,149 @@ $user = get_auth_user();
             </div>
         </div>
     <?php endif; ?>
+
+    <!-- Tour đang diễn ra -->
+    <?php if (!empty($ongoing_tours)): ?>
+        <div class="mb-6 lg:mb-8">
+            <div class="bg-gradient-to-r from-success/20 to-success/10 rounded-2xl p-4 lg:p-6 border border-success/30">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="play-circle" class="w-5 h-5 text-success"></i>
+                        <h2 class="text-base lg:text-lg font-semibold text-primary-700">Tour Đang Diễn Ra</h2>
+                    </div>
+                    <span class="px-3 py-1 bg-success text-white rounded-full text-xs font-semibold">Hoạt động</span>
+                </div>
+                <div class="space-y-3">
+                    <?php foreach ($ongoing_tours as $tour): ?>
+                        <a href="?act=guide-tours&action=show&id=<?= $tour['id'] ?>"
+                            class="block bg-white rounded-xl p-4 hover:shadow-md transition-all">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-mono text-accent font-bold text-sm"><?= htmlspecialchars($tour['tour_code']) ?></span>
+                                        <span class="text-xs px-2 py-0.5 bg-success/20 text-success rounded">Đang diễn ra</span>
+                                    </div>
+                                    <h3 class="font-semibold text-primary-700 text-sm lg:text-base mb-1">
+                                        <?= htmlspecialchars($tour['tour_name']) ?></h3>
+                                    <div class="flex gap-4 text-xs text-primary-500">
+                                        <span><i data-lucide="calendar" class="w-3 h-3 inline"></i>
+                                            <?= date('d/m/Y', strtotime($tour['start_date'])) ?> - <?= date('d/m/Y', strtotime($tour['end_date'])) ?>
+                                        </span>
+                                        <span><i data-lucide="clock" class="w-3 h-3 inline"></i>
+                                            <?= $tour['duration_days'] ?>N<?= $tour['duration_nights'] ?>Đ
+                                        </span>
+                                    </div>
+                                </div>
+                                <i data-lucide="chevron-right" class="w-5 h-5 text-primary-500"></i>
+                            </div>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Content Grid: Upcoming Checkpoints, Tours, Expenses -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <!-- Activity Checkpoints Sắp Tới -->
+        <?php if (!empty($upcoming_checkpoints)): ?>
+            <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
+                <div class="p-4 lg:p-5 border-b border-primary-100 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="map-pin" class="w-5 h-5 text-accent"></i>
+                        <h2 class="text-base lg:text-lg font-semibold text-primary-700">Checkpoint Sắp Tới</h2>
+                    </div>
+                    <a href="?act=guide-activity-checkin"
+                        class="text-xs lg:text-sm text-accent hover:text-accent-hover font-semibold">Xem tất cả →</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <div class="divide-y divide-primary-100">
+                        <?php foreach (array_slice($upcoming_checkpoints, 0, 5) as $cp): ?>
+                            <div class="p-4 hover:bg-primary-50 transition-colors">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-primary-700 text-sm mb-1">
+                                            <?= htmlspecialchars($cp['checkpoint_name']) ?></h3>
+                                        <div class="text-xs text-primary-500 mb-1">
+                                            <span class="font-mono text-accent"><?= htmlspecialchars($cp['tour_code']) ?></span>
+                                            - <?= htmlspecialchars($cp['tour_name']) ?>
+                                        </div>
+                                        <div class="flex gap-3 text-xs text-primary-500">
+                                            <span><i data-lucide="calendar" class="w-3 h-3 inline"></i>
+                                                <?= date('d/m/Y', strtotime($cp['scheduled_date'])) ?>
+                                            </span>
+                                            <span><i data-lucide="clock" class="w-3 h-3 inline"></i>
+                                                <?= date('H:i', strtotime($cp['scheduled_time'])) ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <?php if (isset($cp['summary_status'])): ?>
+                                        <span class="px-2 py-1 rounded-full text-xs font-semibold 
+                                            <?= $cp['summary_status'] === 'completed' ? 'bg-success/20 text-success' : 
+                                                ($cp['summary_status'] === 'in_progress' ? 'bg-info/20 text-info' : 'bg-primary-100 text-primary-600') ?>">
+                                            <?= $cp['summary_status'] === 'completed' ? 'Hoàn thành' : 
+                                                ($cp['summary_status'] === 'in_progress' ? 'Đang diễn ra' : 'Chưa bắt đầu') ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (isset($cp['total_customers']) && $cp['total_customers'] > 0): ?>
+                                    <div class="text-xs text-primary-500 mt-2">
+                                        <i data-lucide="users" class="w-3 h-3 inline"></i>
+                                        <?= $cp['present_count'] ?? 0 ?>/<?= $cp['total_customers'] ?> có mặt
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Chi Phí Chờ Duyệt -->
+        <?php if (!empty($pending_expenses_detail)): ?>
+            <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
+                <div class="p-4 lg:p-5 border-b border-primary-100 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="dollar-sign" class="w-5 h-5 text-warning-text"></i>
+                        <h2 class="text-base lg:text-lg font-semibold text-primary-700">Chi Phí Chờ Duyệt</h2>
+                    </div>
+                    <a href="?act=guide-expenses"
+                        class="text-xs lg:text-sm text-accent hover:text-accent-hover font-semibold">Xem tất cả →</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <div class="divide-y divide-primary-100">
+                        <?php foreach ($pending_expenses_detail as $expense): ?>
+                            <a href="?act=guide-expenses&action=show&id=<?= $expense['id'] ?>"
+                                class="block p-4 hover:bg-primary-50 transition-colors">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-primary-700 text-sm mb-1">
+                                            <?= htmlspecialchars($expense['expense_type']) ?></h3>
+                                        <?php if (!empty($expense['tour_name'])): ?>
+                                            <div class="text-xs text-primary-500 mb-1">
+                                                <span class="font-mono text-accent"><?= htmlspecialchars($expense['tour_code'] ?? '') ?></span>
+                                                - <?= htmlspecialchars($expense['tour_name']) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div class="text-xs text-primary-500">
+                                            <i data-lucide="calendar" class="w-3 h-3 inline"></i>
+                                            <?= date('d/m/Y', strtotime($expense['expense_date'])) ?>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-sm font-bold text-warning-text">
+                                            <?= number_format($expense['amount'], 0, ',', '.') ?> đ
+                                        </div>
+                                        <span class="text-xs px-2 py-0.5 bg-warning/20 text-warning-text rounded">Chờ duyệt</span>
+                                    </div>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
 
     <!-- Content Grid: Tours và Activities -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
@@ -270,8 +376,7 @@ $user = get_auth_user();
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2 mb-1">
-                                            <span
-                                                class="font-mono text-accent font-bold text-sm"><?= htmlspecialchars($s['tour_code']) ?></span>
+                                            <span class="font-mono text-accent font-bold text-sm"><?= htmlspecialchars($s['tour_code']) ?></span>
                                         </div>
                                         <h3 class="font-semibold text-primary-700 text-sm mb-2">
                                             <?= htmlspecialchars($s['tour_name']) ?></h3>
@@ -314,8 +419,7 @@ $user = get_auth_user();
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2 mb-1">
-                                            <span
-                                                class="font-mono text-accent font-bold text-sm"><?= htmlspecialchars($s['tour_code']) ?></span>
+                                            <span class="font-mono text-accent font-bold text-sm"><?= htmlspecialchars($s['tour_code']) ?></span>
                                         </div>
                                         <h3 class="font-semibold text-primary-700 text-sm mb-2">
                                             <?= htmlspecialchars($s['tour_name']) ?></h3>
@@ -332,6 +436,33 @@ $user = get_auth_user();
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics This Month -->
+    <div class="mt-6 lg:mt-8">
+        <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
+            <div class="p-4 lg:p-5 border-b border-primary-100">
+                <h2 class="text-base lg:text-lg font-semibold text-primary-700">Thống Kê Tháng Này</h2>
+            </div>
+            <div class="p-4 lg:p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-primary-50 rounded-xl p-4">
+                        <div class="text-xs text-primary-500 mb-1">Tours Tháng Này</div>
+                        <div class="text-2xl font-bold text-primary-700"><?= $stats['tours_this_month'] ?? 0 ?></div>
+                    </div>
+                    <div class="bg-primary-50 rounded-xl p-4">
+                        <div class="text-xs text-primary-500 mb-1">Hành Khách Tháng Này</div>
+                        <div class="text-2xl font-bold text-primary-700"><?= $stats['passengers_this_month'] ?? 0 ?></div>
+                    </div>
+                    <div class="bg-primary-50 rounded-xl p-4">
+                        <div class="text-xs text-primary-500 mb-1">Tổng Chi Phí</div>
+                        <div class="text-xl font-bold text-primary-700">
+                            <?= number_format($stats['total_expenses'] ?? 0, 0, ',', '.') ?> đ
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

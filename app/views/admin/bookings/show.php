@@ -340,7 +340,7 @@ $statusTexts = [
                 <?php if (empty($booking['discount_code']) && $booking['discount_amount'] == 0): ?>
                     <div class="space-y-3">
                         <p class="text-xs lg:text-sm text-primary-500">Chưa áp dụng mã giảm giá</p>
-                        <?php if (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])): ?>
+                        <?php if (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded', 'paid'])): ?>
                             <button onclick="openModal('discountModal')" 
                                 class="w-full px-4 lg:px-5 py-2 lg:py-2.5 bg-success hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
                                 <i data-lucide="sparkles" class="w-4 h-4"></i>
@@ -358,7 +358,7 @@ $statusTexts = [
                             <span class="text-xs lg:text-sm text-primary-500">Số tiền giảm:</span>
                             <span class="font-bold text-success-text text-sm lg:text-base">-<?= format_currency($booking['discount_amount']) ?></span>
                         </div>
-                        <?php if (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded'])): ?>
+                        <?php if (!in_array($booking['payment_status'], ['cancelled', 'rejected', 'refunded', 'paid'])): ?>
                             <button onclick="openModal('discountModal')" 
                                 class="w-full text-xs lg:text-sm text-accent hover:text-accent-hover hover:underline font-semibold flex items-center justify-center gap-1">
                                 <i data-lucide="pencil" class="w-3 h-3"></i>

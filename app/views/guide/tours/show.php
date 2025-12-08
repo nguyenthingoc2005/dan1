@@ -6,7 +6,7 @@
  */
 ?>
 
-<div class="max-w-7xl mx-auto">
+<div class="max-w-8xl mx-auto">
     <!-- Header - Responsive -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
@@ -206,7 +206,7 @@
                                 <!-- Day Description -->
                                 <?php if (!empty($day['description'])): ?>
                                     <div class="text-slate-600 text-sm leading-relaxed">
-                                        <?= nl2br(htmlspecialchars($day['description'])) ?>
+                                        <?= $day['description'] ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -271,20 +271,198 @@
             <?php endif; ?>
 
         <?php elseif ($active_tab === 'checkin'): ?>
-            <!-- Section: Check-in -->
-            <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
-                    <h2 class="text-base lg:text-lg font-bold text-primary-700">Check-in Hành khách</h2>
-                    <?php if ($can_checkin): ?>
-                        <a href="?act=guide-checkin&action=show&schedule_id=<?= $schedule['id'] ?>"
-                            class="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-xl font-semibold transition-colors text-sm flex items-center gap-2">
-                            <i data-lucide="check-circle" class="w-4 h-4"></i>
-                            Check-in
-                        </a>
+            <!-- Section: Activity Check-in (NEW SYSTEM) -->
+            <div class="space-y-6 mb-8">
+                <!-- Header với các nút action -->
+                <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
+                        <div>
+                            <h2 class="text-base lg:text-lg font-bold text-primary-700">Check-in theo Hoạt động</h2>
+                            <p class="text-xs text-primary-500 mt-1">Quản lý check-in chi tiết theo từng hoạt động trong tour</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="?act=guide-checkpoints&action=create&schedule_id=<?= $schedule['id'] ?>"
+                                class="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-xl font-semibold transition-colors text-sm flex items-center gap-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                Tạo Checkpoint
+                            </a>
+                            <a href="?act=guide-activity-checkin&action=index&schedule_id=<?= $schedule['id'] ?>"
+                                class="px-4 py-2 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-xl font-semibold transition-colors text-sm flex items-center gap-2">
+                                <i data-lucide="list" class="w-4 h-4"></i>
+                                Xem tất cả
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách Checkpoints -->
+                    <?php if (!empty($activity_checkpoints)): ?>
+                        <div class="space-y-4">
+                            <?php 
+                            // Group checkpoints by date
+                            $checkpoints_by_date = [];
+                            foreach ($activity_checkpoints as $cp) {
+                                $date = $cp['scheduled_date'];
+                                if (!isset($checkpoints_by_date[$date])) {
+                                    $checkpoints_by_date[$date] = [];
+                                }
+                                $checkpoints_by_date[$date][] = $cp;
+                            }
+                            ksort($checkpoints_by_date);
+                            ?>
+                            
+                            <?php foreach ($checkpoints_by_date as $date => $checkpoints): ?>
+                                <div class="border border-primary-100 rounded-xl p-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h3 class="font-semibold text-primary-700">
+                                            <i data-lucide="calendar" class="w-4 h-4 inline mr-1"></i>
+                                            <?= date('d/m/Y', strtotime($date)) ?>
+                                        </h3>
+                                        <span class="text-xs text-primary-500">
+                                            <?= count($checkpoints) ?> checkpoint<?= count($checkpoints) > 1 ? 's' : '' ?>
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="space-y-3">
+                                        <?php foreach ($checkpoints as $cp): ?>
+                                            <?php 
+                                            $stats = $activity_checkpoint_stats[$cp['id']] ?? [];
+                                            $type_labels = [
+                                                'boarding' => 'Lên xe',
+                                                'meal' => 'Bữa ăn',
+                                                'accommodation' => 'Nghỉ đêm',
+                                                'attraction' => 'Tham quan',
+                                                'shopping' => 'Mua sắm',
+                                                'other' => 'Khác'
+                                            ];
+                                            $status_labels = [
+                                                'active' => 'Đang hoạt động',
+                                                'completed' => 'Hoàn thành',
+                                                'cancelled' => 'Đã hủy'
+                                            ];
+                                            $status_colors = [
+                                                'active' => 'bg-success-bg text-success-text',
+                                                'completed' => 'bg-primary-100 text-primary-700',
+                                                'cancelled' => 'bg-danger-bg text-danger-text'
+                                            ];
+                                            ?>
+                                            <div class="bg-primary-50 rounded-lg p-4 border border-primary-100 hover:border-accent transition-colors">
+                                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                                    <div class="flex-1">
+                                                        <div class="flex items-center gap-2 mb-2">
+                                                            <h4 class="font-semibold text-primary-700">
+                                                                <?= htmlspecialchars($cp['checkpoint_name']) ?>
+                                                            </h4>
+                                                            <span class="text-xs px-2 py-1 rounded <?= $status_colors[$cp['status']] ?? 'bg-primary-100 text-primary-700' ?>">
+                                                                <?= $status_labels[$cp['status']] ?? $cp['status'] ?>
+                                                            </span>
+                                                        </div>
+                                                        <div class="flex flex-wrap gap-3 text-xs text-primary-600 mb-2">
+                                                            <span>
+                                                                <i data-lucide="tag" class="w-3 h-3 inline mr-1"></i>
+                                                                <?= $type_labels[$cp['checkpoint_type']] ?? $cp['checkpoint_type'] ?>
+                                                            </span>
+                                                            <?php if (!empty($cp['scheduled_time'])): ?>
+                                                                <span>
+                                                                    <i data-lucide="clock" class="w-3 h-3 inline mr-1"></i>
+                                                                    <?= date('H:i', strtotime($cp['scheduled_time'])) ?>
+                                                                </span>
+                                                            <?php endif; ?>
+                                                            <?php if (!empty($cp['location'])): ?>
+                                                                <span>
+                                                                    <i data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i>
+                                                                    <?= htmlspecialchars($cp['location']) ?>
+                                                                </span>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <?php if (!empty($cp['description'])): ?>
+                                                            <p class="text-xs text-primary-500 line-clamp-2">
+                                                                <?= htmlspecialchars($cp['description']) ?>
+                                                            </p>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    
+                                                    <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                                        <!-- Stats -->
+                                                        <?php if (!empty($stats)): ?>
+                                                            <div class="flex gap-2 text-xs">
+                                                                <div class="bg-success-bg text-success-text px-2 py-1 rounded">
+                                                                    <strong><?= $stats['checked_in'] ?? 0 ?></strong>/<?= $stats['total_passengers'] ?? 0 ?>
+                                                                </div>
+                                                                <?php if (($stats['absent'] ?? 0) > 0): ?>
+                                                                    <div class="bg-danger-bg text-danger-text px-2 py-1 rounded">
+                                                                        Vắng: <?= $stats['absent'] ?? 0 ?>
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                                <?php if (($stats['late'] ?? 0) > 0): ?>
+                                                                    <div class="bg-warning-bg text-warning-text px-2 py-1 rounded">
+                                                                        Muộn: <?= $stats['late'] ?? 0 ?>
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                        
+                                                        <!-- Actions -->
+                                                        <div class="flex gap-2">
+                                                            <a href="?act=guide-activity-checkin&action=show&checkpoint_id=<?= $cp['id'] ?>"
+                                                                class="px-3 py-1.5 bg-accent hover:bg-accent-hover text-white rounded-lg font-semibold text-xs transition-colors flex items-center gap-1">
+                                                                <i data-lucide="check-circle" class="w-3 h-3"></i>
+                                                                Check-in
+                                                            </a>
+                                                            <a href="?act=guide-activity-checkin&action=summary&checkpoint_id=<?= $cp['id'] ?>"
+                                                                class="px-3 py-1.5 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-lg font-semibold text-xs transition-colors flex items-center gap-1">
+                                                                <i data-lucide="bar-chart" class="w-3 h-3"></i>
+                                                                Tổng hợp
+                                                            </a>
+                                                            <a href="?act=guide-checkpoints&action=edit&id=<?= $cp['id'] ?>"
+                                                                class="px-3 py-1.5 bg-warning-bg hover:opacity-90 text-warning-text rounded-lg font-semibold text-xs transition-colors flex items-center gap-1">
+                                                                <i data-lucide="edit" class="w-3 h-3"></i>
+                                                                Sửa
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     <?php else: ?>
-                        <span class="text-xs text-primary-500">Tour chưa bắt đầu</span>
+                        <div class="text-center py-8 bg-primary-50 rounded-lg border border-primary-100">
+                            <i data-lucide="map-pin-off" class="w-12 h-12 text-primary-400 mx-auto mb-3"></i>
+                            <p class="text-primary-500 text-sm mb-4">Chưa có checkpoint nào được tạo cho tour này.</p>
+                            <?php if ($can_checkin): ?>
+                                <a href="?act=guide-checkpoints&action=create&schedule_id=<?= $schedule['id'] ?>"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-xl font-semibold transition-colors text-sm">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    Tạo Checkpoint đầu tiên
+                                </a>
+                            <?php else: ?>
+                                <p class="text-xs text-primary-400">Tour chưa bắt đầu. Chỉ có thể tạo checkpoint từ ngày
+                                    <?= date('d/m/Y', strtotime($schedule['start_date'])) ?> trở đi.
+                                </p>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                 </div>
+
+                <!-- Section: Check-in Cũ (Legacy) -->
+                <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
+                        <div>
+                            <h2 class="text-base lg:text-lg font-bold text-primary-700">Check-in Hành khách (Cũ)</h2>
+                            <p class="text-xs text-primary-500 mt-1">Hệ thống check-in cũ - Khuyến nghị sử dụng hệ thống mới ở trên</p>
+                        </div>
+                        <?php if ($can_checkin): ?>
+                            <a href="?act=guide-checkin&action=show&schedule_id=<?= $schedule['id'] ?>"
+                                class="px-4 py-2 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-xl font-semibold transition-colors text-sm flex items-center gap-2">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                Check-in (Cũ)
+                            </a>
+                        <?php else: ?>
+                            <span class="text-xs text-primary-500">Tour chưa bắt đầu</span>
+                        <?php endif; ?>
+                    </div>
 
                 <?php if (!empty($checkin_stats)): ?>
                     <div class="grid grid-cols-3 gap-4 mb-4">

@@ -18,6 +18,19 @@ unset($_SESSION['old']);
         </a>
     </div>
 
+    <!-- Error Message Container -->
+    <div id="errorMessageContainer" class="hidden mb-4 lg:mb-6">
+        <div class="bg-danger-bg border-l-4 border-danger rounded-r-lg p-4 flex items-start gap-3 shadow-sm">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-danger flex-shrink-0 mt-0.5"></i>
+            <div class="flex-1">
+                <p class="text-danger-text font-semibold text-sm lg:text-base" id="errorMessageText"></p>
+            </div>
+            <button onclick="hideErrorMessage()" class="text-danger-text hover:text-danger opacity-70 hover:opacity-100 transition-opacity">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </div>
+
     <form action="?act=admin&module=bookings&action=store" method="POST" class="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6"
         id="bookingForm">
         <?= csrf_field() ?>
@@ -37,6 +50,7 @@ unset($_SESSION['old']);
                         <div class="relative mb-2">
                             <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary-400"></i>
                             <input type="text" id="tour_search" 
+                            style="padding-left:30px"
                                 placeholder="Tìm kiếm tour (mã tour, tên tour)..."
                                 class="w-full pl-10 pr-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                                 autocomplete="off"
@@ -166,6 +180,7 @@ unset($_SESSION['old']);
                     <div class="relative mb-2">
                         <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary-400"></i>
                         <input type="text" id="customer_search" 
+                           style="padding-left:30px"
                             placeholder="Tìm kiếm khách hàng (tên, số điện thoại)..."
                             class="w-full pl-10 pr-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 placeholder:text-primary-300 text-sm lg:text-base"
                             autocomplete="off"
@@ -570,10 +585,12 @@ unset($_SESSION['old']);
                 const [mdY, mdM, mdD] = minDateStr.split('-');
                 const todayDisplay = tdD + '/' + tdM + '/' + tdY;
                 const minDateDisplay = mdD + '/' + mdM + '/' + mdY;
-                alert(`Không thể đặt booking. Phải đặt trước ${deadlineDays} ngày so với ngày khởi hành. (Hôm nay: ${todayDisplay}, Ngày khởi hành tối thiểu: ${minDateDisplay})`);
+                showErrorMessage(`Không thể đặt booking. Phải đặt trước ${deadlineDays} ngày so với ngày khởi hành. (Hôm nay: ${todayDisplay}, Ngày khởi hành tối thiểu: ${minDateDisplay})`);
                 startDateSelect.value = "";
                 endDateInput.value = "";
                 endDateDisplay.value = "";
+                // Scroll to error message
+                document.getElementById('errorMessageContainer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 return;
             }
             
@@ -729,8 +746,10 @@ unset($_SESSION['old']);
                 const [mdY, mdM, mdD] = minDateStr.split('-');
                 const todayFormatted = tdD + '/' + tdM + '/' + tdY;
                 const minDateFormatted = mdD + '/' + mdM + '/' + mdY;
-                alert(`Không thể đặt booking. Phải đặt trước ${deadlineDays} ngày so với ngày khởi hành.\n(Hôm nay: ${todayFormatted}, Ngày khởi hành tối thiểu: ${minDateFormatted})`);
+                showErrorMessage(`Không thể đặt booking. Phải đặt trước ${deadlineDays} ngày so với ngày khởi hành. (Hôm nay: ${todayFormatted}, Ngày khởi hành tối thiểu: ${minDateFormatted})`);
                 startDateSelect.focus();
+                // Scroll to error message
+                document.getElementById('errorMessageContainer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 return false;
             }
             return true;
@@ -1039,5 +1058,33 @@ unset($_SESSION['old']);
 
         // Add 1 for primary customer (adult by default)
         updateCount('adult', 1);
+    }
+
+    // Error Message Functions
+    function showErrorMessage(message) {
+        const container = document.getElementById('errorMessageContainer');
+        const messageText = document.getElementById('errorMessageText');
+        
+        if (container && messageText) {
+            messageText.textContent = message;
+            container.classList.remove('hidden');
+            
+            // Re-initialize Lucide icons for the new elements
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Auto-hide after 8 seconds
+            setTimeout(() => {
+                hideErrorMessage();
+            }, 8000);
+        }
+    }
+
+    function hideErrorMessage() {
+        const container = document.getElementById('errorMessageContainer');
+        if (container) {
+            container.classList.add('hidden');
+        }
     }
 </script>

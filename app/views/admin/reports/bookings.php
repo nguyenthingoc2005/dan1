@@ -101,7 +101,7 @@
             <!-- Submit Button -->
             <div class="lg:col-span-3 flex items-end gap-2">
                 <button type="submit"
-                    class="flex-1 px-4 lg:px-5 py-2 lg:py-2.5 bg-primary-600 hover:opacity-90 text-white font-semibold rounded-xl transition-all text-sm lg:text-base flex items-center justify-center gap-2 h-[38px] shadow-sm">
+                    class="flex-1 px-4 lg:px-5 py-2 lg:py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl transition-all text-sm lg:text-base flex items-center justify-center gap-2 h-[38px] shadow-sm">
                     <i data-lucide="filter" class="w-4 h-4"></i>
                     Xem báo cáo
                 </button>

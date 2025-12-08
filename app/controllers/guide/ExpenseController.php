@@ -218,16 +218,16 @@ class ExpenseController
                 throw new \Exception("Tour chưa bắt đầu. Chỉ có thể ghi chi phí phát sinh từ ngày " . date('d/m/Y', strtotime($schedule['start_date'])) . " trở đi.");
             }
 
-            // Validate booking_id
-            $booking_id = (int) ($_POST['booking_id'] ?? 0);
-            if (!$booking_id) {
-                throw new \Exception("Vui lòng chọn booking.");
-            }
+            // booking_id là optional - có thể NULL nếu là chi phí chung của tour
+            $booking_id = !empty($_POST['booking_id']) ? (int) $_POST['booking_id'] : null;
 
-            // Validate booking belongs to this schedule
-            $booking = $this->bookingModel->getById($booking_id);
-            if (!$booking) {
-                throw new \Exception("Booking không tồn tại.");
+            // Nếu có booking_id, validate booking thuộc schedule (optional)
+            if ($booking_id) {
+                $booking = $this->bookingModel->getById($booking_id);
+                if (!$booking) {
+                    throw new \Exception("Booking không tồn tại.");
+                }
+                // Note: Không bắt buộc booking phải thuộc schedule, vì có thể là chi phí chung
             }
 
             // Validate required fields

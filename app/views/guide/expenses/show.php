@@ -22,6 +22,11 @@
                 <i data-lucide="plus" class="w-4 h-4"></i>
                 Ghi chi phí mới
             </a>
+            <a href="?act=guide-tours&action=show&id=<?= $schedule['id'] ?>&tab=expenses" 
+               class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                <i data-lucide="home" class="w-4 h-4"></i>
+                Quay về Tour
+            </a>
             <a href="?act=guide-expenses" 
                class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 font-semibold transition-colors text-sm lg:text-base flex items-center justify-center gap-2">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -80,8 +85,12 @@
                                 <td class="px-3 lg:px-4 py-2 lg:py-3 text-primary-600 text-xs lg:text-sm">
                                     <?= date('d/m/Y', strtotime($expense['expense_date'])) ?>
                                 </td>
-                                <td class="px-3 lg:px-4 py-2 lg:py-3 text-primary-600 text-xs font-mono">
-                                    <?= htmlspecialchars($expense['booking_code']) ?>
+                                <td class="px-3 lg:px-4 py-2 lg:py-3 text-primary-600 text-xs">
+                                    <?php if (!empty($expense['booking_code'])): ?>
+                                        <span class="font-mono"><?= htmlspecialchars($expense['booking_code']) ?></span>
+                                    <?php else: ?>
+                                        <span class="text-primary-500 italic">Chi phí chung của tour</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-3 lg:px-4 py-2 lg:py-3 text-primary-600 text-xs lg:text-sm">
                                     <?= htmlspecialchars($expense['category'] ?? '-') ?>

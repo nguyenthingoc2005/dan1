@@ -4,7 +4,7 @@
  */
 ?>
 
-<div class="max-w-6xl mx-auto">
+<div class="max-w-8xl mx-auto">
     <!-- Header - Responsive -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <h1 class="text-xl lg:text-2xl font-bold text-primary-700">Lịch Tour Của Tôi</h1>

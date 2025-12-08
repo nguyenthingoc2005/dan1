@@ -912,6 +912,12 @@ switch ($module) {
             case 'reject':
                 $expenseController->reject();
                 break;
+            case 'approve-all':
+                $expenseController->approveAll();
+                break;
+            case 'reject-all':
+                $expenseController->rejectAll();
+                break;
             default:
                 $expenseController->index();
                 break;
@@ -1031,6 +1037,32 @@ switch ($module) {
                 break;
             default:
                 $operationsController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: ACTIVITY CHECKPOINTS (Chỉ xem - Admin không được tạo/sửa/xóa)
+    // ==========================================================================
+    case 'checkpoints':
+        require_once CONTROLLERS_PATH . '/admin/ActivityCheckpointController.php';
+        $checkpointController = new Admin\ActivityCheckpointController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $checkpointController->index();
+                break;
+            case 'show':
+                $checkpointController->show();
+                break;
+            case 'bySchedule':
+                $checkpointController->bySchedule();
+                break;
+            case 'summary':
+                $checkpointController->summary();
+                break;
+            default:
+                $checkpointController->index();
                 break;
         }
         break;

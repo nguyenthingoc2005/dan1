@@ -237,7 +237,11 @@ class TourController
 
         // Get check-in data (only for checkin tab)
         $can_checkin = ($schedule['start_date'] <= date('Y-m-d'));
+        $activity_checkpoints = [];
+        $activity_checkpoint_stats = [];
+        
         if ($active_tab === 'checkin') {
+            // Load old check-in system data
             require_once MODELS_PATH . '/Checkin.php';
             $checkinModel = new \Checkin($this->db);
 
@@ -271,6 +275,31 @@ class TourController
 
             // Get check-in stats
             $checkin_stats = $checkinModel->getStatsBySchedule($id);
+
+            // Load Activity Checkpoints (NEW SYSTEM)
+            require_once MODELS_PATH . '/ActivityCheckpoint.php';
+            require_once MODELS_PATH . '/ActivityCheckin.php';
+            require_once MODELS_PATH . '/ActivityCheckinSummary.php';
+            
+            $activityCheckpointModel = new \ActivityCheckpoint($this->db);
+            $activityCheckinModel = new \ActivityCheckin($this->db);
+            $activityCheckinSummaryModel = new \ActivityCheckinSummary($this->db);
+            
+            // Get all checkpoints for this schedule
+            $activity_checkpoints = $activityCheckpointModel->getBySchedule($id);
+            
+            // Get stats for each checkpoint
+            foreach ($activity_checkpoints as &$cp) {
+                $summary = $activityCheckinSummaryModel->getByCheckpoint($cp['id']);
+                $activity_checkpoint_stats[$cp['id']] = $summary ?: [
+                    'total_passengers' => 0,
+                    'checked_in' => 0,
+                    'absent' => 0,
+                    'late' => 0,
+                    'early' => 0,
+                    'excused' => 0
+                ];
+            }
         }
 
         // Get room assignments (only for rooms tab)

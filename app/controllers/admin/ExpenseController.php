@@ -66,15 +66,55 @@ class ExpenseController
             // List all schedules with expenses
             $filters = [];
             $result = $this->scheduleModel->getAll($filters, $page, $limit);
-            $schedules = $result['data'];
+            $schedules_raw = $result['data'];
             $total_pages = $result['pages'];
             $current_page = $result['current_page'];
+
+            // Loại bỏ duplicate schedules dựa trên id - sử dụng array_values để reset keys
+            $schedules = [];
+            $seen_schedule_ids = [];
+            foreach ($schedules_raw as $schedule) {
+                $schedule_id = $schedule['id'] ?? null;
+                if ($schedule_id && !in_array($schedule_id, $seen_schedule_ids)) {
+                    $schedules[] = $schedule;
+                    $seen_schedule_ids[] = $schedule_id;
+                }
+            }
+            // Reset array keys để đảm bảo không có vấn đề với foreach
+            $schedules = array_values($schedules);
 
             // Get expense totals for each schedule
             foreach ($schedules as &$schedule) {
                 $schedule['expense_total'] = $this->expenseModel->getTotalByScheduleId($schedule['id']);
-                $schedule['expense_count'] = count($this->expenseModel->getByScheduleId($schedule['id']));
+                $expenses = $this->expenseModel->getByScheduleId($schedule['id']);
+                
+                // Loại bỏ duplicate dựa trên id
+                $unique_expenses = [];
+                $seen_ids = [];
+                foreach ($expenses as $expense) {
+                    $expense_id = $expense['id'] ?? null;
+                    if ($expense_id && !in_array($expense_id, $seen_ids)) {
+                        $unique_expenses[] = $expense;
+                        $seen_ids[] = $expense_id;
+                    }
+                }
+                $expenses = $unique_expenses;
+                
+                $schedule['expense_count'] = count($expenses);
+                // Get approval counts for each schedule
+                $schedule['expense_approved_count'] = $this->expenseModel->getCountByScheduleIdAndStatus($schedule['id'], 'approved');
+                $schedule['expense_pending_count'] = $this->expenseModel->getCountByScheduleIdAndStatus($schedule['id'], 'pending');
+                $schedule['expense_rejected_count'] = $this->expenseModel->getCountByScheduleIdAndStatus($schedule['id'], 'rejected');
+                // Get all expenses for display
+                $schedule['expenses'] = $expenses;
+                // Get pending expenses for quick actions
+                $schedule['pending_expenses'] = array_filter($expenses, function($exp) {
+                    return ($exp['approval_status'] ?? 'pending') === 'pending';
+                });
             }
+
+            // Get overall statistics
+            $expense_stats = $this->expenseModel->getApprovalStatistics();
 
             $page_title = 'Quản lý Chi phí phát sinh';
             $content_file = VIEWS_PATH . '/admin/expenses/index.php';
@@ -453,7 +493,15 @@ class ExpenseController
     public function approve()
     {
         require_admin();
-        require_csrf_token();
+        
+        // Kiểm tra CSRF token từ GET parameter
+        $token = $_GET['token'] ?? '';
+        if (!verify_csrf_token($token)) {
+            set_error("CSRF token không hợp lệ. Vui lòng thử lại.");
+            redirect('?act=admin&module=expenses');
+            return;
+        }
+        
         $user_id = get_user_id();
         $id = $_GET['id'] ?? null;
         $schedule_id = $_GET['schedule_id'] ?? null;
@@ -476,11 +524,7 @@ class ExpenseController
             ]);
 
             set_success("Đã duyệt chi phí thành công!");
-            if ($schedule_id) {
-                redirect('?act=admin&module=expenses&action=show&schedule_id=' . $schedule_id);
-            } else {
-                redirect('?act=admin&module=expenses');
-            }
+            redirect('?act=admin&module=expenses');
 
         } catch (\Exception $e) {
             set_error($e->getMessage());
@@ -498,7 +542,15 @@ class ExpenseController
     public function reject()
     {
         require_admin();
-        require_csrf_token();
+        
+        // Kiểm tra CSRF token từ GET hoặc POST parameter
+        $token = $_GET['token'] ?? $_POST['csrf_token'] ?? '';
+        if (!verify_csrf_token($token)) {
+            set_error("CSRF token không hợp lệ. Vui lòng thử lại.");
+            redirect('?act=admin&module=expenses');
+            return;
+        }
+        
         $user_id = get_user_id();
         $id = $_GET['id'] ?? null;
         $schedule_id = $_GET['schedule_id'] ?? null;
@@ -529,11 +581,7 @@ class ExpenseController
             $this->expenseModel->update($id, $update_data);
 
             set_success("Đã từ chối chi phí.");
-            if ($schedule_id) {
-                redirect('?act=admin&module=expenses&action=show&schedule_id=' . $schedule_id);
-            } else {
-                redirect('?act=admin&module=expenses');
-            }
+            redirect('?act=admin&module=expenses');
 
         } catch (\Exception $e) {
             set_error($e->getMessage());
@@ -542,6 +590,124 @@ class ExpenseController
             } else {
                 redirect('?act=admin&module=expenses');
             }
+        }
+    }
+
+    /**
+     * Duyệt tất cả chi phí pending của một schedule
+     */
+    public function approveAll()
+    {
+        require_admin();
+        
+        // Kiểm tra CSRF token từ GET parameter
+        $token = $_GET['token'] ?? '';
+        if (!verify_csrf_token($token)) {
+            set_error("CSRF token không hợp lệ. Vui lòng thử lại.");
+            redirect('?act=admin&module=expenses');
+            return;
+        }
+        
+        $user_id = get_user_id();
+        $schedule_id = $_GET['schedule_id'] ?? null;
+
+        if (!$schedule_id) {
+            set_error("Schedule ID không hợp lệ.");
+            redirect('?act=admin&module=expenses');
+            return;
+        }
+
+        try {
+            // Lấy tất cả expenses pending của schedule này
+            $expenses = $this->expenseModel->getByScheduleId($schedule_id);
+            $pending_expenses = array_filter($expenses, function($exp) {
+                return ($exp['approval_status'] ?? 'pending') === 'pending';
+            });
+
+            if (empty($pending_expenses)) {
+                set_error("Không có chi phí nào chờ duyệt.");
+                redirect('?act=admin&module=expenses');
+                return;
+            }
+
+            $count = 0;
+            foreach ($pending_expenses as $expense) {
+                $this->expenseModel->update($expense['id'], [
+                    'approval_status' => 'approved',
+                    'approved_by' => $user_id
+                ]);
+                $count++;
+            }
+
+            set_success("Đã duyệt thành công {$count} chi phí!");
+            redirect('?act=admin&module=expenses');
+
+        } catch (\Exception $e) {
+            set_error($e->getMessage());
+            redirect('?act=admin&module=expenses&action=show&schedule_id=' . $schedule_id);
+        }
+    }
+
+    /**
+     * Từ chối tất cả chi phí pending của một schedule
+     */
+    public function rejectAll()
+    {
+        require_admin();
+        
+        // Kiểm tra CSRF token từ POST hoặc GET
+        $token = $_POST['csrf_token'] ?? $_GET['token'] ?? '';
+        if (!verify_csrf_token($token)) {
+            set_error("CSRF token không hợp lệ. Vui lòng thử lại.");
+            redirect('?act=admin&module=expenses');
+            return;
+        }
+        
+        $user_id = get_user_id();
+        $schedule_id = $_POST['schedule_id'] ?? $_GET['schedule_id'] ?? null;
+
+        if (!$schedule_id) {
+            set_error("Schedule ID không hợp lệ.");
+            redirect('?act=admin&module=expenses');
+            return;
+        }
+
+        try {
+            // Lấy tất cả expenses pending của schedule này
+            $expenses = $this->expenseModel->getByScheduleId($schedule_id);
+            $pending_expenses = array_filter($expenses, function($exp) {
+                return ($exp['approval_status'] ?? 'pending') === 'pending';
+            });
+
+            if (empty($pending_expenses)) {
+                set_error("Không có chi phí nào chờ duyệt.");
+                redirect('?act=admin&module=expenses');
+                return;
+            }
+
+            $rejection_reason = !empty($_POST['rejection_reason']) ? sanitize($_POST['rejection_reason']) : null;
+
+            $count = 0;
+            foreach ($pending_expenses as $expense) {
+                $update_data = [
+                    'approval_status' => 'rejected',
+                    'approved_by' => $user_id
+                ];
+
+                if ($rejection_reason) {
+                    $update_data['notes'] = ($expense['notes'] ? $expense['notes'] . "\n\n" : '') . "Lý do từ chối: " . $rejection_reason;
+                }
+
+                $this->expenseModel->update($expense['id'], $update_data);
+                $count++;
+            }
+
+            set_success("Đã từ chối {$count} chi phí!");
+            redirect('?act=admin&module=expenses');
+
+        } catch (\Exception $e) {
+            set_error($e->getMessage());
+            redirect('?act=admin&module=expenses&action=show&schedule_id=' . $schedule_id);
         }
     }
 }
