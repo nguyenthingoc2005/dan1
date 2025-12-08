@@ -1,7 +1,7 @@
 <?php
 /**
  * ADMIN - THÊM LỊCH KHỞI HÀNH
- * Variables: $tours, $guides
+ * Variables: $tours
  */
 if (!is_admin())
     redirect('?act=access-denied');
@@ -19,11 +19,24 @@ if (!is_admin())
 
     <form action="?act=admin&module=schedules&action=store" method="POST" class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100 space-y-4 lg:space-y-6">
         
-        <!-- Tour Selection -->
+        <!-- Tour Selection with Quick Search -->
         <div>
             <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
                 Chọn Tour <span class="text-danger">*</span>
             </label>
+            
+            <!-- Quick Search Box -->
+            <div class="mb-3">
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary-400"></i>
+                    <input type="text" id="tour-search-input" 
+                        placeholder="Tìm kiếm tour nhanh (mã tour, tên tour)..."
+                        class="w-full pl-10 pr-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
+                        oninput="filterTourOptions()">
+                </div>
+                <p class="text-xs text-primary-500 mt-1">Gõ để tìm kiếm tour nhanh chóng</p>
+            </div>
+            
             <select name="tour_id" id="tour_id" 
                 class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base" required>
                 <option value="">-- Chọn Tour --</option>
@@ -35,7 +48,9 @@ if (!is_admin())
                         data-duration="<?= $t['duration_days'] ?>"
                         data-tour-type="<?= $t['tour_type'] ?>"
                         data-min-pax="<?= $t['min_participants'] ?? 10 ?>"
-                        data-max-pax="<?= $t['max_participants'] ?? 45 ?>">
+                        data-max-pax="<?= $t['max_participants'] ?? 45 ?>"
+                        data-tour-code="<?= htmlspecialchars(strtolower($t['tour_code'])) ?>"
+                        data-tour-name="<?= htmlspecialchars(strtolower($t['name'])) ?>">
                         <?= htmlspecialchars($t['tour_code'] . ' - ' . $t['name']) ?>
                         <?php if ($t['tour_type'] == 'custom'): ?>
                             <span class="text-purple-600">(Custom)</span>
@@ -97,25 +112,6 @@ if (!is_admin())
             <p class="text-xs text-primary-500 mt-1">Mặc định: Số chỗ = Số người tối đa của tour</p>
         </div>
 
-        <!-- Guide Assignment (Optional) -->
-        <div>
-            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
-                Hướng dẫn viên <span class="text-primary-400 text-xs">(Tùy chọn)</span>
-            </label>
-            <select name="guide_id" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base">
-                <option value="">-- Chưa gán HDV --</option>
-                <?php foreach ($guides as $g): ?>
-                    <option value="<?= $g['id'] ?>">
-                        <?= htmlspecialchars($g['full_name']) ?> 
-                        <?php if (!empty($g['phone'])): ?>
-                            - <?= htmlspecialchars($g['phone']) ?>
-                        <?php endif; ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <p class="text-xs text-primary-500 mt-1">Có thể gán sau khi tạo lịch</p>
-        </div>
-
         <!-- Pricing -->
         <div class="border-t border-primary-100 pt-4">
             <h3 class="font-bold text-primary-700 mb-3 text-sm lg:text-base">Giá bán (Để trống nếu dùng giá gốc của Tour)</h3>
@@ -139,14 +135,6 @@ if (!is_admin())
                         class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
                 </div>
             </div>
-        </div>
-
-        <!-- Guide Notes -->
-        <div>
-            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Ghi chú cho HDV</label>
-            <textarea name="guide_notes" rows="2" 
-                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
-                placeholder="Ghi chú đặc biệt cho hướng dẫn viên..."></textarea>
         </div>
 
         <!-- Submit -->
@@ -300,6 +288,38 @@ if (!is_admin())
     if (tourSelect.value) {
         updateTourInfo();
         updateDefaultPrices();
+    }
+
+    // Quick search function for tour selection
+    function filterTourOptions() {
+        const searchInput = document.getElementById('tour-search-input');
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const options = tourSelect.querySelectorAll('option:not([value=""])');
+        
+        let visibleCount = 0;
+        
+        options.forEach(option => {
+            const tourCode = option.dataset.tourCode || '';
+            const tourName = option.dataset.tourName || '';
+            const match = tourCode.includes(searchTerm) || tourName.includes(searchTerm);
+            
+            if (match) {
+                option.style.display = '';
+                visibleCount++;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+        
+        // Show/hide placeholder option based on search
+        const placeholderOption = tourSelect.querySelector('option[value=""]');
+        if (placeholderOption) {
+            if (searchTerm && visibleCount === 0) {
+                placeholderOption.textContent = '-- Không tìm thấy tour --';
+            } else {
+                placeholderOption.textContent = '-- Chọn Tour --';
+            }
+        }
     }
 </script>
 

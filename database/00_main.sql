@@ -8,11 +8,10 @@
 -- - ✅ Phân phòng (Room Assignment)
 -- - ✅ Check-in chi tiết theo hoạt động (Activity Check-in)
 -- - ✅ Quản lý xe và tài xế (Vehicle & Driver Management)
--- - ✅ Template chi phí cố định (Tour Cost Templates) - Phương án 3
 -- - ✅ Tính phụ cấp tự động (Tour Allowance Rules)
 -- 
 -- CHANGES:
--- - ✅ Tours: Bỏ 4 cột fixed_cost, thay bằng 1 cột fixed_cost_total + template
+-- - ✅ Tours: Bỏ 4 cột fixed_cost, thay bằng 1 cột fixed_cost_total (nhập trực tiếp)
 -- - ✅ Tour Schedules: Thêm status 'confirmed'
 -- - ✅ Incurred Expenses: Thêm tour_schedule_id, booking_id có thể NULL
 -- - ✅ Tour Assignments: tour_schedule_id NOT NULL
@@ -76,12 +75,6 @@ SOURCE database/11_system_other.sql;
 -- ==============================================================================
 -- INSERT DỮ LIỆU MẪU
 -- ==============================================================================
-
--- Insert mẫu Tour Cost Templates
-INSERT INTO `tour_cost_templates` (`template_name`, `description`, `fixed_cost_total`, `is_default`, `status`) VALUES
-('Tour trong nước 3 ngày', 'Template cho tour trong nước ngắn ngày', 2000000, 1, 'active'),
-('Tour trong nước 5-7 ngày', 'Template cho tour trong nước dài ngày', 3000000, 0, 'active'),
-('Tour quốc tế', 'Template cho tour quốc tế', 5000000, 0, 'active');
 
 -- Insert mẫu Tour Allowance Rules
 INSERT INTO `tour_allowance_rules` 

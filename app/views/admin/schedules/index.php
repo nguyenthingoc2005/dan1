@@ -81,7 +81,7 @@ if (!is_admin())
             </div>
 
             <div class="flex items-end">
-                <button type="submit" class="w-full px-4 lg:px-5 py-2 lg:py-2.5 bg-primary-600 hover:opacity-90 text-white rounded-xl font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                <button type="submit" class="w-full px-4 lg:px-5 py-2 lg:py-2.5 bg-accent hover:bg-opacity-90 text-white rounded-xl font-semibold transition-all text-sm lg:text-base flex items-center justify-center gap-2">
                     <i data-lucide="filter" class="w-4 h-4"></i>
                     Lọc
                 </button>

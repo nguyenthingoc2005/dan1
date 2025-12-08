@@ -283,6 +283,9 @@ switch ($module) {
             case 'saveFormSession':
                 $tourController->saveFormSession();
                 break;
+            case 'getFormSession':
+                $tourController->getFormSession();
+                break;
             case 'clearTourSession':
                 $tourController->clearTourSession();
                 break;

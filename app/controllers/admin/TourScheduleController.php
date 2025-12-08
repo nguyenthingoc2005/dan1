@@ -50,18 +50,6 @@ class TourScheduleController
         // Filter tours: status = 'active' (đã bao gồm duyệt rồi)
         $tours = $this->tourModel->getAll(['status' => 'active'], 1, 1000)['data'];
 
-        // Get all guides for dropdown
-        require_once MODELS_PATH . '/TourAssignment.php';
-        $assignmentModel = new TourAssignment($this->pdo);
-        $sql = "SELECT u.id, u.full_name, u.phone, u.email
-                FROM users u
-                JOIN roles r ON u.role_id = r.id
-                WHERE r.name = 'guide' AND u.status = 'active'
-                ORDER BY u.full_name";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute();
-        $guides = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         $page_title = 'Thêm Lịch Khởi Hành';
         $content_file = 'app/views/admin/schedules/create.php';
         require_once 'app/views/layouts/admin_layout.php';
@@ -139,31 +127,6 @@ class TourScheduleController
                     }
                 }
 
-                // 4. Kiểm tra guide availability nếu có gán guide
-                $guide_id = !empty($_POST['guide_id']) ? (int) $_POST['guide_id'] : null;
-                if ($guide_id) {
-                    require_once MODELS_PATH . '/TourAssignment.php';
-                    $assignmentModel = new TourAssignment($this->pdo);
-
-                    // Validate guide is actually a guide
-                    if (!$assignmentModel->isGuide($guide_id)) {
-                        throw new Exception("Người dùng này không phải là Hướng dẫn viên hoặc đã bị vô hiệu hóa");
-                    }
-
-                    // Check guide availability
-                    $availability = $assignmentModel->checkGuideAvailability($guide_id, $start_date, $end_date);
-                    if (!$availability['available']) {
-                        $conflict = $availability['conflict'];
-                        $conflictInfo = '';
-                        if (isset($conflict['tour_name'])) {
-                            $conflictInfo = $conflict['tour_name'] . " ({$conflict['start_date']} - {$conflict['end_date']})";
-                        } else {
-                            $conflictInfo = "Lịch khác ({$conflict['start_date']} - {$conflict['end_date']})";
-                        }
-                        throw new Exception("HDV đã có lịch trùng: " . $conflictInfo);
-                    }
-                }
-
                 $data = [
                     'tour_id' => $tour_id,
                     'start_date' => $start_date,
@@ -174,23 +137,11 @@ class TourScheduleController
                     'adult_price' => !empty($_POST['adult_price']) ? $_POST['adult_price'] : $tour['adult_price'],
                     'child_price' => !empty($_POST['child_price']) ? $_POST['child_price'] : $tour['child_price'],
                     'infant_price' => !empty($_POST['infant_price']) ? $_POST['infant_price'] : $tour['infant_price'],
-                    'guide_id' => $guide_id,
-                    'guide_notes' => !empty($_POST['guide_notes']) ? sanitize($_POST['guide_notes']) : null
+                    'guide_id' => null, // Không gán guide khi tạo lịch
+                    'guide_notes' => null
                 ];
 
                 $schedule_id = $this->scheduleModel->create($data);
-
-                // Lưu lịch sử nếu có gán guide
-                if ($guide_id) {
-                    $this->scheduleModel->logGuideChange(
-                        $schedule_id,
-                        null, // old_guide_id = null (lần đầu gán)
-                        $guide_id,
-                        get_user_id(),
-                        'Gán HDV lần đầu',
-                        $_POST['guide_notes'] ?? null
-                    );
-                }
 
                 set_success("Tạo lịch trình tour thành công!");
                 // Redirect về danh sách lịch trình của tour đó

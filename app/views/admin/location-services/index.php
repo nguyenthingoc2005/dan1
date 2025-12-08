@@ -11,28 +11,39 @@ if (!is_admin())
     /* Horizon UI Style - Location Services */
     /* Simple Tree Item */
     .tree-item {
-        padding: 12px 16px;
-        margin-bottom: 4px;
+        padding: 14px 16px;
+        margin-bottom: 6px;
         background-color: var(--panel);
-        border-left: 3px solid transparent;
+        border: 1px solid var(--primary-200);
+        border-left: 4px solid var(--primary-300);
         border-radius: 12px;
         transition: all 0.2s;
     }
 
     .tree-item:hover {
         background-color: var(--primary-50);
+        border-color: var(--primary-300);
         border-left-color: var(--accent);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        transform: translateX(2px);
     }
 
     .tree-item.active {
-        background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-700) 100%);
-        color: white;
-        border-left-color: var(--accent);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        background: linear-gradient(135deg, #1B2559 0%, #2B3674 100%);
+        color: white !important;
+        border: 2px solid #2B3674;
+        border-left: 4px solid #4318FF;
+        box-shadow: 0 4px 12px rgba(27, 37, 89, 0.3);
     }
 
     .tree-item.active * {
-        color: white;
+        color: white !important;
+    }
+
+    .tree-item.active .tree-label,
+    .tree-item.active .font-semibold,
+    .tree-item.active a {
+        color: white !important;
     }
 
     .tree-item a.no-underline {
@@ -41,19 +52,13 @@ if (!is_admin())
         display: block;
     }
 
+    .tree-item.active a.no-underline {
+        color: white !important;
+    }
+
     .tree-icon {
-        margin-right: 10px;
-        font-size: 16px;
-        width: 20px;
-        text-align: center;
-    }
-
-    .tree-item.country .tree-icon {
-        color: var(--accent);
-    }
-
-    .tree-item.active .tree-icon {
-        color: white;
+        display: none;
+        /* Ẩn icon để tên quốc gia không bị xuống hàng */
     }
 
     .tree-label {
@@ -64,6 +69,7 @@ if (!is_admin())
 
     .tree-badge {
         background-color: var(--primary-100);
+        border: 1px solid var(--primary-200);
         padding: 4px 10px;
         font-size: 11px;
         font-weight: 700;
@@ -74,8 +80,9 @@ if (!is_admin())
     }
 
     .tree-item.active .tree-badge {
-        background-color: rgba(255, 255, 255, 0.25);
-        color: white;
+        background-color: rgba(255, 255, 255, 0.3) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
+        color: white !important;
     }
 
     .tree-actions {
@@ -85,37 +92,40 @@ if (!is_admin())
     }
 
     .tree-action-btn {
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 12px;
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 8px;
         transition: all 0.2s;
         cursor: pointer;
     }
 
     .tree-action-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transform: scale(1.1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
 
     /* Service Cards */
     .service-card {
         background-color: var(--panel);
+        border: 1px solid var(--primary-200);
         border-left: 4px solid var(--accent);
         padding: 20px;
         margin-bottom: 16px;
         border-radius: 16px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
         transition: all 0.2s;
     }
 
     .service-card:hover {
         background-color: var(--primary-50);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary-300);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
     }
 
     .service-card.inactive {
@@ -149,6 +159,9 @@ if (!is_admin())
         text-align: center;
         padding: 60px 20px;
         color: var(--primary-500);
+        border: 2px dashed var(--primary-200);
+        border-radius: 16px;
+        background: var(--primary-50);
     }
 
     .empty-state i {
@@ -191,35 +204,38 @@ if (!is_admin())
 
     /* Province Cards */
     .province-card {
-        padding: 16px;
+        padding: 18px;
         background: var(--panel);
-        border: 1px solid var(--primary-100);
+        border: 2px solid var(--primary-200);
         border-left: 4px solid var(--accent);
         border-radius: 16px;
         color: inherit;
         display: block;
         transition: all 0.2s;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
     }
 
     .province-card:hover {
         background-color: var(--primary-50);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary-300);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
     }
 
     /* Destination Cards */
     .destination-card {
         background: var(--panel);
-        border: 1px solid var(--primary-100);
+        border: 2px solid var(--primary-200);
         border-radius: 16px;
         overflow: hidden;
         transition: all 0.2s;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
     }
 
     .destination-card:hover {
         background-color: var(--primary-50);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary-300);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
         transform: translateY(-2px);
     }
 
@@ -257,9 +273,9 @@ if (!is_admin())
     /* Sidebar Container */
     .sidebar-container {
         background: var(--panel);
-        border: 1px solid var(--primary-100);
+        border: 2px solid var(--primary-200);
         border-radius: 16px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     /* Empty state */
@@ -283,7 +299,7 @@ if (!is_admin())
 
 <div class="max-w-full mx-auto">
     <!-- Header - Responsive -->
-    <div class="mb-4 lg:mb-6 bg-panel rounded-2xl p-4 lg:p-6 border border-primary-100 shadow-sm">
+    <div class="mb-6 lg:mb-8 bg-panel rounded-2xl p-4 lg:p-6 border-2 border-primary-200 shadow-md">
         <h1 class="text-xl lg:text-2xl font-bold text-primary-700 flex items-center gap-2 lg:gap-3">
             <i data-lucide="map-pin" class="w-5 h-5 lg:w-6 lg:h-6 text-accent"></i>
             Quản lý Địa điểm & Dịch vụ
@@ -297,7 +313,7 @@ if (!is_admin())
             style="max-height: calc(100vh - 200px); overflow-y: auto; position: sticky; top: 24px;">
             <div class="mb-4 lg:mb-6">
                 <a href="?act=admin&module=location-services&action=create-country"
-                    class="w-full mb-3 lg:mb-4 px-4 lg:px-6 py-2.5 lg:py-3 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base text-center inline-block flex items-center justify-center gap-2">
+                    class="w-full mb-4 lg:mb-5 px-4 lg:px-6 py-2.5 lg:py-3 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-md transition-all text-sm lg:text-base text-center inline-block flex items-center justify-center gap-2 border border-accent">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     <span>Thêm Quốc gia</span>
                 </a>
@@ -305,7 +321,7 @@ if (!is_admin())
                     <i data-lucide="search"
                         class="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary-400 w-4 h-4"></i>
                     <input type="text" id="searchBox" placeholder="Tìm kiếm..."
-                        class="w-full pl-10 pr-3 py-2.5 lg:py-3 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
+                        class="w-full pl-10 pr-3 py-2.5 lg:py-3 bg-white border-2 border-primary-200 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base shadow-sm">
                 </div>
             </div>
 
@@ -398,8 +414,7 @@ if (!is_admin())
                                 <a href="?act=admin&module=location-services&country_id=<?= $country_id ?>"
                                     class="flex items-center flex-1 no-underline"
                                     style="cursor: pointer; text-decoration: none; color: inherit;">
-                                    <i data-lucide="globe" class="tree-icon w-4 h-4 lg:w-5 lg:h-5"></i>
-                                    <span class="tree-label"><?= htmlspecialchars($country['name']) ?></span>
+                                    <span class="tree-label font-semibold"><?= htmlspecialchars($country['name']) ?></span>
                                     <span class="tree-badge"><?= $country['provinces_count'] ?? 0 ?></span>
                                 </a>
                                 <div class="tree-actions" onclick="event.stopPropagation();">
@@ -428,7 +443,8 @@ if (!is_admin())
         </div>
 
         <!-- Main Content Area -->
-        <div class="flex-1 p-4 lg:p-6" id="mainContent" style="min-height: 600px;">
+        <div class="flex-1 p-4 lg:p-6 bg-panel border-2 border-primary-200 rounded-2xl shadow-md" id="mainContent"
+            style="min-height: 600px;">
             <?php if (!empty($current_service_provider_id) && !empty($current_provider)): ?>
                 <!-- Services List for Provider - Kiểm tra service_provider_id TRƯỚC province_id -->
                 <div class="mb-4 lg:mb-6">
@@ -439,9 +455,10 @@ if (!is_admin())
                     </a>
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4 mb-4">
                         <h2 class="text-lg lg:text-xl font-bold text-primary-700">Dịch vụ của:
-                            <?= htmlspecialchars($current_provider['name'] ?? '') ?></h2>
+                            <?= htmlspecialchars($current_provider['name'] ?? '') ?>
+                        </h2>
                         <a href="?act=admin&module=location-services&action=create-service&service_provider_id=<?= $current_service_provider_id ?>"
-                            class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-success to-success-dark hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base inline-flex items-center justify-center gap-2">
+                            class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-success hover:bg-opacity-90 text-white rounded-xl font-semibold transition-all text-sm lg:text-base inline-flex items-center justify-center gap-2">
                             <i data-lucide="plus" class="w-4 h-4"></i>
                             <span>Thêm dịch vụ</span>
                         </a>
@@ -683,7 +700,7 @@ if (!is_admin())
                                             class="font-bold text-sm lg:text-base <?= $is_inactive ? 'text-primary-500' : 'text-primary-700' ?>">
                                             Dịch vụ (<?= $provider['services_count'] ?? 0 ?>)</h4>
                                         <a href="?act=admin&module=location-services&country_id=<?= $current_country_id ?? '' ?>&province_id=<?= $current_province_id ?>&service_provider_id=<?= $provider['id'] ?>"
-                                            class="w-full sm:w-auto px-3 lg:px-4 py-1.5 lg:py-2 bg-gradient-to-r from-success to-success-dark hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm inline-flex items-center justify-center gap-1.5 <?= $is_inactive ? 'opacity-50 cursor-not-allowed' : '' ?>"
+                                            class="w-full sm:w-auto px-3 lg:px-4 py-1.5 lg:py-2 bg-success hover:bg-opacity-90 text-white rounded-xl font-semibold transition-all text-xs lg:text-sm inline-flex items-center justify-center gap-1.5 <?= $is_inactive ? 'opacity-50 cursor-not-allowed' : '' ?>"
                                             <?= $is_inactive ? 'onclick="return false;" title="Nhà cung cấp đã bị vô hiệu hóa"' : '' ?>>
                                             <i data-lucide="list" class="w-3 h-3 lg:w-4 lg:h-4"></i>
                                             <span>Xem dịch vụ</span>
@@ -790,7 +807,7 @@ if (!is_admin())
                             <?= htmlspecialchars($current_country['name']) ?>
                         </h2>
                         <a href="?act=admin&module=location-services&action=create-province&country_id=<?= $current_country_id ?>"
-                            class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-success to-success-dark hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base inline-flex items-center justify-center gap-2">
+                            class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-success hover:bg-opacity-90 text-white rounded-xl font-semibold transition-all text-sm lg:text-base inline-flex items-center justify-center gap-2">
                             <i data-lucide="plus" class="w-4 h-4"></i>
                             <span>Thêm tỉnh thành</span>
                         </a>
@@ -817,7 +834,8 @@ if (!is_admin())
                                         <a href="<?= $province_url ?>" class="flex-1">
                                             <h3
                                                 class="font-bold text-base lg:text-lg text-primary-700 hover:text-accent transition-colors">
-                                                <?= htmlspecialchars($province['name']) ?></h3>
+                                                <?= htmlspecialchars($province['name']) ?>
+                                            </h3>
                                         </a>
                                         <span
                                             class="status-badge <?= ($province['status'] ?? 'active') == 'active' ? 'active' : 'inactive' ?> ml-2 flex items-center gap-1">

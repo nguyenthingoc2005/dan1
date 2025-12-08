@@ -37,7 +37,7 @@ class TourController
         // Allow filtering by date range if provided
         $filter_type = $_GET['filter'] ?? 'all'; // all, upcoming, history
         $today = date('Y-m-d');
-        
+
         if ($filter_type === 'upcoming') {
             // Chỉ lấy tours từ hôm nay trở đi
             $filters['start_date'] = $today;
@@ -95,7 +95,7 @@ class TourController
             'tour_schedule_id' => $id,
             'status' => 'paid'
         ], 1, 1000);
-        
+
         // If no bookings found by tour_schedule_id, try fallback method
         if (empty($bookings)) {
             $bookings = $this->bookingModel->getAll([
@@ -123,7 +123,7 @@ class TourController
         require_once MODELS_PATH . '/ItineraryDayService.php';
         $dayServiceModel = new \ItineraryDayService($this->db);
         $dayServices = $dayServiceModel->getByTourId($schedule['tour_id']);
-        
+
         // Group services by day
         $servicesByDay = [];
         foreach ($dayServices as $service) {
@@ -138,7 +138,7 @@ class TourController
         require_once MODELS_PATH . '/BookingService.php';
         $bookingServiceModel = new \BookingService($this->db);
         $bookingServices = $bookingServiceModel->getByScheduleId($id);
-        
+
         // Group booking services by service_date or by service_type
         $bookingServicesByDate = [];
         $bookingServicesByType = [];
@@ -149,7 +149,7 @@ class TourController
                 $bookingServicesByDate[$service_date] = [];
             }
             $bookingServicesByDate[$service_date][] = $bs;
-            
+
             // Group by type
             $service_type = $bs['service_type_name'] ?? 'Khác';
             if (!isset($bookingServicesByType[$service_type])) {
@@ -157,6 +157,117 @@ class TourController
             }
             $bookingServicesByType[$service_type][] = $bs;
         }
+
+        // Get expenses for this schedule
+        require_once MODELS_PATH . '/IncurredExpense.php';
+        $expenseModel = new \IncurredExpense($this->db);
+        $expenses = $expenseModel->getByScheduleId($id);
+        $expense_total = $expenseModel->getTotalByScheduleId($id);
+
+        // Get journals for this schedule
+        require_once MODELS_PATH . '/Journal.php';
+        $journalModel = new \Journal($this->db);
+        $journals = $journalModel->getAll(['tour_schedule_id' => $id], 1, 100);
+        // Get images for each journal
+        foreach ($journals as &$journal) {
+            $journal['images'] = $journalModel->getImages($journal['id']);
+        }
+
+        // Get check-in data
+        require_once MODELS_PATH . '/Checkin.php';
+        $checkinModel = new \Checkin($this->db);
+        
+        // Get passengers with check-in status (chỉ lấy từ bookings đã thanh toán đủ)
+        $checkin_passengers = [];
+        $checkin_bookings = [];
+        foreach ($bookings as $booking) {
+            if (in_array($booking['payment_status'], ['partial', 'paid']) 
+                && (float)$booking['remaining_amount'] == 0) {
+                $checkin_bookings[] = $booking;
+            }
+        }
+
+        foreach ($checkin_bookings as $booking) {
+            $p_list = $this->bookingModel->getPassengers($booking['id']);
+            foreach ($p_list as $p) {
+                // Chỉ thêm passenger nếu có customer_id hợp lệ
+                if (!empty($p['customer_id']) && !empty($p['id'])) {
+                    $checkin = $checkinModel->getCustomerCheckin($booking['id'], $p['id']);
+                    $p['booking_id'] = $booking['id'];
+                    $p['booking_code'] = $booking['booking_code'];
+                    $p['checkin_status'] = $checkin ? $checkin['status'] : null;
+                    $p['checkin_time'] = $checkin ? $checkin['checkin_time'] : null;
+                    $p['checkin_notes'] = $checkin ? $checkin['notes'] : null;
+                    $checkin_passengers[] = $p;
+                }
+            }
+        }
+
+        // Get check-in stats
+        $checkin_stats = $checkinModel->getStatsBySchedule($id);
+        $can_checkin = ($schedule['start_date'] <= date('Y-m-d'));
+
+        // Get room assignments (read-only) - chỉ query nếu bảng tồn tại
+        $room_assignments = [];
+        try {
+            $room_assignments_sql = "SELECT 
+                ra.id,
+                ra.room_number,
+                ra.room_type,
+                ra.actual_occupancy,
+                ra.max_capacity,
+                i.day_number,
+                sp.name AS hotel_name,
+                GROUP_CONCAT(c.full_name ORDER BY c.full_name SEPARATOR ', ') AS customers
+            FROM room_assignments ra
+            JOIN itineraries i ON ra.itinerary_id = i.id
+            LEFT JOIN service_providers sp ON ra.service_provider_id = sp.id
+            LEFT JOIN room_assignment_customers rac ON ra.id = rac.room_assignment_id
+            LEFT JOIN customers c ON rac.customer_id = c.id
+            WHERE ra.tour_schedule_id = :schedule_id
+              AND ra.status IN ('assigned', 'confirmed')
+            GROUP BY ra.id
+            ORDER BY i.day_number, ra.room_number";
+            $stmt = $this->db->prepare($room_assignments_sql);
+            $stmt->execute(['schedule_id' => $id]);
+            $room_assignments = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            // Bảng chưa tồn tại, để mảng rỗng
+            $room_assignments = [];
+        }
+
+        // Get vehicle assignments (read-only) - chỉ query nếu bảng tồn tại
+        $vehicle_assignments = [];
+        try {
+            $vehicle_assignments_sql = "SELECT 
+                va.id,
+                v.vehicle_code,
+                v.vehicle_type,
+                v.license_plate,
+                v.capacity,
+                d.full_name AS driver_name,
+                d.phone AS driver_phone,
+                d.license_type,
+                va.driver_salary,
+                va.estimated_fuel_cost,
+                va.status
+            FROM vehicle_assignments va
+            JOIN vehicles v ON va.vehicle_id = v.id
+            JOIN drivers d ON va.driver_id = d.id
+            WHERE va.tour_schedule_id = :schedule_id
+              AND va.status != 'cancelled'";
+            $stmt = $this->db->prepare($vehicle_assignments_sql);
+            $stmt->execute(['schedule_id' => $id]);
+            $vehicle_assignments = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            // Bảng chưa tồn tại, để mảng rỗng
+            $vehicle_assignments = [];
+        }
+
+        // Check if tour has started
+        $today = date('Y-m-d');
+        $can_add_expense = ($schedule['start_date'] <= $today);
+        $can_add_journal = ($schedule['start_date'] <= $today);
 
         $page_title = 'Chi tiết Tour: ' . $tour['tour_code'];
         $content_file = VIEWS_PATH . '/guide/tours/show.php';

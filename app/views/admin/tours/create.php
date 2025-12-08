@@ -66,7 +66,7 @@ if (is_array($old_day_services)) {
 }
 ?>
 
-<div class="max-w-6xl mx-auto">
+<div class="max-w-8xl mx-auto">
     <!-- Header - Responsive -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
@@ -80,7 +80,8 @@ if (is_array($old_day_services)) {
                 </p>
             <?php endif; ?>
         </div>
-        <a href="?act=admin&module=tours" class="text-primary-500 hover:text-primary-700 font-semibold text-sm lg:text-base flex items-center gap-2">
+        <a href="?act=admin&module=tours"
+            class="text-primary-500 hover:text-primary-700 font-semibold text-sm lg:text-base flex items-center gap-2">
             <i data-lucide="arrow-left" class="w-4 h-4"></i>
             Quay lại danh sách
         </a>
@@ -88,7 +89,8 @@ if (is_array($old_day_services)) {
 
     <!-- ERROR ALERT - Responsive -->
     <?php if (!empty($errs)): ?>
-        <div class="bg-danger-bg border border-danger text-danger-text px-4 lg:px-6 py-3 lg:py-4 rounded-2xl relative mb-4 lg:mb-6" role="alert">
+        <div class="bg-danger-bg border border-danger text-danger-text px-4 lg:px-6 py-3 lg:py-4 rounded-2xl relative mb-4 lg:mb-6"
+            role="alert">
             <strong class="font-bold text-sm lg:text-base">Có lỗi xảy ra!</strong>
             <ul class="mt-2 list-disc list-inside text-xs lg:text-sm">
                 <?php foreach ($errs as $key => $msg): ?>
@@ -99,7 +101,7 @@ if (is_array($old_day_services)) {
     <?php endif; ?>
 
     <form id="tourForm" method="POST" action="?act=admin&module=tours&action=store" enctype="multipart/form-data"
-        class="bg-panel rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
+        class="bg-panel rounded-2xl shadow-sm border border-primary-100">
 
         <!-- Hidden fields -->
         <input type="hidden" name="tour_type" value="<?= htmlspecialchars($old['tour_type'] ?? 'public') ?>">
@@ -109,34 +111,34 @@ if (is_array($old_day_services)) {
 
         <!-- WIZARD STEPS (6 steps) - Responsive -->
         <div class="flex border-b border-primary-100 bg-primary-50 overflow-x-auto">
-            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-accent border-b-2 border-accent flex-1 text-center whitespace-nowrap min-w-[100px]"
-                data-step="1">
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-accent border-b-2 border-accent flex-1 text-center whitespace-nowrap min-w-[100px] cursor-pointer hover:bg-primary-100 transition-colors"
+                data-step="1" onclick="goToStep(1)">
                 1. Thông tin chung
             </div>
-            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px]"
-                data-step="2">
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px] cursor-pointer hover:bg-primary-100 transition-colors"
+                data-step="2" onclick="goToStep(2)">
                 2. Lịch trình
             </div>
-            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px]"
-                data-step="3">
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px] cursor-pointer hover:bg-primary-100 transition-colors"
+                data-step="3" onclick="goToStep(3)">
                 3. Bao gồm
             </div>
-            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px]"
-                data-step="4">
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px] cursor-pointer hover:bg-primary-100 transition-colors"
+                data-step="4" onclick="goToStep(4)">
                 4. Chính sách
             </div>
-            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px]"
-                data-step="5">
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px] cursor-pointer hover:bg-primary-100 transition-colors"
+                data-step="5" onclick="goToStep(5)">
                 5. Hình ảnh
             </div>
-            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px]"
-                data-step="6">
+            <div class="step-indicator px-2 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-semibold text-primary-500 border-b-2 border-transparent flex-1 text-center whitespace-nowrap min-w-[100px] cursor-pointer hover:bg-primary-100 transition-colors"
+                data-step="6" onclick="goToStep(6)">
                 6. Giá & Lưu
             </div>
         </div>
 
         <!-- STEPS CONTENT - Responsive -->
-        <div class="p-4 lg:p-6">
+        <div class="p-4 lg:p-6 pb-32 lg:pb-40">
 
             <!-- ============================================================
                  STEP 1: THÔNG TIN CHUNG
@@ -161,7 +163,8 @@ if (is_array($old_day_services)) {
 
                     <!-- Điểm khởi hành -->
                     <div>
-                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Điểm khởi hành</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Điểm khởi
+                            hành</label>
                         <input type="text" name="departure_location"
                             value="<?= htmlspecialchars($old['departure_location'] ?? '') ?>"
                             class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
@@ -181,7 +184,8 @@ if (is_array($old_day_services)) {
 
                     <!-- Số đêm -->
                     <div>
-                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số đêm</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số
+                            đêm</label>
                         <input type="number" name="duration_nights" id="duration_nights" min="0"
                             value="<?= $old['duration_nights'] ?? '2' ?>"
                             class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base">
@@ -190,14 +194,17 @@ if (is_array($old_day_services)) {
 
                 <!-- Giới thiệu ngắn -->
                 <div class="mt-4 lg:mt-5">
-                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Giới thiệu ngắn</label>
-                    <textarea name="introduction" rows="3" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Giới thiệu
+                        ngắn</label>
+                    <textarea name="introduction" rows="3"
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                         placeholder="Mô tả ngắn gọn về tour (sẽ hiển thị ở danh sách)..."><?= htmlspecialchars($old['introduction'] ?? '') ?></textarea>
                 </div>
 
                 <!-- Mô tả chi tiết -->
                 <div class="mt-4 lg:mt-5">
-                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Mô tả chi tiết</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Mô tả chi
+                        tiết</label>
                     <textarea name="description" id="description" rows="6"
                         class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
                         placeholder="Mô tả chi tiết về tour..."><?= htmlspecialchars($old['description'] ?? '') ?></textarea>
@@ -212,23 +219,27 @@ if (is_array($old_day_services)) {
                     </h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số người tối thiểu</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số người
+                                tối thiểu</label>
                             <input type="number" name="min_participants" id="min_participants" min="1"
                                 value="<?= $old['min_participants'] ?? '15' ?>"
                                 class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base"
                                 onchange="updatePricing(); updateMinParticipantsDisplay();">
                         </div>
                         <div>
-                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số người tối đa</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số người
+                                tối đa</label>
                             <input type="number" name="max_participants" min="1"
                                 value="<?= $old['max_participants'] ?? '45' ?>"
                                 class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base">
                         </div>
                         <div>
-                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Deadline đặt tour (ngày)</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Deadline
+                                đặt tour (ngày)</label>
                             <input type="number" name="booking_deadline_days" min="1"
                                 value="<?= $old['booking_deadline_days'] ?? '1' ?>"
-                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base" placeholder="1">
+                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-100 rounded-xl focus:outline-none focus:border-accent transition-all text-primary-700 text-center text-sm lg:text-base"
+                                placeholder="1">
                             <p class="text-xs text-primary-500 mt-1">Trước ngày khởi hành</p>
                         </div>
                     </div>
@@ -241,9 +252,11 @@ if (is_array($old_day_services)) {
             <div id="step-2" class="step-content hidden">
                 <h2 class="text-lg lg:text-xl font-bold text-primary-700 mb-4 lg:mb-6">Lịch trình</h2>
 
-                <div class="bg-info-bg border border-info text-info-text px-4 lg:px-5 py-3 lg:py-4 rounded-2xl mb-4 lg:mb-6 text-xs lg:text-sm flex items-start gap-2">
+                <div
+                    class="bg-info-bg border border-info text-info-text px-4 lg:px-5 py-3 lg:py-4 rounded-2xl mb-4 lg:mb-6 text-xs lg:text-sm flex items-start gap-2">
                     <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
-                    <span>Lịch trình được tạo tự động dựa trên số ngày bạn nhập ở Bước 1. Mỗi ngày có thể quản lý Timeline chi tiết và Dịch vụ ngay bên dưới.</span>
+                    <span>Lịch trình được tạo tự động dựa trên số ngày bạn nhập ở Bước 1. Mỗi ngày có thể quản lý
+                        Timeline chi tiết và Dịch vụ ngay bên dưới.</span>
                 </div>
 
                 <div id="itinerary-overview-container" class="space-y-4">
@@ -377,7 +390,32 @@ if (is_array($old_day_services)) {
             <div id="step-6" class="step-content hidden">
                 <h2 class="text-lg lg:text-xl font-bold text-primary-700 mb-4 lg:mb-6">Giá Tour & Lưu</h2>
 
-                <!-- Pricing Breakdown -->
+                <!-- Fixed Costs Input - ĐẦU TIÊN -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+                    <h3 class="font-bold text-yellow-900 mb-4">💼 Chi phí cố định (chia đều cho số người)</h3>
+                    <p class="text-sm text-yellow-700 mb-4">
+                        Nhập tổng chi phí cố định cho tour (lương HDV, quản lý, marketing, và các chi phí khác).
+                        Hệ thống sẽ tự động chia đều cho số người tối thiểu để tính chi phí/người.
+                    </p>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Tổng chi phí cố định <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" name="fixed_cost_total" id="fixed_cost_total" min="0" step="10000"
+                            value="<?= $old['fixed_cost_total'] ?? ($old['fixed_cost_guide'] ?? 0) + ($old['fixed_cost_management'] ?? 0) + ($old['fixed_cost_marketing'] ?? 0) + ($old['fixed_cost_other'] ?? 0) ?>"
+                            class="w-full px-3 py-2 border rounded focus:border-yellow-500" onchange="updatePricing()"
+                            placeholder="VD: 4000000" required>
+                        <p class="text-xs text-gray-500 mt-1">Tổng tất cả chi phí cố định (HDV, quản lý, marketing,
+                            khác...)</p>
+                    </div>
+                    <div class="mt-4 p-3 bg-yellow-100 rounded text-sm text-yellow-800">
+                        <strong>💡 Lưu ý:</strong> Chi phí cố định sẽ được chia đều cho <span
+                            id="min-participants-display" class="font-bold">15</span> người (số người tối thiểu).
+                        Chi phí cố định/người = Tổng chi phí cố định ÷ Số người tối thiểu.
+                    </div>
+                </div>
+
+                <!-- Pricing Breakdown - THỨ HAI -->
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
                     <h3 class="font-bold text-blue-900 mb-4">💰 PHÂN TÍCH GIÁ TOUR</h3>
 
@@ -419,7 +457,7 @@ if (is_array($old_day_services)) {
                     </div>
                 </div>
 
-                <!-- Final Price Input -->
+                <!-- Final Price Input - CUỐI CÙNG -->
                 <div class="bg-white border border-gray-300 rounded-lg p-6 mb-6">
                     <h3 class="font-bold text-gray-900 mb-4">🎯 Giá bán cuối cùng</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -451,62 +489,6 @@ if (is_array($old_day_services)) {
                                 class="w-full px-3 py-2 border rounded focus:border-accent">
                             <p class="text-xs text-gray-500 mt-1">Dưới 2 tuổi</p>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Fixed Costs Input -->
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-                    <h3 class="font-bold text-yellow-900 mb-4">💼 Chi phí cố định (chia đều cho số người)</h3>
-                    <p class="text-sm text-yellow-700 mb-4">
-                        Nhập các chi phí cố định cho tour (lương HDV, quản lý, marketing...).
-                        Hệ thống sẽ tự động chia đều cho số người tối thiểu để tính chi phí/người.
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Lương HDV (Hướng dẫn viên)
-                            </label>
-                            <input type="number" name="fixed_cost_guide" id="fixed_cost_guide" min="0" step="10000"
-                                value="<?= $old['fixed_cost_guide'] ?? '0' ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-yellow-500"
-                                onchange="updatePricing()" placeholder="VD: 2000000">
-                            <p class="text-xs text-gray-500 mt-1">Tổng lương cho HDV trong tour</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Chi phí quản lý
-                            </label>
-                            <input type="number" name="fixed_cost_management" id="fixed_cost_management" min="0"
-                                step="10000" value="<?= $old['fixed_cost_management'] ?? '0' ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-yellow-500"
-                                onchange="updatePricing()" placeholder="VD: 1500000">
-                            <p class="text-xs text-gray-500 mt-1">Chi phí quản lý tour</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Chi phí marketing
-                            </label>
-                            <input type="number" name="fixed_cost_marketing" id="fixed_cost_marketing" min="0"
-                                step="10000" value="<?= $old['fixed_cost_marketing'] ?? '0' ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-yellow-500"
-                                onchange="updatePricing()" placeholder="VD: 500000">
-                            <p class="text-xs text-gray-500 mt-1">Chi phí marketing, quảng cáo</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Chi phí khác
-                            </label>
-                            <input type="number" name="fixed_cost_other" id="fixed_cost_other" min="0" step="10000"
-                                value="<?= $old['fixed_cost_other'] ?? '0' ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-yellow-500"
-                                onchange="updatePricing()" placeholder="VD: 0">
-                            <p class="text-xs text-gray-500 mt-1">Các chi phí khác (nếu có)</p>
-                        </div>
-                    </div>
-                    <div class="mt-4 p-3 bg-yellow-100 rounded text-sm text-yellow-800">
-                        <strong>💡 Lưu ý:</strong> Chi phí cố định sẽ được chia đều cho <span
-                            id="min-participants-display" class="font-bold">15</span> người (số người tối thiểu).
-                        Chi phí cố định/người = Tổng chi phí cố định ÷ Số người tối thiểu.
                     </div>
                 </div>
 
@@ -542,7 +524,8 @@ if (is_array($old_day_services)) {
         </div>
 
         <!-- FOOTER ACTIONS - Responsive -->
-        <div class="bg-primary-50 px-4 lg:px-6 py-3 lg:py-4 flex flex-col sm:flex-row justify-between gap-3 border-t border-primary-100">
+        <div
+            class="bg-primary-50 px-4 lg:px-6 py-3 lg:py-4 flex flex-col sm:flex-row justify-between gap-3 border-t border-primary-100">
             <button type="button" id="prevBtn"
                 class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-panel border border-primary-100 text-primary-700 rounded-xl hover:bg-primary-50 font-semibold transition-all text-sm lg:text-base hidden flex items-center justify-center gap-2"
                 onclick="changeStep(-1)">
@@ -555,7 +538,8 @@ if (is_array($old_day_services)) {
                     Hủy
                 </a>
                 <button type="button" id="nextBtn"
-                    class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2" onclick="changeStep(1)">
+                    class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2"
+                    onclick="changeStep(1)">
                     Tiếp theo
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
@@ -569,6 +553,167 @@ if (is_array($old_day_services)) {
         </div>
     </form>
 </div>
+
+<!-- Toast Notification Container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[10000] space-y-2"></div>
+
+<style>
+    .toast {
+        min-width: 300px;
+        max-width: 500px;
+        padding: 1rem 1.25rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        animation: slideInRight 0.3s ease-out;
+        position: relative;
+    }
+
+    .toast-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .toast-error {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+
+    .toast-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
+
+    .toast-info {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+
+    .toast.hiding {
+        animation: slideOutRight 0.3s ease-out forwards;
+    }
+
+    .toast-icon {
+        flex-shrink: 0;
+        width: 1.5rem;
+        height: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .toast-content {
+        flex: 1;
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+
+    .toast-close {
+        flex-shrink: 0;
+        width: 1.25rem;
+        height: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+        border-radius: 0.25rem;
+    }
+
+    .toast-close:hover {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Fix scroll issue for step 4 and all steps */
+    .step-content {
+        min-height: 100%;
+        overflow: visible;
+    }
+
+    /* Ensure form container allows scrolling */
+    #tourForm {
+        overflow: visible;
+    }
+
+    /* Ensure main content area can scroll */
+    .max-w-8xl {
+        overflow: visible;
+    }
+</style>
+
+<script>
+    /**
+     * Show Toast Notification
+     * @param {string} message - Message to display
+     * @param {string} type - 'success', 'error', 'warning', 'info'
+     * @param {number} duration - Auto-hide duration in ms (0 = no auto-hide)
+     */
+    function showToast(message, type = 'info', duration = 4000) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+
+        // Icons
+        const icons = {
+            success: '<i class="fas fa-check-circle"></i>',
+            error: '<i class="fas fa-exclamation-circle"></i>',
+            warning: '<i class="fas fa-exclamation-triangle"></i>',
+            info: '<i class="fas fa-info-circle"></i>'
+        };
+
+        toast.innerHTML = `
+            <div class="toast-icon">${icons[type] || icons.info}</div>
+            <div class="toast-content">${escapeHtml(message)}</div>
+            <div class="toast-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times text-xs"></i>
+            </div>
+        `;
+
+        container.appendChild(toast);
+
+        // Auto-hide
+        if (duration > 0) {
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.remove();
+                    }
+                }, 300);
+            }, duration);
+        }
+    }
+</script>
 
 <!-- JavaScript sẽ được thêm vào file riêng hoặc inline ở đây -->
 <script>
@@ -599,22 +744,35 @@ if (is_array($old_day_services)) {
     // ============================================================================
 
     function showStep(step) {
+        // Cập nhật currentStep global variable
+        currentStep = step;
+
         // Hide all steps
         document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
         document.querySelectorAll('.step-indicator').forEach(el => {
             el.classList.remove('text-accent', 'border-accent');
-            el.classList.add('text-gray-400', 'border-transparent');
+            el.classList.add('text-primary-500', 'border-transparent');
         });
 
         // Show current step
-        document.getElementById(`step-${step}`).classList.remove('hidden');
+        const stepEl = document.getElementById(`step-${step}`);
+        if (stepEl) {
+            stepEl.classList.remove('hidden');
+        }
 
-        // Update indicators
+        // Update indicators - highlight current step và các step đã qua
         for (let i = 1; i <= step; i++) {
             const indicator = document.querySelector(`.step-indicator[data-step="${i}"]`);
             if (indicator) {
-                indicator.classList.remove('text-gray-400', 'border-transparent');
-                indicator.classList.add('text-accent', 'border-accent');
+                if (i === step) {
+                    // Current step - highlight accent
+                    indicator.classList.remove('text-primary-500', 'border-transparent');
+                    indicator.classList.add('text-accent', 'border-accent');
+                } else {
+                    // Completed steps - subtle highlight
+                    indicator.classList.remove('text-primary-500', 'border-transparent');
+                    indicator.classList.add('text-accent', 'border-accent');
+                }
             }
         }
 
@@ -648,8 +806,11 @@ if (is_array($old_day_services)) {
             restorePolicyIdsFromSession();
         }
         if (step === 6) {
-            updatePricing();
-            updateMinParticipantsDisplay();
+            // Load session data và restore pricing
+            loadSessionDataAndRestore(6).then(() => {
+                updatePricing();
+                updateMinParticipantsDisplay();
+            });
         }
 
         // Update URL with step parameter để lưu trạng thái
@@ -671,6 +832,45 @@ if (is_array($old_day_services)) {
         if (currentStep > totalSteps) currentStep = totalSteps;
 
         showStep(currentStep);
+    }
+
+    /**
+     * Go to specific step (click on step indicator)
+     * Cho phép click vào step đã qua để chuyển trực tiếp
+     */
+    function goToStep(targetStep) {
+        // Chỉ cho phép chuyển đến step đã qua hoặc step tiếp theo
+        // (không cho phép nhảy qua step chưa điền)
+        if (targetStep < 1 || targetStep > totalSteps) {
+            return;
+        }
+
+        // Nếu đang ở step hiện tại, không làm gì
+        if (targetStep === currentStep) {
+            return;
+        }
+
+        // Nếu chuyển lên step trước, luôn cho phép
+        if (targetStep < currentStep) {
+            saveFormDataToSession(); // Lưu dữ liệu hiện tại
+            showStep(targetStep);
+            return;
+        }
+
+        // Nếu chuyển lên step sau, validate step hiện tại trước
+        if (targetStep > currentStep) {
+            // Validate tất cả các step từ currentStep đến targetStep - 1
+            for (let s = currentStep; s < targetStep; s++) {
+                if (!validateStep(s)) {
+                    showToast(`Vui lòng hoàn thành bước ${s} trước khi chuyển đến bước ${targetStep}`, 'warning');
+                    return;
+                }
+            }
+            // Tất cả đã valid, lưu và chuyển
+            saveFormDataToSession();
+            showStep(targetStep);
+            return;
+        }
     }
 
     function validateStep(step) {
@@ -760,9 +960,9 @@ if (is_array($old_day_services)) {
 
         if (!isValid) {
             if (errorMessage) {
-                alert(errorMessage);
+                showToast(errorMessage, 'error');
             } else {
-                alert('Vui lòng điền đầy đủ thông tin bắt buộc trước khi tiếp tục.');
+                showToast('Vui lòng điền đầy đủ thông tin bắt buộc trước khi tiếp tục.', 'warning');
             }
         }
 
@@ -1190,12 +1390,16 @@ if (is_array($old_day_services)) {
                    placeholder="Nhập nội dung bao gồm..."
                    class="flex-1 px-3 py-2 border rounded focus:border-green-500 text-sm">
             <button type="button" onclick="this.parentElement.remove()" 
-                    class="text-red-400 hover:text-red-600">
-                <i class="fas fa-times"></i>
+                    class="px-2 py-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors flex items-center justify-center">
+                <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
     `;
         container.insertAdjacentHTML('beforeend', html);
+        // Khởi tạo lại Lucide icons cho icon vừa thêm
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 
     function addExcludedItem(text = '') {
@@ -1207,12 +1411,16 @@ if (is_array($old_day_services)) {
                    placeholder="Nhập nội dung không bao gồm..."
                    class="flex-1 px-3 py-2 border rounded focus:border-red-500 text-sm">
             <button type="button" onclick="this.parentElement.remove()" 
-                    class="text-red-400 hover:text-red-600">
-                <i class="fas fa-times"></i>
+                    class="px-2 py-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors flex items-center justify-center">
+                <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
     `;
         container.insertAdjacentHTML('beforeend', html);
+        // Khởi tạo lại Lucide icons cho icon vừa thêm
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 
     const templates = {
@@ -1341,13 +1549,8 @@ if (is_array($old_day_services)) {
         }
 
         // Tính chi phí cố định/người
-        const fixedCostGuide = parseFloat(document.getElementById('fixed_cost_guide')?.value || 0);
-        const fixedCostManagement = parseFloat(document.getElementById('fixed_cost_management')?.value || 0);
-        const fixedCostMarketing = parseFloat(document.getElementById('fixed_cost_marketing')?.value || 0);
-        const fixedCostOther = parseFloat(document.getElementById('fixed_cost_other')?.value || 0);
         const minParticipants = parseInt(document.getElementById('min_participants')?.value || 15);
-
-        const totalFixedCost = fixedCostGuide + fixedCostManagement + fixedCostMarketing + fixedCostOther;
+        const totalFixedCost = parseFloat(document.getElementById('fixed_cost_total')?.value || 0);
         const fixedCostPerPerson = minParticipants > 0 ? totalFixedCost / minParticipants : 0;
 
         // Hiển thị chi phí cố định/người
@@ -1360,21 +1563,12 @@ if (is_array($old_day_services)) {
         const fixedCostBreakdownEl = document.getElementById('fixed-cost-breakdown');
         if (fixedCostBreakdownEl) {
             if (totalFixedCost > 0) {
-                let html = '<div class="mt-1 space-y-1">';
-                if (fixedCostGuide > 0) {
-                    html += `<div>Lương HDV: ${formatCurrency(fixedCostGuide)} ÷ ${minParticipants} = ${formatCurrency(fixedCostGuide / minParticipants)}</div>`;
-                }
-                if (fixedCostManagement > 0) {
-                    html += `<div>Quản lý: ${formatCurrency(fixedCostManagement)} ÷ ${minParticipants} = ${formatCurrency(fixedCostManagement / minParticipants)}</div>`;
-                }
-                if (fixedCostMarketing > 0) {
-                    html += `<div>Marketing: ${formatCurrency(fixedCostMarketing)} ÷ ${minParticipants} = ${formatCurrency(fixedCostMarketing / minParticipants)}</div>`;
-                }
-                if (fixedCostOther > 0) {
-                    html += `<div>Khác: ${formatCurrency(fixedCostOther)} ÷ ${minParticipants} = ${formatCurrency(fixedCostOther / minParticipants)}</div>`;
-                }
-                html += '</div>';
-                fixedCostBreakdownEl.innerHTML = html;
+                fixedCostBreakdownEl.innerHTML = `
+                    <div class="mt-1 space-y-1">
+                        <div>Tổng chi phí cố định: ${formatCurrency(totalFixedCost)}</div>
+                        <div>Chi phí cố định/người: ${formatCurrency(totalFixedCost)} ÷ ${minParticipants} = ${formatCurrency(fixedCostPerPerson)}</div>
+                    </div>
+                `;
             } else {
                 fixedCostBreakdownEl.innerHTML = '<div class="text-gray-400 italic">Chưa nhập chi phí cố định</div>';
             }
@@ -1417,11 +1611,11 @@ if (is_array($old_day_services)) {
         const infant = parseFloat(document.getElementById('infant_price')?.value || 0);
 
         if (child > adult) {
-            alert('Giá trẻ em không được lớn hơn giá người lớn');
+            showToast('Giá trẻ em không được lớn hơn giá người lớn', 'error');
             document.getElementById('child_price').value = adult;
         }
         if (infant > child) {
-            alert('Giá em bé không được lớn hơn giá trẻ em');
+            showToast('Giá em bé không được lớn hơn giá trẻ em', 'error');
             document.getElementById('infant_price').value = child;
         }
     }
@@ -1437,7 +1631,7 @@ if (is_array($old_day_services)) {
         if (input.files && input.files.length > 0) {
             Array.from(input.files).forEach(file => {
                 if (file.size > 5 * 1024 * 1024) {
-                    alert(`File ${file.name} vượt quá 5MB`);
+                    showToast(`File ${file.name} vượt quá 5MB`, 'error');
                     return;
                 }
 
@@ -1480,31 +1674,38 @@ if (is_array($old_day_services)) {
         const stepFromUrl = urlParams.get('step');
         const initialStep = stepFromUrl ? parseInt(stepFromUrl) : 1;
 
+        // Cập nhật currentStep trước khi showStep
+        currentStep = initialStep;
         showStep(initialStep);
 
-        // Restore policy IDs from session if on step 4
-        if (initialStep === 4) {
-            setTimeout(() => {
-                restorePolicyIdsFromSession();
-            }, 500);
-        }
+        // Load session data via AJAX để restore
+        loadSessionDataAndRestore(initialStep).then(() => {
+            // Restore policy IDs from session if on step 4
+            if (initialStep === 4) {
+                setTimeout(() => {
+                    restorePolicyIdsFromSession();
+                }, 500);
+            }
 
-        // If step 2, generate itinerary days
-        if (initialStep === 2 || (oldItinerary && oldItinerary.length > 0)) {
-            // Wait a bit for page to be fully loaded
-            setTimeout(() => {
-                generateItineraryDays();
-                // Restore day services from session after generating itinerary
-                restoreDayServicesFromSession();
-            }, 500);
-        }
+            // If step 2, generate itinerary days
+            if (initialStep === 2 || (oldItinerary && oldItinerary.length > 0)) {
+                // Wait a bit for page to be fully loaded
+                setTimeout(() => {
+                    generateItineraryDays();
+                    // Restore day services from session after generating itinerary
+                    setTimeout(() => {
+                        restoreDayServicesFromSession();
+                    }, 500);
+                }, 500);
+            }
 
-        // Restore day services if already on step 2
-        if (initialStep === 2) {
-            setTimeout(() => {
-                restoreDayServicesFromSession();
-            }, 1000);
-        }
+            // Restore day services if already on step 2
+            if (initialStep === 2) {
+                setTimeout(() => {
+                    restoreDayServicesFromSession();
+                }, 1500);
+            }
+        });
 
         // Event delegation for itinerary manager
         initItineraryManagerEvents();
@@ -1606,7 +1807,7 @@ if (is_array($old_day_services)) {
                 if (!name) {
                     e.preventDefault();
                     e.stopPropagation();
-                    alert('Vui lòng nhập tên tour');
+                    showToast('Vui lòng nhập tên tour', 'warning');
                     showStep(1);
                     return false;
                 }
@@ -1616,7 +1817,7 @@ if (is_array($old_day_services)) {
                 if (durationDays <= 0) {
                     e.preventDefault();
                     e.stopPropagation();
-                    alert('Vui lòng nhập số ngày hợp lệ');
+                    showToast('Vui lòng nhập số ngày hợp lệ', 'warning');
                     showStep(1);
                     return false;
                 }
@@ -1626,7 +1827,7 @@ if (is_array($old_day_services)) {
                 if (adultPrice <= 0) {
                     e.preventDefault();
                     e.stopPropagation();
-                    alert('Vui lòng nhập giá người lớn');
+                    showToast('Vui lòng nhập giá người lớn', 'warning');
                     showStep(6);
                     return false;
                 }
@@ -1839,11 +2040,16 @@ if (is_array($old_day_services)) {
             <div id="add-service-modal-day-${dayNumber}" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
                 <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                     <div class="p-6 border-b">
-                        <h3 class="text-lg font-bold text-gray-800">Thêm dịch vụ - Day ${dayNumber}</h3>
+                        <h3 class="text-lg font-bold text-gray-800" id="modal-title-day-${dayNumber}">Thêm dịch vụ - Day ${dayNumber}</h3>
                     </div>
                     <form id="add-service-form-day-${dayNumber}" class="p-6" data-action="save-service" data-day="${dayNumber}">
                         <div class="space-y-4">
                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm dịch vụ</label>
+                                <input type="text" id="service-search-day-${dayNumber}" 
+                                    placeholder="Nhập tên dịch vụ để tìm kiếm..."
+                                    class="w-full px-3 py-2 border rounded focus:border-green-500 mb-2"
+                                    oninput="filterServicesForDay(${dayNumber})">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Chọn dịch vụ <span class="text-red-500">*</span></label>
                                 <select id="modal-service-id-day-${dayNumber}"
                                     class="w-full px-3 py-2 border rounded focus:border-green-500"
@@ -1896,7 +2102,7 @@ if (is_array($old_day_services)) {
                                 class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                                 Hủy
                             </button>
-                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                            <button type="submit" id="modal-submit-btn-day-${dayNumber}" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
                                 Thêm dịch vụ
                             </button>
                         </div>
@@ -1995,7 +2201,107 @@ if (is_array($old_day_services)) {
             modal.classList.add('hidden');
             modal.style.display = 'none';
             const form = document.getElementById(`add-service-form-day-${dayNumber}`);
-            if (form) form.reset();
+            if (form) {
+                form.reset();
+                // Reset edit mode
+                form.removeAttribute('data-editing-item');
+            }
+            // Reset modal title and button
+            const title = document.getElementById(`modal-title-day-${dayNumber}`);
+            const submitBtn = document.getElementById(`modal-submit-btn-day-${dayNumber}`);
+            if (title) title.textContent = `Thêm dịch vụ - Day ${dayNumber}`;
+            if (submitBtn) submitBtn.textContent = 'Thêm dịch vụ';
+            // Clear search
+            const searchInput = document.getElementById(`service-search-day-${dayNumber}`);
+            if (searchInput) searchInput.value = '';
+            // Reset filter
+            filterServicesForDay(dayNumber);
+        }
+    }
+
+    function editDayServiceItem(button, dayNumber) {
+        const serviceItem = button.closest('.day-service-item');
+        if (!serviceItem) return;
+
+        // Mark item as being edited
+        serviceItem.setAttribute('data-editing', 'true');
+
+        // Get service data from hidden inputs
+        const serviceId = serviceItem.querySelector('[name="day_service_service_id[]"]')?.value || '';
+        const providerId = serviceItem.querySelector('[name="day_service_provider_id[]"]')?.value || '';
+        const unitPrice = serviceItem.querySelector('[name="day_service_unit_price[]"]')?.value || '';
+        const quantity = serviceItem.querySelector('[name="day_service_quantity[]"]')?.value || '1';
+        const unit = serviceItem.querySelector('[name="day_service_unit[]"]')?.value || '';
+        const included = serviceItem.querySelector('[name^="day_service_included"]')?.checked || false;
+        const notes = serviceItem.querySelector('[name="day_service_notes[]"]')?.value || '';
+
+        // Open modal
+        openAddServiceModal(dayNumber);
+
+        // Wait for modal to be ready
+        setTimeout(() => {
+            // Set form values
+            const serviceSelect = document.getElementById(`modal-service-id-day-${dayNumber}`);
+            const providerSelect = document.getElementById(`modal-service-provider-id-day-${dayNumber}`);
+            const priceInput = document.getElementById(`modal-unit-price-day-${dayNumber}`);
+            const quantityInput = document.getElementById(`modal-quantity-day-${dayNumber}`);
+            const unitInput = document.getElementById(`modal-unit-day-${dayNumber}`);
+            const includedCheckbox = document.getElementById(`modal-included-day-${dayNumber}`);
+            const notesTextarea = document.getElementById(`modal-notes-day-${dayNumber}`);
+
+            if (serviceSelect) serviceSelect.value = serviceId;
+            if (priceInput) priceInput.value = unitPrice;
+            if (quantityInput) quantityInput.value = quantity;
+            if (unitInput) unitInput.value = unit;
+            if (includedCheckbox) includedCheckbox.checked = included;
+            if (notesTextarea) notesTextarea.value = notes;
+
+            // Load service info to populate providers
+            if (serviceId) {
+                loadServiceInfoForDay(dayNumber);
+                // Wait a bit for providers to load, then set provider
+                setTimeout(() => {
+                    if (providerSelect && providerId) {
+                        providerSelect.value = providerId;
+                    }
+                }, 500);
+            }
+
+            // Update modal title and button
+            const title = document.getElementById(`modal-title-day-${dayNumber}`);
+            const submitBtn = document.getElementById(`modal-submit-btn-day-${dayNumber}`);
+            if (title) title.textContent = `Sửa dịch vụ - Day ${dayNumber}`;
+            if (submitBtn) submitBtn.textContent = 'Cập nhật dịch vụ';
+
+            // Mark form as editing
+            const form = document.getElementById(`add-service-form-day-${dayNumber}`);
+            if (form) {
+                form.setAttribute('data-editing-item', 'true');
+            }
+        }, 100);
+    }
+
+    function filterServicesForDay(dayNumber) {
+        const searchInput = document.getElementById(`service-search-day-${dayNumber}`);
+        const serviceSelect = document.getElementById(`modal-service-id-day-${dayNumber}`);
+
+        if (!searchInput || !serviceSelect) return;
+
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const options = serviceSelect.querySelectorAll('option');
+
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            if (searchTerm === '' || text.includes(searchTerm) || option.value === '') {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+
+        // If search is active and no visible options, show message
+        if (searchTerm && !Array.from(options).some(opt => opt.style.display !== 'none' && opt.value !== '')) {
+            // Optionally show a "no results" message
         }
     }
 
@@ -2008,23 +2314,46 @@ if (is_array($old_day_services)) {
             event.stopPropagation();
         }
 
-        // Initialize counter if needed
-        if (!window.dayServiceCounter) {
-            window.dayServiceCounter = {};
-        }
-        if (!window.dayServiceCounter[dayNumber]) {
-            window.dayServiceCounter[dayNumber] = 0;
-        }
-
-        const counter = window.dayServiceCounter[dayNumber] = window.dayServiceCounter[dayNumber] + 1;
+        const form = document.getElementById(`add-service-form-day-${dayNumber}`);
+        const isEditing = form && form.getAttribute('data-editing-item') === 'true';
         const container = document.getElementById(`day-services-list-day-${dayNumber}`);
+
         if (!container) {
             console.error('Container not found:', `day-services-list-day-${dayNumber}`);
-            alert('❌ Không tìm thấy container day-services-list-day-' + dayNumber);
+            showToast('Không tìm thấy container day-services-list-day-' + dayNumber, 'error');
             return;
         }
 
-        console.log('Container found, counter:', counter);
+        // If editing, get counter from existing item, otherwise increment
+        let counter;
+        if (isEditing) {
+            const editingItem = container.querySelector('[data-editing="true"]');
+            if (editingItem) {
+                counter = editingItem.getAttribute('data-counter') ||
+                    editingItem.querySelector('[name^="day_service_included"]')?.name.match(/\[(\d+)\]\[(\d+)\]/)?.[2] ||
+                    '1';
+            } else {
+                // Fallback: initialize counter
+                if (!window.dayServiceCounter) {
+                    window.dayServiceCounter = {};
+                }
+                if (!window.dayServiceCounter[dayNumber]) {
+                    window.dayServiceCounter[dayNumber] = 0;
+                }
+                counter = window.dayServiceCounter[dayNumber] = window.dayServiceCounter[dayNumber] + 1;
+            }
+        } else {
+            // Initialize counter if needed
+            if (!window.dayServiceCounter) {
+                window.dayServiceCounter = {};
+            }
+            if (!window.dayServiceCounter[dayNumber]) {
+                window.dayServiceCounter[dayNumber] = 0;
+            }
+            counter = window.dayServiceCounter[dayNumber] = window.dayServiceCounter[dayNumber] + 1;
+        }
+
+        console.log('Container found, counter:', counter, 'isEditing:', isEditing);
 
         const serviceSelect = document.getElementById(`modal-service-id-day-${dayNumber}`);
         const serviceId = serviceSelect?.value || '';
@@ -2040,14 +2369,14 @@ if (is_array($old_day_services)) {
         const notes = document.getElementById(`modal-notes-day-${dayNumber}`)?.value || '';
 
         if (!serviceId || !serviceName) {
-            alert('Vui lòng chọn dịch vụ');
+            showToast('Vui lòng chọn dịch vụ', 'warning');
             return;
         }
 
         const total = unitPrice * quantity;
 
         const serviceHtml = `
-            <div class="day-service-item bg-white border border-gray-200 rounded-lg p-4">
+            <div class="day-service-item bg-white border border-gray-200 rounded-lg p-4" data-service-id="${serviceId}" data-counter="${counter}">
                 <div class="flex items-start gap-4">
                     <div class="flex-shrink-0 mt-1">
                         <input type="checkbox" name="day_service_included[${dayNumber}][${counter}]" value="1"
@@ -2095,19 +2424,39 @@ if (is_array($old_day_services)) {
                         <input type="hidden" name="day_service_unit[]" value="${escapeHtml(unit)}">
                         <input type="hidden" name="day_service_notes[]" value="${escapeHtml(notes)}">
                     </div>
-                    <div class="flex-shrink-0">
-                        <button type="button" onclick="removeDayServiceItem(this, ${dayNumber})" class="text-red-500 hover:text-red-700">
-                            <i class="fas fa-trash"></i>
+                    <div class="flex-shrink-0 flex items-center gap-2">
+                        <button type="button" onclick="editDayServiceItem(this, ${dayNumber})" 
+                                class="px-2 py-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors flex items-center justify-center"
+                                title="Sửa dịch vụ">
+                            <i data-lucide="edit" class="w-4 h-4"></i>
+                        </button>
+                        <button type="button" onclick="removeDayServiceItem(this, ${dayNumber})" 
+                                class="px-2 py-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors flex items-center justify-center"
+                                title="Xóa dịch vụ">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
                 </div>
             </div>
         `;
 
-        if (container.innerHTML.includes('Chưa có dịch vụ')) {
-            container.innerHTML = serviceHtml;
+        // Check if editing existing item
+        const editingItem = container.querySelector('[data-editing="true"]');
+        if (editingItem) {
+            // Replace existing item
+            editingItem.outerHTML = serviceHtml;
         } else {
-            container.insertAdjacentHTML('beforeend', serviceHtml);
+            // Add new item
+            if (container.innerHTML.includes('Chưa có dịch vụ')) {
+                container.innerHTML = serviceHtml;
+            } else {
+                container.insertAdjacentHTML('beforeend', serviceHtml);
+            }
+        }
+
+        // Initialize Lucide icons for new buttons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
         }
 
         updateDayServiceTotal(dayNumber);
@@ -2163,18 +2512,22 @@ if (is_array($old_day_services)) {
 
     /**
      * Restore policy IDs from session data
+     * Load từ PHP data hoặc từ AJAX session
      */
     function restorePolicyIdsFromSession() {
-        if (!selectedPolicyIds || !Array.isArray(selectedPolicyIds) || selectedPolicyIds.length === 0) {
+        // Use global selectedPolicyIds (may be updated from loadSessionDataAndRestore)
+        const policyIdsToRestore = window.selectedPolicyIds || selectedPolicyIds || [];
+
+        if (!policyIdsToRestore || !Array.isArray(policyIdsToRestore) || policyIdsToRestore.length === 0) {
             console.log('No policy IDs to restore from session');
             return;
         }
 
-        console.log('📋 Restoring policy IDs from session:', selectedPolicyIds);
+        console.log('📋 Restoring policy IDs from session:', policyIdsToRestore);
 
         // Wait a bit for policy selector to be ready
         setTimeout(() => {
-            selectedPolicyIds.forEach(policyId => {
+            policyIdsToRestore.forEach(policyId => {
                 const checkbox = document.getElementById(`policy-${policyId}`);
                 if (checkbox && !checkbox.checked) {
                     // Get policy name and type from the card
@@ -2195,36 +2548,98 @@ if (is_array($old_day_services)) {
     }
 
     /**
+     * Load session data from server via AJAX
+     */
+    async function loadSessionDataAndRestore(step) {
+        try {
+            const response = await fetch('?act=admin&module=tours&action=getFormSession');
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                const sessionData = result.data;
+                console.log('📦 Session data loaded:', sessionData);
+
+                // Update global variables
+                if (sessionData.policy_ids && Array.isArray(sessionData.policy_ids)) {
+                    // Update selectedPolicyIds
+                    window.selectedPolicyIds = sessionData.policy_ids;
+                }
+
+                if (sessionData.itinerary_day_services) {
+                    // Update oldDayServices
+                    window.oldDayServices = sessionData.itinerary_day_services;
+                }
+
+                // Restore form fields if on step 6
+                if (step === 6) {
+                    if (sessionData.fixed_cost_total) {
+                        const fixedCostInput = document.getElementById('fixed_cost_total');
+                        if (fixedCostInput && !fixedCostInput.value) {
+                            fixedCostInput.value = sessionData.fixed_cost_total;
+                        }
+                    }
+                    if (sessionData.adult_price) {
+                        const adultPriceInput = document.getElementById('adult_price');
+                        if (adultPriceInput && !adultPriceInput.value) {
+                            adultPriceInput.value = sessionData.adult_price;
+                        }
+                    }
+                    if (sessionData.child_price) {
+                        const childPriceInput = document.getElementById('child_price');
+                        if (childPriceInput && !childPriceInput.value) {
+                            childPriceInput.value = sessionData.child_price;
+                        }
+                    }
+                    if (sessionData.infant_price) {
+                        const infantPriceInput = document.getElementById('infant_price');
+                        if (infantPriceInput && !infantPriceInput.value) {
+                            infantPriceInput.value = sessionData.infant_price;
+                        }
+                    }
+                }
+
+                return sessionData;
+            }
+        } catch (error) {
+            console.error('Error loading session data:', error);
+        }
+        return null;
+    }
+
+    /**
      * Restore day services from session data
      */
     function restoreDayServicesFromSession() {
-        if (!oldDayServices) {
+        // Use global oldDayServices (may be updated from loadSessionDataAndRestore)
+        const dayServicesToRestore = window.oldDayServices || oldDayServices;
+
+        if (!dayServicesToRestore) {
             console.log('No oldDayServices data to restore');
             return;
         }
 
-        console.log('Restoring day services from session:', oldDayServices);
+        console.log('Restoring day services from session:', dayServicesToRestore);
 
-        // oldDayServices có thể là:
+        // dayServicesToRestore có thể là:
         // 1. Object: { 1: [...], 2: [...] }
         // 2. Array: [{day_number: 1, ...}, {day_number: 2, ...}]
 
         let servicesByDay = {};
 
-        if (Array.isArray(oldDayServices)) {
+        if (Array.isArray(dayServicesToRestore)) {
             // Format: [{day_number: 1, ...}, {day_number: 2, ...}]
-            oldDayServices.forEach(service => {
+            dayServicesToRestore.forEach(service => {
                 const dayNum = service.day_number || 1;
                 if (!servicesByDay[dayNum]) {
                     servicesByDay[dayNum] = [];
                 }
                 servicesByDay[dayNum].push(service);
             });
-        } else if (typeof oldDayServices === 'object' && oldDayServices !== null) {
+        } else if (typeof dayServicesToRestore === 'object' && dayServicesToRestore !== null) {
             // Format: { 1: [...], 2: [...] }
-            servicesByDay = oldDayServices;
+            servicesByDay = dayServicesToRestore;
         } else {
-            console.warn('Invalid oldDayServices format:', typeof oldDayServices);
+            console.warn('Invalid dayServicesToRestore format:', typeof dayServicesToRestore);
             return;
         }
 
@@ -2257,10 +2672,10 @@ if (is_array($old_day_services)) {
                 dayServices.forEach((service, index) => {
                     const counter = index + 1;
                     const serviceHtml = `
-                        <div class="day-service-item bg-white border border-gray-200 rounded-lg p-4">
+                        <div class="day-service-item bg-white border border-gray-200 rounded-lg p-4" data-service-id="${service.service_id || ''}" data-counter="${counter}">
                             <div class="flex items-start gap-4">
                                 <div class="flex-shrink-0 mt-1">
-                                    <input type="checkbox" name="day_service_included[${dayNumber}][${index + 1}]" value="1"
+                                    <input type="checkbox" name="day_service_included[${dayNumber}][${counter}]" value="1"
                                         ${service.is_included_in_price ? 'checked' : ''}
                                         onchange="updateDayServiceTotal(${dayNumber})"
                                         class="w-5 h-5 text-blue-600 rounded">
@@ -2268,6 +2683,7 @@ if (is_array($old_day_services)) {
                                 <div class="flex-1">
                                     <div class="font-medium text-gray-800">
                                         ${escapeHtml(service.service_name || 'N/A')}
+                                        ${service.provider_name ? `<span class="text-sm text-gray-500">- ${escapeHtml(service.provider_name)}</span>` : ''}
                                     </div>
                                     <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                                         <div>
@@ -2291,7 +2707,7 @@ if (is_array($old_day_services)) {
                                     </div>
                                     ${service.notes ? `
                                         <div class="mt-2 text-sm text-gray-500">
-                                            <i class="fas fa-sticky-note mr-1"></i>
+                                            <i data-lucide="sticky-note" class="w-3 h-3 inline-block mr-1"></i>
                                             ${escapeHtml(service.notes)}
                                         </div>
                                     ` : ''}
@@ -2304,9 +2720,16 @@ if (is_array($old_day_services)) {
                                     <input type="hidden" name="day_service_unit[]" value="${escapeHtml(service.unit || '')}">
                                     <input type="hidden" name="day_service_notes[]" value="${escapeHtml(service.notes || '')}">
                                 </div>
-                                <div class="flex-shrink-0">
-                                    <button type="button" onclick="removeDayServiceItem(this, ${dayNumber})" class="text-red-500 hover:text-red-700">
-                                        <i class="fas fa-trash"></i>
+                                <div class="flex-shrink-0 flex items-center gap-2">
+                                    <button type="button" onclick="editDayServiceItem(this, ${dayNumber})" 
+                                            class="px-2 py-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors flex items-center justify-center"
+                                            title="Sửa dịch vụ">
+                                        <i data-lucide="edit" class="w-4 h-4"></i>
+                                    </button>
+                                    <button type="button" onclick="removeDayServiceItem(this, ${dayNumber})" 
+                                            class="px-2 py-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors flex items-center justify-center"
+                                            title="Xóa dịch vụ">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </div>
                             </div>
@@ -2314,6 +2737,11 @@ if (is_array($old_day_services)) {
                     `;
                     container.insertAdjacentHTML('beforeend', serviceHtml);
                 });
+
+                // Initialize Lucide icons for restored items
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
 
                 // Update total
                 updateDayServiceTotal(parseInt(dayNumber));
@@ -2342,10 +2770,7 @@ if (is_array($old_day_services)) {
             deposit_percentage: parseFloat(document.querySelector('[name="deposit_percentage"]')?.value || 30),
             booking_deadline_days: parseInt(document.querySelector('[name="booking_deadline_days"]')?.value || 1),
             // Fixed costs
-            fixed_cost_guide: parseFloat(document.getElementById('fixed_cost_guide')?.value || 0),
-            fixed_cost_management: parseFloat(document.getElementById('fixed_cost_management')?.value || 0),
-            fixed_cost_marketing: parseFloat(document.getElementById('fixed_cost_marketing')?.value || 0),
-            fixed_cost_other: parseFloat(document.getElementById('fixed_cost_other')?.value || 0),
+            fixed_cost_total: parseFloat(document.getElementById('fixed_cost_total')?.value || 0),
             status: document.querySelector('[name="status"]')?.value || 'draft',
             tour_type: document.querySelector('[name="tour_type"]')?.value || 'public'
         };

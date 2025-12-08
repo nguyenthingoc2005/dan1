@@ -149,6 +149,12 @@ class JournalController
                 throw new \Exception("Bạn không được phân công tour này.");
             }
 
+            // Kiểm tra tour đã bắt đầu chưa
+            $today = date('Y-m-d');
+            if ($schedule['start_date'] > $today) {
+                throw new \Exception("Tour chưa bắt đầu. Chỉ có thể viết nhật ký từ ngày " . date('d/m/Y', strtotime($schedule['start_date'])) . " trở đi.");
+            }
+
             // Get first paid booking from this schedule (for database constraint)
             // Journal is for the tour, but we need a booking_id for the database
             $bookings = $this->bookingModel->getAll([

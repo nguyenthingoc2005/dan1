@@ -158,6 +158,14 @@ class ExpenseController
             return;
         }
 
+        // Kiểm tra tour đã bắt đầu chưa
+        $today = date('Y-m-d');
+        if ($schedule['start_date'] > $today) {
+            set_error("Tour chưa bắt đầu. Chỉ có thể ghi chi phí phát sinh từ ngày " . date('d/m/Y', strtotime($schedule['start_date'])) . " trở đi.");
+            redirect('?act=guide-expenses&action=show&schedule_id=' . $schedule_id);
+            return;
+        }
+
         // Get Tour Details
         require_once MODELS_PATH . '/Tour.php';
         $tourModel = new \Tour($this->db);
@@ -202,6 +210,12 @@ class ExpenseController
 
             if (!$schedule || $schedule['guide_id'] != $user_id) {
                 throw new \Exception("Bạn không được phân công tour này.");
+            }
+
+            // Kiểm tra tour đã bắt đầu chưa
+            $today = date('Y-m-d');
+            if ($schedule['start_date'] > $today) {
+                throw new \Exception("Tour chưa bắt đầu. Chỉ có thể ghi chi phí phát sinh từ ngày " . date('d/m/Y', strtotime($schedule['start_date'])) . " trở đi.");
             }
 
             // Validate booking_id

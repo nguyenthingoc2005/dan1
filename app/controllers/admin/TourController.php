@@ -47,30 +47,21 @@ class TourController
 
     /**
      * Danh sách Tours
-     * ĐÃ XÓA: category filter
+     * Trả về TẤT CẢ tours, filter bằng JavaScript client-side
      */
     public function index()
     {
         require_admin();
 
-        // Filters
-        $filters = [];
-        if (!empty($_GET['status']))
-            $filters['status'] = sanitize($_GET['status']);
-        // Filter by Approval Status - REMOVED: Đã gộp vào status
-        if (!empty($_GET['tour_type']))
-            $filters['tour_type'] = sanitize($_GET['tour_type']);
-        if (!empty($_GET['search']))
-            $filters['search'] = sanitize($_GET['search']);
-
-        // Pagination
-        $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-        $result = $this->tourModel->getAll($filters, $page, 10);
+        // Lấy TẤT CẢ tours (không filter, không pagination)
+        // Sử dụng page = 1 và per_page = 10000 để lấy tất cả
+        $result = $this->tourModel->getAll([], 1, 10000);
 
         $tours = $result['data'];
+        // Không cần pagination nữa vì filter bằng JS
         $total = $result['total'];
-        $total_pages = $result['pages'];
-        $current_page = $result['current_page'];
+        $total_pages = 1;
+        $current_page = 1;
 
         $page_title = 'Quản lý Tour';
         $content_file = VIEWS_PATH . '/admin/tours/index.php';
@@ -163,6 +154,13 @@ class TourController
             'infant_price' => $template['infant_price'] ?? 0,
             'deposit_percentage' => $template['deposit_percentage'] ?? 30,
             'booking_deadline_days' => $template['booking_deadline_days'] ?? 1,
+            // Backward compatible: Nếu template có fixed_cost_total thì dùng, nếu không thì tính từ 4 cột cũ
+            'fixed_cost_total' => $template['fixed_cost_total'] ?? (
+                ($template['fixed_cost_guide'] ?? 0) +
+                ($template['fixed_cost_management'] ?? 0) +
+                ($template['fixed_cost_marketing'] ?? 0) +
+                ($template['fixed_cost_other'] ?? 0)
+            ),
             'fixed_cost_guide' => $template['fixed_cost_guide'] ?? 0,
             'fixed_cost_management' => $template['fixed_cost_management'] ?? 0,
             'fixed_cost_marketing' => $template['fixed_cost_marketing'] ?? 0,
@@ -267,13 +265,16 @@ class TourController
             $tour_code = $this->generateTourCodeUnique();
 
             // 3. Calculate pricing từ PricingHelper
-            // Lấy fixed costs từ form_data (đã merge session + POST)
-            $fixed_costs = [
-                'guide' => (float) ($form_data['fixed_cost_guide'] ?? 0),
-                'management' => (float) ($form_data['fixed_cost_management'] ?? 0),
-                'marketing' => (float) ($form_data['fixed_cost_marketing'] ?? 0),
-                'other' => (float) ($form_data['fixed_cost_other'] ?? 0)
-            ];
+            // Lấy fixed_cost_total từ form_data (đã merge session + POST)
+            // Backward compatible: Nếu có fixed_cost_total thì dùng, nếu không thì tính từ 4 cột cũ
+            $fixed_cost_total = (float) ($form_data['fixed_cost_total'] ?? 0);
+            if ($fixed_cost_total == 0) {
+                // Tính từ 4 cột cũ nếu fixed_cost_total không có
+                $fixed_cost_total = (float) ($form_data['fixed_cost_guide'] ?? 0) +
+                                   (float) ($form_data['fixed_cost_management'] ?? 0) +
+                                   (float) ($form_data['fixed_cost_marketing'] ?? 0) +
+                                   (float) ($form_data['fixed_cost_other'] ?? 0);
+            }
             $min_participants = (int) ($form_data['min_participants'] ?? 15);
 
             // Tính estimated_cost (sẽ tính lại sau khi có day_services)
@@ -296,10 +297,12 @@ class TourController
                 'estimated_cost_per_person' => $estimated_cost_per_person,
                 'deposit_percentage' => (float) ($form_data['deposit_percentage'] ?? 30),
                 'booking_deadline_days' => (int) ($form_data['booking_deadline_days'] ?? 1),
-                'fixed_cost_guide' => $fixed_costs['guide'],
-                'fixed_cost_management' => $fixed_costs['management'],
-                'fixed_cost_marketing' => $fixed_costs['marketing'],
-                'fixed_cost_other' => $fixed_costs['other'],
+                'fixed_cost_total' => $fixed_cost_total,
+                // Backward compatible: Giữ lại 4 cột cũ trong data để Model có thể xử lý
+                'fixed_cost_guide' => (float) ($form_data['fixed_cost_guide'] ?? 0),
+                'fixed_cost_management' => (float) ($form_data['fixed_cost_management'] ?? 0),
+                'fixed_cost_marketing' => (float) ($form_data['fixed_cost_marketing'] ?? 0),
+                'fixed_cost_other' => (float) ($form_data['fixed_cost_other'] ?? 0),
                 'tour_type' => $form_data['tour_type'] ?? 'public',
                 // Status: draft, pending, active, rejected, inactive
                 // BUG FIX: Validate và sanitize status để đảm bảo giá trị hợp lệ
@@ -363,7 +366,7 @@ class TourController
             $estimated_cost = calculateTotalCostPerPerson(
                 $this->db,
                 $tour_id,
-                $fixed_costs,
+                $fixed_cost_total,
                 $min_participants
             );
             $this->tourModel->updateStatus($tour_id, ['estimated_cost_per_person' => $estimated_cost]);
@@ -854,12 +857,16 @@ class TourController
             }
 
             // Calculate pricing từ PricingHelper
-            $fixed_costs = [
-                'guide' => (float) ($_POST['fixed_cost_guide'] ?? 0),
-                'management' => (float) ($_POST['fixed_cost_management'] ?? 0),
-                'marketing' => (float) ($_POST['fixed_cost_marketing'] ?? 0),
-                'other' => (float) ($_POST['fixed_cost_other'] ?? 0)
-            ];
+            // Lấy fixed_cost_total từ POST
+            // Backward compatible: Nếu có fixed_cost_total thì dùng, nếu không thì tính từ 4 cột cũ
+            $fixed_cost_total = (float) ($_POST['fixed_cost_total'] ?? 0);
+            if ($fixed_cost_total == 0) {
+                // Tính từ 4 cột cũ nếu fixed_cost_total không có
+                $fixed_cost_total = (float) ($_POST['fixed_cost_guide'] ?? 0) +
+                                   (float) ($_POST['fixed_cost_management'] ?? 0) +
+                                   (float) ($_POST['fixed_cost_marketing'] ?? 0) +
+                                   (float) ($_POST['fixed_cost_other'] ?? 0);
+            }
             $min_participants = (int) ($_POST['min_participants'] ?? 15);
 
             // Prepare Tour Data
@@ -878,10 +885,12 @@ class TourController
                 'estimated_cost_per_person' => null, // Sẽ tính lại sau
                 'deposit_percentage' => (float) ($_POST['deposit_percentage'] ?? 30),
                 'booking_deadline_days' => (int) ($_POST['booking_deadline_days'] ?? 1),
-                'fixed_cost_guide' => $fixed_costs['guide'],
-                'fixed_cost_management' => $fixed_costs['management'],
-                'fixed_cost_marketing' => $fixed_costs['marketing'],
-                'fixed_cost_other' => $fixed_costs['other'],
+                'fixed_cost_total' => $fixed_cost_total,
+                // Backward compatible: Giữ lại 4 cột cũ trong data để Model có thể xử lý
+                'fixed_cost_guide' => (float) ($_POST['fixed_cost_guide'] ?? 0),
+                'fixed_cost_management' => (float) ($_POST['fixed_cost_management'] ?? 0),
+                'fixed_cost_marketing' => (float) ($_POST['fixed_cost_marketing'] ?? 0),
+                'fixed_cost_other' => (float) ($_POST['fixed_cost_other'] ?? 0),
                 'tour_type' => $_POST['tour_type'] ?? 'public',
                 'status' => $_POST['status'] ?? 'draft'
             ];
@@ -1475,6 +1484,26 @@ class TourController
                 'itinerary' => count($_SESSION['tour_form_data']['itinerary'] ?? []),
                 'day_services' => count($_SESSION['tour_form_data']['itinerary_day_services'] ?? [])
             ]
+        ]);
+        exit;
+    }
+
+    /**
+     * Get Tour Session Data (AJAX)
+     * URL: ?act=admin&module=tours&action=getFormSession
+     * Lấy dữ liệu từ session để restore
+     */
+    public function getFormSession()
+    {
+        require_admin();
+        header('Content-Type: application/json');
+
+        $this->initTourSession();
+        $session_data = $this->loadTourSession();
+
+        echo json_encode([
+            'success' => true,
+            'data' => $session_data
         ]);
         exit;
     }

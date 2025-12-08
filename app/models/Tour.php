@@ -215,14 +215,14 @@ class Tour
                 departure_location, min_participants, max_participants,
                 adult_price, child_price, infant_price, estimated_cost_per_person,
                 deposit_percentage, booking_deadline_days,
-                fixed_cost_guide, fixed_cost_management, fixed_cost_marketing, fixed_cost_other,
+                fixed_cost_total,
                 tour_type, status, parent_tour_id, created_by
             ) VALUES (
                 :code, :name, :introduction, :description, :duration_days, :duration_nights,
                 :departure_location, :min_participants, :max_participants,
                 :adult_price, :child_price, :infant_price, :estimated_cost_per_person,
                 :deposit_percentage, :booking_deadline_days,
-                :fixed_cost_guide, :fixed_cost_management, :fixed_cost_marketing, :fixed_cost_other,
+                :fixed_cost_total,
                 :tour_type, :status, :parent_tour_id, :created_by
             )";
 
@@ -243,10 +243,8 @@ class Tour
                 'estimated_cost_per_person' => $data['estimated_cost_per_person'] ?? null,
                 'deposit_percentage' => $data['deposit_percentage'] ?? 30,
                 'booking_deadline_days' => $data['booking_deadline_days'] ?? 1,
-                'fixed_cost_guide' => $data['fixed_cost_guide'] ?? 0,
-                'fixed_cost_management' => $data['fixed_cost_management'] ?? 0,
-                'fixed_cost_marketing' => $data['fixed_cost_marketing'] ?? 0,
-                'fixed_cost_other' => $data['fixed_cost_other'] ?? 0,
+                // Backward compatible: Nếu có fixed_cost_total thì dùng, nếu không thì tính từ 4 cột cũ
+                'fixed_cost_total' => $this->getFixedCostTotal($data),
                 'tour_type' => $data['tour_type'] ?? 'public',
                 // BUG FIX: Validate status để đảm bảo giá trị hợp lệ
                 'status' => $this->sanitizeTourStatus($data['status'] ?? 'draft'),
@@ -325,10 +323,7 @@ class Tour
                 'estimated_cost_per_person = :estimated_cost_per_person',
                 'deposit_percentage = :deposit_percentage',
                 'booking_deadline_days = :booking_deadline_days',
-                'fixed_cost_guide = :fixed_cost_guide',
-                'fixed_cost_management = :fixed_cost_management',
-                'fixed_cost_marketing = :fixed_cost_marketing',
-                'fixed_cost_other = :fixed_cost_other',
+                'fixed_cost_total = :fixed_cost_total',
                 'tour_type = :tour_type',
                 'status = :status',
                 'updated_at = NOW()'
@@ -353,10 +348,8 @@ class Tour
                 'estimated_cost_per_person' => $data['estimated_cost_per_person'] ?? null,
                 'deposit_percentage' => $data['deposit_percentage'] ?? 30,
                 'booking_deadline_days' => $data['booking_deadline_days'] ?? 1,
-                'fixed_cost_guide' => $data['fixed_cost_guide'] ?? 0,
-                'fixed_cost_management' => $data['fixed_cost_management'] ?? 0,
-                'fixed_cost_marketing' => $data['fixed_cost_marketing'] ?? 0,
-                'fixed_cost_other' => $data['fixed_cost_other'] ?? 0,
+                // Backward compatible: Nếu có fixed_cost_total thì dùng, nếu không thì tính từ 4 cột cũ
+                'fixed_cost_total' => $this->getFixedCostTotal($data),
                 'tour_type' => $data['tour_type'] ?? 'public',
                 // BUG FIX: Validate status để đảm bảo giá trị hợp lệ
                 'status' => $this->sanitizeTourStatus($data['status'] ?? 'draft')
@@ -699,5 +692,29 @@ class Tour
         }
 
         return $status;
+    }
+
+    /**
+     * Lấy fixed_cost_total từ data (backward compatible)
+     * Nếu có fixed_cost_total thì dùng, nếu không thì tính từ 4 cột cũ
+     * 
+     * @param array $data
+     * @return float
+     */
+    private function getFixedCostTotal($data)
+    {
+        // Ưu tiên dùng fixed_cost_total nếu có
+        if (isset($data['fixed_cost_total']) && $data['fixed_cost_total'] > 0) {
+            return (float) $data['fixed_cost_total'];
+        }
+
+        // Backward compatible: Tính từ 4 cột cũ nếu có
+        $total = 0;
+        $total += (float) ($data['fixed_cost_guide'] ?? 0);
+        $total += (float) ($data['fixed_cost_management'] ?? 0);
+        $total += (float) ($data['fixed_cost_marketing'] ?? 0);
+        $total += (float) ($data['fixed_cost_other'] ?? 0);
+
+        return $total;
     }
 }

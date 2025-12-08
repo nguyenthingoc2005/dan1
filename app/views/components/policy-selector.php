@@ -70,11 +70,11 @@ $policy_type_names = [
                     if ($policy):
                         ?>
                         <div
-                            class="selected-policy-item bg-success-bg border border-success rounded-xl p-3 lg:p-4 flex items-center justify-between">
+                            class="selected-policy-item bg-success-bg border border-success rounded-xl p-3 lg:p-4 flex items-center justify-between" data-policy-id="<?= $policy_id ?>">
                             <div>
                                 <span class="font-semibold text-success-dark text-sm lg:text-base"><?= htmlspecialchars($policy['name']) ?></span>
                                 <span class="text-xs lg:text-sm text-success-text ml-2">
-                                    (<?= $policy_type_names[$policy['policy_type'] ?? 'other'] ?? 'Khác' ?>)
+                                    (<?= $policy_type_names[$policy['policy_type'] ?? 'other'] ?? 'Khác' ?>) 
                                 </span>
                             </div>
                             <button type="button" onclick="removePolicy(<?= $policy_id ?>)" class="text-danger hover:text-danger-dark flex items-center justify-center w-6 h-6 lg:w-8 lg:h-8 rounded-lg hover:bg-danger-bg transition-colors">
@@ -210,20 +210,31 @@ $policy_type_names = [
 
 <script>
     // Initialize selectedPolicies from PHP data
-    let selectedPolicies = <?= json_encode(array_flip($selected_policy_ids)) ?>;
+    // Sử dụng window để có thể truy cập từ mọi nơi
+    window.selectedPolicies = <?= json_encode(array_flip($selected_policy_ids)) ?>;
+    let selectedPolicies = window.selectedPolicies; // Alias for backward compatibility
 
     // Restore policy IDs from session if available (from create.php)
     // Note: This will be handled by restorePolicyIdsFromSession() in create.php
     // We just need to make sure selectedPolicyIds is available globally
+    
+    console.log('📋 Initialized selectedPolicies:', window.selectedPolicies);
 
     function togglePolicy(checkbox, policyId, policyName, policyType) {
+        // Đảm bảo sử dụng window.selectedPolicies
+        if (!window.selectedPolicies) {
+            window.selectedPolicies = {};
+        }
+        
         if (checkbox.checked) {
-            if (!selectedPolicies[policyId]) {
-                selectedPolicies[policyId] = true;
+            if (!window.selectedPolicies[policyId]) {
+                window.selectedPolicies[policyId] = true;
+                selectedPolicies = window.selectedPolicies; // Sync alias
                 addPolicyToList(policyId, policyName, policyType);
             }
         } else {
-            delete selectedPolicies[policyId];
+            delete window.selectedPolicies[policyId];
+            selectedPolicies = window.selectedPolicies; // Sync alias
             removePolicyFromList(policyId);
         }
 
@@ -257,30 +268,57 @@ $policy_type_names = [
     }
 
     function removePolicy(policyId) {
-        delete selectedPolicies[policyId];
+        console.log('🗑️ Removing policy:', policyId);
+        
+        // Đảm bảo sử dụng window.selectedPolicies
+        if (!window.selectedPolicies) {
+            window.selectedPolicies = {};
+        }
+        
+        // Xóa khỏi selectedPolicies object
+        delete window.selectedPolicies[policyId];
+        selectedPolicies = window.selectedPolicies; // Sync alias
 
         // Uncheck checkbox
         const checkbox = document.getElementById(`policy-${policyId}`);
         if (checkbox) {
             checkbox.checked = false;
+            console.log('✅ Checkbox unchecked for policy:', policyId);
+        } else {
+            console.warn('⚠️ Checkbox not found for policy:', policyId);
         }
 
-        // Remove from list
+        // Remove from list (sẽ xóa cả hidden input)
         removePolicyFromList(policyId);
 
         // Lưu vào session khi thay đổi
         savePolicyIdsToSession();
+        
+        console.log('✅ Policy removed and session saved');
     }
 
     function removePolicyFromList(policyId) {
+        // Tìm phần tử bằng data-policy-id
         const item = document.querySelector(`.selected-policy-item[data-policy-id="${policyId}"]`);
         if (item) {
+            // Xóa phần tử (sẽ xóa cả hidden input bên trong)
             item.remove();
+            console.log('✅ Policy item removed from DOM:', policyId);
+        } else {
+            console.warn('⚠️ Policy item not found in DOM:', policyId);
+            // Fallback: Tìm bằng hidden input
+            const hiddenInputs = document.querySelectorAll(`[name="policy_ids[]"]`);
+            hiddenInputs.forEach(input => {
+                if (parseInt(input.value) === parseInt(policyId)) {
+                    input.closest('.selected-policy-item')?.remove();
+                    console.log('✅ Policy item removed via fallback');
+                }
+            });
         }
 
         // Show empty message if no policies left
         const container = document.getElementById('selected-policies-list');
-        if (container.children.length === 0) {
+        if (container && container.children.length === 0) {
             container.innerHTML = `
             <div class="text-primary-500 text-center py-6 lg:py-8 bg-primary-50 rounded-2xl border-2 border-dashed border-primary-200">
                 <div class="flex justify-center mb-2 lg:mb-3">
@@ -309,13 +347,21 @@ $policy_type_names = [
         const content = document.getElementById('new-policy-content').value.trim();
 
         if (!name) {
-            alert('Vui lòng nhập tên chính sách');
+            if (typeof showToast === 'function') {
+                showToast('Vui lòng nhập tên chính sách', 'warning');
+            } else {
+                alert('Vui lòng nhập tên chính sách');
+            }
             document.getElementById('new-policy-name').focus();
             return false;
         }
 
         if (!content) {
-            alert('Vui lòng nhập nội dung chi tiết');
+            if (typeof showToast === 'function') {
+                showToast('Vui lòng nhập nội dung chi tiết', 'warning');
+            } else {
+                alert('Vui lòng nhập nội dung chi tiết');
+            }
             document.getElementById('new-policy-content').focus();
             return false;
         }
@@ -341,12 +387,20 @@ $policy_type_names = [
                     // Reload page to show new policy
                     location.reload();
                 } else {
-                    alert('Có lỗi: ' + (data.message || 'Không thể tạo chính sách'));
+                    if (typeof showToast === 'function') {
+                        showToast('Có lỗi: ' + (data.message || 'Không thể tạo chính sách'), 'error');
+                    } else {
+                        alert('Có lỗi: ' + (data.message || 'Không thể tạo chính sách'));
+                    }
                 }
             })
             .catch(err => {
                 console.error(err);
-                alert('Có lỗi xảy ra khi tạo chính sách');
+                if (typeof showToast === 'function') {
+                    showToast('Có lỗi xảy ra khi tạo chính sách', 'error');
+                } else {
+                    alert('Có lỗi xảy ra khi tạo chính sách');
+                }
             });
     }
 
@@ -378,7 +432,7 @@ $policy_type_names = [
         // Collect policy IDs từ checkboxes và hidden inputs
         const policyIds = [];
 
-        // Lấy từ checkboxes
+        // Lấy từ checkboxes (ưu tiên)
         document.querySelectorAll('[id^="policy-"]:checked').forEach(cb => {
             const id = parseInt(cb.value);
             if (id && !policyIds.includes(id)) {
@@ -386,12 +440,18 @@ $policy_type_names = [
             }
         });
 
-        // Lấy từ hidden inputs (đã được thêm vào list)
+        // Lấy từ hidden inputs (backup - nếu checkbox chưa được check nhưng đã có trong list)
         document.querySelectorAll('[name="policy_ids[]"]').forEach(input => {
             const id = parseInt(input.value);
             if (id && !policyIds.includes(id)) {
                 policyIds.push(id);
             }
+        });
+
+        // Cập nhật selectedPolicies object để đồng bộ
+        window.selectedPolicies = {};
+        policyIds.forEach(id => {
+            window.selectedPolicies[id] = true;
         });
 
         // Gọi saveFormDataToSession nếu function tồn tại (từ create.php)
@@ -400,6 +460,8 @@ $policy_type_names = [
                 policy_ids: policyIds
             });
             console.log('✅ Policy IDs saved to session:', policyIds);
+        } else {
+            console.warn('⚠️ saveFormDataToSession function not found');
         }
     }
 </script>

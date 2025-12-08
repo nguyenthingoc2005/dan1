@@ -925,18 +925,30 @@ class BookingController
                     }
                 }
 
-                // Add passenger
-                $sql = "INSERT INTO booking_customers (booking_id, customer_id, age_type, is_primary) 
-                        VALUES (:booking_id, :customer_id, :age_type, :is_primary)";
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute([
-                    'booking_id' => $booking_id,
-                    'customer_id' => $customer_id,
-                    'age_type' => $age_type,
-                    'is_primary' => $is_primary
-                ]);
+                // Get Tour and Schedule info for pricing
+                $tour = $this->tourModel->findById($booking['tour_id']);
+                if (!$tour) {
+                    throw new \Exception("Tour không tồn tại.");
+                }
 
-                // Update booking counts
+                require_once 'app/models/TourSchedule.php';
+                $scheduleModel = new TourSchedule($this->pdo);
+                $schedule = null;
+
+                // Get schedule if booking has tour_schedule_id
+                if (!empty($booking['tour_schedule_id'])) {
+                    $schedule = $scheduleModel->getById($booking['tour_schedule_id']);
+                } else {
+                    // Fallback: Try to find schedule by tour_id and start_date
+                    $schedule = $scheduleModel->getByTourAndStartDate($booking['tour_id'], $booking['start_date']);
+                }
+
+                // Get pricing (ưu tiên schedule, fallback tour)
+                $priceAdult = $schedule['adult_price'] ?? $tour['adult_price'] ?? 0;
+                $priceChild = $schedule['child_price'] ?? $tour['child_price'] ?? 0;
+                $priceInfant = $schedule['infant_price'] ?? $tour['infant_price'] ?? 0;
+
+                // Calculate new counts
                 $currentAdult = $booking['adult_count'];
                 $currentChild = $booking['child_count'];
                 $currentInfant = $booking['infant_count'];
@@ -949,30 +961,72 @@ class BookingController
                     $currentInfant++;
                 }
 
-                $updateSql = "UPDATE bookings SET 
-                              adult_count = :adult,
-                              child_count = :child,
-                              infant_count = :infant
-                              WHERE id = :id";
-                $updateStmt = $this->pdo->prepare($updateSql);
-                $updateStmt->execute([
-                    'adult' => $currentAdult,
-                    'child' => $currentChild,
-                    'infant' => $currentInfant,
-                    'id' => $booking_id
-                ]);
+                // Calculate new total amount
+                $newTotalAmount = ($priceAdult * $currentAdult) + ($priceChild * $currentChild) + ($priceInfant * $currentInfant);
+                
+                // Calculate new final amount (consider existing discount)
+                $currentDiscount = (float) ($booking['discount_amount'] ?? 0);
+                $newFinalAmount = max(0, $newTotalAmount - $currentDiscount);
 
-                // Log history
-                $this->bookingModel->logHistory(
-                    $booking_id,
-                    $booking['payment_status'],
-                    $booking['payment_status'],
-                    get_user_id(),
-                    "Thêm khách hàng vào booking"
-                );
+                // Start transaction
+                $this->pdo->beginTransaction();
 
-                set_success("Đã thêm khách hàng vào booking!");
-                redirect("?act=staff-bookings&action=show&id=$booking_id");
+                try {
+                    // Add passenger
+                    $sql = "INSERT INTO booking_customers (booking_id, customer_id, age_type, is_primary) 
+                            VALUES (:booking_id, :customer_id, :age_type, :is_primary)";
+                    $stmt = $this->pdo->prepare($sql);
+                    $stmt->execute([
+                        'booking_id' => $booking_id,
+                        'customer_id' => $customer_id,
+                        'age_type' => $age_type,
+                        'is_primary' => $is_primary
+                    ]);
+
+                    // Update booking counts and amounts (KHÔNG update remaining_amount ở đây)
+                    // remaining_amount sẽ được tính lại bằng updatePaymentStatus() dựa trên payments thực tế
+                    $updateSql = "UPDATE bookings SET 
+                                  adult_count = :adult,
+                                  child_count = :child,
+                                  infant_count = :infant,
+                                  total_amount = :total_amount,
+                                  final_amount = :final_amount
+                                  WHERE id = :id";
+                    $updateStmt = $this->pdo->prepare($updateSql);
+                    $updateStmt->execute([
+                        'adult' => $currentAdult,
+                        'child' => $currentChild,
+                        'infant' => $currentInfant,
+                        'total_amount' => $newTotalAmount,
+                        'final_amount' => $newFinalAmount,
+                        'id' => $booking_id
+                    ]);
+
+                    // Tính lại paid_amount và remaining_amount dựa trên payments thực tế
+                    $this->bookingModel->updatePaymentStatus($booking_id);
+
+                    // Commit transaction
+                    $this->pdo->commit();
+
+                    // Log history
+                    $this->bookingModel->logHistory(
+                        $booking_id,
+                        $booking['payment_status'],
+                        $booking['payment_status'],
+                        get_user_id(),
+                        "Thêm khách hàng vào booking (Loại: " . ($age_type === 'adult' ? 'Người lớn' : ($age_type === 'child' ? 'Trẻ em' : 'Em bé')) . "). Tổng tiền mới: " . number_format($newTotalAmount) . " đ"
+                    );
+
+                    set_success("Đã thêm khách hàng vào booking! Tổng tiền đã được cập nhật.");
+                    redirect("?act=staff-bookings&action=show&id=$booking_id");
+
+                } catch (\Exception $e) {
+                    // Rollback transaction on error
+                    if ($this->pdo->inTransaction()) {
+                        $this->pdo->rollBack();
+                    }
+                    throw $e;
+                }
 
             } catch (\Exception $e) {
                 set_error($e->getMessage());

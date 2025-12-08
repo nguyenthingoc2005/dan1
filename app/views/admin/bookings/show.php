@@ -401,8 +401,10 @@ $statusTexts = [
                         <!-- Progress Bar -->
                         <?php
                         $percent = $booking['final_amount'] > 0 ? ($booking['paid_amount'] / $booking['final_amount']) * 100 : 0;
+                        // Giới hạn phần trăm tối đa là 100% để tránh tràn viền
+                        $percent = min(100, max(0, $percent));
                         ?>
-                        <div class="w-full bg-primary-100 rounded-full h-2.5 mt-2">
+                        <div class="w-full bg-primary-100 rounded-full h-2.5 mt-2 overflow-hidden">
                             <div class="bg-success h-2.5 rounded-full transition-all" style="width: <?= $percent ?>%"></div>
                         </div>
                     </div>

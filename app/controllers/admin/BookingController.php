@@ -559,15 +559,13 @@ class BookingController
 
                 // Calculate new amounts
                 $new_final_amount = max(0, $total_amount - $discount_amount);
-                $current_deposit = (float) ($booking['deposit_amount'] ?? 0);
-                $new_remaining = max(0, $new_final_amount - $current_deposit);
 
-                // Update booking
+                // Update booking (KHÔNG update remaining_amount ở đây)
+                // remaining_amount sẽ được tính lại bằng updatePaymentStatus() dựa trên payments thực tế
                 $sql = "UPDATE bookings SET 
                         discount_code = :discount_code,
                         discount_amount = :discount_amount,
-                        final_amount = :final_amount,
-                        remaining_amount = :remaining_amount
+                        final_amount = :final_amount
                         WHERE id = :id";
 
                 $stmt = $this->pdo->prepare($sql);
@@ -575,9 +573,11 @@ class BookingController
                     'discount_code' => !empty($discount_code) ? sanitize($discount_code) : null,
                     'discount_amount' => $discount_amount,
                     'final_amount' => $new_final_amount,
-                    'remaining_amount' => $new_remaining,
                     'id' => $booking_id
                 ]);
+
+                // Tính lại paid_amount và remaining_amount dựa trên payments thực tế
+                $this->bookingModel->updatePaymentStatus($booking_id);
 
                 // Log history
                 $this->bookingModel->logHistory(
@@ -1128,10 +1128,6 @@ class BookingController
                 // Calculate new final amount (consider existing discount)
                 $currentDiscount = (float) ($booking['discount_amount'] ?? 0);
                 $newFinalAmount = max(0, $newTotalAmount - $currentDiscount);
-                
-                // Calculate new remaining amount (consider existing deposit)
-                $currentDeposit = (float) ($booking['deposit_amount'] ?? 0);
-                $newRemainingAmount = max(0, $newFinalAmount - $currentDeposit);
 
                 // Start transaction
                 $this->pdo->beginTransaction();
@@ -1148,14 +1144,14 @@ class BookingController
                         'is_primary' => $is_primary
                     ]);
 
-                    // Update booking counts and amounts
+                    // Update booking counts and amounts (KHÔNG update remaining_amount ở đây)
+                    // remaining_amount sẽ được tính lại bằng updatePaymentStatus() dựa trên payments thực tế
                     $updateSql = "UPDATE bookings SET 
                                   adult_count = :adult,
                                   child_count = :child,
                                   infant_count = :infant,
                                   total_amount = :total_amount,
-                                  final_amount = :final_amount,
-                                  remaining_amount = :remaining_amount
+                                  final_amount = :final_amount
                                   WHERE id = :id";
                     $updateStmt = $this->pdo->prepare($updateSql);
                     $updateStmt->execute([
@@ -1164,9 +1160,11 @@ class BookingController
                         'infant' => $currentInfant,
                         'total_amount' => $newTotalAmount,
                         'final_amount' => $newFinalAmount,
-                        'remaining_amount' => $newRemainingAmount,
                         'id' => $booking_id
                     ]);
+
+                    // Tính lại paid_amount và remaining_amount dựa trên payments thực tế
+                    $this->bookingModel->updatePaymentStatus($booking_id);
 
                     // Increment booked count of schedule
                     if ($schedule) {

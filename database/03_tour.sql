@@ -2,24 +2,7 @@
 -- MODULE 3: TOUR
 -- ==============================================================================
 
--- Tour Cost Templates (MỚI - Phương án 3)
-CREATE TABLE IF NOT EXISTS `tour_cost_templates` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `template_name` VARCHAR(200) NOT NULL COMMENT 'Tên template (VD: "Tour trong nước 3 ngày")',
-  `description` TEXT COMMENT 'Mô tả template',
-  `fixed_cost_total` DECIMAL(15,2) DEFAULT 0.00 COMMENT 'Tổng chi phí cố định mặc định',
-  `is_default` TINYINT(1) DEFAULT 0 COMMENT '1 = template mặc định',
-  `status` ENUM('active','inactive') DEFAULT 'active',
-  `created_by` INT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `created_by` (`created_by`),
-  KEY `idx_templates_status` (`status`),
-  CONSTRAINT `tour_cost_templates_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Tours (ĐÃ SỬA - Bỏ 4 cột fixed_cost, thay bằng 1 cột + template)
+-- Tours (ĐÃ SỬA - Bỏ 4 cột fixed_cost, thay bằng 1 cột fixed_cost_total)
 CREATE TABLE IF NOT EXISTS `tours` (
   `id` int NOT NULL AUTO_INCREMENT,
   `tour_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -38,9 +21,7 @@ CREATE TABLE IF NOT EXISTS `tours` (
   `estimated_cost_per_person` decimal(15,2) DEFAULT NULL,
   `markup_percentage` decimal(5,2) DEFAULT '0.00' COMMENT 'DEPRECATED - Không dùng nữa, giữ lại để backward compatible',
   `deposit_percentage` decimal(5,2) DEFAULT '30.00',
-  `fixed_cost_total` DECIMAL(15,2) DEFAULT 0.00 COMMENT 'Tổng chi phí cố định (tự động từ template hoặc nhập thủ công)',
-  `tour_cost_template_id` INT NULL COMMENT 'Template chi phí (nếu có)',
-  `use_template_cost` TINYINT(1) DEFAULT 1 COMMENT '1 = dùng từ template, 0 = nhập thủ công',
+  `fixed_cost_total` DECIMAL(15,2) DEFAULT 0.00 COMMENT 'Tổng chi phí cố định (nhập trực tiếp)',
   `booking_deadline_days` int DEFAULT '1' COMMENT 'Số ngày tối thiểu trước ngày khởi hành để đặt booking (default: 1 ngày)',
   `tour_type` enum('public','custom') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'public',
   `approved_by` int DEFAULT NULL,
@@ -57,11 +38,9 @@ CREATE TABLE IF NOT EXISTS `tours` (
   KEY `idx_tours_status` (`status`),
   KEY `idx_tours_created_by` (`created_by`),
   KEY `parent_tour_id` (`parent_tour_id`),
-  KEY `tour_cost_template_id` (`tour_cost_template_id`),
   CONSTRAINT `tours_ibfk_2` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `tours_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `tours_ibfk_4` FOREIGN KEY (`parent_tour_id`) REFERENCES `tours` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `tours_ibfk_cost_template` FOREIGN KEY (`tour_cost_template_id`) REFERENCES `tour_cost_templates` (`id`) ON DELETE SET NULL
+  CONSTRAINT `tours_ibfk_4` FOREIGN KEY (`parent_tour_id`) REFERENCES `tours` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tour Schedules (ĐÃ SỬA - Thêm status 'confirmed')
