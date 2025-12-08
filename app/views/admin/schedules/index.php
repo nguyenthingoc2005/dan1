@@ -194,11 +194,6 @@ if (!is_admin())
                                         class="text-warning-text hover:text-warning-text p-1.5 rounded-xl hover:bg-warning-bg transition-all" title="Sửa">
                                         <i data-lucide="pencil" class="w-4 h-4"></i>
                                     </a>
-                                    <!-- Phân công Guide -->
-                                    <a href="?act=admin&module=schedules&action=assignGuideForm&id=<?= $s['id'] ?>"
-                                        class="text-info-text hover:text-info-text p-1.5 rounded-xl hover:bg-info-bg transition-all" title="Phân công guide">
-                                        <i data-lucide="user-plus" class="w-4 h-4"></i>
-                                    </a>
                                     <!-- Đóng/Mở -->
                                     <?php if ($s['status'] == 'open'): ?>
                                         <form method="POST" action="?act=admin&module=schedules&action=changeStatus" class="inline">

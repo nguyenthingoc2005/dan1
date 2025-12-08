@@ -159,65 +159,6 @@ if (!is_admin())
                 </div>
             <?php endif; ?>
         </div>
-    <?php else: ?>
-        <div class="bg-warning-bg border border-warning rounded-2xl p-4 lg:p-6 mb-4 lg:mb-6">
-            <div class="flex items-center gap-2">
-                <i data-lucide="alert-triangle" class="w-4 h-4 lg:w-5 lg:h-5 text-warning-text"></i>
-                <span class="text-warning-text font-semibold text-sm lg:text-base">Chưa gán hướng dẫn viên cho lịch này</span>
-            </div>
-            <a href="?act=admin&module=schedules&action=edit&id=<?= $schedule['id'] ?>" 
-               class="mt-2 inline-block text-xs lg:text-sm text-accent hover:text-accent-hover font-semibold flex items-center gap-1">
-                Gán HDV ngay
-                <i data-lucide="arrow-right" class="w-3 h-3"></i>
-            </a>
-        </div>
-    <?php endif; ?>
-
-    <!-- Guide Change History -->
-    <?php if (!empty($guide_history)): ?>
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-bold text-primary-800 mb-4 flex items-center gap-2">
-                <i data-lucide="history" class="w-5 h-5 text-accent"></i> Lịch sử thay đổi HDV
-            </h2>
-            <div class="space-y-3">
-                <?php foreach ($guide_history as $h): ?>
-                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <div class="font-medium text-primary-800 mb-2">
-                                    <?php if ($h['old_guide_name'] && $h['new_guide_name']): ?>
-                                        <span class="text-red-600"><?= htmlspecialchars($h['old_guide_name']) ?></span>
-                                        <span class="mx-2 text-gray-400">→</span>
-                                        <span class="text-green-600"><?= htmlspecialchars($h['new_guide_name']) ?></span>
-                                    <?php elseif ($h['new_guide_name']): ?>
-                                        <span class="text-green-600">Gán: <?= htmlspecialchars($h['new_guide_name']) ?></span>
-                                    <?php else: ?>
-                                        <span class="text-red-600">Hủy gán: <?= htmlspecialchars($h['old_guide_name']) ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                <?php if ($h['reason']): ?>
-                                    <div class="text-sm text-gray-600 mb-1">
-                                        <span class="font-medium">Lý do:</span> <?= htmlspecialchars($h['reason']) ?>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if ($h['notes']): ?>
-                                    <div class="text-sm text-gray-500 mb-1">
-                                        <span class="font-medium">Ghi chú:</span> <?= htmlspecialchars($h['notes']) ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                            <div class="text-sm text-gray-500 text-right ml-4">
-                                <div class="font-medium"><?= date('d/m/Y', strtotime($h['created_at'])) ?></div>
-                                <div class="text-xs text-gray-400"><?= date('H:i', strtotime($h['created_at'])) ?></div>
-                                <?php if ($h['changed_by_name']): ?>
-                                    <div class="text-xs text-gray-400 mt-1">bởi <?= htmlspecialchars($h['changed_by_name']) ?></div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
     <?php endif; ?>
 
     <!-- Bookings List -->
@@ -329,6 +270,87 @@ if (!is_admin())
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Expenses Section -->
+    <div class="bg-panel rounded-2xl border border-primary-100 shadow-sm p-4 lg:p-6 mt-4 lg:mt-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <h2 class="text-base lg:text-lg font-bold text-primary-700">Chi phí phát sinh</h2>
+            <div class="flex gap-2">
+                <a href="?act=admin&module=expenses&action=create&schedule_id=<?= $schedule['id'] ?>" 
+                   class="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-xl font-semibold transition-colors text-sm flex items-center gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Thêm chi phí
+                </a>
+                <a href="?act=admin&module=expenses&action=show&schedule_id=<?= $schedule['id'] ?>" 
+                   class="px-4 py-2 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-xl font-semibold transition-colors text-sm">
+                    Xem tất cả
+                </a>
+            </div>
+        </div>
+
+        <?php if (!empty($expenses)): ?>
+            <div class="mb-4 p-3 bg-primary-50 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-primary-500">Tổng chi phí (đã duyệt):</span>
+                    <span class="text-lg font-bold text-accent"><?= number_format($expense_total, 0, ',', '.') ?> VNĐ</span>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <?php foreach (array_slice($expenses, 0, 5) as $exp): ?>
+                    <div class="flex items-center justify-between p-2 bg-primary-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="text-sm font-semibold text-primary-700">
+                                <?= htmlspecialchars($exp['description']) ?>
+                            </div>
+                            <div class="text-xs text-primary-500">
+                                <?= date('d/m/Y', strtotime($exp['expense_date'])) ?>
+                                <?php if (!empty($exp['category'])): ?>
+                                    <span class="mx-1">•</span>
+                                    <?= htmlspecialchars($exp['category']) ?>
+                                <?php endif; ?>
+                                <?php
+                                $status_colors = [
+                                    'pending' => 'text-warning-text',
+                                    'approved' => 'text-success-text',
+                                    'rejected' => 'text-danger-text'
+                                ];
+                                $status_labels = [
+                                    'pending' => 'Chờ duyệt',
+                                    'approved' => 'Đã duyệt',
+                                    'rejected' => 'Từ chối'
+                                ];
+                                $status = $exp['approval_status'] ?? 'pending';
+                                ?>
+                                <span class="ml-2 <?= $status_colors[$status] ?? '' ?>">
+                                    (<?= $status_labels[$status] ?? $status ?>)
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-sm font-semibold text-primary-700">
+                            <?= number_format($exp['amount'], 0, ',', '.') ?> VNĐ
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <?php if (count($expenses) > 5): ?>
+                <div class="mt-4 text-center">
+                    <a href="?act=admin&module=expenses&action=show&schedule_id=<?= $schedule['id'] ?>" 
+                       class="text-accent hover:text-accent-hover text-sm font-medium">
+                        Xem thêm (<?= count($expenses) - 5 ?> chi phí khác) →
+                    </a>
+                </div>
+            <?php endif; ?>
+        <?php else: ?>
+            <div class="text-center py-8">
+                <p class="text-primary-500 text-sm mb-4">Chưa có chi phí phát sinh nào.</p>
+                <a href="?act=admin&module=expenses&action=create&schedule_id=<?= $schedule['id'] ?>" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-xl font-semibold transition-colors text-sm">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Thêm chi phí phát sinh
+                </a>
             </div>
         <?php endif; ?>
     </div>

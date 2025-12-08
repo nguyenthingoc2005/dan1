@@ -327,6 +327,9 @@ switch ($module) {
             case 'applyDiscount':
                 $bookingController->applyDiscount();
                 break;
+            case 'validateDiscountCode':
+                $bookingController->validateDiscountCode();
+                break;
             case 'importPassengers':
                 $bookingController->importPassengers();
                 break;
@@ -347,6 +350,32 @@ switch ($module) {
                 break;
             default:
                 $bookingController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: CANCELLATIONS (Quản lý Hủy Booking)
+    // ==========================================================================
+    case 'cancellations':
+        require_once CONTROLLERS_PATH . '/admin/CancellationController.php';
+        $cancellationController = new CancellationController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $cancellationController->index();
+                break;
+            case 'show':
+                $cancellationController->show();
+                break;
+            case 'processRefund':
+                $cancellationController->processRefund();
+                break;
+            case 'statistics':
+                $cancellationController->statistics();
+                break;
+            default:
+                $cancellationController->index();
                 break;
         }
         break;
@@ -432,12 +461,6 @@ switch ($module) {
                 break;
             case 'changeStatus':
                 $scheduleController->changeStatus();
-                break;
-            case 'assignGuideForm':
-                $scheduleController->assignGuideForm();
-                break;
-            case 'assignGuide':
-                $scheduleController->assignGuide();
                 break;
             case 'cancelForm':
                 $scheduleController->cancelForm();
@@ -788,8 +811,230 @@ switch ($module) {
         break;
 
     // ==========================================================================
+    // DISCOUNT CODES MODULE
+    // ==========================================================================
+    case 'cancellation-policies':
+        require_once CONTROLLERS_PATH . '/admin/CancellationPolicyController.php';
+        $cancellationPolicyController = new CancellationPolicyController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $cancellationPolicyController->index();
+                break;
+            case 'create':
+                $cancellationPolicyController->create();
+                break;
+            case 'store':
+                $cancellationPolicyController->store();
+                break;
+            case 'edit':
+                $cancellationPolicyController->edit();
+                break;
+            case 'update':
+                $cancellationPolicyController->update();
+                break;
+            case 'delete':
+                $cancellationPolicyController->delete();
+                break;
+            case 'toggleStatus':
+                $cancellationPolicyController->toggleStatus();
+                break;
+            default:
+                $cancellationPolicyController->index();
+                break;
+        }
+        break;
+
+    case 'discount-codes':
+        require_once CONTROLLERS_PATH . '/admin/DiscountCodeController.php';
+        $discountCodeController = new DiscountCodeController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $discountCodeController->index();
+                break;
+            case 'create':
+                $discountCodeController->create();
+                break;
+            case 'store':
+                $discountCodeController->store();
+                break;
+            case 'edit':
+                $discountCodeController->edit();
+                break;
+            case 'update':
+                $discountCodeController->update();
+                break;
+            case 'delete':
+                $discountCodeController->delete();
+                break;
+            case 'toggleStatus':
+                $discountCodeController->toggleStatus();
+                break;
+            default:
+                http_response_code(404);
+                require VIEWS_PATH . '/errors/404.php';
+        }
+        break;
+
+    // ==========================================================================
+    // EXPENSES MODULE (Chi phí phát sinh)
+    // ==========================================================================
+    case 'expenses':
+        require_once CONTROLLERS_PATH . '/admin/ExpenseController.php';
+        $expenseController = new ExpenseController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $expenseController->index();
+                break;
+            case 'show':
+                $expenseController->show();
+                break;
+            case 'create':
+                $expenseController->create();
+                break;
+            case 'store':
+                $expenseController->store();
+                break;
+            case 'edit':
+                $expenseController->edit();
+                break;
+            case 'update':
+                $expenseController->update();
+                break;
+            case 'delete':
+                $expenseController->delete();
+                break;
+            case 'approve':
+                $expenseController->approve();
+                break;
+            case 'reject':
+                $expenseController->reject();
+                break;
+            default:
+                $expenseController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
     // DEFAULT: DASHBOARD
     // ==========================================================================
+    // ==========================================================================
+    // MODULE: VEHICLES (Quản lý Xe)
+    // ==========================================================================
+    case 'vehicles':
+        require_once CONTROLLERS_PATH . '/admin/VehicleController.php';
+        $vehicleController = new VehicleController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $vehicleController->index();
+                break;
+            case 'create':
+                $vehicleController->create();
+                break;
+            case 'store':
+                $vehicleController->store();
+                break;
+            case 'show':
+                $vehicleController->show();
+                break;
+            case 'edit':
+                $vehicleController->edit();
+                break;
+            case 'update':
+                $vehicleController->update();
+                break;
+            case 'delete':
+                $vehicleController->delete();
+                break;
+            default:
+                $vehicleController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: DRIVERS (Quản lý Tài xế)
+    // ==========================================================================
+    case 'drivers':
+        require_once CONTROLLERS_PATH . '/admin/DriverController.php';
+        $driverController = new DriverController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $driverController->index();
+                break;
+            case 'create':
+                $driverController->create();
+                break;
+            case 'store':
+                $driverController->store();
+                break;
+            case 'show':
+                $driverController->show();
+                break;
+            case 'edit':
+                $driverController->edit();
+                break;
+            case 'update':
+                $driverController->update();
+                break;
+            case 'delete':
+                $driverController->delete();
+                break;
+            default:
+                $driverController->index();
+                break;
+        }
+        break;
+
+    // ==========================================================================
+    // MODULE: TOUR OPERATIONS (Quản lý Tour Đã Chốt)
+    // ==========================================================================
+    case 'tour-operations':
+        require_once CONTROLLERS_PATH . '/admin/TourOperationsController.php';
+        $operationsController = new TourOperationsController($pdo);
+
+        switch ($action) {
+            case 'index':
+                $operationsController->index();
+                break;
+            case 'show':
+                $operationsController->show();
+                break;
+            case 'assignGuide':
+                $operationsController->assignGuide();
+                break;
+            case 'assignVehicle':
+                $operationsController->assignVehicle();
+                break;
+            case 'autoAssignRooms':
+                $operationsController->autoAssignRooms();
+                break;
+            case 'createRoom':
+                $operationsController->createRoom();
+                break;
+            case 'updateRoom':
+                $operationsController->updateRoom();
+                break;
+            case 'assignCustomerToRoom':
+                $operationsController->assignCustomerToRoom();
+                break;
+            case 'removeCustomerFromRoom':
+                $operationsController->removeCustomerFromRoom();
+                break;
+            case 'updateStatus':
+                $operationsController->updateStatus();
+                break;
+            default:
+                $operationsController->index();
+                break;
+        }
+        break;
+
     default:
         require_once CONTROLLERS_PATH . '/DashboardController.php';
         $dashboardController = new DashboardController($pdo);

@@ -1,7 +1,7 @@
 <?php
 /**
  * ADMIN - CHỈNH SỬA LỊCH KHỞI HÀNH
- * Variables: $schedule, $tours, $guides
+ * Variables: $schedule, $tours
  */
 if (!is_admin())
     redirect('?act=access-denied');
@@ -129,60 +129,6 @@ if (!is_admin())
                     </div>
                 </div>
 
-                <!-- Guide Assignment -->
-                <div>
-                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
-                        Hướng dẫn viên <span class="text-primary-400 text-xs">(Tùy chọn)</span>
-                    </label>
-                    <select name="guide_id" 
-                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-primary-50 text-primary-700 text-sm lg:text-base">
-                        <option value="">-- Chưa gán HDV --</option>
-                        <?php foreach ($guides as $g): ?>
-                            <option value="<?= $g['id'] ?>" 
-                                <?= ($schedule['guide_id'] ?? null) == $g['id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($g['full_name']) ?> 
-                                <?php if (!empty($g['phone'])): ?>
-                                    - <?= htmlspecialchars($g['phone']) ?>
-                                <?php endif; ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <?php if (!empty($schedule['guide_name'])): ?>
-                        <p class="mt-1 text-xs text-accent">
-                            HDV hiện tại: <strong><?= htmlspecialchars($schedule['guide_name']) ?></strong>
-                            <?php if (!empty($schedule['guide_phone'])): ?>
-                                (<?= htmlspecialchars($schedule['guide_phone']) ?>)
-                            <?php endif; ?>
-                        </p>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Guide Change Reason (only show if guide is being changed) -->
-                <div id="guide-change-reason-section" class="hidden">
-                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
-                        Lý do đổi HDV <span class="text-danger">*</span>
-                    </label>
-                    <select name="guide_change_reason" 
-                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-primary-50 text-primary-700 text-sm lg:text-base">
-                        <option value="">-- Chọn lý do --</option>
-                        <option value="HDV bận">HDV bận</option>
-                        <option value="HDV ốm">HDV ốm</option>
-                        <option value="HDV xin nghỉ">HDV xin nghỉ</option>
-                        <option value="Yêu cầu khách hàng">Yêu cầu khách hàng</option>
-                        <option value="Tối ưu phân công">Tối ưu phân công</option>
-                        <option value="Khác">Khác</option>
-                    </select>
-                    <p class="text-xs text-primary-500 mt-1">Vui lòng chọn lý do khi đổi HDV</p>
-                </div>
-
-                <!-- Guide Notes -->
-                <div>
-                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Ghi chú cho HDV</label>
-                    <textarea name="guide_notes" rows="3" 
-                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all bg-primary-50 placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
-                        placeholder="Ghi chú đặc biệt cho hướng dẫn viên..."><?= htmlspecialchars($schedule['guide_notes'] ?? '') ?></textarea>
-                </div>
-
                 <!-- Status -->
                 <div>
                     <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Trạng thái</label>
@@ -208,49 +154,6 @@ if (!is_admin())
                 </div>
             </div>
 
-            <!-- Guide Change History -->
-            <?php if (!empty($guide_history)): ?>
-                <div class="mt-4 lg:mt-6 border-t border-primary-100 pt-4 lg:pt-6">
-                    <h3 class="text-xs lg:text-sm font-semibold text-primary-700 mb-3 flex items-center gap-2">
-                        <i data-lucide="history" class="w-4 h-4 text-info-text"></i>
-                        Lịch sử thay đổi HDV
-                    </h3>
-                    <div class="space-y-2 max-h-48 overflow-y-auto">
-                        <?php foreach ($guide_history as $h): ?>
-                            <div class="bg-primary-50 p-3 rounded-2xl border border-primary-100 text-xs lg:text-sm">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <div class="font-semibold text-primary-700">
-                                            <?php if ($h['old_guide_name'] && $h['new_guide_name']): ?>
-                                                <span class="text-danger-text"><?= htmlspecialchars($h['old_guide_name']) ?></span>
-                                                <span class="mx-2">→</span>
-                                                <span class="text-success-text"><?= htmlspecialchars($h['new_guide_name']) ?></span>
-                                            <?php elseif ($h['new_guide_name']): ?>
-                                                Gán: <span class="text-success-text"><?= htmlspecialchars($h['new_guide_name']) ?></span>
-                                            <?php else: ?>
-                                                Hủy gán: <span class="text-red-600"><?= htmlspecialchars($h['old_guide_name']) ?></span>
-                                            <?php endif; ?>
-                                        </div>
-                                        <?php if ($h['reason']): ?>
-                                            <div class="text-xs text-gray-600 mt-1">Lý do: <?= htmlspecialchars($h['reason']) ?></div>
-                                        <?php endif; ?>
-                                        <?php if ($h['notes']): ?>
-                                            <div class="text-xs text-gray-500 mt-1"><?= htmlspecialchars($h['notes']) ?></div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="text-xs text-gray-500 text-right">
-                                        <div><?= date('d/m/Y H:i', strtotime($h['created_at'])) ?></div>
-                                        <?php if ($h['changed_by_name']): ?>
-                                            <div class="text-gray-400">bởi <?= htmlspecialchars($h['changed_by_name']) ?></div>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
-
             <div class="mt-8 flex items-center justify-end gap-3">
                 <a href="?act=admin&module=schedules" 
                     class="px-4 lg:px-5 py-2 lg:py-2.5 border border-primary-200 rounded-xl text-primary-700 hover:bg-primary-50 font-medium transition-colors">
@@ -269,9 +172,6 @@ if (!is_admin())
     const quotaInput = document.getElementById('quota-input');
     const quotaWarning = document.getElementById('quota-warning');
     const bookedCount = <?= $schedule['booked'] ?? 0 ?>;
-    const guideSelect = document.querySelector('select[name="guide_id"]');
-    const guideChangeReasonSection = document.getElementById('guide-change-reason-section');
-    const currentGuideId = <?= $schedule['guide_id'] ?? 'null' ?>;
 
     quotaInput.addEventListener('input', function() {
         const quota = parseInt(quotaInput.value) || 0;
@@ -283,22 +183,6 @@ if (!is_admin())
         } else {
             quotaWarning.classList.add('hidden');
             quotaInput.setCustomValidity('');
-        }
-    });
-
-    // Show/hide guide change reason when guide changes
-    guideSelect.addEventListener('change', function() {
-        const newGuideId = this.value ? parseInt(this.value) : null;
-        const isChanging = (currentGuideId && newGuideId && newGuideId != currentGuideId) || 
-                          (currentGuideId && !newGuideId) || 
-                          (!currentGuideId && newGuideId);
-        
-        if (isChanging) {
-            guideChangeReasonSection.classList.remove('hidden');
-            guideChangeReasonSection.querySelector('select').required = true;
-        } else {
-            guideChangeReasonSection.classList.add('hidden');
-            guideChangeReasonSection.querySelector('select').required = false;
         }
     });
 

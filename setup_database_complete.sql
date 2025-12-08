@@ -827,17 +827,19 @@ CREATE TABLE IF NOT EXISTS `service_provider_payment_details` (
 -- MODULE 7: OPERATIONS
 -- ==============================================================================
 
--- Tour Assignments
+-- Tour Assignments (ĐÃ SỬA - thêm previous_guide_id và change_reason)
 CREATE TABLE IF NOT EXISTS `tour_assignments` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `tour_schedule_id` int DEFAULT NULL,
+  `tour_schedule_id` int NOT NULL COMMENT 'Bắt buộc - tour schedule nào',
   `booking_id` int DEFAULT NULL,
   `guide_id` int NOT NULL,
+  `previous_guide_id` int DEFAULT NULL COMMENT 'HDV trước đó (khi thay đổi)',
   `assignment_date` date NOT NULL,
-  `salary_amount` decimal(15,2) DEFAULT NULL,
+  `salary_amount` decimal(15,2) DEFAULT NULL COMMENT 'Phụ cấp tour (tự động từ tour_allowance_rules)',
   `salary_status` enum('pending','paid') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
   `paid_date` date DEFAULT NULL,
   `notes` text COLLATE utf8mb4_unicode_ci,
+  `change_reason` text COLLATE utf8mb4_unicode_ci COMMENT 'Lý do thay đổi HDV (khi thay đổi từ HDV cũ sang HDV mới)',
   `status` enum('assigned','in_progress','completed','cancelled') COLLATE utf8mb4_unicode_ci DEFAULT 'assigned',
   `created_by` int DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -846,9 +848,12 @@ CREATE TABLE IF NOT EXISTS `tour_assignments` (
   KEY `idx_tour_assignments_schedule` (`tour_schedule_id`),
   KEY `idx_tour_assignments_booking_id` (`booking_id`),
   KEY `idx_tour_assignments_guide_id` (`guide_id`),
+  KEY `idx_tour_assignments_previous_guide` (`previous_guide_id`),
   CONSTRAINT `tour_assignments_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`),
   CONSTRAINT `tour_assignments_ibfk_2` FOREIGN KEY (`guide_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `tour_assignments_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `tour_assignments_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `tour_assignments_ibfk_previous_guide` FOREIGN KEY (`previous_guide_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `tour_assignments_ibfk_schedule` FOREIGN KEY (`tour_schedule_id`) REFERENCES `tour_schedules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Journals (link với tour_schedule_id - theo tour, booking_id giữ lại để backward compatible)

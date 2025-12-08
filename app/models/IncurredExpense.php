@@ -26,41 +26,47 @@ class IncurredExpense
      */
     public function getByScheduleId($schedule_id)
     {
-        // Lấy tour_schedule info một lần
-        $scheduleStmt = $this->pdo->prepare("SELECT tour_id, start_date FROM tour_schedules WHERE id = ?");
-        $scheduleStmt->execute([$schedule_id]);
-        $schedule = $scheduleStmt->fetch(PDO::FETCH_ASSOC);
+        try {
+            // Lấy tour_schedule info một lần
+            $scheduleStmt = $this->pdo->prepare("SELECT tour_id, start_date FROM tour_schedules WHERE id = ?");
+            $scheduleStmt->execute([$schedule_id]);
+            $schedule = $scheduleStmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$schedule) {
+            if (!$schedule) {
+                return [];
+            }
+
+            // Query đơn giản: check tour_schedule_id trực tiếp hoặc từ booking
+            // Ưu tiên: tour_schedule_id trực tiếp > booking.tour_schedule_id > tour_id + start_date
+            $sql = "SELECT DISTINCT ie.*, 
+                           b.booking_code,
+                           u1.full_name as reported_by_name,
+                           u2.full_name as approved_by_name
+                    FROM incurred_expenses ie
+                    LEFT JOIN bookings b ON ie.booking_id = b.id
+                    LEFT JOIN users u1 ON ie.reported_by = u1.id
+                    LEFT JOIN users u2 ON ie.approved_by = u2.id
+                    WHERE (ie.tour_schedule_id = :schedule_id1
+                       OR (ie.tour_schedule_id IS NULL 
+                           AND b.tour_schedule_id = :schedule_id2)
+                       OR (ie.tour_schedule_id IS NULL 
+                           AND b.tour_schedule_id IS NULL
+                           AND b.tour_id = :tour_id
+                           AND b.start_date = :start_date))
+                    ORDER BY ie.expense_date DESC, ie.created_at DESC";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                'schedule_id1' => $schedule_id,
+                'schedule_id2' => $schedule_id,
+                'tour_id' => $schedule['tour_id'],
+                'start_date' => $schedule['start_date']
+            ]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            error_log("IncurredExpense::getByScheduleId() Error: " . $e->getMessage());
             return [];
         }
-
-        // Query đơn giản: check tour_schedule_id trực tiếp hoặc từ booking
-        $sql = "SELECT DISTINCT ie.*, 
-                       b.booking_code,
-                       u1.full_name as reported_by_name,
-                       u2.full_name as approved_by_name
-                FROM incurred_expenses ie
-                LEFT JOIN bookings b ON ie.booking_id = b.id
-                LEFT JOIN users u1 ON ie.reported_by = u1.id
-                LEFT JOIN users u2 ON ie.approved_by = u2.id
-                WHERE ie.tour_schedule_id = :schedule_id1
-                   OR (ie.tour_schedule_id IS NULL 
-                       AND b.tour_schedule_id = :schedule_id2)
-                   OR (ie.tour_schedule_id IS NULL 
-                       AND b.tour_schedule_id IS NULL
-                       AND b.tour_id = :tour_id
-                       AND b.start_date = :start_date)
-                ORDER BY ie.expense_date DESC, ie.created_at DESC";
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            'schedule_id1' => $schedule_id,
-            'schedule_id2' => $schedule_id,
-            'tour_id' => $schedule['tour_id'],
-            'start_date' => $schedule['start_date']
-        ]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -110,16 +116,17 @@ class IncurredExpense
     public function create($data)
     {
         $sql = "INSERT INTO incurred_expenses (
-                    booking_id, expense_date, category, description, amount, 
+                    booking_id, tour_schedule_id, expense_date, category, description, amount, 
                     receipt_file, reported_by, notes
                 ) VALUES (
-                    :booking_id, :expense_date, :category, :description, :amount,
+                    :booking_id, :tour_schedule_id, :expense_date, :category, :description, :amount,
                     :receipt_file, :reported_by, :notes
                 )";
 
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
-            'booking_id' => $data['booking_id'],
+            'booking_id' => $data['booking_id'] ?? null,
+            'tour_schedule_id' => $data['tour_schedule_id'] ?? null,
             'expense_date' => $data['expense_date'],
             'category' => $data['category'] ?? null,
             'description' => $data['description'],

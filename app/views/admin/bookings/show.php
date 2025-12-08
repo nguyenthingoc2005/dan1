@@ -502,30 +502,70 @@ $statusTexts = [
 <div id="discountModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
     <div class="bg-white rounded-lg w-full max-w-md p-6">
         <h3 class="text-lg font-bold mb-4">Áp dụng mã giảm giá</h3>
-        <form action="?act=admin&module=bookings&action=applyDiscount" method="POST">
+        <form action="?act=admin&module=bookings&action=applyDiscount" method="POST" id="discountForm">
             <?= csrf_field() ?>
             <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium mb-1">Mã giảm giá (Tùy chọn)</label>
-                    <input type="text" name="discount_code" 
-                        value="<?= htmlspecialchars($booking['discount_code'] ?? '') ?>"
-                        placeholder="Nhập mã giảm giá (nếu có)"
-                        class="w-full px-3 py-2 border rounded">
-                    <p class="text-xs text-gray-500 mt-1">Có thể để trống nếu chỉ giảm trực tiếp</p>
+                    <label class="block text-sm font-medium mb-1">Mã giảm giá</label>
+                    <select name="discount_code" id="discount_code_select"
+                        class="w-full px-3 py-2 border rounded"
+                        onchange="handleDiscountCodeSelect()">
+                        <option value="">-- Không có mã giảm giá (Tính tiền gốc) --</option>
+                        <?php if (!empty($availableDiscountCodes)): ?>
+                            <?php foreach ($availableDiscountCodes as $dc): ?>
+                                <option value="<?= htmlspecialchars($dc['code']) ?>"
+                                    data-type="<?= $dc['discount_type'] ?>"
+                                    data-value="<?= $dc['discount_value'] ?>"
+                                    data-min="<?= $dc['min_purchase'] ?>"
+                                    <?= ($booking['discount_code'] ?? '') == $dc['code'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($dc['code']) ?> - 
+                                    <?php if ($dc['discount_type'] === 'percentage'): ?>
+                                        Giảm <?= number_format($dc['discount_value'], 0) ?>%
+                                    <?php else: ?>
+                                        Giảm <?= format_currency($dc['discount_value']) ?>
+                                    <?php endif; ?>
+                                    <?php if ($dc['min_purchase'] > 0): ?>
+                                        (Tối thiểu: <?= format_currency($dc['min_purchase']) ?>)
+                                    <?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Chọn mã giảm giá từ danh sách có sẵn trên hệ thống</p>
+                    <div id="discount_code_info" class="mt-2 hidden">
+                        <div id="discount_code_message" class="text-xs p-2 rounded"></div>
+                    </div>
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium mb-1">Số tiền giảm (VNĐ) <span class="text-red-500">*</span></label>
-                    <input type="number" name="discount_amount" 
+                    <label class="block text-sm font-medium mb-1">Số tiền giảm (VNĐ)</label>
+                    <input type="number" name="discount_amount" id="discount_amount_input"
                         value="<?= $booking['discount_amount'] ?? 0 ?>"
                         min="0" max="<?= $booking['total_amount'] ?>"
                         step="1000"
-                        class="w-full px-3 py-2 border rounded" required>
+                        class="w-full px-3 py-2 border rounded"
+                        oninput="updateFinalAmount()">
                     <p class="text-xs text-gray-500 mt-1">
-                        Tối đa: <?= format_currency($booking['total_amount']) ?>
+                        Số tiền tự động tính từ mã giảm giá (có thể chỉnh sửa thủ công)
                     </p>
+                    <p class="text-xs text-primary-600 mt-1" id="discount_amount_note"></p>
+                </div>
+
+                <div class="bg-primary-50 p-3 rounded border border-primary-200">
+                    <div class="flex justify-between text-sm">
+                        <span class="font-semibold">Tổng tiền tour:</span>
+                        <span id="total_amount_display"><?= format_currency($booking['total_amount']) ?></span>
+                    </div>
+                    <div class="flex justify-between text-sm mt-1 text-success-text">
+                        <span>Giảm giá:</span>
+                        <span id="discount_display">-<?= format_currency($booking['discount_amount'] ?? 0) ?></span>
+                    </div>
+                    <div class="flex justify-between text-base font-bold mt-2 pt-2 border-t border-primary-200">
+                        <span>Thành tiền:</span>
+                        <span id="final_amount_display" class="text-accent"><?= format_currency($booking['final_amount']) ?></span>
+                    </div>
                 </div>
             </div>
             
@@ -539,6 +579,109 @@ $statusTexts = [
         </form>
     </div>
 </div>
+
+<script>
+    const totalAmount = <?= $booking['total_amount'] ?>;
+    let discountCodeValidated = false;
+    let autoCalculatedAmount = 0;
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    }
+
+    function handleDiscountCodeSelect() {
+        const select = document.getElementById('discount_code_select');
+        const amountInput = document.getElementById('discount_amount_input');
+        const infoDiv = document.getElementById('discount_code_info');
+        const messageDiv = document.getElementById('discount_code_message');
+        const noteDiv = document.getElementById('discount_amount_note');
+        const selectedOption = select.options[select.selectedIndex];
+        
+        if (!selectedOption.value) {
+            // Không chọn mã -> không giảm gì, tính tiền gốc
+            infoDiv.classList.add('hidden');
+            amountInput.value = 0;
+            noteDiv.textContent = 'Không có mã giảm giá - Tính tiền gốc';
+            noteDiv.className = 'text-xs text-gray-600 mt-1';
+            discountCodeValidated = false;
+            autoCalculatedAmount = 0;
+            updateFinalAmount();
+            return;
+        }
+
+        // Lấy thông tin từ data attributes
+        const discountType = selectedOption.dataset.type;
+        const discountValue = parseFloat(selectedOption.dataset.value);
+        const minPurchase = parseFloat(selectedOption.dataset.min || 0);
+
+        // Check min purchase
+        if (minPurchase > 0 && totalAmount < minPurchase) {
+            infoDiv.classList.remove('hidden');
+            messageDiv.className = 'text-xs p-2 rounded bg-danger-bg text-danger-text';
+            messageDiv.textContent = `✗ Đơn hàng phải có giá trị tối thiểu ${formatCurrency(minPurchase)} để sử dụng mã này`;
+            amountInput.value = 0;
+            discountCodeValidated = false;
+            autoCalculatedAmount = 0;
+            noteDiv.textContent = 'Mã không đủ điều kiện - Không được giảm giá';
+            noteDiv.className = 'text-xs text-danger-text mt-1';
+            updateFinalAmount();
+            return;
+        }
+
+        // Calculate discount
+        let calculatedAmount = 0;
+        if (discountType === 'percentage') {
+            calculatedAmount = Math.round(totalAmount * (discountValue / 100));
+        } else {
+            calculatedAmount = Math.min(discountValue, totalAmount);
+        }
+
+        // Set giá trị
+        amountInput.value = calculatedAmount;
+        autoCalculatedAmount = calculatedAmount;
+        discountCodeValidated = true;
+        
+        // Hiển thị thông báo thành công
+        infoDiv.classList.remove('hidden');
+        messageDiv.className = 'text-xs p-2 rounded bg-success-bg text-success-text';
+        messageDiv.textContent = `✓ Mã hợp lệ! Giảm ${formatCurrency(calculatedAmount)}`;
+        noteDiv.textContent = 'Số tiền tự động tính từ mã giảm giá (có thể chỉnh sửa thủ công)';
+        noteDiv.className = 'text-xs text-success-text mt-1';
+        
+        updateFinalAmount();
+    }
+
+    function updateDiscountAmount() {
+        // Cho phép chỉnh sửa số tiền thủ công sau khi đã chọn mã
+        updateFinalAmount();
+    }
+
+    function updateFinalAmount() {
+        const amountInput = document.getElementById('discount_amount_input');
+        const discountAmount = parseFloat(amountInput.value) || 0;
+        const finalAmount = Math.max(0, totalAmount - discountAmount);
+        
+        document.getElementById('discount_display').textContent = '-' + formatCurrency(discountAmount);
+        document.getElementById('final_amount_display').textContent = formatCurrency(finalAmount);
+    }
+
+    // Initialize discount modal
+    function initializeDiscountModal() {
+        const select = document.getElementById('discount_code_select');
+        const amountInput = document.getElementById('discount_amount_input');
+        
+        // Nếu đã có mã được chọn -> tính toán ngay
+        if (select && select.value) {
+            handleDiscountCodeSelect();
+        } else {
+            // Không có mã -> set về 0
+            if (amountInput) {
+                amountInput.value = 0;
+            }
+            updateFinalAmount();
+        }
+    }
+</script>
 
 <!-- 3. Cancel Modal -->
 <div id="cancelModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
@@ -737,6 +880,10 @@ $statusTexts = [
 <script>
     function openModal(id) {
         document.getElementById(id).classList.remove('hidden');
+        // Initialize discount modal khi mở
+        if (id === 'discountModal') {
+            setTimeout(initializeDiscountModal, 100);
+        }
     }
     function closeModal(id) {
         document.getElementById(id).classList.add('hidden');

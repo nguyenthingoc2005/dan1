@@ -201,7 +201,7 @@ $policy_type_names = [
         </div>
         <div class="p-4 lg:p-6 border-t border-primary-100 flex justify-end">
             <button type="button" onclick="closePreviewPolicyModal()"
-                class="px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-600 text-white rounded-xl hover:opacity-90 font-semibold transition-all text-sm lg:text-base">
+                class="px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base">
                 Đóng
             </button>
         </div>
@@ -411,7 +411,7 @@ $policy_type_names = [
             .then(data => {
                 if (data.success) {
                     document.getElementById('preview-policy-title').textContent = data.data.name;
-                    document.getElementById('preview-policy-content').textContent = data.data.content;
+                    document.getElementById('preview-policy-content').innerHTML = data.data.content;
                     document.getElementById('preview-policy-modal').classList.remove('hidden');
                 }
             });

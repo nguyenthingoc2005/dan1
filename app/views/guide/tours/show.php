@@ -27,57 +27,57 @@
         <!-- Sticky Navigation Menu -->
         <div class="sticky top-0 bg-panel border-b border-primary-100 z-10 mb-6 -mx-4 lg:-mx-8 px-4 lg:px-8 py-3">
             <div class="flex gap-2 overflow-x-auto">
-                <button data-tab="tour-info"
-                    class="nav-section-link px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white font-semibold hover:opacity-90 transition-colors text-xs lg:text-sm">
+                <?php
+                $active_tab = $_GET['tab'] ?? 'tour-info';
+                $base_url = "?act=guide-tours&action=show&id=" . $schedule['id'];
+                ?>
+                <a href="<?= $base_url ?>&tab=tour-info"
+                    class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap font-semibold transition-colors text-xs lg:text-sm <?= $active_tab === 'tour-info' ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200' ?>">
                     <i data-lucide="file-text" class="w-4 h-4 inline mr-1"></i>
                     Thông tin Tour
-                </button>
+                </a>
                 <?php if ($can_checkin || !empty($checkin_passengers)): ?>
-                    <button data-tab="checkin"
-                        class="nav-section-link px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors text-xs lg:text-sm">
+                    <a href="<?= $base_url ?>&tab=checkin"
+                        class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap font-semibold transition-colors text-xs lg:text-sm <?= $active_tab === 'checkin' ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200' ?>">
                         <i data-lucide="check-circle" class="w-4 h-4 inline mr-1"></i>
                         Check-in
-                    </button>
+                    </a>
                 <?php endif; ?>
-                <button data-tab="expenses"
-                    class="nav-section-link px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors text-xs lg:text-sm">
+                <a href="<?= $base_url ?>&tab=expenses"
+                    class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap font-semibold transition-colors text-xs lg:text-sm <?= $active_tab === 'expenses' ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200' ?>">
                     <i data-lucide="dollar-sign" class="w-4 h-4 inline mr-1"></i>
                     Chi phí phát sinh
-                </button>
-                <button data-tab="journals"
-                    class="nav-section-link px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors text-xs lg:text-sm">
+                </a>
+                <a href="<?= $base_url ?>&tab=journals"
+                    class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap font-semibold transition-colors text-xs lg:text-sm <?= $active_tab === 'journals' ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200' ?>">
                     <i data-lucide="book-open" class="w-4 h-4 inline mr-1"></i>
                     Nhật ký tour
-                </button>
-                <button data-tab="services"
-                    class="nav-section-link px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors text-xs lg:text-sm">
+                </a>
+                <a href="<?= $base_url ?>&tab=services"
+                    class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap font-semibold transition-colors text-xs lg:text-sm <?= $active_tab === 'services' ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200' ?>">
                     <i data-lucide="briefcase" class="w-4 h-4 inline mr-1"></i>
-                    Dịch vụ (<?= count($bookingServices ?? []) ?>)
-                </button>
-                <button data-tab="passengers"
-                    class="nav-section-link px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors text-xs lg:text-sm">
+                    Dịch vụ
+                </a>
+                <a href="<?= $base_url ?>&tab=passengers"
+                    class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap font-semibold transition-colors text-xs lg:text-sm <?= $active_tab === 'passengers' ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200' ?>">
                     <i data-lucide="users" class="w-4 h-4 inline mr-1"></i>
-                    Hành khách (<?= count($passengers ?? []) ?>)
-                </button>
-                <?php if (!empty($room_assignments)): ?>
-                    <button data-tab="rooms"
-                        class="nav-section-link px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors text-xs lg:text-sm">
-                        <i data-lucide="home" class="w-4 h-4 inline mr-1"></i>
-                        Phân phòng
-                    </button>
-                <?php endif; ?>
-                <?php if (!empty($vehicle_assignments)): ?>
-                    <button data-tab="vehicles"
-                        class="nav-section-link px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors text-xs lg:text-sm">
-                        <i data-lucide="car" class="w-4 h-4 inline mr-1"></i>
-                        Xe & Tài xế
-                    </button>
-                <?php endif; ?>
+                    Hành khách
+                </a>
+                <a href="<?= $base_url ?>&tab=rooms"
+                    class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap font-semibold transition-colors text-xs lg:text-sm <?= $active_tab === 'rooms' ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200' ?>">
+                    <i data-lucide="home" class="w-4 h-4 inline mr-1"></i>
+                    Phân phòng
+                </a>
+                <a href="<?= $base_url ?>&tab=vehicles"
+                    class="px-3 lg:px-4 py-2 rounded-xl whitespace-nowrap font-semibold transition-colors text-xs lg:text-sm <?= $active_tab === 'vehicles' ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white' : 'bg-primary-100 text-primary-700 hover:bg-primary-200' ?>">
+                    <i data-lucide="car" class="w-4 h-4 inline mr-1"></i>
+                    Xe & Tài xế
+                </a>
             </div>
         </div>
 
-        <!-- Section: Thông tin Tour -->
-        <div id="section-tour-info" class="tab-component hidden">
+        <!-- Render content based on active tab -->
+        <?php if ($active_tab === 'tour-info'): ?>
             <!-- Basic Info - Responsive -->
             <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
                 <h2 class="text-base lg:text-lg font-bold text-primary-700 mb-4 lg:mb-6">Thông tin chuyến đi</h2>
@@ -86,13 +86,15 @@
                         <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Ngày khởi hành
                         </div>
                         <div class="font-semibold text-primary-700 text-sm lg:text-base">
-                            <?= date('d/m/Y', strtotime($schedule['start_date'])) ?></div>
+                            <?= date('d/m/Y', strtotime($schedule['start_date'])) ?>
+                        </div>
                     </div>
                     <div>
                         <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Ngày kết thúc
                         </div>
                         <div class="font-semibold text-primary-700 text-sm lg:text-base">
-                            <?= date('d/m/Y', strtotime($schedule['end_date'])) ?></div>
+                            <?= date('d/m/Y', strtotime($schedule['end_date'])) ?>
+                        </div>
                     </div>
                     <div>
                         <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Thời lượng
@@ -111,7 +113,8 @@
                         <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Điểm khởi hành
                         </div>
                         <div class="font-semibold text-primary-700 text-sm lg:text-base">
-                            <?= htmlspecialchars($tour['departure_location'] ?? '-') ?></div>
+                            <?= htmlspecialchars($tour['departure_location'] ?? '-') ?>
+                        </div>
                     </div>
                     <div>
                         <div class="text-xs text-primary-500 uppercase tracking-wide mb-1 font-semibold">Loại tour</div>
@@ -203,7 +206,8 @@
                                 <!-- Day Description -->
                                 <?php if (!empty($day['description'])): ?>
                                     <div class="text-slate-600 text-sm leading-relaxed">
-                                        <?= nl2br(htmlspecialchars($day['description'])) ?></div>
+                                        <?= nl2br(htmlspecialchars($day['description'])) ?>
+                                    </div>
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
@@ -257,7 +261,8 @@
                                 </h3>
                                 <?php if (!empty($policy['description'])): ?>
                                     <p class="text-slate-600 text-sm leading-relaxed">
-                                        <?= nl2br(htmlspecialchars($policy['description'])) ?></p>
+                                        <?= nl2br(htmlspecialchars($policy['description'])) ?>
+                                    </p>
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
@@ -265,9 +270,9 @@
                 </div>
             <?php endif; ?>
 
+        <?php elseif ($active_tab === 'checkin'): ?>
             <!-- Section: Check-in -->
-            <div id="section-checkin"
-                class="tab-component hidden bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
+            <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
                     <h2 class="text-base lg:text-lg font-bold text-primary-700">Check-in Hành khách</h2>
                     <?php if ($can_checkin): ?>
@@ -318,7 +323,8 @@
                                     <tr class="border-b border-primary-50 hover:bg-primary-50/50">
                                         <td class="px-3 py-2 text-primary-700"><?= htmlspecialchars($p['full_name']) ?></td>
                                         <td class="px-3 py-2 text-primary-500 text-xs">
-                                            <?= htmlspecialchars($p['booking_code']) ?></td>
+                                            <?= htmlspecialchars($p['booking_code']) ?>
+                                        </td>
                                         <td class="px-3 py-2">
                                             <?php
                                             $status_map = ['present' => 'Có mặt', 'absent' => 'Vắng mặt', 'late' => 'Muộn'];
@@ -362,15 +368,16 @@
                             </a>
                         <?php else: ?>
                             <p class="text-xs text-primary-400">Tour chưa bắt đầu. Chỉ có thể check-in từ ngày
-                                <?= date('d/m/Y', strtotime($schedule['start_date'])) ?> trở đi.</p>
+                                <?= date('d/m/Y', strtotime($schedule['start_date'])) ?> trở đi.
+                            </p>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>
 
-            <!-- Section: Chi phí phát sinh (Summary) -->
-            <div id="section-expenses"
-                class="tab-component hidden bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
+        <?php elseif ($active_tab === 'expenses'): ?>
+            <!-- Section: Chi phí phát sinh -->
+            <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                     <h2 class="text-base lg:text-lg font-bold text-primary-700">Chi phí phát sinh</h2>
                     <div class="flex gap-2">
@@ -401,12 +408,14 @@
                             <div class="flex items-center justify-between p-2 bg-primary-50 rounded-lg">
                                 <div class="flex-1">
                                     <div class="text-sm font-semibold text-primary-700">
-                                        <?= htmlspecialchars($exp['description']) ?></div>
+                                        <?= htmlspecialchars($exp['description']) ?>
+                                    </div>
                                     <div class="text-xs text-primary-500"><?= date('d/m/Y', strtotime($exp['expense_date'])) ?>
                                     </div>
                                 </div>
                                 <div class="text-sm font-semibold text-primary-700">
-                                    <?= number_format($exp['amount'], 0, ',', '.') ?> VNĐ</div>
+                                    <?= number_format($exp['amount'], 0, ',', '.') ?> VNĐ
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -429,15 +438,16 @@
                             </a>
                         <?php else: ?>
                             <p class="text-xs text-primary-400">Tour chưa bắt đầu. Chỉ có thể thêm chi phí từ ngày
-                                <?= date('d/m/Y', strtotime($schedule['start_date'])) ?> trở đi.</p>
+                                <?= date('d/m/Y', strtotime($schedule['start_date'])) ?> trở đi.
+                            </p>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>
 
-            <!-- Section: Nhật ký tour (Summary) -->
-            <div id="section-journals"
-                class="tab-component hidden bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
+        <?php elseif ($active_tab === 'journals'): ?>
+            <!-- Section: Nhật ký tour -->
+            <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                     <h2 class="text-base lg:text-lg font-bold text-primary-700">Nhật ký Tour</h2>
                     <div class="flex gap-2">
@@ -468,11 +478,12 @@
                                 </div>
                                 <?php if (!empty($journal['content'])): ?>
                                     <p class="text-sm text-primary-700 line-clamp-2 mb-2">
-                                        <?= strip_tags(substr($journal['content'], 0, 150)) ?>...</p>
+                                        <?= strip_tags(substr($journal['content'], 0, 150)) ?>...
+                                    </p>
                                 <?php endif; ?>
                                 <?php if (!empty($journal['images']) && count($journal['images']) > 0): ?>
                                     <div class="flex gap-2 mb-2">
-                                        <img src="<?= BASE_URL ?>/public/<?= htmlspecialchars($journal['images'][0]['image_url']) ?>"
+                                        <img src="<?= (defined('BASE_URL') ? BASE_URL : '') ?>/public/<?= htmlspecialchars($journal['images'][0]['image_url']) ?>"
                                             alt="" class="w-16 h-16 object-cover rounded">
                                         <?php if (count($journal['images']) > 1): ?>
                                             <div
@@ -506,14 +517,16 @@
                             </a>
                         <?php else: ?>
                             <p class="text-xs text-primary-400">Tour chưa bắt đầu. Chỉ có thể viết nhật ký từ ngày
-                                <?= date('d/m/Y', strtotime($schedule['start_date'])) ?> trở đi.</p>
+                                <?= date('d/m/Y', strtotime($schedule['start_date'])) ?> trở đi.
+                            </p>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>
 
+        <?php elseif ($active_tab === 'services'): ?>
             <!-- Section: Dịch vụ -->
-            <div id="section-services" class="tab-component hidden space-y-8 mb-8">
+            <div class="space-y-8 mb-8">
                 <!-- Dịch vụ đã đặt thực tế (Booking Services) -->
                 <?php if (!empty($bookingServices)): ?>
                     <div class="bg-panel rounded p-6">
@@ -572,7 +585,7 @@
                                                             </div>
                                                             <?php if (!empty($service['quantity']) && $service['quantity'] > 1): ?>
                                                                 <div class="text-xs text-slate-500">
-                                                                    <?= $service['quantity'] ?>                     <?= $service['unit'] ?? '' ?>
+                                                                    <?= $service['quantity'] ?>                         <?= $service['unit'] ?? '' ?>
                                                                     × <?= number_format($service['unit_price'] ?? 0) ?> VNĐ
                                                                 </div>
                                                             <?php endif; ?>
@@ -631,7 +644,7 @@
                                                             </div>
                                                             <?php if (!empty($service['quantity']) && $service['quantity'] > 1): ?>
                                                                 <div class="text-xs text-slate-500">
-                                                                    × <?= $service['quantity'] ?>                     <?= $service['unit'] ?? '' ?>
+                                                                    × <?= $service['quantity'] ?>                         <?= $service['unit'] ?? '' ?>
                                                                 </div>
                                                             <?php endif; ?>
                                                         </div>
@@ -667,8 +680,9 @@
                 <?php endif; ?>
             </div>
 
+        <?php elseif ($active_tab === 'passengers'): ?>
             <!-- Section: Hành khách -->
-            <div id="section-passengers" class="tab-component hidden">
+            <div>
                 <div class="bg-panel rounded p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-lg font-bold text-slate-800">Danh sách hành khách</h2>
@@ -753,9 +767,10 @@
                 </div>
             </div>
 
+        <?php elseif ($active_tab === 'rooms'): ?>
             <!-- Section: Phân phòng -->
             <?php if (!empty($room_assignments)): ?>
-                <div id="section-rooms" class="tab-component hidden space-y-4 lg:space-y-8 mb-6 lg:mb-8">
+                <div class="space-y-4 lg:space-y-8 mb-6 lg:mb-8">
                     <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
                         <h2 class="text-base lg:text-lg font-bold text-primary-700 mb-4 lg:mb-6">Phân phòng</h2>
                         <div class="space-y-4">
@@ -802,11 +817,18 @@
                         </div>
                     </div>
                 </div>
+            <?php else: ?>
+                <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
+                    <div class="text-center py-8">
+                        <p class="text-primary-500 text-sm">Chưa có thông tin phân phòng cho tour này.</p>
+                    </div>
+                </div>
             <?php endif; ?>
 
+        <?php elseif ($active_tab === 'vehicles'): ?>
             <!-- Section: Xe & Tài xế -->
             <?php if (!empty($vehicle_assignments)): ?>
-                <div id="section-vehicles" class="tab-component hidden space-y-4 lg:space-y-8 mb-6 lg:mb-8">
+                <div class="space-y-4 lg:space-y-8 mb-6 lg:mb-8">
                     <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
                         <h2 class="text-base lg:text-lg font-bold text-primary-700 mb-4 lg:mb-6">Xe và Tài xế</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -855,96 +877,14 @@
                             <?php endforeach; ?>
                         </div>
                     </div>
-                <?php endif; ?>
-            </div>
+                </div>
+            <?php else: ?>
+                <div class="bg-panel rounded-2xl shadow-sm border border-primary-100 p-4 lg:p-6">
+                    <h2 class="text-base lg:text-lg font-bold text-primary-700 mb-4 lg:mb-6">Xe và Tài xế</h2>
+                    <div class="text-center py-8">
+                        <p class="text-primary-500 text-sm">Chưa có thông tin xe và tài xế cho tour này.</p>
+                    </div>
+                </div>
+            <?php endif; ?>
 
-            <script>
-                // Map tab names to section IDs
-                const tabMap = {
-                    'tour-info': 'section-tour-info',
-                    'checkin': 'section-checkin',
-                    'expenses': 'section-expenses',
-                    'journals': 'section-journals',
-                    'services': 'section-services',
-                    'passengers': 'section-passengers',
-                    'rooms': 'section-rooms',
-                    'vehicles': 'section-vehicles'
-                };
-
-                // Show component và ẩn các component khác
-                function showComponent(tabName) {
-                    // Ẩn tất cả components
-                    document.querySelectorAll('.tab-component').forEach(component => {
-                        component.classList.add('hidden');
-                    });
-
-                    // Hiển thị component được chọn
-                    const sectionId = tabMap[tabName];
-                    if (sectionId) {
-                        const component = document.getElementById(sectionId);
-                        if (component) {
-                            component.classList.remove('hidden');
-
-                            // Scroll to top smoothly
-                            setTimeout(() => {
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }, 50);
-                        }
-                    }
-
-                    // Update active nav link
-                    document.querySelectorAll('.nav-section-link').forEach(link => {
-                        link.classList.remove('bg-gradient-to-r', 'from-accent-gradient-from', 'to-accent-gradient-to', 'text-white');
-                        link.classList.add('bg-primary-100', 'text-primary-700');
-                    });
-
-                    const activeLink = document.querySelector(`.nav-section-link[data-tab="${tabName}"]`);
-                    if (activeLink) {
-                        activeLink.classList.remove('bg-primary-100', 'text-primary-700');
-                        activeLink.classList.add('bg-gradient-to-r', 'from-accent-gradient-from', 'to-accent-gradient-to', 'text-white');
-                    }
-
-                    // Update URL without reload
-                    const url = new URL(window.location);
-                    url.searchParams.set('tab', tabName);
-                    window.history.pushState({}, '', url);
-
-                    // Re-initialize Lucide icons sau khi switch component
-                    if (typeof lucide !== 'undefined') {
-                        setTimeout(() => {
-                            lucide.createIcons();
-                        }, 100);
-                    }
-                }
-
-                // Đọc ?tab=xxx từ URL và hiển thị component tương ứng khi load page
-                document.addEventListener('DOMContentLoaded', () => {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const tab = urlParams.get('tab');
-
-                    if (tab && tabMap[tab]) {
-                        // Hiển thị component từ URL parameter
-                        showComponent(tab);
-                    } else {
-                        // Mặc định hiển thị "tour-info"
-                        showComponent('tour-info');
-                    }
-
-                    // Xử lý click nav links
-                    document.querySelectorAll('.nav-section-link').forEach(link => {
-                        link.addEventListener('click', function (e) {
-                            e.preventDefault();
-                            const tabName = this.getAttribute('data-tab');
-                            if (tabName) {
-                                showComponent(tabName);
-                            }
-                        });
-                    });
-
-                    // Re-initialize Lucide icons
-                    if (typeof lucide !== 'undefined') {
-                        lucide.createIcons();
-                    }
-                });
-
-            </script>
+        <?php endif; ?>

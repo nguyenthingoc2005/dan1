@@ -263,6 +263,7 @@ class ExpenseController
             // Create expense
             $data = [
                 'booking_id' => $booking_id,
+                'tour_schedule_id' => $schedule_id,
                 'expense_date' => sanitize($_POST['expense_date']),
                 'category' => !empty($_POST['category']) ? sanitize($_POST['category']) : null,
                 'description' => sanitize($_POST['description']),

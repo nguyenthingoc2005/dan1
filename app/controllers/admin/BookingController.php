@@ -439,6 +439,11 @@ class BookingController
         $customersResult = $this->customerModel->getAll([], 1, 1000);
         $availableCustomers = $customersResult['data'] ?? [];
 
+        // Get available discount codes
+        require_once 'app/models/DiscountCode.php';
+        $discountCodeModel = new DiscountCode($this->pdo);
+        $availableDiscountCodes = $discountCodeModel->getAllActive();
+
         $page_title = 'Chi tiết Booking: ' . $booking['booking_code'];
         $content_file = 'app/views/admin/bookings/show.php';
         require_once 'app/views/layouts/admin_layout.php';
@@ -530,8 +535,8 @@ class BookingController
 
             try {
                 $booking_id = $_POST['booking_id'] ?? null;
-                $discount_code = $_POST['discount_code'] ?? '';
-                $discount_amount = (float) ($_POST['discount_amount'] ?? 0);
+                $discount_code_input = trim($_POST['discount_code'] ?? '');
+                $discount_amount_input = !empty($_POST['discount_amount']) ? (float) $_POST['discount_amount'] : 0;
 
                 if (!$booking_id) {
                     throw new Exception("Booking ID không hợp lệ");
@@ -547,53 +552,176 @@ class BookingController
                     throw new Exception("Không thể áp dụng mã giảm giá cho booking đã hủy/từ chối");
                 }
 
-                // Validate discount amount
                 $total_amount = (float) $booking['total_amount'];
-                if ($discount_amount > $total_amount) {
-                    throw new Exception("Số tiền giảm giá không được lớn hơn tổng tiền tour (" . number_format($total_amount) . " đ)");
-                }
+                $old_discount_code = $booking['discount_code'] ?? null;
+                $old_discount_amount = (float) ($booking['discount_amount'] ?? 0);
 
-                if ($discount_amount < 0) {
-                    throw new Exception("Số tiền giảm giá không được âm");
+                // Load DiscountCode model
+                require_once 'app/models/DiscountCode.php';
+                $discountCodeModel = new DiscountCode($this->pdo);
+
+                $discount_code = null;
+                $discount_amount = 0;
+
+                // Nếu có chọn mã giảm giá
+                if (!empty($discount_code_input)) {
+                    // Validate mã giảm giá từ database
+                    $validation = $discountCodeModel->validateForBooking($discount_code_input, $total_amount, $booking_id);
+                    
+                    if (!$validation['valid']) {
+                        throw new Exception($validation['message']);
+                    }
+
+                    $discount_code = $discount_code_input;
+                    
+                    // Nếu có nhập số tiền thủ công -> dùng số tiền đó (nhưng phải validate)
+                    // Nếu không -> dùng số tiền tự động tính từ mã
+                    if ($discount_amount_input > 0) {
+                        // Validate số tiền nhập vào
+                        if ($discount_amount_input > $total_amount) {
+                            throw new Exception("Số tiền giảm giá không được lớn hơn tổng tiền tour (" . number_format($total_amount) . " đ)");
+                        }
+                        if ($discount_amount_input < 0) {
+                            throw new Exception("Số tiền giảm giá không được âm");
+                        }
+                        $discount_amount = $discount_amount_input;
+                    } else {
+                        // Dùng số tiền tự động tính từ mã
+                        $discount_amount = $validation['discount_amount'];
+                    }
+                } 
+                // Nếu không có mã -> không giảm gì, tính tiền gốc
+                else {
+                    $discount_code = null;
+                    $discount_amount = 0;
                 }
 
                 // Calculate new amounts
                 $new_final_amount = max(0, $total_amount - $discount_amount);
 
-                // Update booking (KHÔNG update remaining_amount ở đây)
-                // remaining_amount sẽ được tính lại bằng updatePaymentStatus() dựa trên payments thực tế
-                $sql = "UPDATE bookings SET 
-                        discount_code = :discount_code,
-                        discount_amount = :discount_amount,
-                        final_amount = :final_amount
-                        WHERE id = :id";
+                // Start transaction
+                $this->pdo->beginTransaction();
 
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute([
-                    'discount_code' => !empty($discount_code) ? sanitize($discount_code) : null,
-                    'discount_amount' => $discount_amount,
-                    'final_amount' => $new_final_amount,
-                    'id' => $booking_id
-                ]);
+                try {
+                    // Nếu đổi mã hoặc xóa mã -> giảm used_count của mã cũ
+                    if ($old_discount_code && $old_discount_code !== $discount_code) {
+                        $discountCodeModel->decrementUsage($old_discount_code);
+                    }
 
-                // Tính lại paid_amount và remaining_amount dựa trên payments thực tế
-                $this->bookingModel->updatePaymentStatus($booking_id);
+                    // Nếu có mã mới và khác mã cũ -> tăng used_count
+                    if ($discount_code && $discount_code !== $old_discount_code) {
+                        $discountCodeModel->incrementUsage($discount_code);
+                    }
 
-                // Log history
-                $this->bookingModel->logHistory(
-                    $booking_id,
-                    $booking['payment_status'],
-                    $booking['payment_status'],
-                    $_SESSION['user_id'] ?? null,
-                    "Áp dụng mã giảm giá: " . ($discount_code ?: 'Giảm trực tiếp') . " - " . number_format($discount_amount) . " đ"
-                );
+                    // Update booking
+                    $sql = "UPDATE bookings SET 
+                            discount_code = :discount_code,
+                            discount_amount = :discount_amount,
+                            final_amount = :final_amount
+                            WHERE id = :id";
 
-                set_success("Đã áp dụng mã giảm giá thành công!");
-                redirect("?act=admin&module=bookings&action=show&id=$booking_id");
+                    $stmt = $this->pdo->prepare($sql);
+                    $stmt->execute([
+                        'discount_code' => !empty($discount_code) ? sanitize($discount_code) : null,
+                        'discount_amount' => $discount_amount,
+                        'final_amount' => $new_final_amount,
+                        'id' => $booking_id
+                    ]);
+
+                    // Tính lại paid_amount và remaining_amount dựa trên payments thực tế
+                    $this->bookingModel->updatePaymentStatus($booking_id);
+
+                    // Log history
+                    if ($discount_code) {
+                        $logMessage = "Áp dụng mã giảm giá: {$discount_code} - " . number_format($discount_amount) . " đ";
+                        if ($old_discount_code && $old_discount_code !== $discount_code) {
+                            $logMessage = "Đổi mã giảm giá từ '{$old_discount_code}' sang '{$discount_code}' - " . number_format($discount_amount) . " đ";
+                        }
+                    } else {
+                        if ($old_discount_code) {
+                            $logMessage = "Xóa mã giảm giá '{$old_discount_code}' - Tính tiền gốc";
+                        } else {
+                            $logMessage = "Không có mã giảm giá - Tính tiền gốc";
+                        }
+                    }
+
+                    $this->bookingModel->logHistory(
+                        $booking_id,
+                        $booking['payment_status'],
+                        $booking['payment_status'],
+                        $_SESSION['user_id'] ?? null,
+                        $logMessage
+                    );
+
+                    $this->pdo->commit();
+
+                    set_success("Đã áp dụng mã giảm giá thành công!");
+                    redirect("?act=admin&module=bookings&action=show&id=$booking_id");
+
+                } catch (Exception $e) {
+                    $this->pdo->rollBack();
+                    throw $e;
+                }
 
             } catch (Exception $e) {
                 set_error("Lỗi: " . $e->getMessage());
                 redirect("?act=admin&module=bookings&action=show&id=" . ($_POST['booking_id'] ?? ''));
+            }
+        }
+    }
+
+    /**
+     * AJAX: Validate mã giảm giá (dùng cho real-time validation trong form)
+     */
+    public function validateDiscountCode()
+    {
+        require_admin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
+            
+            try {
+                // Optional CSRF check (không bắt buộc vì chỉ validate, không thay đổi data)
+                // Nhưng nên check để an toàn
+                if (!empty($_POST['csrf_token'])) {
+                    require_csrf_token();
+                }
+
+                $code = trim($_POST['code'] ?? '');
+                $totalAmount = (float) ($_POST['total_amount'] ?? 0);
+                $bookingId = !empty($_POST['booking_id']) ? (int) $_POST['booking_id'] : null;
+
+                require_once 'app/models/DiscountCode.php';
+                $discountCodeModel = new DiscountCode($this->pdo);
+
+                $validation = $discountCodeModel->validateForBooking($code, $totalAmount, $bookingId);
+
+                $response = [
+                    'valid' => $validation['valid'],
+                    'message' => $validation['message'],
+                    'discount_amount' => $validation['discount_amount']
+                ];
+
+                if ($validation['valid'] && $validation['discount_code']) {
+                    $dc = $validation['discount_code'];
+                    $discountInfo = '';
+                    if ($dc['discount_type'] === 'percentage') {
+                        $discountInfo = "Giảm {$dc['discount_value']}%";
+                    } else {
+                        $discountInfo = "Giảm " . number_format($dc['discount_value'], 0, ',', '.') . " đ";
+                    }
+                    $response['discount_info'] = $discountInfo;
+                }
+
+                echo json_encode($response);
+                exit;
+
+            } catch (Exception $e) {
+                echo json_encode([
+                    'valid' => false,
+                    'message' => 'Lỗi: ' . $e->getMessage(),
+                    'discount_amount' => 0
+                ]);
+                exit;
             }
         }
     }

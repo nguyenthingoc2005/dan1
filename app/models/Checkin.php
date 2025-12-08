@@ -41,17 +41,26 @@ class Checkin
      */
     public function getBySchedule($schedule_id)
     {
-        $sql = "SELECT cc.*, c.full_name, c.phone, c.email, b.booking_code
-                FROM customer_checkins cc
-                JOIN customers c ON cc.customer_id = c.id
-                JOIN bookings b ON cc.booking_id = b.id
-                JOIN tour_schedules ts ON (b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
-                WHERE ts.id = :schedule_id
-                ORDER BY cc.checkin_time DESC";
+        try {
+            // Ưu tiên: booking.tour_schedule_id trực tiếp > tour_id + start_date
+            $sql = "SELECT cc.*, c.full_name, c.phone, c.email, b.booking_code
+                    FROM customer_checkins cc
+                    JOIN customers c ON cc.customer_id = c.id
+                    JOIN bookings b ON cc.booking_id = b.id
+                    JOIN tour_schedules ts ON (
+                        b.tour_schedule_id = ts.id 
+                        OR (b.tour_schedule_id IS NULL AND b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
+                    )
+                    WHERE ts.id = :schedule_id
+                    ORDER BY cc.checkin_time DESC";
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['schedule_id' => $schedule_id]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['schedule_id' => $schedule_id]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            error_log("Checkin::getBySchedule() Error: " . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -144,34 +153,50 @@ class Checkin
      */
     public function getStatsBySchedule($schedule_id)
     {
-        // Get all passengers in this schedule
-        $sql = "SELECT bc.customer_id, bc.booking_id
-                FROM booking_customers bc
-                JOIN bookings b ON bc.booking_id = b.id
-                JOIN tour_schedules ts ON (b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
-                WHERE ts.id = :schedule_id
-                AND b.payment_status IN ('partial', 'paid')";
+        try {
+            // Get all passengers in this schedule
+            // Ưu tiên: booking.tour_schedule_id trực tiếp > tour_id + start_date
+            $sql = "SELECT bc.customer_id, bc.booking_id
+                    FROM booking_customers bc
+                    JOIN bookings b ON bc.booking_id = b.id
+                    JOIN tour_schedules ts ON (
+                        b.tour_schedule_id = ts.id 
+                        OR (b.tour_schedule_id IS NULL AND b.tour_id = ts.tour_id AND b.start_date = ts.start_date)
+                    )
+                    WHERE ts.id = :schedule_id
+                    AND b.payment_status IN ('partial', 'paid')";
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['schedule_id' => $schedule_id]);
-        $all_passengers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $total = count($all_passengers);
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['schedule_id' => $schedule_id]);
+            $all_passengers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $total = count($all_passengers);
 
-        // Get check-ins
-        $checkins = $this->getBySchedule($schedule_id);
-        $checked_in = count($checkins);
-        $present = count(array_filter($checkins, fn($c) => $c['status'] == 'present'));
-        $absent = count(array_filter($checkins, fn($c) => $c['status'] == 'absent'));
-        $late = count(array_filter($checkins, fn($c) => $c['status'] == 'late'));
+            // Get check-ins
+            $checkins = $this->getBySchedule($schedule_id);
+            $checked_in = count($checkins);
+            $present = count(array_filter($checkins, fn($c) => $c['status'] == 'present'));
+            $absent = count(array_filter($checkins, fn($c) => $c['status'] == 'absent'));
+            $late = count(array_filter($checkins, fn($c) => $c['status'] == 'late'));
 
-        return [
-            'total' => $total,
-            'checked_in' => $checked_in,
-            'not_checked' => $total - $checked_in,
-            'present' => $present,
-            'absent' => $absent,
-            'late' => $late
-        ];
+            return [
+                'total' => $total,
+                'checked_in' => $checked_in,
+                'not_checked_in' => $total - $checked_in,
+                'present' => $present,
+                'absent' => $absent,
+                'late' => $late
+            ];
+        } catch (\Exception $e) {
+            error_log("Checkin::getStatsBySchedule() Error: " . $e->getMessage());
+            return [
+                'total' => 0,
+                'checked_in' => 0,
+                'not_checked_in' => 0,
+                'present' => 0,
+                'absent' => 0,
+                'late' => 0
+            ];
+        }
     }
 }
 

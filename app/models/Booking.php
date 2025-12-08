@@ -672,4 +672,279 @@ class Booking
 
         return $prefix . "0001";
     }
+
+    /**
+     * Lấy danh sách booking đã hủy
+     */
+    public function getCancelledBookings($filters = [], $page = 1, $limit = 20)
+    {
+        $offset = ($page - 1) * $limit;
+
+        $sql = "SELECT b.*, 
+                       t.name as tour_name, t.tour_code,
+                       c.full_name as customer_name, c.phone as customer_phone,
+                       cp.name as policy_name, cp.fee_percentage,
+                       u.full_name as cancelled_by_name
+                FROM bookings b
+                LEFT JOIN tours t ON b.tour_id = t.id
+                LEFT JOIN customers c ON b.customer_id = c.id
+                LEFT JOIN cancellation_policies cp ON b.cancellation_policy_id = cp.id
+                LEFT JOIN users u ON b.rejected_by = u.id
+                WHERE b.payment_status IN ('cancelled', 'refunded')
+                  AND b.cancellation_date IS NOT NULL";
+
+        $params = [];
+
+        // Search
+        if (!empty($filters['search'])) {
+            $sql .= " AND (b.booking_code LIKE :search1 OR c.full_name LIKE :search2 OR c.phone LIKE :search3)";
+            $searchTerm = "%" . $filters['search'] . "%";
+            $params['search1'] = $searchTerm;
+            $params['search2'] = $searchTerm;
+            $params['search3'] = $searchTerm;
+        }
+
+        // Filter by status
+        if (!empty($filters['status'])) {
+            $sql .= " AND b.payment_status = :status";
+            $params['status'] = $filters['status'];
+        }
+
+        // Filter by tour
+        if (!empty($filters['tour_id'])) {
+            $sql .= " AND b.tour_id = :tour_id";
+            $params['tour_id'] = $filters['tour_id'];
+        }
+
+        // Filter by cancellation date
+        if (!empty($filters['cancellation_date_from'])) {
+            $sql .= " AND b.cancellation_date >= :cancel_from";
+            $params['cancel_from'] = $filters['cancellation_date_from'];
+        }
+        if (!empty($filters['cancellation_date_to'])) {
+            $sql .= " AND b.cancellation_date <= :cancel_to";
+            $params['cancel_to'] = $filters['cancellation_date_to'];
+        }
+
+        // Filter by start date
+        if (!empty($filters['start_date_from'])) {
+            $sql .= " AND b.start_date >= :start_from";
+            $params['start_from'] = $filters['start_date_from'];
+        }
+        if (!empty($filters['start_date_to'])) {
+            $sql .= " AND b.start_date <= :start_to";
+            $params['start_to'] = $filters['start_date_to'];
+        }
+
+        // Filter by has refund
+        if ($filters['has_refund'] === 'yes') {
+            $sql .= " AND b.refund_amount > 0";
+        } elseif ($filters['has_refund'] === 'no') {
+            $sql .= " AND (b.refund_amount = 0 OR b.refund_amount IS NULL)";
+        }
+
+        // Filter by days_before (số ngày trước khởi hành khi hủy)
+        if (!empty($filters['days_before'])) {
+            // Calculate days before departure for each booking
+            // We need to join and calculate in the query
+            $sql .= " AND DATEDIFF(b.start_date, b.cancellation_date) <= :days_before";
+            $params['days_before'] = (int) $filters['days_before'];
+        }
+
+        $sql .= " ORDER BY b.cancellation_date DESC, b.id DESC LIMIT $limit OFFSET $offset";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Đếm tổng số booking đã hủy
+     */
+    public function countCancelledBookings($filters = [])
+    {
+        $sql = "SELECT COUNT(*) FROM bookings b
+                LEFT JOIN customers c ON b.customer_id = c.id
+                WHERE b.payment_status IN ('cancelled', 'refunded')
+                  AND b.cancellation_date IS NOT NULL";
+
+        $params = [];
+
+        // Search
+        if (!empty($filters['search'])) {
+            $sql .= " AND (b.booking_code LIKE :search1 OR c.full_name LIKE :search2 OR c.phone LIKE :search3)";
+            $searchTerm = "%" . $filters['search'] . "%";
+            $params['search1'] = $searchTerm;
+            $params['search2'] = $searchTerm;
+            $params['search3'] = $searchTerm;
+        }
+
+        // Filter by status
+        if (!empty($filters['status'])) {
+            $sql .= " AND b.payment_status = :status";
+            $params['status'] = $filters['status'];
+        }
+
+        // Filter by tour
+        if (!empty($filters['tour_id'])) {
+            $sql .= " AND b.tour_id = :tour_id";
+            $params['tour_id'] = $filters['tour_id'];
+        }
+
+        // Filter by cancellation date
+        if (!empty($filters['cancellation_date_from'])) {
+            $sql .= " AND b.cancellation_date >= :cancel_from";
+            $params['cancel_from'] = $filters['cancellation_date_from'];
+        }
+        if (!empty($filters['cancellation_date_to'])) {
+            $sql .= " AND b.cancellation_date <= :cancel_to";
+            $params['cancel_to'] = $filters['cancellation_date_to'];
+        }
+
+        // Filter by start date
+        if (!empty($filters['start_date_from'])) {
+            $sql .= " AND b.start_date >= :start_from";
+            $params['start_from'] = $filters['start_date_from'];
+        }
+        if (!empty($filters['start_date_to'])) {
+            $sql .= " AND b.start_date <= :start_to";
+            $params['start_to'] = $filters['start_date_to'];
+        }
+
+        // Filter by has refund
+        if ($filters['has_refund'] === 'yes') {
+            $sql .= " AND b.refund_amount > 0";
+        } elseif ($filters['has_refund'] === 'no') {
+            $sql .= " AND (b.refund_amount = 0 OR b.refund_amount IS NULL)";
+        }
+
+        // Filter by days_before
+        if (!empty($filters['days_before'])) {
+            $sql .= " AND DATEDIFF(b.start_date, b.cancellation_date) <= :days_before";
+            $params['days_before'] = (int) $filters['days_before'];
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchColumn();
+    }
+
+    /**
+     * Lấy quick stats cho trang danh sách hủy
+     */
+    public function getCancellationQuickStats()
+    {
+        $sql = "SELECT 
+                    COUNT(*) as total_cancelled,
+                    SUM(cancellation_fee) as total_fee,
+                    SUM(CASE WHEN payment_status = 'refunded' THEN refund_amount ELSE 0 END) as total_refund,
+                    COUNT(CASE WHEN payment_status = 'refunded' THEN 1 END) as total_refunded_count
+                FROM bookings
+                WHERE payment_status IN ('cancelled', 'refunded')
+                  AND cancellation_date IS NOT NULL";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Kiểm tra đã xử lý hoàn tiền chưa
+     */
+    public function hasRefundProcessed($booking_id)
+    {
+        $sql = "SELECT COUNT(*) FROM payments 
+                WHERE booking_id = :booking_id 
+                  AND payment_type = 'refund' 
+                  AND status != 'cancelled'";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['booking_id' => $booking_id]);
+        return $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Lấy thống kê hủy booking
+     */
+    public function getCancellationStatistics($filters = [])
+    {
+        $where = "WHERE b.payment_status IN ('cancelled', 'refunded') AND b.cancellation_date IS NOT NULL";
+        $params = [];
+
+        if (!empty($filters['date_from'])) {
+            $where .= " AND b.cancellation_date >= :date_from";
+            $params['date_from'] = $filters['date_from'];
+        }
+        if (!empty($filters['date_to'])) {
+            $where .= " AND b.cancellation_date <= :date_to";
+            $params['date_to'] = $filters['date_to'];
+        }
+        if (!empty($filters['tour_id'])) {
+            $where .= " AND b.tour_id = :tour_id";
+            $params['tour_id'] = $filters['tour_id'];
+        }
+
+        // Overall stats
+        $sql = "SELECT 
+                    COUNT(*) as total_cancelled,
+                    SUM(cancellation_fee) as total_fee,
+                    SUM(refund_amount) as total_refund,
+                    AVG(cancellation_fee) as avg_fee
+                FROM bookings b
+                $where";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $overall = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // By month
+        $sql = "SELECT 
+                    DATE_FORMAT(b.cancellation_date, '%Y-%m') as month,
+                    COUNT(*) as count,
+                    SUM(b.cancellation_fee) as total_fee,
+                    SUM(b.refund_amount) as total_refund
+                FROM bookings b
+                $where
+                GROUP BY DATE_FORMAT(b.cancellation_date, '%Y-%m')
+                ORDER BY month DESC
+                LIMIT 12";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $byMonth = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // By tour
+        $sql = "SELECT 
+                    t.id, t.name as tour_name, t.tour_code,
+                    COUNT(*) as count,
+                    SUM(b.cancellation_fee) as total_fee
+                FROM bookings b
+                LEFT JOIN tours t ON b.tour_id = t.id
+                $where
+                GROUP BY t.id, t.name, t.tour_code
+                ORDER BY count DESC
+                LIMIT 10";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $byTour = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // By reason (top reasons)
+        $sql = "SELECT 
+                    cancellation_reason,
+                    COUNT(*) as count
+                FROM bookings b
+                $where
+                  AND cancellation_reason IS NOT NULL
+                  AND cancellation_reason != ''
+                GROUP BY cancellation_reason
+                ORDER BY count DESC
+                LIMIT 10";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $byReason = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'overall' => $overall,
+            'by_month' => $byMonth,
+            'by_tour' => $byTour,
+            'by_reason' => $byReason
+        ];
+    }
 }

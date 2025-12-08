@@ -174,7 +174,7 @@
                                     </td>
                                     <td class="px-3 lg:px-4 py-2 lg:py-3">
                                         <input type="hidden" name="checkins[<?= $index ?>][booking_id]" value="<?= $p['booking_id'] ?>">
-                                        <input type="hidden" name="checkins[<?= $index ?>][customer_id]" value="<?= $p['id'] ?>">
+                                        <input type="hidden" name="checkins[<?= $index ?>][customer_id]" value="<?= $p['customer_id'] ?>">
                                         <div class="flex flex-col gap-2">
                                             <select name="checkins[<?= $index ?>][status]" 
                                                 class="w-full px-2 lg:px-3 py-1.5 lg:py-2 bg-primary-50 border border-primary-100 rounded-xl text-xs lg:text-sm checkin-status text-primary-700 focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all <?= !$can_checkin ? 'opacity-50 cursor-not-allowed' : '' ?>"

@@ -146,14 +146,19 @@ class CheckinController
             $p_list = $this->bookingModel->getPassengers($booking['id']);
             foreach ($p_list as $p) {
                 // Chỉ thêm passenger nếu có customer_id hợp lệ (không NULL và tồn tại trong customers)
-                if (!empty($p['customer_id']) && !empty($p['id'])) {
-                    $checkin = $this->checkinModel->getCustomerCheckin($booking['id'], $p['id']);
-                    $p['booking_id'] = $booking['id'];
-                    $p['booking_code'] = $booking['booking_code'];
-                    $p['checkin_status'] = $checkin ? $checkin['status'] : null;
-                    $p['checkin_time'] = $checkin ? $checkin['checkin_time'] : null;
-                    $p['checkin_notes'] = $checkin ? $checkin['notes'] : null;
-                    $passengers[] = $p;
+                if (!empty($p['customer_id'])) {
+                    // Validate customer_id tồn tại trong bảng customers
+                    $stmt = $this->db->prepare("SELECT id FROM customers WHERE id = :id");
+                    $stmt->execute(['id' => $p['customer_id']]);
+                    if ($stmt->fetch()) {
+                        $checkin = $this->checkinModel->getCustomerCheckin($booking['id'], $p['customer_id']);
+                        $p['booking_id'] = $booking['id'];
+                        $p['booking_code'] = $booking['booking_code'];
+                        $p['checkin_status'] = $checkin ? $checkin['status'] : null;
+                        $p['checkin_time'] = $checkin ? $checkin['checkin_time'] : null;
+                        $p['checkin_notes'] = $checkin ? $checkin['notes'] : null;
+                        $passengers[] = $p;
+                    }
                 }
             }
         }
@@ -325,12 +330,20 @@ class CheckinController
         foreach ($bookings as $booking) {
             $p_list = $this->bookingModel->getPassengers($booking['id']);
             foreach ($p_list as $p) {
-                $checkin = $this->checkinModel->getCustomerCheckin($booking['id'], $p['id']);
-                $p['booking_id'] = $booking['id'];
-                $p['booking_code'] = $booking['booking_code'];
-                $p['checkin_status'] = $checkin ? $checkin['status'] : null;
-                $p['checkin_time'] = $checkin ? $checkin['checkin_time'] : null;
-                $passengers[] = $p;
+                // Chỉ thêm passenger nếu có customer_id hợp lệ
+                if (!empty($p['customer_id'])) {
+                    // Validate customer_id tồn tại trong bảng customers
+                    $stmt = $this->db->prepare("SELECT id FROM customers WHERE id = :id");
+                    $stmt->execute(['id' => $p['customer_id']]);
+                    if ($stmt->fetch()) {
+                        $checkin = $this->checkinModel->getCustomerCheckin($booking['id'], $p['customer_id']);
+                        $p['booking_id'] = $booking['id'];
+                        $p['booking_code'] = $booking['booking_code'];
+                        $p['checkin_status'] = $checkin ? $checkin['status'] : null;
+                        $p['checkin_time'] = $checkin ? $checkin['checkin_time'] : null;
+                        $passengers[] = $p;
+                    }
+                }
             }
         }
 

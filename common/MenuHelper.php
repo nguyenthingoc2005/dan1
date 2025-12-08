@@ -53,6 +53,24 @@ function get_menu_items($role)
                 'active_pattern' => 'admin:bookings'
             ],
             [
+                'icon' => 'file-x',
+                'label' => 'Chính sách Hủy',
+                'url' => $base_url . '/?act=admin&module=cancellation-policies',
+                'active_pattern' => 'admin:cancellation-policies'
+            ],
+            [
+                'icon' => 'x-circle',
+                'label' => 'Hủy Booking',
+                'url' => $base_url . '/?act=admin&module=cancellations',
+                'active_pattern' => 'admin:cancellations'
+            ],
+            [
+                'icon' => 'clipboard-check',
+                'label' => 'Tour Đã Chốt',
+                'url' => $base_url . '/?act=admin&module=tour-operations',
+                'active_pattern' => 'admin:tour-operations'
+            ],
+            [
                 'icon' => 'users',
                 'label' => 'Khách hàng',
                 'url' => $base_url . '/?act=admin&module=customers',
@@ -65,10 +83,22 @@ function get_menu_items($role)
                 'active_pattern' => 'admin:payments'
             ],
             [
+                'icon' => 'tag',
+                'label' => 'Mã giảm giá',
+                'url' => $base_url . '/?act=admin&module=discount-codes',
+                'active_pattern' => 'admin:discount-codes'
+            ],
+            [
                 'icon' => 'book-open',
                 'label' => 'Nhật ký Tour',
                 'url' => $base_url . '/?act=admin&module=journals',
                 'active_pattern' => 'admin:journals'
+            ],
+            [
+                'icon' => 'dollar-sign',
+                'label' => 'Chi phí phát sinh',
+                'url' => $base_url . '/?act=admin&module=expenses',
+                'active_pattern' => 'admin:expenses'
             ],
             [
                 'icon' => 'bar-chart-3',
@@ -100,6 +130,19 @@ function get_menu_items($role)
                 'label' => 'Chính sách',
                 'url' => $base_url . '/?act=admin&module=policies',
                 'active_pattern' => 'admin:policies'
+            ],
+            // Quản lý Xe & Tài xế
+            [
+                'icon' => 'truck',
+                'label' => 'Quản lý Xe',
+                'url' => $base_url . '/?act=admin&module=vehicles',
+                'active_pattern' => 'admin:vehicles'
+            ],
+            [
+                'icon' => 'user-cog',
+                'label' => 'Quản lý Tài xế',
+                'url' => $base_url . '/?act=admin&module=drivers',
+                'active_pattern' => 'admin:drivers'
             ],
         ],
 
@@ -174,24 +217,6 @@ function get_menu_items($role)
                 'active_pattern' => 'guide-tours'
             ],
             [
-                'icon' => 'check-circle',
-                'label' => 'Check-in',
-                'url' => $base_url . '/?act=guide-checkin',
-                'active_pattern' => 'guide-checkin'
-            ],
-            [
-                'icon' => 'book-open',
-                'label' => 'Nhật ký Tour',
-                'url' => $base_url . '/?act=guide-journals',
-                'active_pattern' => 'guide-journals'
-            ],
-            [
-                'icon' => 'dollar-sign',
-                'label' => 'Chi phí phát sinh',
-                'url' => $base_url . '/?act=guide-expenses',
-                'active_pattern' => 'guide-expenses'
-            ],
-            [
                 'icon' => 'user',
                 'label' => 'Thông tin cá nhân',
                 'url' => $base_url . '/?act=profile',
@@ -257,8 +282,8 @@ function render_menu()
         }
 
         // Horizon UI Style - Better contrast
-        $active_class = $is_active 
-            ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white font-semibold' 
+        $active_class = $is_active
+            ? 'bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to text-white font-semibold'
             : 'text-primary-700 hover:bg-primary-50 hover:text-primary-900 font-semibold';
         $submenu_id = 'submenu-' . $index;
 
@@ -282,8 +307,8 @@ function render_menu()
                 $sub_act = str_replace('?act=', '', parse_url($subitem['url'], PHP_URL_QUERY));
                 $sub_is_active = ($current_act === $sub_act);
 
-                $sub_active_class = $sub_is_active 
-                    ? 'text-accent font-semibold bg-primary-50' 
+                $sub_active_class = $sub_is_active
+                    ? 'text-accent font-semibold bg-primary-50'
                     : 'text-primary-500 hover:text-primary-700 hover:bg-primary-50 font-medium';
 
                 echo '<a href="' . $subitem['url'] . '" class="block px-4 py-2 rounded-xl transition-colors text-sm ' . $sub_active_class . '">';

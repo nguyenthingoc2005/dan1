@@ -33,6 +33,16 @@ unset($_SESSION['old']);
                     <div>
                         <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Chọn Tour <span
                                 class="text-danger">*</span></label>
+                        <!-- Search Input -->
+                        <div class="relative mb-2">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary-400"></i>
+                            <input type="text" id="tour_search" 
+                                placeholder="Tìm kiếm tour (mã tour, tên tour)..."
+                                class="w-full pl-10 pr-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all placeholder:text-primary-300 text-primary-700 text-sm lg:text-base"
+                                autocomplete="off"
+                                oninput="filterTourSelectOptions()">
+                        </div>
+                        <!-- Select (giữ nguyên) -->
                         <select name="tour_id" id="tour_id"
                             class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-all text-primary-700 text-sm lg:text-base"
                             required>
@@ -55,6 +65,8 @@ unset($_SESSION['old']);
                                         data-price-infant="<?= (float) $infantPrice ?>" 
                                         data-duration="<?= (int) $duration ?>"
                                         data-booking-deadline-days="<?= (int) $deadlineDays ?>"
+                                        data-tour-code="<?= htmlspecialchars(strtolower($tourCode)) ?>"
+                                        data-tour-name="<?= htmlspecialchars(strtolower($tourName)) ?>"
                                         <?= ($old['tour_id'] ?? '') == $tourId ? 'selected' : '' ?>>
                                         <?= htmlspecialchars($tourCode . ' - ' . $tourName) ?>
                                     </option>
@@ -150,6 +162,16 @@ unset($_SESSION['old']);
                 <div id="existing_customer_section">
                     <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Tìm khách hàng <span
                             class="text-danger">*</span></label>
+                    <!-- Search Input -->
+                    <div class="relative mb-2">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary-400"></i>
+                        <input type="text" id="customer_search" 
+                            placeholder="Tìm kiếm khách hàng (tên, số điện thoại)..."
+                            class="w-full pl-10 pr-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 placeholder:text-primary-300 text-sm lg:text-base"
+                            autocomplete="off"
+                            oninput="filterCustomerSelectOptions()">
+                    </div>
+                    <!-- Select (giữ nguyên) -->
                     <select name="customer_id" id="customer_id"
                         class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700">
                         <option value="">-- Chọn Khách hàng --</option>
@@ -160,7 +182,10 @@ unset($_SESSION['old']);
                                 $customerName = $c['full_name'] ?? '';
                                 $customerPhone = $c['phone'] ?? '';
                                 ?>
-                                <option value="<?= htmlspecialchars($customerId) ?>" <?= ($old['customer_id'] ?? '') == $customerId ? 'selected' : '' ?>>
+                                <option value="<?= htmlspecialchars($customerId) ?>" 
+                                    data-customer-name="<?= htmlspecialchars(strtolower($customerName)) ?>"
+                                    data-customer-phone="<?= htmlspecialchars(strtolower($customerPhone)) ?>"
+                                    <?= ($old['customer_id'] ?? '') == $customerId ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($customerName . ' - ' . $customerPhone) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -237,29 +262,34 @@ unset($_SESSION['old']);
                                 📄 Template
                             </a>
                             <button type="button" onclick="addPassengerRow()"
-                                class="text-sm text-blue-600 hover:underline">+ Thêm người</button>
+                                class="px-3 py-1.5 bg-accent hover:bg-accent-hover text-white rounded-xl font-semibold text-sm transition-all flex items-center gap-1">
+                                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                                Thêm người
+                            </button>
                         </div>
                     </div>
-                    <div id="importStatus" class="mb-2 hidden"></div>
-                    <p class="text-xs text-primary-500 mb-2">
+                    <div id="importStatus" class="mb-3 hidden"></div>
+                    <p class="text-xs lg:text-sm text-primary-500 mb-4">
                         💡 Hướng dẫn: Tải file mẫu, điền thông tin khách hàng, sau đó import.
                         File Excel (.xlsx) cần lưu dưới dạng CSV trước khi import.
                     </p>
-                    <table class="w-full text-sm text-left text-primary-500 border border-primary-200 rounded-xl">
-                        <thead class="bg-primary-50">
-                            <tr>
-                                <th class="px-2 py-2">Họ tên</th>
-                                <th class="px-2 py-2 w-32">SĐT</th>
-                                <th class="px-2 py-2 w-40">Email</th>
-                                <th class="px-2 py-2 w-24">Loại</th>
-                                <th class="px-2 py-2 w-24">Giới tính</th>
-                                <th class="px-2 py-2 w-10"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="passenger-container">
-                            <!-- Dynamic Rows -->
-                        </tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm lg:text-base text-left text-primary-700 border border-primary-200 rounded-xl shadow-sm">
+                            <thead class="bg-primary-50 border-b-2 border-primary-200">
+                                <tr>
+                                    <th class="px-4 py-3 font-semibold text-primary-700">Họ tên</th>
+                                    <th class="px-4 py-3 font-semibold text-primary-700 min-w-[140px]">SĐT</th>
+                                    <th class="px-4 py-3 font-semibold text-primary-700 min-w-[180px]">Email</th>
+                                    <th class="px-4 py-3 font-semibold text-primary-700 min-w-[120px]">Loại</th>
+                                    <th class="px-4 py-3 font-semibold text-primary-700 min-w-[120px]">Giới tính</th>
+                                    <th class="px-4 py-3 font-semibold text-primary-700 w-16 text-center">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="passenger-container" class="bg-white divide-y divide-primary-100">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div class="mt-4 space-y-4">
@@ -344,6 +374,64 @@ unset($_SESSION['old']);
 </div>
 
 <script>
+    // Tour Search Functions - Filter options in select
+    function filterTourSelectOptions() {
+        const searchInput = document.getElementById('tour_search');
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const tourSelect = document.getElementById('tour_id');
+        const options = tourSelect.querySelectorAll('option:not([value=""])');
+        
+        if (searchTerm.length === 0) {
+            // Hiển thị tất cả options
+            options.forEach(option => {
+                option.style.display = '';
+            });
+            return;
+        }
+        
+        // Filter options
+        options.forEach(option => {
+            const tourCode = option.dataset.tourCode || '';
+            const tourName = option.dataset.tourName || '';
+            const match = tourCode.includes(searchTerm) || tourName.includes(searchTerm);
+            
+            if (match) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+    }
+    
+    // Customer Search Functions - Filter options in select
+    function filterCustomerSelectOptions() {
+        const searchInput = document.getElementById('customer_search');
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const customerSelect = document.getElementById('customer_id');
+        const options = customerSelect.querySelectorAll('option:not([value=""])');
+        
+        if (searchTerm.length === 0) {
+            // Hiển thị tất cả options
+            options.forEach(option => {
+                option.style.display = '';
+            });
+            return;
+        }
+        
+        // Filter options
+        options.forEach(option => {
+            const customerName = option.dataset.customerName || '';
+            const customerPhone = option.dataset.customerPhone || '';
+            const match = customerName.includes(searchTerm) || customerPhone.includes(searchTerm);
+            
+            if (match) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+    }
+    
     document.addEventListener('DOMContentLoaded', function () {
         const tourSelect = document.getElementById('tour_id');
         const startDateSelect = document.getElementById('start_date');
@@ -698,32 +786,44 @@ unset($_SESSION['old']);
     function addPassengerRow() {
         const container = document.getElementById('passenger-container');
         const html = `
-            <tr class="border-b passenger-row">
-                <td class="px-2 py-2">
-                    <input type="text" name="passenger_names[]" class="w-full px-2 py-1 border rounded text-sm" placeholder="Họ tên" required>
+            <tr class="passenger-row hover:bg-primary-50 transition-colors">
+                <td class="px-4 py-3">
+                    <input type="text" name="passenger_names[]" 
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 text-sm lg:text-base placeholder:text-primary-400 transition-all" 
+                        placeholder="Nhập họ tên" required>
                 </td>
-                <td class="px-2 py-2">
-                    <input type="text" name="passenger_phones[]" class="w-full px-2 py-1 border rounded text-sm" placeholder="SĐT">
+                <td class="px-4 py-3">
+                    <input type="text" name="passenger_phones[]" 
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 text-sm lg:text-base placeholder:text-primary-400 transition-all" 
+                        placeholder="Nhập SĐT">
                 </td>
-                <td class="px-2 py-2">
-                    <input type="email" name="passenger_emails[]" class="w-full px-2 py-1 border rounded text-sm" placeholder="Email">
+                <td class="px-4 py-3">
+                    <input type="email" name="passenger_emails[]" 
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 text-sm lg:text-base placeholder:text-primary-400 transition-all" 
+                        placeholder="Nhập email">
                 </td>
-                <td class="px-2 py-2">
-                    <select name="passenger_types[]" class="w-full px-2 py-1 border rounded text-sm passenger-type" onchange="handleTypeChange(this)">
+                <td class="px-4 py-3">
+                    <select name="passenger_types[]" 
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 text-sm lg:text-base passenger-type transition-all" 
+                        onchange="handleTypeChange(this)">
                         <option value="adult">Người lớn</option>
                         <option value="child">Trẻ em</option>
                         <option value="infant">Em bé</option>
                     </select>
                 </td>
-                <td class="px-2 py-2">
-                    <select name="passenger_genders[]" class="w-full px-2 py-1 border rounded text-sm">
+                <td class="px-4 py-3">
+                    <select name="passenger_genders[]" 
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 text-sm lg:text-base transition-all">
                         <option value="male">Nam</option>
                         <option value="female">Nữ</option>
                         <option value="other">Khác</option>
                     </select>
                 </td>
-                <td class="px-2 py-2 text-center">
-                    <button type="button" onclick="removePassengerRow(this)" class="text-red-500 hover:text-red-700">×</button>
+                <td class="px-4 py-3 text-center">
+                    <button type="button" onclick="removePassengerRow(this)" 
+                        class="w-8 h-8 flex items-center justify-center bg-danger-bg hover:bg-danger text-white rounded-xl font-bold text-base transition-all shadow-sm hover:shadow-md">
+                        ×
+                    </button>
                 </td>
             </tr>
         `;
@@ -875,36 +975,43 @@ unset($_SESSION['old']);
         const ageType = data.age_type || 'adult';
 
         row.innerHTML = `
-            <td class="px-2 py-2">
+            <td class="px-4 py-3">
                 <input type="text" name="passenger_names[]" value="${name}" 
-                    class="w-full px-2 py-1 border rounded text-sm" placeholder="Họ tên">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 text-sm lg:text-base placeholder:text-primary-400 transition-all" 
+                    placeholder="Nhập họ tên">
             </td>
-            <td class="px-2 py-2">
+            <td class="px-4 py-3">
                 <input type="text" name="passenger_phones[]" value="${phone}" 
-                    class="w-full px-2 py-1 border rounded text-sm" placeholder="SĐT">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 text-sm lg:text-base placeholder:text-primary-400 transition-all" 
+                    placeholder="Nhập SĐT">
             </td>
-            <td class="px-2 py-2">
+            <td class="px-4 py-3">
                 <input type="email" name="passenger_emails[]" value="${email}" 
-                    class="w-full px-2 py-1 border rounded text-sm" placeholder="Email">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 text-sm lg:text-base placeholder:text-primary-400 transition-all" 
+                    placeholder="Nhập email">
             </td>
-            <td class="px-2 py-2">
-                <select name="passenger_types[]" class="passenger-type w-full px-2 py-1 border rounded text-sm" 
+            <td class="px-4 py-3">
+                <select name="passenger_types[]" 
+                    class="passenger-type w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 text-sm lg:text-base transition-all" 
                     onchange="handleTypeChange(this)">
                     <option value="adult" ${ageType === 'adult' ? 'selected' : ''}>Người lớn</option>
                     <option value="child" ${ageType === 'child' ? 'selected' : ''}>Trẻ em</option>
                     <option value="infant" ${ageType === 'infant' ? 'selected' : ''}>Em bé</option>
                 </select>
             </td>
-            <td class="px-2 py-2">
-                <select name="passenger_genders[]" class="w-full px-2 py-1 border rounded text-sm">
+            <td class="px-4 py-3">
+                <select name="passenger_genders[]" 
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-white border border-primary-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700 text-sm lg:text-base transition-all">
                     <option value="male" ${gender === 'male' ? 'selected' : ''}>Nam</option>
                     <option value="female" ${gender === 'female' ? 'selected' : ''}>Nữ</option>
                     <option value="other" ${gender === 'other' ? 'selected' : ''}>Khác</option>
                 </select>
             </td>
-            <td class="px-2 py-2 text-center">
+            <td class="px-4 py-3 text-center">
                 <button type="button" onclick="removePassengerRow(this)" 
-                    class="text-red-600 hover:text-red-800">✕</button>
+                    class="w-8 h-8 flex items-center justify-center bg-danger-bg hover:bg-danger text-white rounded-xl font-bold text-base transition-all shadow-sm hover:shadow-md">
+                    ×
+                </button>
             </td>
         `;
 
