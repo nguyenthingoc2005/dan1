@@ -1,4 +1,4 @@
-<div class="max-w-8xl mx-auto p-4 lg:p-8">
+<div class=" mx-auto">
     <!-- Page Header - Responsive -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 lg:mb-6">
         <div>
@@ -52,9 +52,11 @@
             <div class="absolute right-0 top-0 h-full w-1 bg-success"></div>
             <div class="flex justify-between items-center">
                 <div>
-                    <div class="text-xs font-bold text-success-text uppercase tracking-wide mb-1 lg:mb-2">Tổng doanh thu (Thực
+                    <div class="text-xs font-bold text-success-text uppercase tracking-wide mb-1 lg:mb-2">Tổng doanh thu
+                        (Thực
                         thu)</div>
-                    <div class="text-xl lg:text-2xl font-bold text-primary-700"><?= format_currency($total_revenue) ?></div>
+                    <div class="text-xl lg:text-2xl font-bold text-primary-700"><?= format_currency($total_revenue) ?>
+                    </div>
                 </div>
                 <div class="w-12 h-12 rounded-full bg-success-bg flex items-center justify-center">
                     <i data-lucide="dollar-sign" class="w-6 h-6 text-success-text"></i>

@@ -13,7 +13,7 @@ $current_user = get_auth_user(); // Đổi tên để không conflict với $use
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $page_title ?? 'Dashboard'; ?> - Tour Management</title>
+    <title><?php echo $page_title ?? 'Dashboard'; ?> COMMIT2 BUG</title>
 
     <!-- DM Sans Font (Horizon UI) -->
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
@@ -178,7 +178,7 @@ $current_user = get_auth_user(); // Đổi tên để không conflict với $use
             <div class="p-4 lg:p-6 border-b border-primary-100">
                 <h1 class="text-xl lg:text-2xl font-bold text-primary-700 flex items-center gap-2">
                     <i data-lucide="compass" class="w-6 h-6 lg:w-7 lg:h-7 text-accent"></i>
-                    TourManager
+                    COMMIT2 BUG
                 </h1>
             </div>
 

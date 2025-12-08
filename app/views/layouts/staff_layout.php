@@ -142,7 +142,8 @@ $user = get_auth_user();
 
     <div class="flex h-screen bg-main overflow-hidden">
         <!-- SIDEBAR -->
-        <div id="sidebar" class="sidebar fixed left-0 top-0 bottom-0 w-[280px] lg:w-[260px] bg-sidebar border-r border-primary-100 flex flex-col z-50 lg:z-20 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 overflow-y-auto">
+        <div id="sidebar"
+            class="sidebar fixed left-0 top-0 bottom-0 w-[280px] lg:w-[260px] bg-sidebar border-r border-primary-100 flex flex-col z-50 lg:z-20 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 overflow-y-auto">
             <!-- Close Button (Mobile only) -->
             <button
                 class="lg:hidden absolute top-4 right-4 p-2 text-primary-700 hover:bg-primary-50 rounded-xl transition-colors"
@@ -154,7 +155,7 @@ $user = get_auth_user();
             <div class="p-4 lg:p-6 border-b border-primary-100">
                 <h1 class="text-xl lg:text-2xl font-bold text-primary-700 flex items-center gap-2">
                     <i data-lucide="compass" class="w-6 h-6 lg:w-7 lg:h-7 text-accent"></i>
-                    TourManager
+                    COMMIT2 BUG
                 </h1>
             </div>
 
@@ -305,7 +306,7 @@ $user = get_auth_user();
                 menuButtons.forEach(btn => {
                     if (btn.contains(e.target)) isMenuButton = true;
                 });
-                
+
                 if (!sidebar.contains(e.target) && !isMenuButton) {
                     if (!sidebar.classList.contains('-translate-x-full')) {
                         sidebar.classList.add('-translate-x-full');

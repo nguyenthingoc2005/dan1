@@ -424,8 +424,8 @@ if (is_array($old_day_services)) {
                     <h3 class="font-bold text-gray-900 mb-4">🎯 Giá bán cuối cùng</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Giá người lớn <span class="text-red-500">*</span>
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">
+                                Giá người lớn <span class="text-danger">*</span>
                             </label>
                             <input type="number" name="adult_price" id="adult_price" required min="0" step="1000"
                                 value="<?= $old['adult_price'] ?? '' ?>"
@@ -433,19 +433,19 @@ if (is_array($old_day_services)) {
                                 oninput="validatePricing()">
                             <button type="button" onclick="applySuggestedPrice()"
                                 class="mt-2 text-sm text-blue-600 hover:underline">
-                                <i class="fas fa-magic mr-1"></i>Dùng giá đề xuất
+                                <i data-lucide="sparkles" class="w-4 h-4 inline-block mr-1"></i>Dùng giá đề xuất
                             </button>
                             <p class="text-xs text-gray-500 mt-1">Giá áp dụng cho khách > 12 tuổi</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Giá trẻ em</label>
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Giá trẻ em</label>
                             <input type="number" name="child_price" id="child_price" min="0" step="1000"
                                 value="<?= $old['child_price'] ?? '' ?>"
                                 class="w-full px-3 py-2 border rounded focus:border-accent">
                             <p class="text-xs text-gray-500 mt-1">Thường bằng 70-80% giá người lớn</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Giá em bé</label>
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Giá em bé</label>
                             <input type="number" name="infant_price" id="infant_price" min="0" step="1000"
                                 value="<?= $old['infant_price'] ?? '0' ?>"
                                 class="w-full px-3 py-2 border rounded focus:border-accent">

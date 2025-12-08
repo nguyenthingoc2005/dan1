@@ -160,7 +160,7 @@ if (!is_admin())
 
                 <!-- Trạng thái -->
                 <div class="mt-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                    <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Trạng thái</label>
                     <select name="status" class="w-full md:w-1/2 px-3 py-2 border rounded focus:border-accent focus:outline-none">
                         <option value="draft" <?= $tour['status'] == 'draft' ? 'selected' : '' ?>>Bản nháp (Draft)</option>
                         <option value="active" <?= $tour['status'] == 'active' ? 'selected' : '' ?>>Hoạt động (Active)</option>
@@ -172,23 +172,23 @@ if (!is_admin())
 
         <!-- Section 2: Giá bán -->
         <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div class="bg-gray-50 px-5 py-3 border-b">
-                <h2 class="font-bold text-gray-800">2. Giá bán</h2>
+            <div class="bg-primary-50 px-4 lg:px-5 py-3 border-b border-primary-200">
+                <h2 class="font-bold text-primary-800">2. Giá bán</h2>
             </div>
             <div class="p-5">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá người lớn <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Giá người lớn <span class="text-danger">*</span></label>
                         <input type="number" name="adult_price" required min="0" value="<?= $tour['adult_price'] ?>"
                             class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none font-bold">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá trẻ em</label>
+                        <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Giá trẻ em</label>
                         <input type="number" name="child_price" min="0" value="<?= $tour['child_price'] ?>"
                             class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá em bé</label>
+                        <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Giá em bé</label>
                         <input type="number" name="infant_price" min="0" value="<?= $tour['infant_price'] ?>"
                             class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
                     </div>

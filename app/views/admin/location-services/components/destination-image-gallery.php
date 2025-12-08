@@ -11,77 +11,77 @@ if (!$destination_id) {
 }
 ?>
 
-<div class="space-y-6">
+<div class="space-y-4 lg:space-y-6">
     <!-- Upload Section -->
-    <div class="border-2 border-dashed border-gray-300 p-6 text-center bg-gray-50">
-        <form id="uploadImageForm" enctype="multipart/form-data" class="space-y-4">
+    <div class="border-2 border-dashed border-primary-200 p-4 lg:p-6 text-center bg-primary-50 rounded-2xl">
+        <form id="uploadImageForm" enctype="multipart/form-data" class="space-y-3 lg:space-y-4">
             <input type="hidden" name="destination_id" value="<?= $destination_id ?>">
             <div>
                 <label for="galleryDestinationImages" class="cursor-pointer">
                     <div class="flex flex-col items-center">
-                        <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                            </path>
-                        </svg>
-                        <span class="text-sm font-medium text-gray-700">Chọn ảnh để upload</span>
-                        <span class="text-xs text-gray-500 mt-1">JPG, PNG, WEBP (tối đa 5MB mỗi ảnh)</span>
+                        <div class="mb-2 lg:mb-3">
+                            <i data-lucide="upload" class="w-12 h-12 lg:w-16 lg:h-16 text-primary-300"></i>
+                        </div>
+                        <span class="text-xs lg:text-sm font-semibold text-primary-700">Chọn ảnh để upload</span>
+                        <span class="text-xs text-primary-500 mt-1">JPG, PNG, WEBP (tối đa 5MB mỗi ảnh)</span>
                     </div>
                 </label>
                 <input type="file" id="galleryDestinationImages" name="gallery_images[]" multiple
                     accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleImageUpload()">
             </div>
             <button type="button" onclick="document.getElementById('galleryDestinationImages').click()"
-                class="px-4 py-2 bg-accent text-white font-medium hover:bg-blue-600 transition-colors text-sm">
+                class="px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-accent-gradient-from to-accent-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-xs lg:text-sm">
                 Chọn ảnh
             </button>
         </form>
     </div>
 
     <!-- Gallery -->
-    <div id="imageGallery" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div id="imageGallery" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
         <?php if (empty($images)): ?>
-            <div class="col-span-full text-center py-12 text-gray-500">
-                <p>Chưa có ảnh nào. Hãy upload ảnh để bắt đầu.</p>
+            <div class="col-span-full text-center py-8 lg:py-12 text-primary-500">
+                <i data-lucide="image" class="w-12 h-12 lg:w-16 lg:h-16 mx-auto mb-3 text-primary-300"></i>
+                <p class="text-sm lg:text-base">Chưa có ảnh nào. Hãy upload ảnh để bắt đầu.</p>
             </div>
         <?php else: ?>
             <?php foreach ($images as $index => $image): ?>
-                <div class="image-item relative group border-l-4 border-gray-200 bg-white overflow-hidden transition-colors hover:border-accent"
+                <div class="image-item relative group border-l-4 border-primary-200 bg-panel overflow-hidden transition-all hover:border-accent rounded-xl shadow-sm hover:shadow-md"
                     data-image-id="<?= $image['id'] ?>">
                     <img src="<?= htmlspecialchars($image['image_url']) ?>" alt="Destination Image"
-                        class="w-full h-32 object-cover">
+                        class="w-full h-32 lg:h-40 object-cover rounded-r-xl">
 
                     <!-- Primary Badge -->
                     <?php if ($image['is_primary']): ?>
-                        <div class="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 font-medium">
-                            ⭐ Chính
+                        <div class="absolute top-2 left-2 bg-warning text-white text-xs px-2 py-1 font-bold rounded-xl flex items-center gap-1">
+                            <i data-lucide="star" class="w-3 h-3"></i>
+                            Chính
                         </div>
                     <?php endif; ?>
 
                     <!-- Overlay Actions -->
                     <div
-                        class="absolute inset-0 bg-gray-900 bg-opacity-0 group-hover:bg-opacity-60 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                        class="absolute inset-0 bg-primary-900 bg-opacity-0 group-hover:bg-opacity-60 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 rounded-xl">
                         <button onclick="setPrimaryImage(<?= $image['id'] ?>, <?= $destination_id ?>)"
-                            class="px-2.5 py-1.5 bg-yellow-500 text-white text-xs font-medium hover:bg-yellow-600 transition-colors"
+                            class="px-2.5 py-1.5 bg-warning hover:opacity-90 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1"
                             title="Đặt làm ảnh chính">
-                            ⭐
+                            <i data-lucide="star" class="w-3 h-3"></i>
                         </button>
                         <button
                             onclick="editImageCaption(<?= $image['id'] ?>, '<?= htmlspecialchars(addslashes($image['caption'] ?? '')) ?>')"
-                            class="px-2.5 py-1.5 bg-accent text-white text-xs font-medium hover:bg-blue-600 transition-colors"
+                            class="px-2.5 py-1.5 bg-accent hover:opacity-90 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1"
                             title="Sửa caption">
-                            ✏️
+                            <i data-lucide="edit" class="w-3 h-3"></i>
                         </button>
                         <button onclick="deleteImage(<?= $image['id'] ?>, <?= $destination_id ?>)"
-                            class="px-2.5 py-1.5 bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors"
+                            class="px-2.5 py-1.5 bg-danger hover:opacity-90 text-white text-xs font-semibold rounded-xl transition-all flex items-center gap-1"
                             title="Xóa">
-                            🗑️
+                            <i data-lucide="trash-2" class="w-3 h-3"></i>
                         </button>
                     </div>
 
                     <!-- Caption -->
                     <?php if (!empty($image['caption'])): ?>
-                        <div class="absolute bottom-0 left-0 right-0 bg-gray-900 bg-opacity-75 text-white text-xs p-2 font-medium">
+                        <div class="absolute bottom-0 left-0 right-0 bg-primary-900 bg-opacity-75 text-white text-xs p-2 font-semibold rounded-br-xl">
                             <?= htmlspecialchars($image['caption']) ?>
                         </div>
                     <?php endif; ?>
@@ -109,7 +109,7 @@ if (!$destination_id) {
 
         // Show loading
         const gallery = document.getElementById('imageGallery');
-        const loadingHtml = '<div class="col-span-full text-center py-4"><span class="text-blue-600">Đang upload...</span></div>';
+        const loadingHtml = '<div class="col-span-full text-center py-4"><span class="text-accent flex items-center justify-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>Đang upload...</span></div>';
         gallery.innerHTML = loadingHtml;
 
         $.ajax({
@@ -160,7 +160,7 @@ if (!$destination_id) {
                         $(this).remove();
                         // Check if gallery is empty
                         if ($('#imageGallery .image-item').length === 0) {
-                            $('#imageGallery').html('<div class="col-span-full text-center py-8 text-gray-500"><p>Chưa có ảnh nào. Hãy upload ảnh để bắt đầu.</p></div>');
+                            $('#imageGallery').html('<div class="col-span-full text-center py-8 lg:py-12 text-primary-500"><i data-lucide="image" class="w-12 h-12 lg:w-16 lg:h-16 mx-auto mb-3 text-primary-300"></i><p class="text-sm lg:text-base">Chưa có ảnh nào. Hãy upload ảnh để bắt đầu.</p></div>');
                         }
                     });
                 } else {

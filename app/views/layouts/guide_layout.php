@@ -156,7 +156,7 @@ $user = get_auth_user();
             <div class="p-4 lg:p-6 border-b border-primary-100">
                 <h1 class="text-xl lg:text-2xl font-bold text-primary-700 flex items-center gap-2">
                     <i data-lucide="compass" class="w-6 h-6 lg:w-7 lg:h-7 text-accent"></i>
-                    TourManager
+                    COMMIT2 BUG
                 </h1>
             </div>
 

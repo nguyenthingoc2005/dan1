@@ -176,15 +176,15 @@ if (!is_admin())
     <!-- Guide Change History -->
     <?php if (!empty($guide_history)): ?>
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-history text-blue-500"></i> Lịch sử thay đổi HDV
+            <h2 class="text-lg font-bold text-primary-800 mb-4 flex items-center gap-2">
+                <i data-lucide="history" class="w-5 h-5 text-accent"></i> Lịch sử thay đổi HDV
             </h2>
             <div class="space-y-3">
                 <?php foreach ($guide_history as $h): ?>
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
-                                <div class="font-medium text-gray-800 mb-2">
+                                <div class="font-medium text-primary-800 mb-2">
                                     <?php if ($h['old_guide_name'] && $h['new_guide_name']): ?>
                                         <span class="text-red-600"><?= htmlspecialchars($h['old_guide_name']) ?></span>
                                         <span class="mx-2 text-gray-400">→</span>

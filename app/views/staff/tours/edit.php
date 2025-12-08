@@ -115,7 +115,7 @@ require_staff_or_admin();
                     </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">
                                 Lương HDV (Hướng dẫn viên)
                             </label>
                             <input type="number" name="fixed_cost_guide" id="fixed_cost_guide" min="0" step="10000"
@@ -123,7 +123,7 @@ require_staff_or_admin();
                                 class="w-full px-3 py-2 border rounded focus:border-yellow-500" placeholder="VD: 2000000">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">
                                 Chi phí quản lý
                             </label>
                             <input type="number" name="fixed_cost_management" id="fixed_cost_management" min="0"
@@ -131,7 +131,7 @@ require_staff_or_admin();
                                 class="w-full px-3 py-2 border rounded focus:border-yellow-500" placeholder="VD: 1500000">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">
                                 Chi phí marketing
                             </label>
                             <input type="number" name="fixed_cost_marketing" id="fixed_cost_marketing" min="0"

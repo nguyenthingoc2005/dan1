@@ -197,7 +197,7 @@ $statusColors = [
                     <p class="text-sm text-gray-500 italic">Chưa có dịch vụ nào được thêm vào booking này.</p>
                 <?php else: ?>
                     <table class="w-full text-sm text-left text-gray-500 border rounded">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-primary-50">
                             <tr>
                                 <th class="px-3 py-2">Tên dịch vụ</th>
                                 <th class="px-3 py-2">Nhà cung cấp</th>
@@ -261,7 +261,7 @@ $statusColors = [
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
-                        <tfoot class="bg-gray-50">
+                        <tfoot class="bg-primary-50">
                             <tr>
                                 <td colspan="4" class="px-3 py-2 text-right font-bold">Tổng tiền dịch vụ:</td>
                                 <td class="px-3 py-2 text-right font-bold text-blue-600">
@@ -277,7 +277,7 @@ $statusColors = [
             <!-- 4. HISTORY LOG -->
             <div class="bg-panel p-4 lg:p-6 rounded-2xl shadow-sm border border-primary-100">
                 <h2 class="text-base lg:text-lg font-bold text-primary-700 border-b border-primary-100 pb-2 lg:pb-3 mb-4 lg:mb-5">Lịch sử hoạt động</h2>
-                <div class="relative border-l-2 border-gray-200 ml-3 space-y-6">
+                <div class="relative border-l-2 border-primary-200 ml-3 space-y-6">
                     <?php foreach ($history as $log): ?>
                         <div class="mb-4 ml-6 relative">
                             <span

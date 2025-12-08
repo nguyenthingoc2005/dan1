@@ -222,8 +222,12 @@ function is_active_route($pattern)
         return $current_act === $act_pattern && $current_module === $module_pattern;
     }
 
-    // Old pattern: exact match or starts with
-    return strpos($current_act, $pattern) === 0;
+    // Old pattern: exact match, but only if no module is present
+    // This prevents Dashboard from being active when viewing modules
+    if (!empty($current_module)) {
+        return false; // If there's a module, old patterns shouldn't match
+    }
+    return $current_act === $pattern; // Exact match only
 }
 
 /**

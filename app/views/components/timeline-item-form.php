@@ -35,10 +35,10 @@ $type_icons = [
 ];
 
 $type_colors = [
-    'meal' => 'bg-orange-50 border-orange-200',
-    'accommodation' => 'bg-blue-50 border-blue-200',
-    'activity' => 'bg-green-50 border-green-200',
-    'transport' => 'bg-purple-50 border-purple-200'
+    'meal' => 'bg-warning-bg border-warning',
+    'accommodation' => 'bg-info-bg border-info',
+    'activity' => 'bg-success-bg border-success',
+    'transport' => 'bg-primary-100 border-primary-300'
 ];
 
 $timeline_type = $item['timeline_type'] ?? 'activity';
@@ -46,65 +46,65 @@ $icon = $type_icons[$timeline_type] ?? '🎯';
 $color_class = $type_colors[$timeline_type] ?? 'bg-gray-50 border-gray-200';
 ?>
 
-<div class="timeline-item bg-white border-2 <?= $color_class ?> rounded-lg p-4 mb-4 relative" 
+<div class="timeline-item bg-panel border-2 <?= $color_class ?> rounded-xl p-3 lg:p-4 mb-3 lg:mb-4 relative shadow-sm hover:shadow-md transition-all" 
      data-day="<?= $day_number ?>" 
      data-index="<?= $idx ?>"
      data-time="<?= htmlspecialchars($item['timeline_time'] ?? '') ?>">
     
     <!-- Timeline Dot -->
-    <div class="absolute -left-6 top-6 w-6 h-6 bg-white border-4 border-blue-500 rounded-full flex items-center justify-center z-10">
-        <span class="text-sm"><?= $icon ?></span>
+    <div class="absolute -left-4 lg:-left-6 top-6 w-6 h-6 lg:w-8 lg:h-8 bg-panel border-4 border-accent rounded-full flex items-center justify-center z-10 shadow-sm">
+        <i data-lucide="circle" class="w-2 h-2 lg:w-3 lg:h-3 text-accent"></i>
     </div>
     
     <!-- Header with Time and Type -->
-    <div class="flex justify-between items-start mb-3">
-        <div class="flex items-center gap-3">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
+        <div class="flex items-center gap-2 lg:gap-3">
             <div>
                 <div class="flex items-center gap-2">
                     <input type="time" 
                            name="timeline_time[]" 
                            value="<?= htmlspecialchars($item['timeline_time'] ?? '') ?>"
                            required
-                           class="px-2 py-1 border rounded focus:border-blue-500 font-semibold text-blue-600 text-lg"
+                           class="px-2 lg:px-3 py-1 lg:py-1.5 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all font-bold text-accent text-sm lg:text-base bg-primary-50"
                            onchange="sortTimelineByTime(<?= $day_number ?>)">
-                    <span class="text-sm font-medium text-gray-600 px-2 py-1 bg-white rounded">
+                    <span class="text-xs lg:text-sm font-semibold text-primary-600 px-2 lg:px-3 py-1 bg-primary-50 rounded-xl">
                         <?= ucfirst($timeline_type === 'meal' ? 'Bữa ăn' : ($timeline_type === 'accommodation' ? 'Nơi nghỉ' : ($timeline_type === 'activity' ? 'Hoạt động' : 'Di chuyển'))) ?>
                     </span>
                 </div>
             </div>
         </div>
-        <button type="button" onclick="removeTimelineItem(this)" class="text-red-500 hover:text-red-700">
-            <i class="fas fa-trash"></i>
+        <button type="button" onclick="removeTimelineItem(this)" class="text-danger hover:opacity-80 transition-all p-1 lg:p-2 rounded-lg hover:bg-danger-bg">
+            <i data-lucide="trash-2" class="w-4 h-4 lg:w-5 lg:h-5"></i>
         </button>
     </div>
     
     <!-- Form Fields -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4">
         <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-                Hoạt động <span class="text-red-500">*</span>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">
+                Hoạt động <span class="text-danger">*</span>
             </label>
             <input type="text" 
                    name="timeline_activity_title[]" 
                    value="<?= htmlspecialchars($item['activity_title'] ?? '') ?>"
                    placeholder="VD: Ăn sáng, Check-in, Tham quan..."
                    required
-                   class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                   class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
             <input type="hidden" name="timeline_day_number[]" value="<?= $day_number ?>">
         </div>
         
         <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Mô tả</label>
             <textarea name="timeline_activity_description[]" 
                       rows="2"
-                      class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                      class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"
                       placeholder="Mô tả chi tiết hoạt động..."><?= htmlspecialchars($item['activity_description'] ?? '') ?></textarea>
         </div>
         
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Loại timeline</label>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Loại timeline</label>
             <select name="timeline_type[]" 
-                    class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"
                     onchange="updateTimelineType(this)">
                 <option value="activity" <?= $timeline_type === 'activity' ? 'selected' : '' ?>>Hoạt động</option>
                 <option value="meal" <?= $timeline_type === 'meal' ? 'selected' : '' ?>>Bữa ăn</option>
@@ -114,18 +114,18 @@ $color_class = $type_colors[$timeline_type] ?? 'bg-gray-50 border-gray-200';
         </div>
         
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Địa điểm</label>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Địa điểm</label>
             <input type="text" 
                    name="timeline_location[]" 
                    value="<?= htmlspecialchars($item['location'] ?? '') ?>"
                    placeholder="VD: Nhà hàng ABC"
-                   class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                   class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
         </div>
         
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nhà dịch vụ</label>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Nhà dịch vụ</label>
             <select name="timeline_service_provider[]" 
-                    class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"
                     onchange="updateLocationFromProvider(this)">
                 <option value="">-- Chọn nhà dịch vụ --</option>
                 <?php foreach ($service_providers as $provider): ?>
@@ -139,9 +139,9 @@ $color_class = $type_colors[$timeline_type] ?? 'bg-gray-50 border-gray-200';
         </div>
         
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Địa điểm du lịch</label>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Địa điểm du lịch</label>
             <select name="timeline_destination[]" 
-                    class="w-full px-3 py-2 border rounded focus:border-blue-500">
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
                 <option value="">-- Chọn địa điểm --</option>
                 <?php foreach ($destinations as $dest): ?>
                     <?php 
@@ -157,9 +157,9 @@ $color_class = $type_colors[$timeline_type] ?? 'bg-gray-50 border-gray-200';
         </div>
         
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Dịch vụ</label>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Dịch vụ</label>
             <select name="timeline_service[]" 
-                    class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"
                     onchange="promptAddToDayServices(this, <?= $day_number ?>)">
                 <option value="">-- Chọn dịch vụ --</option>
                 <?php foreach ($services as $service): ?>
@@ -176,10 +176,10 @@ $color_class = $type_colors[$timeline_type] ?? 'bg-gray-50 border-gray-200';
         </div>
         
         <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Ghi chú</label>
             <textarea name="timeline_notes[]" 
                       rows="2"
-                      class="w-full px-3 py-2 border rounded focus:border-blue-500"
+                      class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"
                       placeholder="Ghi chú thêm..."><?= htmlspecialchars($item['notes'] ?? '') ?></textarea>
         </div>
         
@@ -188,11 +188,13 @@ $color_class = $type_colors[$timeline_type] ?? 'bg-gray-50 border-gray-200';
     
     <!-- Actions -->
     <div class="mt-3 flex justify-end gap-2">
-        <button type="button" onclick="moveTimelineUp(this)" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
-            <i class="fas fa-arrow-up"></i> Lên
+        <button type="button" onclick="moveTimelineUp(this)" class="px-3 py-1.5 lg:py-2 text-xs lg:text-sm bg-primary-50 hover:bg-primary-100 rounded-xl text-primary-700 font-semibold transition-colors flex items-center gap-1">
+            <i data-lucide="arrow-up" class="w-3 h-3 lg:w-4 lg:h-4"></i>
+            Lên
         </button>
-        <button type="button" onclick="moveTimelineDown(this)" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
-            <i class="fas fa-arrow-down"></i> Xuống
+        <button type="button" onclick="moveTimelineDown(this)" class="px-3 py-1.5 lg:py-2 text-xs lg:text-sm bg-primary-50 hover:bg-primary-100 rounded-xl text-primary-700 font-semibold transition-colors flex items-center gap-1">
+            <i data-lucide="arrow-down" class="w-3 h-3 lg:w-4 lg:h-4"></i>
+            Xuống
         </button>
     </div>
 </div>

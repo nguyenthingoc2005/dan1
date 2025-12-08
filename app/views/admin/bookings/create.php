@@ -120,9 +120,9 @@ unset($_SESSION['old']);
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc</label>
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Ngày kết thúc</label>
                             <input type="text" id="end_date_display" value="<?= $old['end_date'] ?? '' ?>"
-                                class="w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded focus:outline-none"
+                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none text-primary-700"
                                 readonly>
                         </div>
                     </div>
@@ -148,10 +148,10 @@ unset($_SESSION['old']);
 
                 <!-- EXISTING CUSTOMER SELECT -->
                 <div id="existing_customer_section">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tìm khách hàng <span
-                            class="text-red-500">*</span></label>
+                    <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Tìm khách hàng <span
+                            class="text-danger">*</span></label>
                     <select name="customer_id" id="customer_id"
-                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700">
                         <option value="">-- Chọn Khách hàng --</option>
                         <?php if (!empty($customers)): ?>
                             <?php foreach ($customers as $c): ?>
@@ -172,20 +172,20 @@ unset($_SESSION['old']);
                 <div id="new_customer_section" class="hidden space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên <span
-                                    class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Họ tên <span
+                                    class="text-danger">*</span></label>
                             <input type="text" name="new_customer_name" class="w-full px-3 py-2 border rounded">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại <span
-                                    class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Số điện thoại <span
+                                    class="text-danger">*</span></label>
                             <input type="text" name="new_customer_phone" class="w-full px-3 py-2 border rounded">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" name="new_customer_email" class="w-full px-3 py-2 border rounded">
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Email</label>
+                            <input type="email" name="new_customer_email" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
@@ -241,12 +241,12 @@ unset($_SESSION['old']);
                         </div>
                     </div>
                     <div id="importStatus" class="mb-2 hidden"></div>
-                    <p class="text-xs text-gray-500 mb-2">
+                    <p class="text-xs text-primary-500 mb-2">
                         💡 Hướng dẫn: Tải file mẫu, điền thông tin khách hàng, sau đó import.
                         File Excel (.xlsx) cần lưu dưới dạng CSV trước khi import.
                     </p>
-                    <table class="w-full text-sm text-left text-gray-500 border rounded">
-                        <thead class="bg-gray-50">
+                    <table class="w-full text-sm text-left text-primary-500 border border-primary-200 rounded-xl">
+                        <thead class="bg-primary-50">
                             <tr>
                                 <th class="px-2 py-2">Họ tên</th>
                                 <th class="px-2 py-2 w-32">SĐT</th>
@@ -264,9 +264,9 @@ unset($_SESSION['old']);
 
                 <div class="mt-4 space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nguồn booking</label>
+                        <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">Nguồn booking</label>
                         <select name="source" id="source"
-                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-accent">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent text-primary-700">
                             <option value="">-- Chọn nguồn --</option>
                             <option value="phone" <?= ($old['source'] ?? '') == 'phone' ? 'selected' : '' ?>>Điện thoại</option>
                             <option value="email" <?= ($old['source'] ?? '') == 'email' ? 'selected' : '' ?>>Email</option>

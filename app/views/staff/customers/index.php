@@ -220,7 +220,7 @@
                     <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                         <a href="?act=staff-customers&page=<?= $i ?>&search=<?= urlencode($filters['search'] ?? '') ?>" class="px-3 py-1 rounded-md text-sm font-medium transition-colors <?= $i == $current_page
                                   ? 'bg-blue-600 text-white shadow-sm'
-                                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100' ?>">
+                                  : 'bg-panel text-primary-700 border border-primary-200 hover:bg-primary-50' ?>">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>

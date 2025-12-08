@@ -253,7 +253,7 @@ if (!is_admin())
 
             <div class="mt-8 flex items-center justify-end gap-3">
                 <a href="?act=admin&module=schedules" 
-                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                    class="px-4 lg:px-5 py-2 lg:py-2.5 border border-primary-200 rounded-xl text-primary-700 hover:bg-primary-50 font-medium transition-colors">
                     Hủy bỏ
                 </a>
                 <button type="submit" 

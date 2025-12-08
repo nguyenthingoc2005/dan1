@@ -12,25 +12,31 @@ $errs = $errors ?? [];
 
 <div class="max-w-5xl mx-auto">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 lg:gap-3 mb-4 lg:mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-primary">Tạo Tour từ Template</h1>
+            <h1 class="text-xl lg:text-2xl font-bold text-primary-700 flex items-center gap-2">
+                <i data-lucide="copy" class="w-5 h-5 lg:w-6 lg:h-6 text-accent"></i>
+                Tạo Tour từ Template
+            </h1>
             <?php if (!empty($template_info)): ?>
-                <p class="text-sm text-gray-500 mt-1">
-                    Dựa trên: <span class="font-medium text-accent"><?= htmlspecialchars($template_info['code']) ?></span>
+                <p class="text-xs lg:text-sm text-primary-500 mt-1 lg:mt-2">
+                    Dựa trên: <span class="font-semibold text-accent"><?= htmlspecialchars($template_info['code']) ?></span>
                     - <?= htmlspecialchars($template_info['name']) ?>
                 </p>
             <?php endif; ?>
         </div>
-        <a href="?act=admin&module=tours&action=selectTemplate" class="text-gray-500 hover:text-gray-700">← Chọn template khác</a>
+        <a href="?act=admin&module=tours&action=selectTemplate" class="text-primary-500 hover:text-accent font-semibold flex items-center gap-2 text-xs lg:text-sm transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            Chọn template khác
+        </a>
     </div>
 
     <!-- Error Alert -->
     <?php if (!empty($errs)): ?>
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <ul class="list-disc list-inside text-sm">
+        <div class="bg-danger-bg border border-danger rounded-xl px-4 py-3 lg:px-5 lg:py-4 mb-4 lg:mb-6">
+            <ul class="list-disc list-inside text-xs lg:text-sm text-danger-dark">
                 <?php foreach ($errs as $msg): ?>
-                    <li><?= htmlspecialchars($msg) ?></li>
+                    <li class="font-semibold"><?= htmlspecialchars($msg) ?></li>
                 <?php endforeach; ?>
             </ul>
         </div>
@@ -43,20 +49,23 @@ $errs = $errors ?? [];
         <input type="hidden" name="code" value="AUTO">
 
         <!-- Section 1: Thông tin cơ bản -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div class="bg-gray-50 px-5 py-3 border-b">
-                <h2 class="font-bold text-gray-800">1. Thông tin cơ bản</h2>
+        <div class="bg-panel rounded-2xl shadow-sm overflow-hidden mb-4 lg:mb-6">
+            <div class="bg-primary-50 px-4 lg:px-5 py-3 lg:py-4 border-b border-primary-100">
+                <h2 class="font-bold text-primary-700 text-base lg:text-lg flex items-center gap-2">
+                    <i data-lucide="info" class="w-4 h-4 lg:w-5 lg:h-5 text-accent"></i>
+                    1. Thông tin cơ bản
+                </h2>
             </div>
-            <div class="p-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="p-4 lg:p-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tên Tour <span class="text-red-500">*</span></label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Tên Tour <span class="text-danger">*</span></label>
                         <input type="text" name="name" value="<?= htmlspecialchars($old['name'] ?? '') ?>" required
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
-                        <select name="category_id" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Danh mục</label>
+                        <select name="category_id" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
                             <option value="">-- Chọn danh mục --</option>
                             <?php foreach ($categories as $id => $name): ?>
                                 <option value="<?= $id ?>" <?= ($old['category_id'] ?? '') == $id ? 'selected' : '' ?>><?= htmlspecialchars($name) ?></option>
@@ -64,56 +73,59 @@ $errs = $errors ?? [];
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Điểm khởi hành</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Điểm khởi hành</label>
                         <input type="text" name="departure_location" value="<?= htmlspecialchars($old['departure_location'] ?? '') ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Số ngày <span class="text-red-500">*</span></label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số ngày <span class="text-danger">*</span></label>
                         <input type="number" name="duration_days" id="duration_days" min="1" required
                             value="<?= $old['duration_days'] ?? '1' ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none"
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"
                             onchange="updateItineraryDays()">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Số đêm</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số đêm</label>
                         <input type="number" name="duration_nights" min="0" value="<?= $old['duration_nights'] ?? '0' ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả ngắn</label>
-                        <textarea name="description" rows="2" class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none"><?= htmlspecialchars($old['description'] ?? '') ?></textarea>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Mô tả ngắn</label>
+                        <textarea name="description" rows="2" class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"><?= htmlspecialchars($old['description'] ?? '') ?></textarea>
                     </div>
                 </div>
 
                 <!-- Số lượng khách & Đặt cọc -->
-                <div class="mt-5 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 class="font-medium text-blue-800 mb-3">📊 Số lượng khách & Đặt cọc</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="mt-4 lg:mt-5 p-3 lg:p-4 bg-info-bg rounded-xl border border-info">
+                    <h4 class="font-bold text-info-dark mb-2 lg:mb-3 text-sm lg:text-base flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4 lg:w-5 lg:h-5"></i>
+                        Số lượng khách & Đặt cọc
+                    </h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Số khách tối thiểu</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số khách tối thiểu</label>
                             <input type="number" name="min_participants" min="1" value="<?= $old['min_participants'] ?? '10' ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent text-center">
+                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base text-center">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Số khách tối đa</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Số khách tối đa</label>
                             <input type="number" name="max_participants" min="1" value="<?= $old['max_participants'] ?? '45' ?>"
-                                class="w-full px-3 py-2 border rounded focus:border-accent text-center">
+                                class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base text-center">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Giá tính cho</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Giá tính cho</label>
                             <div class="flex items-center">
                                 <input type="number" name="price_based_on_pax" min="1" value="<?= $old['price_based_on_pax'] ?? '30' ?>"
-                                    class="w-full px-3 py-2 border rounded-l focus:border-accent text-center">
-                                <span class="px-3 py-2 bg-gray-100 border border-l-0 rounded-r text-sm text-gray-600">khách</span>
+                                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-l-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base text-center">
+                                <span class="px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-100 border border-l-0 border-primary-100 rounded-r-xl text-xs lg:text-sm text-primary-600 font-semibold">khách</span>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tỷ lệ đặt cọc</label>
+                            <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Tỷ lệ đặt cọc</label>
                             <div class="flex items-center">
                                 <input type="number" name="deposit_percentage" min="0" max="100" value="<?= $old['deposit_percentage'] ?? '30' ?>"
-                                    class="w-full px-3 py-2 border rounded-l focus:border-accent text-center">
-                                <span class="px-3 py-2 bg-gray-100 border border-l-0 rounded-r text-sm text-gray-600">%</span>
+                                    class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-l-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base text-center">
+                                <span class="px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-100 border border-l-0 border-primary-100 rounded-r-xl text-xs lg:text-sm text-primary-600 font-semibold">%</span>
                             </div>
                         </div>
                     </div>
@@ -122,64 +134,79 @@ $errs = $errors ?? [];
         </div>
 
         <!-- Section 2: Lịch trình -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div class="bg-gray-50 px-5 py-3 border-b flex justify-between items-center">
-                <h2 class="font-bold text-gray-800">2. Lịch trình</h2>
-                <span class="text-sm text-green-600">✓ Đã copy từ template</span>
+        <div class="bg-panel rounded-2xl shadow-sm overflow-hidden mb-4 lg:mb-6">
+            <div class="bg-primary-50 px-4 lg:px-5 py-3 lg:py-4 border-b border-primary-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <h2 class="font-bold text-primary-700 text-base lg:text-lg flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 lg:w-5 lg:h-5 text-accent"></i>
+                    2. Lịch trình
+                </h2>
+                <span class="text-xs lg:text-sm text-success font-semibold flex items-center gap-1">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    Đã copy từ template
+                </span>
             </div>
-            <div class="p-5" id="itinerary-container">
+            <div class="p-4 lg:p-5" id="itinerary-container">
                 <!-- Generated by JS -->
             </div>
         </div>
 
         <!-- Section 3: Giá bán -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div class="bg-gray-50 px-5 py-3 border-b">
-                <h2 class="font-bold text-gray-800">3. Giá bán</h2>
+        <div class="bg-panel rounded-2xl shadow-sm overflow-hidden mb-4 lg:mb-6">
+            <div class="bg-primary-50 px-4 lg:px-5 py-3 lg:py-4 border-b border-primary-100">
+                <h2 class="font-bold text-primary-700 text-base lg:text-lg flex items-center gap-2">
+                    <i data-lucide="dollar-sign" class="w-4 h-4 lg:w-5 lg:h-5 text-accent"></i>
+                    3. Giá bán
+                </h2>
             </div>
-            <div class="p-5">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="p-4 lg:p-5">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá người lớn <span class="text-red-500">*</span></label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Giá người lớn <span class="text-danger">*</span></label>
                         <input type="number" name="adult_price" id="adult_price" required min="0"
                             value="<?= $old['adult_price'] ?? '' ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none font-bold">
-                        <p class="text-xs text-gray-400 mt-1">Trên 12 tuổi</p>
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base font-bold">
+                        <p class="text-xs text-primary-400 mt-1">Trên 12 tuổi</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá trẻ em</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Giá trẻ em</label>
                         <input type="number" name="child_price" min="0" value="<?= $old['child_price'] ?? '' ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
-                        <p class="text-xs text-gray-400 mt-1">5-11 tuổi (thường 70-80% người lớn)</p>
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
+                        <p class="text-xs text-primary-400 mt-1">5-11 tuổi (thường 70-80% người lớn)</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá em bé</label>
+                        <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Giá em bé</label>
                         <input type="number" name="infant_price" min="0" value="<?= $old['infant_price'] ?? '0' ?>"
-                            class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none">
-                        <p class="text-xs text-gray-400 mt-1">Dưới 5 tuổi</p>
+                            class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base">
+                        <p class="text-xs text-primary-400 mt-1">Dưới 5 tuổi</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Section 4: Dịch vụ (Optional) -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div class="bg-gray-50 px-5 py-3 border-b flex justify-between items-center">
-                <h2 class="font-bold text-gray-800">4. Dịch vụ đi kèm <span class="text-gray-400 font-normal text-sm">(Tùy chọn)</span></h2>
-                <button type="button" onclick="addServiceRow()" class="text-sm text-accent hover:underline">+ Thêm dịch vụ</button>
+        <div class="bg-panel rounded-2xl shadow-sm overflow-hidden mb-4 lg:mb-6">
+            <div class="bg-primary-50 px-4 lg:px-5 py-3 lg:py-4 border-b border-primary-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <h2 class="font-bold text-primary-700 text-base lg:text-lg flex items-center gap-2">
+                    <i data-lucide="briefcase" class="w-4 h-4 lg:w-5 lg:h-5 text-accent"></i>
+                    4. Dịch vụ đi kèm <span class="text-primary-400 font-normal text-xs lg:text-sm">(Tùy chọn)</span>
+                </h2>
+                <button type="button" onclick="addServiceRow()" class="text-xs lg:text-sm text-accent hover:opacity-80 font-semibold flex items-center gap-1 transition-colors">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Thêm dịch vụ
+                </button>
             </div>
-            <div class="p-5 overflow-x-auto">
-                <table class="w-full text-sm border rounded">
-                    <thead class="bg-gray-50">
+            <div class="p-4 lg:p-5 overflow-x-auto">
+                <table class="w-full text-xs lg:text-sm border border-primary-100 rounded-xl overflow-hidden">
+                    <thead class="bg-primary-50">
                         <tr>
-                            <th class="px-3 py-2 text-left font-medium text-gray-600">Dịch vụ</th>
-                            <th class="px-3 py-2 text-left font-medium text-gray-600 w-28">Số lượng</th>
-                            <th class="px-3 py-2 text-left font-medium text-gray-600 w-32">Đơn giá</th>
-                            <th class="px-3 py-2 text-left font-medium text-gray-600 w-24">ĐVT</th>
-                            <th class="px-3 py-2 w-10"></th>
+                            <th class="px-3 lg:px-4 py-2 lg:py-2.5 text-left font-semibold text-primary-700">Dịch vụ</th>
+                            <th class="px-3 lg:px-4 py-2 lg:py-2.5 text-left font-semibold text-primary-700 w-28">Số lượng</th>
+                            <th class="px-3 lg:px-4 py-2 lg:py-2.5 text-left font-semibold text-primary-700 w-32">Đơn giá</th>
+                            <th class="px-3 lg:px-4 py-2 lg:py-2.5 text-left font-semibold text-primary-700 w-24">ĐVT</th>
+                            <th class="px-3 lg:px-4 py-2 lg:py-2.5 w-10"></th>
                         </tr>
                     </thead>
-                    <tbody id="services-container">
+                    <tbody id="services-container" class="bg-panel">
                         <!-- Generated by JS -->
                     </tbody>
                 </table>
@@ -187,65 +214,89 @@ $errs = $errors ?? [];
         </div>
 
         <!-- Section 5: Bao gồm / Không bao gồm -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div class="bg-gray-50 px-5 py-3 border-b">
-                <h2 class="font-bold text-gray-800">5. Bao gồm / Không bao gồm</h2>
+        <div class="bg-panel rounded-2xl shadow-sm overflow-hidden mb-4 lg:mb-6">
+            <div class="bg-primary-50 px-4 lg:px-5 py-3 lg:py-4 border-b border-primary-100">
+                <h2 class="font-bold text-primary-700 text-base lg:text-lg flex items-center gap-2">
+                    <i data-lucide="check-square" class="w-4 h-4 lg:w-5 lg:h-5 text-accent"></i>
+                    5. Bao gồm / Không bao gồm
+                </h2>
             </div>
-            <div class="p-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="p-4 lg:p-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
                     <!-- Bao gồm -->
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-bold text-green-800">✅ Giá tour BAO GỒM</h3>
-                            <button type="button" onclick="addIncludedItem()" class="text-sm text-green-600 hover:underline">+ Thêm</button>
+                    <div class="bg-success-bg border border-success rounded-xl p-3 lg:p-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 lg:mb-3">
+                            <h3 class="font-bold text-success-dark text-sm lg:text-base flex items-center gap-2">
+                                <i data-lucide="check-circle" class="w-4 h-4 lg:w-5 lg:h-5"></i>
+                                Giá tour BAO GỒM
+                            </h3>
+                            <button type="button" onclick="addIncludedItem()" class="text-xs lg:text-sm text-success hover:opacity-80 font-semibold flex items-center gap-1 transition-colors">
+                                <i data-lucide="plus" class="w-3 h-3 lg:w-4 lg:h-4"></i>
+                                Thêm
+                            </button>
                         </div>
                         <div id="included-container" class="space-y-2"></div>
                     </div>
                     <!-- Không bao gồm -->
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-bold text-red-800">❌ Giá tour KHÔNG BAO GỒM</h3>
-                            <button type="button" onclick="addExcludedItem()" class="text-sm text-red-600 hover:underline">+ Thêm</button>
+                    <div class="bg-danger-bg border border-danger rounded-xl p-3 lg:p-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 lg:mb-3">
+                            <h3 class="font-bold text-danger-dark text-sm lg:text-base flex items-center gap-2">
+                                <i data-lucide="x-circle" class="w-4 h-4 lg:w-5 lg:h-5"></i>
+                                Giá tour KHÔNG BAO GỒM
+                            </h3>
+                            <button type="button" onclick="addExcludedItem()" class="text-xs lg:text-sm text-danger hover:opacity-80 font-semibold flex items-center gap-1 transition-colors">
+                                <i data-lucide="plus" class="w-3 h-3 lg:w-4 lg:h-4"></i>
+                                Thêm
+                            </button>
                         </div>
                         <div id="excluded-container" class="space-y-2"></div>
                     </div>
                 </div>
-                <div class="mt-3 text-center">
-                    <button type="button" onclick="applyTemplate('domestic')" class="text-sm text-accent hover:underline mr-3">Mẫu tour trong nước</button>
-                    <button type="button" onclick="applyTemplate('international')" class="text-sm text-accent hover:underline">Mẫu tour quốc tế</button>
+                <div class="mt-3 lg:mt-4 text-center flex flex-wrap justify-center gap-2 lg:gap-3">
+                    <button type="button" onclick="applyTemplate('domestic')" class="text-xs lg:text-sm text-accent hover:opacity-80 font-semibold transition-colors">Mẫu tour trong nước</button>
+                    <span class="text-primary-300">|</span>
+                    <button type="button" onclick="applyTemplate('international')" class="text-xs lg:text-sm text-accent hover:opacity-80 font-semibold transition-colors">Mẫu tour quốc tế</button>
                 </div>
             </div>
         </div>
 
         <!-- Section 6: Hình ảnh & Highlights -->
-        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div class="bg-gray-50 px-5 py-3 border-b">
-                <h2 class="font-bold text-gray-800">6. Hình ảnh & Điểm nổi bật</h2>
+        <div class="bg-panel rounded-2xl shadow-sm overflow-hidden mb-4 lg:mb-6">
+            <div class="bg-primary-50 px-4 lg:px-5 py-3 lg:py-4 border-b border-primary-100">
+                <h2 class="font-bold text-primary-700 text-base lg:text-lg flex items-center gap-2">
+                    <i data-lucide="image" class="w-4 h-4 lg:w-5 lg:h-5 text-accent"></i>
+                    6. Hình ảnh & Điểm nổi bật
+                </h2>
             </div>
-            <div class="p-5 space-y-5">
+            <div class="p-4 lg:p-5 space-y-4 lg:space-y-5">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Hình ảnh Tour</label>
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50"
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-2 lg:mb-3">Hình ảnh Tour</label>
+                    <div class="border-2 border-dashed border-primary-200 rounded-xl p-4 lg:p-6 text-center cursor-pointer hover:bg-primary-50 transition-colors"
                         onclick="document.getElementById('images').click()">
                         <input type="file" name="images[]" id="images" multiple accept="image/*" class="hidden" onchange="previewImages(this)">
-                        <div class="text-gray-400 text-3xl mb-2">📷</div>
-                        <p class="text-gray-500 text-sm">Click để chọn ảnh (tối đa 10 ảnh)</p>
+                        <div class="mb-2 lg:mb-3">
+                            <i data-lucide="image" class="w-12 h-12 lg:w-16 lg:h-16 mx-auto text-primary-300"></i>
+                        </div>
+                        <p class="text-primary-600 text-xs lg:text-sm font-semibold">Click để chọn ảnh (tối đa 10 ảnh)</p>
                     </div>
-                    <div id="image-preview" class="grid grid-cols-5 gap-3 mt-3"></div>
+                    <div id="image-preview" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 lg:gap-3 mt-3"></div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Điểm nổi bật</label>
+                    <label class="block text-xs lg:text-sm font-semibold text-primary-700 mb-1 lg:mb-2">Điểm nổi bật</label>
                     <textarea name="highlights" rows="3" placeholder="Mỗi dòng một điểm nổi bật..."
-                        class="w-full px-3 py-2 border rounded focus:border-accent focus:outline-none"><?= htmlspecialchars(is_array($old['highlights'] ?? null) ? implode("\n", $old['highlights']) : ($old['highlights'] ?? '')) ?></textarea>
+                        class="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-primary-50 border border-primary-100 rounded-xl focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all text-primary-700 text-sm lg:text-base"><?= htmlspecialchars(is_array($old['highlights'] ?? null) ? implode("\n", $old['highlights']) : ($old['highlights'] ?? '')) ?></textarea>
                 </div>
             </div>
         </div>
 
         <!-- Submit -->
-        <div class="flex justify-end gap-3">
-            <a href="?act=admin&module=tours&action=selectTemplate" class="px-6 py-2 border rounded hover:bg-gray-50">Hủy</a>
-            <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium">
-                ✓ Tạo Tour Custom
+        <div class="flex flex-col sm:flex-row justify-end gap-2 lg:gap-3">
+            <a href="?act=admin&module=tours&action=selectTemplate" class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-primary-50 text-primary-700 rounded-xl font-semibold hover:bg-primary-100 transition-colors text-sm lg:text-base text-center">
+                Hủy
+            </a>
+            <button type="submit" class="w-full sm:w-auto px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-success-gradient-from to-success-gradient-to hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition-all text-sm lg:text-base flex items-center justify-center gap-2">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                Tạo Tour Custom
             </button>
         </div>
     </form>

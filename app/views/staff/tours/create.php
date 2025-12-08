@@ -362,7 +362,7 @@ if (is_array($old_day_services)) {
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Upload hình ảnh (tối đa 10 hình, tổng dung lượng ≤ 10MB)
                     </label>
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 transition-colors"
+                    <div class="border-2 border-dashed border-primary-200 rounded-xl p-6 lg:p-8 text-center cursor-pointer hover:bg-primary-50 transition-colors"
                         onclick="document.getElementById('tour_images').click()">
                         <input type="file" name="images[]" id="tour_images" multiple accept="image/*" class="hidden"
                             onchange="previewTourImages(this)">
@@ -432,12 +432,12 @@ if (is_array($old_day_services)) {
                 </div>
 
                 <!-- Final Price Input -->
-                <div class="bg-white border border-gray-300 rounded-lg p-6 mb-6">
+                <div class="bg-panel border border-primary-200 rounded-xl p-4 lg:p-6 mb-6">
                     <h3 class="font-bold text-gray-900 mb-4">🎯 Giá bán cuối cùng</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Giá người lớn <span class="text-red-500">*</span>
+                            <label class="block text-sm font-medium text-primary-700 mb-1 lg:mb-2">
+                                Giá người lớn <span class="text-danger">*</span>
                             </label>
                             <input type="number" name="adult_price" id="adult_price" required min="0" step="1000"
                                 value="<?= $old['adult_price'] ?? '' ?>"

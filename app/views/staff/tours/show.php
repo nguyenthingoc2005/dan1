@@ -166,14 +166,14 @@ require_staff_or_admin();
                             $day_num = $item['day_number'];
                             $day_services = $day_services_by_day[$day_num] ?? [];
                             ?>
-                            <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="border border-primary-200 rounded-xl p-4 lg:p-6">
                                 <div class="flex gap-4 mb-3">
                                     <div
                                         class="w-10 h-10 bg-accent text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
                                         <?= $day_num ?>
                                     </div>
                                     <div class="flex-1">
-                                        <h4 class="font-bold text-gray-800">
+                                        <h4 class="font-bold text-primary-800">
                                             <?= htmlspecialchars($item['title'] ?: "Ngày $day_num") ?></h4>
                                         <?php if (!empty($item['destination_name'])): ?>
                                             <p class="text-sm text-blue-600">📍 <?= htmlspecialchars($item['destination_name']) ?>
@@ -189,8 +189,8 @@ require_staff_or_admin();
 
                                 <!-- Dịch vụ theo ngày -->
                                 <?php if (!empty($day_services)): ?>
-                                    <div class="ml-14 mt-3 pt-3 border-t border-gray-200">
-                                        <h5 class="text-sm font-semibold text-gray-700 mb-2">
+                                    <div class="ml-14 mt-3 pt-3 border-t border-primary-200">
+                                        <h5 class="text-sm font-semibold text-primary-700 mb-2">
                                             <i class="fas fa-concierge-bell mr-1 text-green-500"></i>Dịch vụ theo ngày:
                                         </h5>
                                         <div class="space-y-2">

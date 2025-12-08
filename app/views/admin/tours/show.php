@@ -174,7 +174,7 @@ if (!is_admin())
                                         <?= $day_num ?>
                                     </div>
                                     <div class="flex-1">
-                                        <h4 class="font-bold text-gray-800">
+                                        <h4 class="font-bold text-primary-800">
                                             <?= htmlspecialchars($item['title'] ?: "Ngày $day_num") ?></h4>
                                         <?php if (!empty($item['destination_name'])): ?>
                                             <p class="text-sm text-blue-600">📍 <?= htmlspecialchars($item['destination_name']) ?>
@@ -197,7 +197,7 @@ if (!is_admin())
                                         <div class="space-y-2">
                                             <?php foreach ($day_services as $service): ?>
                                                 <div class="bg-green-50 border border-green-200 rounded p-2 text-sm">
-                                                    <div class="font-medium text-gray-800">
+                                                    <div class="font-medium text-primary-800">
                                                         <?= htmlspecialchars($service['service_name'] ?? 'N/A') ?></div>
                                                     <div class="text-gray-600 mt-1">
                                                         Giá: <?= number_format($service['unit_price'] ?? 0, 0, ',', '.') ?>đ /
@@ -225,8 +225,8 @@ if (!is_admin())
             </div>
 
             <!-- Included / Excluded -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Bao gồm / Không bao gồm</h2>
+            <div class="bg-panel rounded-xl shadow-sm p-4 lg:p-6">
+                <h2 class="text-lg font-bold text-primary-800 border-b border-primary-200 pb-2 mb-4">Bao gồm / Không bao gồm</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Included -->
                     <div>
@@ -270,8 +270,8 @@ if (!is_admin())
 
             <!-- Status & Actions -->
             <div
-                class="bg-white rounded-lg shadow-sm p-6 border-l-4 <?= $tour['status'] == 'active' ? 'border-green-500' : ($tour['status'] == 'draft' ? 'border-yellow-500' : 'border-red-500') ?>">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Trạng thái</h2>
+                class="bg-panel rounded-xl shadow-sm p-4 lg:p-6 border-l-4 <?= $tour['status'] == 'active' ? 'border-success' : ($tour['status'] == 'draft' ? 'border-warning' : 'border-danger') ?>">
+                <h2 class="text-lg font-bold text-primary-800 border-b border-primary-200 pb-2 mb-4">Trạng thái</h2>
 
                 <div class="space-y-3 mb-4">
                     <div class="flex justify-between items-center">
@@ -291,7 +291,7 @@ if (!is_admin())
                                 echo '<span class="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full font-medium">📝 Bản nháp</span>';
                                 break;
                             case 'inactive':
-                                echo '<span class="px-3 py-1 bg-gray-300 text-gray-800 text-sm rounded-full font-medium">🙈 Đã ẩn</span>';
+                                echo '<span class="px-3 py-1 bg-primary-200 text-primary-800 text-sm rounded-full font-medium">🙈 Đã ẩn</span>';
                                 break;
                             default:
                                 echo '<span class="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full font-medium">' . htmlspecialchars($tour['status']) . '</span>';
@@ -351,8 +351,8 @@ if (!is_admin())
             </div>
 
             <!-- Pricing -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Bảng giá</h2>
+            <div class="bg-panel rounded-xl shadow-sm p-4 lg:p-6">
+                <h2 class="text-lg font-bold text-primary-800 border-b border-primary-200 pb-2 mb-4">Bảng giá</h2>
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
                         <span class="text-gray-600">Người lớn</span>
@@ -386,12 +386,12 @@ if (!is_admin())
 
             <!-- Policies -->
             <?php if (!empty($tour['policies'])): ?>
-                <div class="bg-white rounded-lg shadow-sm p-6">
-                    <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Chính sách</h2>
+                <div class="bg-panel rounded-xl shadow-sm p-4 lg:p-6">
+                    <h2 class="text-lg font-bold text-primary-800 border-b border-primary-200 pb-2 mb-4">Chính sách</h2>
                     <div class="space-y-3">
                         <?php foreach ($tour['policies'] as $policy): ?>
                             <div class="border border-gray-200 rounded p-3">
-                                <div class="font-medium text-gray-800"><?= htmlspecialchars($policy['name']) ?></div>
+                                <div class="font-medium text-primary-800"><?= htmlspecialchars($policy['name']) ?></div>
                                 <?php if (!empty($policy['description'])): ?>
                                     <div class="text-xs text-gray-500 mt-1"><?= htmlspecialchars($policy['description']) ?></div>
                                 <?php endif; ?>
@@ -402,8 +402,8 @@ if (!is_admin())
             <?php endif; ?>
 
             <!-- Highlights -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Điểm nổi bật</h2>
+            <div class="bg-panel rounded-xl shadow-sm p-4 lg:p-6">
+                <h2 class="text-lg font-bold text-primary-800 border-b border-primary-200 pb-2 mb-4">Điểm nổi bật</h2>
                 <?php if (!empty($tour['highlights'])): ?>
                     <ul class="space-y-2">
                         <?php foreach ($tour['highlights'] as $hl): ?>
@@ -419,8 +419,8 @@ if (!is_admin())
             </div>
 
             <!-- Images -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Thư viện ảnh</h2>
+            <div class="bg-panel rounded-xl shadow-sm p-4 lg:p-6">
+                <h2 class="text-lg font-bold text-primary-800 border-b border-primary-200 pb-2 mb-4">Thư viện ảnh</h2>
                 <?php if (!empty($tour['images'])): ?>
                     <div class="grid grid-cols-2 gap-2">
                         <?php foreach ($tour['images'] as $img): ?>
