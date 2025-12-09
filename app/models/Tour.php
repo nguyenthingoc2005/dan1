@@ -248,7 +248,8 @@ class Tour
                 'tour_type' => $data['tour_type'] ?? 'public',
                 // BUG FIX: Validate status để đảm bảo giá trị hợp lệ
                 'status' => $this->sanitizeTourStatus($data['status'] ?? 'draft'),
-                'parent_tour_id' => $data['parent_tour_id'] ?? null,
+                // BUG FIX: Validate parent_tour_id để đảm bảo foreign key constraint
+                'parent_tour_id' => $this->validateParentTourId($data['parent_tour_id'] ?? null),
                 'created_by' => get_user_id()
             ]);
 
@@ -692,6 +693,50 @@ class Tour
         }
 
         return $status;
+    }
+
+    /**
+     * Validate parent_tour_id - Kiểm tra xem tour parent có tồn tại không
+     * Nếu không tồn tại hoặc không hợp lệ, trả về null để tránh foreign key constraint error
+     * 
+     * @param mixed $parent_tour_id
+     * @return int|null
+     */
+    private function validateParentTourId($parent_tour_id)
+    {
+        // Nếu null hoặc rỗng, trả về null
+        if (empty($parent_tour_id)) {
+            return null;
+        }
+
+        // Chuyển sang int
+        $parent_tour_id = (int) $parent_tour_id;
+
+        // Nếu <= 0, không hợp lệ
+        if ($parent_tour_id <= 0) {
+            error_log("Tour::validateParentTourId() - Invalid parent_tour_id: $parent_tour_id, defaulting to null");
+            return null;
+        }
+
+        // Kiểm tra xem tour có tồn tại trong database không
+        try {
+            $sql = "SELECT id FROM tours WHERE id = :id LIMIT 1";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['id' => $parent_tour_id]);
+            $result = $stmt->fetch();
+
+            if (!$result) {
+                // Tour không tồn tại, trả về null
+                error_log("Tour::validateParentTourId() - Parent tour ID $parent_tour_id does not exist, defaulting to null");
+                return null;
+            }
+
+            return $parent_tour_id;
+        } catch (PDOException $e) {
+            // Nếu có lỗi khi query, trả về null để an toàn
+            error_log("Tour::validateParentTourId() - Error checking parent_tour_id: " . $e->getMessage());
+            return null;
+        }
     }
 
     /**

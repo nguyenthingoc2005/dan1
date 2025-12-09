@@ -80,59 +80,34 @@ require_staff_or_admin();
                 </div>
 
                 <!-- Chi phí cố định -->
-                <?php if (!empty($tour['fixed_cost_guide']) || !empty($tour['fixed_cost_management']) || !empty($tour['fixed_cost_marketing']) || !empty($tour['fixed_cost_other'])): ?>
+                <?php 
+                // Chỉ hiển thị fixed_cost_total hoặc fixed_cost_other (nếu fixed_cost_total không có)
+                $fixedCostTotal = !empty($tour['fixed_cost_total']) ? (float)$tour['fixed_cost_total'] : (!empty($tour['fixed_cost_other']) ? (float)$tour['fixed_cost_other'] : 0);
+                if ($fixedCostTotal > 0): 
+                ?>
                     <div class="mt-4 lg:mt-5 p-4 lg:p-5 bg-warning-bg rounded-2xl border border-warning">
                         <h3 class="font-semibold text-warning-text mb-3 text-sm lg:text-base flex items-center gap-2">
                             <i data-lucide="dollar-sign" class="w-4 h-4"></i>
                             Chi phí cố định
                         </h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                            <?php if (!empty($tour['fixed_cost_guide'])): ?>
-                                <div>
-                                    <span class="text-primary-500">Lương HDV:</span>
-                                    <span class="font-semibold ml-2 text-primary-700"><?= number_format($tour['fixed_cost_guide'], 0, ',', '.') ?>
-                                        đ</span>
-                                </div>
-                            <?php endif; ?>
-                            <?php if (!empty($tour['fixed_cost_management'])): ?>
-                                <div>
-                                    <span class="text-primary-500">Chi phí quản lý:</span>
-                                    <span
-                                        class="font-semibold ml-2 text-primary-700"><?= number_format($tour['fixed_cost_management'], 0, ',', '.') ?>
-                                        đ</span>
-                                </div>
-                            <?php endif; ?>
-                            <?php if (!empty($tour['fixed_cost_marketing'])): ?>
-                                <div>
-                                    <span class="text-primary-500">Chi phí marketing:</span>
-                                    <span
-                                        class="font-semibold ml-2 text-primary-700"><?= number_format($tour['fixed_cost_marketing'], 0, ',', '.') ?>
-                                        đ</span>
-                                </div>
-                            <?php endif; ?>
-                            <?php if (!empty($tour['fixed_cost_other'])): ?>
-                                <div>
-                                    <span class="text-primary-500">Chi phí khác:</span>
-                                    <span class="font-semibold ml-2 text-primary-700"><?= number_format($tour['fixed_cost_other'], 0, ',', '.') ?>
-                                        đ</span>
-                                </div>
-                            <?php endif; ?>
+                        <div class="text-sm">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-primary-500">Chi phí khác:</span>
+                                <span class="font-semibold text-primary-700"><?= number_format($fixedCostTotal, 0, ',', '.') ?> đ</span>
+                            </div>
                         </div>
                         <?php
-                        $totalFixedCost = ($tour['fixed_cost_guide'] ?? 0) + ($tour['fixed_cost_management'] ?? 0) + ($tour['fixed_cost_marketing'] ?? 0) + ($tour['fixed_cost_other'] ?? 0);
                         $minParticipants = $tour['min_participants'] ?? 15;
-                        $fixedCostPerPerson = $minParticipants > 0 ? $totalFixedCost / $minParticipants : 0;
+                        $fixedCostPerPerson = $minParticipants > 0 ? $fixedCostTotal / $minParticipants : 0;
                         ?>
                         <div class="mt-3 pt-3 border-t border-warning">
                             <div class="flex justify-between items-center">
                                 <span class="text-primary-700 font-semibold text-sm lg:text-base">Tổng chi phí cố định:</span>
-                                <span class="font-bold text-warning-text text-sm lg:text-base"><?= number_format($totalFixedCost, 0, ',', '.') ?>
-                                    đ</span>
+                                <span class="font-bold text-warning-text text-sm lg:text-base"><?= number_format($fixedCostTotal, 0, ',', '.') ?> đ</span>
                             </div>
                             <div class="flex justify-between items-center mt-1">
                                 <span class="text-primary-500 text-xs lg:text-sm">Chi phí cố định/người:</span>
-                                <span class="font-semibold text-xs lg:text-sm text-primary-700"><?= number_format($fixedCostPerPerson, 0, ',', '.') ?>
-                                    đ</span>
+                                <span class="font-semibold text-xs lg:text-sm text-primary-700"><?= number_format($fixedCostPerPerson, 0, ',', '.') ?> đ</span>
                             </div>
                         </div>
                     </div>
