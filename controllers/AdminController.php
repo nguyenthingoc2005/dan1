@@ -1289,4 +1289,8 @@ public function deletePhanconghdv($hdv_id)
         }
         header('Location: ' . BASEURL . '?act=dattourlist');
 }
+public function diadiemlist(){
+    require_once './views/admin/diadiemlist.php';
+    
+}
 }

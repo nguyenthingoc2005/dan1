@@ -18,6 +18,7 @@ match ($act) {
 
 
     // ================== ĐỊA ĐIỂM TOUR ==================
+    'diadiemlist' => (new AdminController())->diadiemlist(),
     'diadiem' => (new AdminController())->diadiem($_GET['tour_id'] ?? null),
     'gan_diadiem' => (new AdminController())->gan_diadiem($_GET['tour_id'] ?? null),
     'luu_gan_diadiem' => (new AdminController())->luu_gan_diadiem($_GET['tour_id'] ?? null),
