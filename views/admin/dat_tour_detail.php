@@ -230,7 +230,12 @@ foreach ($dichVuTour as $dv) {
                                             <span class="text-danger fst-italic me-2"><i class="bi bi-exclamation-circle"></i> Chưa có</span>
                                             <a href="<?= BASEURL ?>?act=add_schedule&tour_id=<?= $data['tour_info']['tour_id'] ?? '' ?>" class="btn btn-sm btn-primary py-0 px-2 fw-bold">Lên lịch ngay</a>
                                         <?php else: ?>
-                                            <?= renderStatusBadge($trang_thai_lich) ?>
+                                            <?php if ($trang_thai_lich == 0): ?>
+                                                <span class="badge bg-secondary">Chưa xác nhận</span>
+                                            <?php elseif ($trang_thai_lich == 1): ?>
+                                                <span class="badge bg-success">Đã xác nhận</span>
+                                            <?php endif; ?>
+
                                             <div class="ms-2">
 
                                                 <a href="<?= BASEURL ?>?act=edit_schedule&lich_id=<?= $lich_id ?>" class="text-warning me-1" title="Sửa"><i class="bi bi-pencil-square"></i></a>
@@ -416,12 +421,12 @@ foreach ($dichVuTour as $dv) {
                                     <p class="mt-2 mb-0">Chưa có hướng dẫn viên nào được phân công.</p>
                                 </div>
                             <?php else: ?>
-                                
+
                                 <div class="row g-3">
-                                    
+
                                     <?php foreach ($huongDanVien as $hdv): ?>
                                         <div class="col-md-6 col-lg-4">
-                                            
+
                                             <div class="border rounded p-3 d-flex align-items-center shadow-sm h-100 bg-white position-relative">
 
                                                 <a href="<?= BASEURL ?>?act=remove_guide&hdv_id=<?= $hdv['id'] ?? 0 ?>&lich_id=<?= $lich_id ?>"

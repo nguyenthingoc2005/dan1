@@ -68,8 +68,8 @@
                         <div class="col-md-6">
                             <label>Trạng thái</label>
                             <select name="trang_thai" class="form-select">
-                                <option value="published" <?= ($lich['trang_thai'] == 'published') ? 'selected' : '' ?>>Published</option>
-                                <option value="draft" <?= ($lich['trang_thai'] == 'draft') ? 'selected' : '' ?>>Draft</option>
+                                <option value="published" <?= ($lich['trang_thai'] == '0') ? 'selected' : '' ?>>Chưa xác nhận</option>
+                                <option value="draft" <?= ($lich['trang_thai'] == '1') ? 'selected' : '' ?>>Xác nhận</option>
                             </select>
                         </div>
 

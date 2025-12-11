@@ -68,8 +68,8 @@
                         <div class="col-md-6">
                             <label>Trạng thái</label>
                             <select name="trang_thai" class="form-select">
-                                <option value="published">Published</option>
-                                <option value="draft">Draft</option>
+                                <option value="0">Chưa xác nhận</option>
+                                <option value="1">Đã xác nhận</option>
                             </select>
                         </div>
 

@@ -1,4 +1,3 @@
-
 <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
 <nav>
@@ -22,6 +21,7 @@
         <li class="list"><a href="<?= BASEURL ?>?act=user_list" class="nav-link"><i class="bx bx-shield-alt-2"></i><span class="link">Quản lí tài khoản</span></a></li>
         <li class="list"><a href="<?= BASEURL ?>?act=hdv" class="nav-link"><i class="bx bx-user icon"></i><span class="link">Hướng dẫn viên</span></a></li>
         <li class="list"><a href="<?= BASEURL ?>?act=khachhang_list" class="nav-link"><i class="bx bx-user-circle"></i><span class="link">Khách hàng</span></a></li>
+        <li class="list"><a href="<?= BASEURL ?>?act=dattourlist " class="nav-link"><i class="bx bx-calendar-check icon"></i><span class="link">Quản lý địa điểm</span></a></li>
       </ul>
 
       <div class="bottom-cotent">
